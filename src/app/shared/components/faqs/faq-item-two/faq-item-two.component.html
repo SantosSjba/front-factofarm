@@ -1,0 +1,31 @@
+<div
+  class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+>
+  <button
+    type="button"
+    (click)="onToggle()"
+    class="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+  >
+    <span class="text-sm font-medium text-gray-800 dark:text-white/90">{{ title }}</span>
+    <svg
+      class="size-4 shrink-0 text-gray-500 transition-transform"
+      [class.rotate-180]="isOpen"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  </button>
+  @if (isOpen) {
+    <div class="border-t border-gray-200 px-4 pb-3.5 pt-0 text-sm text-gray-600 dark:border-gray-800 dark:text-gray-400">
+      {{ content }}
+    </div>
+  }
+</div>

@@ -1,6 +1,55 @@
 # FrontFactofarm
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.7.
+Cliente web de **FactoFarm** generado con [Angular CLI](https://github.com/angular/angular-cli) version 21.2.7.
+
+## Arquitectura del proyecto
+
+### Enfoque
+
+- **Feature-based**: cada funcionalidad de negocio vive en `src/app/modules/<feature>/`.
+- **Core**: servicios globales, guards e interceptors — se cargan una vez (típicamente desde `app.config` / raíz de la app).
+- **Shared**: piezas reutilizables (componentes UI, pipes, directivas) sin lógica de un solo dominio.
+
+### Estructura de carpetas (`src/app/`)
+
+```text
+src/app/
+  core/
+    services/
+    guards/
+    interceptors/
+  shared/
+    components/
+    pipes/
+    directives/
+  modules/
+    auth/
+    dashboard/
+    properties/
+    clients/
+    sales/
+```
+
+### Estructura por feature (ejemplo `modules/properties/`)
+
+```text
+properties/
+  pages/        # Rutas / vistas contenedoras
+  components/   # Componentes específicos del feature
+  services/     # Estado y llamadas HTTP del feature
+  models/       # Tipos, interfaces, DTOs de vista
+```
+
+Evitar mezclar todo en carpetas globales `components/`, `services/` o `models/` a nivel de `app/`: no escala ni delimita límites del feature.
+
+### Conexión con el backend
+
+- La app consume la **API REST** del proyecto `api-factofarm` (NestJS).
+- **JWT**: tokens gestionados en `core` (servicio de auth) y adjuntos con un **interceptor** HTTP.
+
+### Stack relacionado
+
+- **Backend**: NestJS, Clean Architecture modular, Prisma, PostgreSQL.
 
 ## Development server
 
