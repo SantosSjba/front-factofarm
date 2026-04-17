@@ -1,15 +1,38 @@
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
   <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
     {{ pageTitle }}
   </h2>
-  <nav>
+  <nav aria-label="Migas de pan">
+    @if (segments?.length) {
+    <ol class="flex flex-wrap items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+      @for (seg of segments; track $index; let last = $last; let i = $index) {
+        <li class="inline-flex items-center gap-1.5">
+          @if (!last && seg.link !== undefined && seg.link !== null && seg.link !== '') {
+            <a
+              class="inline-flex items-center gap-1.5 hover:text-brand-500 dark:hover:text-brand-400"
+              [routerLink]="seg.link!"
+            >
+              {{ seg.label }}
+            </a>
+          } @else {
+            <span [class.text-gray-800]="last" [class.dark:text-white]="last" [class.dark:text-white/90]="last">
+              {{ seg.label }}
+            </span>
+          }
+          @if (!last) {
+            <span class="text-gray-400" aria-hidden="true">/</span>
+          }
+        </li>
+      }
+    </ol>
+    } @else {
     <ol class="flex items-center gap-1.5">
       <li>
         <a
-          class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
-          routerLink="/"
+          class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"
+          [routerLink]="homeLink"
         >
-          Home
+          {{ homeLabel }}
           <svg
             class="stroke-current"
             width="17"
@@ -17,6 +40,7 @@
             viewBox="0 0 17 16"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
           >
             <path
               d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366"
@@ -32,5 +56,6 @@
         {{ pageTitle }}
       </li>
     </ol>
+    }
   </nav>
 </div>

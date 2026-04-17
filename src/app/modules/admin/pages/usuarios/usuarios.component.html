@@ -1,0 +1,135 @@
+<div class="mb-5">
+  <app-breadcrumb-inline
+    [segments]="breadcrumbSegments"
+  />
+</div>
+
+<app-page-toolbar>
+  <h1
+    data-toolbar-title
+    class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
+  >
+    Usuarios
+  </h1>
+  <div data-toolbar-actions>
+    <app-button size="sm" (btnClick)="openModal()">
+      <span class="inline-flex items-center gap-2">
+        <svg width="1em" height="1em" viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true">
+          <path
+            d="M10 4.16667V15.8333M4.16667 10H15.8333"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+        Nuevo
+      </span>
+    </app-button>
+  </div>
+</app-page-toolbar>
+
+@if (usersQuery.isError()) {
+  <div
+    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+    role="alert"
+  >
+    No se pudo cargar el listado.
+    <button type="button" class="ml-3 underline" (click)="refetchUsers()">Reintentar</button>
+  </div>
+}
+
+<app-component-card title="Listado de usuarios" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Email</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Nombre</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Perfil</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Api Token</th>
+            <th
+              class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400"
+            >
+              Establecimiento
+            </th>
+            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              &nbsp;
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (u of usersQuery.data() ?? []; track u.id; let i = $index) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ i + 1 }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ u.email }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ u.nombre }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+                {{ roleLabel(u.role) }}
+              </td>
+              <td
+                class="max-w-[220px] truncate px-5 py-4 font-mono text-theme-xs text-gray-500"
+                [title]="apiTokenCell()"
+              >
+                {{ apiTokenCell() }}
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm text-gray-700 dark:text-gray-300">
+                {{ u.establecimientoNombre }}
+              </td>
+              <td class="px-5 py-4 text-end">
+                <div class="flex flex-wrap justify-end gap-2">
+                  @if (u.role === 'ADMINISTRADOR') {
+                    <button
+                      type="button"
+                      class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
+                      (click)="rowAction(u, 'editar')"
+                    >
+                      Editar
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
+                      (click)="rowAction(u, 'editar')"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-lg bg-error-50 px-3 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:hover:bg-error-500/25"
+                      (click)="rowAction(u, 'eliminar')"
+                    >
+                      Eliminar
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-lg bg-success-50 px-3 py-1.5 text-theme-xs font-medium text-success-700 hover:bg-success-100 dark:bg-success-500/15 dark:text-success-400 dark:hover:bg-success-500/25"
+                      (click)="rowAction(u, 'permisos')"
+                    >
+                      Entrar Permisos
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="px-5 py-8 text-center text-theme-sm text-gray-500">
+                @if (usersQuery.isPending()) {
+                  Cargando…
+                } @else if (usersQuery.isError()) {
+                  Use “Reintentar” arriba para volver a cargar.
+                } @else {
+                  No hay usuarios registrados.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-usuario-form-modal [isOpen]="modalOpen()" (closed)="closeModal()" />

@@ -1,0 +1,16 @@
+<select
+  [id]="id || null"
+  [name]="name || null"
+  [attr.aria-label]="placeholder"
+  [disabled]="disabled"
+  [ngClass]="selectClass"
+  [value]="value"
+  (change)="onChange($event)"
+>
+  @if (showPlaceholder && placeholder) {
+    <option value="">{{ placeholder }}</option>
+  }
+  @for (opt of options; track opt.value) {
+    <option [value]="opt.value">{{ opt.label }}</option>
+  }
+</select>

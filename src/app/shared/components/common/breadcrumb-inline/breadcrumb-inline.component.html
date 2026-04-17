@@ -1,0 +1,26 @@
+<nav class="text-theme-sm text-gray-500 dark:text-gray-400" aria-label="Migas de pan">
+  <ol class="flex flex-wrap items-center gap-1.5">
+    @for (seg of segments; track $index; let last = $last) {
+    <li class="inline-flex items-center gap-1.5">
+      @if (!last && seg.link !== undefined && seg.link !== null && seg.link !== '') {
+        <a
+          class="hover:text-brand-500 dark:hover:text-brand-400"
+          [routerLink]="seg.link!"
+          >{{ seg.label }}</a
+        >
+      } @else {
+        <span
+          [class.font-medium]="last"
+          [class.text-gray-800]="last"
+          [class.dark:text-white/90]="last"
+        >
+          {{ seg.label }}
+        </span>
+      }
+      @if (!last) {
+        <span class="mx-1.5 text-gray-400" aria-hidden="true">/</span>
+      }
+    </li>
+    }
+  </ol>
+</nav>

@@ -1,0 +1,6 @@
+<div [class]="hostClass()">
+  @if (title()) {
+    <h3 [class]="titleClass()">{{ title() }}</h3>
+  }
+  <app-tab-strip [tabs]="tabs()" [activeId]="activeId()" (tabChange)="selectTab($event)" />
+</div>

@@ -1,0 +1,243 @@
+<app-modal
+  [isOpen]="isOpen()"
+  (close)="onClose()"
+  className="w-full max-w-4xl shadow-theme-lg"
+  maxHeightClass="max-h-[min(90dvh,880px)]"
+  bodyClass="custom-scrollbar"
+>
+  <!-- Hijo nativo con `data-modal-header`: la proyección de `app-modal` no siempre enlaza el host de un componente hijo. -->
+  <div data-modal-header class="shrink-0">
+    <app-modal-tab-header
+      title="Nuevo usuario"
+      [tabs]="tabs"
+      [activeId]="activeTab()"
+      (tabChange)="setTab($event)"
+    />
+  </div>
+
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    @if (activeTab() === 'datos') {
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+        <div>
+          <app-label>Nombre</app-label>
+          <app-input-field
+            className="mt-2"
+            placeholder="Nombre completo"
+            [value]="nombre()"
+            (valueChange)="nombre.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Correo electrónico</app-label>
+          <app-input-field
+            type="email"
+            className="mt-2"
+            placeholder="correo@ejemplo.com"
+            [value]="email()"
+            (valueChange)="email.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Establecimiento</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="establecimientoId()"
+            [options]="establecimientoOptions()"
+            (valueChange)="establecimientoId.set($event)"
+          />
+        </div>
+        <div>
+          <app-label>Perfil</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="role()"
+            [options]="roleOptions"
+            [showPlaceholder]="false"
+            placeholder=""
+            (valueChange)="setRoleFromSelect($event)"
+          />
+        </div>
+        <div>
+          <app-label>Contraseña</app-label>
+          <app-input-field
+            type="password"
+            className="mt-2"
+            placeholder="••••••••"
+            [value]="password()"
+            (valueChange)="password.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Confirmar contraseña</app-label>
+          <app-input-field
+            type="password"
+            className="mt-2"
+            placeholder="••••••••"
+            [value]="password2()"
+            (valueChange)="password2.set($event + '')"
+          />
+        </div>
+      </div>
+    }
+
+    @if (activeTab() === 'permisos') {
+      <div class="space-y-4">
+        <p class="text-theme-sm text-gray-500 dark:text-gray-400">
+          Seleccione el acceso al menú (FactoFarm). La asignación definitiva se conectará al guardar el
+          usuario.
+        </p>
+        <app-permission-menu-tree
+          [tree]="menuTree()"
+          [selectedCodes]="navCodesList()"
+          (parentToggle)="onPermissionParent($event)"
+          (childToggle)="onPermissionChild($event)"
+        />
+      </div>
+    }
+
+    @if (activeTab() === 'personales') {
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+        <div>
+          <app-label>Tipo Doc. Identidad</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="tipoDoc()"
+            [options]="tipoDocOptions"
+            (valueChange)="tipoDoc.set($event)"
+          />
+        </div>
+        <div>
+          <app-label>Número</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="numeroDoc()"
+            (valueChange)="numeroDoc.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Nombres</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="nombres()"
+            (valueChange)="nombres.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Apellidos</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="apellidos()"
+            (valueChange)="apellidos.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Fecha de nacimiento</app-label>
+          <app-input-field
+            type="date"
+            className="mt-2"
+            [value]="fechaNac()"
+            (valueChange)="fechaNac.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Correo electrónico personal</app-label>
+          <app-input-field
+            type="email"
+            className="mt-2"
+            [value]="emailPersonal()"
+            (valueChange)="emailPersonal.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Nº Celular personal</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="celPersonal()"
+            (valueChange)="celPersonal.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Dirección</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="direccion()"
+            (valueChange)="direccion.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Correo electrónico corporativo</app-label>
+          <app-input-field
+            type="email"
+            className="mt-2"
+            [value]="emailCorp()"
+            (valueChange)="emailCorp.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Nº Celular corporativo</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="celCorp()"
+            (valueChange)="celCorp.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Fecha de contratación</app-label>
+          <app-input-field
+            type="date"
+            className="mt-2"
+            [value]="fechaContratacion()"
+            (valueChange)="fechaContratacion.set($event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Cargo</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="cargo()"
+            (valueChange)="cargo.set($event + '')"
+          />
+        </div>
+        <div class="md:col-span-2">
+          <app-label>Foto</app-label>
+          <div class="mt-2">
+            @if (fotoUploadError()) {
+              <p class="text-theme-xs mb-2 text-red-600 dark:text-red-400">{{ fotoUploadError() }}</p>
+            }
+            <app-image-square-picker
+              [previewUrl]="fotoPreview()"
+              (fileSelected)="onFotoFile($event)"
+            >
+              <p>
+                Se sube al servidor; el id queda en <code class="text-xs">fotoArchivoId</code> para guardar el
+                usuario.
+              </p>
+            </app-image-square-picker>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeTab() === 'documentos') {
+      <p class="text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">
+        Aquí podrá definir plantillas y series documentarias por usuario. Pendiente de reglas de negocio de
+        FactoFarm.
+      </p>
+    }
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+  >
+    <app-button variant="outline" [disabled]="createUserMutation.isPending()" (btnClick)="onClose()">
+      Cancelar
+    </app-button>
+    <app-button
+      [disabled]="createUserMutation.isPending()"
+      (btnClick)="onSave()"
+    >
+      {{ createUserMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </div>
+</app-modal>

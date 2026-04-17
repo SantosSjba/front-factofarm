@@ -1,0 +1,20 @@
+<div
+  class="-mx-1 flex gap-0 overflow-x-auto border-b border-gray-200 dark:border-gray-800"
+  role="tablist"
+>
+  @for (tab of tabs(); track tab.id) {
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeId() === tab.id"
+      (click)="select(tab.id)"
+      class="shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:px-4"
+      [class.border-brand-500]="activeId() === tab.id"
+      [class.text-brand-500]="activeId() === tab.id"
+      [class.border-transparent]="activeId() !== tab.id"
+      [class.text-gray-500]="activeId() !== tab.id"
+    >
+      {{ tab.label }}
+    </button>
+  }
+</div>

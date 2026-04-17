@@ -1,23 +1,24 @@
-<!-- Only render if open -->
 @if (isOpen) {
-<div class="fixed inset-0 flex items-center justify-center overflow-y-auto modal z-99999">
-  <!-- Backdrop -->
+<div
+  class="modal fixed inset-0 z-99999 flex items-start justify-center overflow-y-auto p-4 sm:items-center sm:py-6"
+>
   @if (!isFullscreen) {
   <div
     class="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
     (click)="onBackdropClick($event)"
   ></div>
   }
-  <!-- Modal Content -->
   <div
-    [ngClass]="isFullscreen ? 'w-full h-full' : 'relative w-full rounded-3xl bg-white dark:bg-gray-900'"
-    [class]="className"
+    role="dialog"
+    aria-modal="true"
+    [ngClass]="panelClasses()"
     (click)="onContentClick($event)"
   >
-    @if (showCloseButton) {
+    @if (showCloseButton && !isFullscreen) {
     <button
+      type="button"
       (click)="close.emit()"
-      class="absolute right-3 top-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white sm:right-6 sm:top-6 sm:h-11 sm:w-11"
+      class="absolute right-3 top-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white sm:right-5 sm:top-5 sm:h-11 sm:w-11"
     >
       <svg
         width="24"
@@ -25,6 +26,7 @@
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
       >
         <path
           fillRule="evenodd"
@@ -35,9 +37,18 @@
       </svg>
     </button>
     }
-    <div>
+
+    <ng-content select="[data-modal-header]"></ng-content>
+
+    <div
+      class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+      [ngClass]="bodyClass || null"
+    >
+      <ng-content select="[data-modal-body]"></ng-content>
       <ng-content></ng-content>
     </div>
+
+    <ng-content select="[data-modal-footer]"></ng-content>
   </div>
 </div>
 }

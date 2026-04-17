@@ -9,15 +9,6 @@
       </p>
     </div>
 
-    @if (errorMessage) {
-      <p
-        class="mb-4 rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </p>
-    }
-
     <form (ngSubmit)="onSignIn()" class="space-y-6">
       <div>
         <app-label>Correo electrónico <span class="text-error-500">*</span></app-label>

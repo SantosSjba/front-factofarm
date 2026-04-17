@@ -1,5 +1,5 @@
-
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { NotifyService } from '../../../../core/services/notify.service';
 import { LabelComponent } from '../../form/label/label.component';
 import { CheckboxComponent } from '../../form/input/checkbox.component';
 import { InputFieldComponent } from '../../form/input/input-field.component';
@@ -20,6 +20,7 @@ import { FormsModule } from '@angular/forms';
   styles: ``
 })
 export class SignupFormComponent {
+  private readonly notify = inject(NotifyService);
 
   showPassword = false;
   isChecked = false;
@@ -34,10 +35,6 @@ export class SignupFormComponent {
   }
 
   onSignIn() {
-    console.log('First Name:', this.fname);
-    console.log('Last Name:', this.lname);
-    console.log('Email:', this.email);
-    console.log('Password:', this.password);
-    console.log('Remember Me:', this.isChecked);
+    this.notify.info('Registro de nuevas cuentas', 'Función próximamente disponible.');
   }
 }

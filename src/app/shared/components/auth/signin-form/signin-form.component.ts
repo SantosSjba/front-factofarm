@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
+import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../ui/button/button.component';
 import { CheckboxComponent } from '../../form/input/checkbox.component';
 import { InputFieldComponent } from '../../form/input/input-field.component';
@@ -24,11 +25,11 @@ import { LabelComponent } from '../../form/label/label.component';
 export class SigninFormComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly notify = inject(NotifyService);
 
   showPassword = false;
   isChecked = false;
   isLoading = false;
-  errorMessage: string | null = null;
 
   email = '';
   password = '';
@@ -41,20 +42,20 @@ export class SigninFormComponent {
     if (this.isLoading) {
       return;
     }
-    this.errorMessage = null;
     if (!this.email?.trim() || !this.password?.trim()) {
-      this.errorMessage = 'Ingresa correo y contraseña.';
+      this.notify.warning('Ingresa correo y contraseña.');
       return;
     }
     this.isLoading = true;
     this.auth.login(this.email.trim(), this.password).subscribe({
       next: () => {
         this.isLoading = false;
+        this.notify.success('Sesión iniciada');
         void this.router.navigateByUrl('/');
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;
-        this.errorMessage = this.apiMessage(err);
+        this.notify.error(this.apiMessage(err));
       },
     });
   }
