@@ -12,8 +12,8 @@ import { AuthService } from '../../../../core/services/auth.service';
   imports: [CommonModule, RouterModule, DropdownComponent, DropdownItemTwoComponent],
 })
 export class UserDropdownComponent {
-  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
 
   isOpen = false;
 
@@ -28,6 +28,6 @@ export class UserDropdownComponent {
   logout(event: Event) {
     event.preventDefault();
     this.auth.logout();
-    void this.router.navigateByUrl('/signin');
+    void this.router.navigateByUrl('/auth/signin');
   }
 }

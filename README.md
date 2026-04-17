@@ -25,11 +25,19 @@ src/app/
     pipes/            # carpeta reservada / pipes adicionales
     directives/
     services/       # tema, sidebar, modal, etc.
-  pages/            # vistas y rutas del panel (plantilla actual)
-  modules/          # features de negocio (vacío hasta crear con `ng generate`)
+  pages/            # solo páginas “globales” (p. ej. 404); el panel no vive aquí
+  modules/
+    admin/
+      admin.routes.ts  # layout + rutas lazy del panel (dashboard, calendario, UI demo…)
+      pages/           # vistas del back-office migradas del template
+    auth/
+      auth.routes.ts   # rutas lazy `/auth/signin`, `/auth/signup`
+      pages/
 ```
 
-Cada nuevo dominio de negocio debe ir bajo `modules/<feature>/` (con `pages/`, `components/`, `services/`, `models/`). Las rutas demo actuales viven en `pages/` heredadas del template, no en `modules/`.
+`app.routes.ts` solo declara **cargas perezosas** (`loadChildren`) al módulo **admin** (ruta `''`), al módulo **auth** (`auth`), redirecciones y el **404**. Cada feature puede crecer con su propio `<feature>.routes.ts` e incluso sub-lazy routes. **Auth** compone formularios desde `shared/components/auth/`. Nuevos dominios (p. ej. `modules/ventas/`) siguen el mismo patrón.
+
+Variables de entorno: `src/environments/environment.ts` (producción, `apiBaseUrl` típico `/api` detrás de proxy) y `environment.development.ts` (local: `http://localhost:3000/api`). El target de desarrollo reemplaza el archivo vía `fileReplacements` en `angular.json`.
 
 ### Estructura por feature (ejemplo `modules/properties/`)
 
@@ -46,7 +54,8 @@ Evitar mezclar todo en carpetas globales `components/`, `services/` o `models/` 
 ### Conexión con el backend
 
 - La app consume la **API REST** del proyecto `api-factofarm` (NestJS).
-- **JWT**: tokens gestionados en `core` (servicio de auth) y adjuntos con un **interceptor** HTTP.
+- **Login**: `POST {apiBaseUrl}/auth/login` con `{ email, password }`; la respuesta incluye `accessToken` y `user`.
+- **JWT**: el token se guarda en `sessionStorage`, el estado del usuario en `core` (`AuthService`) y se envía en cada petición al API con el **interceptor** `core/interceptors/auth.interceptor.ts` (`Authorization: Bearer …`). Arranca el backend y define `JWT_SECRET` en la API.
 
 ### Stack relacionado
 

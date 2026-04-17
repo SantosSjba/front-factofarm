@@ -1,12 +1,12 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { LabelComponent } from '../../form/label/label.component';
-import { CheckboxComponent } from '../../form/input/checkbox.component';
-import { ButtonComponent } from '../../ui/button/button.component';
-import { InputFieldComponent } from '../../form/input/input-field.component';
-import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ButtonComponent } from '../../ui/button/button.component';
+import { CheckboxComponent } from '../../form/input/checkbox.component';
+import { InputFieldComponent } from '../../form/input/input-field.component';
+import { LabelComponent } from '../../form/label/label.component';
 
 @Component({
   selector: 'app-signin-form',
@@ -27,6 +27,8 @@ export class SigninFormComponent {
 
   showPassword = false;
   isChecked = false;
+  isLoading = false;
+  errorMessage: string | null = null;
 
   email = '';
   password = '';
@@ -36,8 +38,38 @@ export class SigninFormComponent {
   }
 
   onSignIn() {
-    if (this.auth.login(this.email, this.password)) {
-      void this.router.navigateByUrl('/');
+    if (this.isLoading) {
+      return;
     }
+    this.errorMessage = null;
+    if (!this.email?.trim() || !this.password?.trim()) {
+      this.errorMessage = 'Ingresa correo y contraseña.';
+      return;
+    }
+    this.isLoading = true;
+    this.auth.login(this.email.trim(), this.password).subscribe({
+      next: () => {
+        this.isLoading = false;
+        void this.router.navigateByUrl('/');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isLoading = false;
+        this.errorMessage = this.apiMessage(err);
+      },
+    });
+  }
+
+  private apiMessage(err: HttpErrorResponse): string {
+    const body = err.error as { message?: string | string[] } | null;
+    if (body && typeof body.message === 'string') {
+      return body.message;
+    }
+    if (body && Array.isArray(body.message)) {
+      return body.message.join(' ');
+    }
+    if (err.status === 0) {
+      return 'No hay conexión con el servidor. ¿Está la API en marcha?';
+    }
+    return 'No se pudo iniciar sesión.';
   }
 }

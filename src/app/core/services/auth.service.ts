@@ -1,34 +1,56 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, map, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import type { AuthUser, LoginResponse } from '../models/auth-session';
 
-const STORAGE_KEY = 'ff_auth';
+const TOKEN_KEY = 'ff_access_token';
+const USER_KEY = 'ff_user';
 
-/**
- * Autenticación lógica (sin API). Cualquier email y contraseña no vacíos permiten el acceso.
- * El estado se guarda en sessionStorage para refrescar la pestaña.
- */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly loggedInSignal = signal(this.readFromStorage());
+  private readonly http = inject(HttpClient);
+
+  private readonly userSignal = signal<AuthUser | null>(this.readUserFromStorage());
+
+  readonly user = computed(() => this.userSignal());
 
   isAuthenticated(): boolean {
-    return this.loggedInSignal();
+    return !!this.getAccessToken() && !!this.userSignal();
   }
 
-  login(email: string, password: string): boolean {
-    if (!email?.trim() || !password?.trim()) {
-      return false;
-    }
-    sessionStorage.setItem(STORAGE_KEY, '1');
-    this.loggedInSignal.set(true);
-    return true;
+  getAccessToken(): string | null {
+    return sessionStorage.getItem(TOKEN_KEY);
+  }
+
+  login(email: string, password: string): Observable<void> {
+    const url = `${environment.apiBaseUrl}/auth/login`;
+    return this.http.post<LoginResponse>(url, { email, password }).pipe(
+      tap((res: LoginResponse) => {
+        sessionStorage.setItem(TOKEN_KEY, res.accessToken);
+        sessionStorage.setItem(USER_KEY, JSON.stringify(res.user));
+        this.userSignal.set(res.user);
+      }),
+      map(() => undefined),
+    );
   }
 
   logout(): void {
-    sessionStorage.removeItem(STORAGE_KEY);
-    this.loggedInSignal.set(false);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
+    this.userSignal.set(null);
   }
 
-  private readFromStorage(): boolean {
-    return sessionStorage.getItem(STORAGE_KEY) === '1';
+  private readUserFromStorage(): AuthUser | null {
+    const raw = sessionStorage.getItem(USER_KEY);
+    if (!raw) {
+      return null;
+    }
+    try {
+      return JSON.parse(raw) as AuthUser;
+    } catch {
+      sessionStorage.removeItem(USER_KEY);
+      return null;
+    }
   }
 }
