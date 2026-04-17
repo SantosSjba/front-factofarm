@@ -8,7 +8,7 @@
         [ngClass]="{
           'bg-gray-100 dark:bg-white/[0.03]': isMobileOpen$ | async
         }"
-        (click)="handleToggle()" aria-label="Toggle Sidebar">
+        (click)="handleToggle()" aria-label="Abrir o cerrar menú lateral">
         @if (isMobileOpen$ | async) {
           <!-- Cross Icon -->
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -27,8 +27,8 @@
       </button>
       <!-- Logo (placeholder) -->
       <a routerLink="/" class="xl:hidden">
-        <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-        <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+        <img class="dark:hidden" src="/images/logo/logo.svg" alt="FactoFarm" />
+        <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="FactoFarm" />
       </a>
       <button (click)="toggleApplicationMenu()"
         class="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 xl:hidden">
