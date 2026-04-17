@@ -15,20 +15,21 @@ Cliente web de **FactoFarm** generado con [Angular CLI](https://github.com/angul
 ```text
 src/app/
   core/
-    services/
-    guards/
-    interceptors/
+    services/       # p. ej. auth.service (singleton)
+    guards/           # p. ej. authGuard / guestGuard
+    interceptors/   # p. ej. adjuntar JWT (añadir al integrar API)
   shared/
-    components/
-    pipes/
+    components/     # UI reutilizable (template TailAdmin)
+    layout/
+    pipe/             # pipes reutilizables (p. ej. safe-html)
+    pipes/            # carpeta reservada / pipes adicionales
     directives/
-  modules/
-    auth/
-    dashboard/
-    properties/
-    clients/
-    sales/
+    services/       # tema, sidebar, modal, etc.
+  pages/            # vistas y rutas del panel (plantilla actual)
+  modules/          # features de negocio (vacío hasta crear con `ng generate`)
 ```
+
+Cada nuevo dominio de negocio debe ir bajo `modules/<feature>/` (con `pages/`, `components/`, `services/`, `models/`). Las rutas demo actuales viven en `pages/` heredadas del template, no en `modules/`.
 
 ### Estructura por feature (ejemplo `modules/properties/`)
 
