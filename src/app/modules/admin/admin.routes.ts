@@ -14,7 +14,15 @@ export const adminRoutes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'usuarios',
+        redirectTo: 'dashboard',
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./pages/dashboard/dash-admin/dash-admin.component').then(
+            (m) => m.DashAdminComponent,
+          ),
+        title: 'FactoFarm | Dashboard',
       },
       {
         path: 'usuarios',
