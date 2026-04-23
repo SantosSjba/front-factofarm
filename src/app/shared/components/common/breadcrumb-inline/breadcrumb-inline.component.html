@@ -1,5 +1,5 @@
-<nav class="text-theme-sm text-gray-500 dark:text-gray-400" aria-label="Migas de pan">
-  <ol class="flex flex-wrap items-center gap-1.5">
+<nav class="ml-auto flex w-full justify-end text-theme-sm text-gray-500 dark:text-gray-400" aria-label="Migas de pan">
+  <ol class="flex flex-wrap items-center justify-end gap-1.5 text-right">
     @for (seg of segments; track $index; let last = $last) {
     <li class="inline-flex items-center gap-1.5">
       @if (!last && seg.link !== undefined && seg.link !== null && seg.link !== '') {
