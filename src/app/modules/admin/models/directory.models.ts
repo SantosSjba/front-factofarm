@@ -120,6 +120,23 @@ export interface EstablishmentDocumentTypeOptionDto {
   label: string;
 }
 
+export interface UbigeoDepartmentDto {
+  id: string;
+  name: string;
+}
+
+export interface UbigeoProvinceDto {
+  id: string;
+  name: string;
+  departmentId: string;
+}
+
+export interface UbigeoDistrictDto {
+  id: string;
+  name: string;
+  provinceId: string;
+}
+
 export interface CreateEstablishmentRequest {
   nombre: string;
   codigo?: string;

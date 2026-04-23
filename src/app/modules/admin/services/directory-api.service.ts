@@ -9,6 +9,9 @@ import type {
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
   PermissionMenuNodeDto,
+  UbigeoDepartmentDto,
+  UbigeoDistrictDto,
+  UbigeoProvinceDto,
   UpdateEstablishmentRequest,
   UpdateUserRequest,
   UserListItemDto,
@@ -76,6 +79,24 @@ export class DirectoryApiService {
   listEstablishmentDocumentTypes() {
     return this.http.get<EstablishmentDocumentTypeOptionDto[]>(
       `${this.base}/establishments/series/document-types`,
+    );
+  }
+
+  listUbigeoDepartments() {
+    return this.http.get<UbigeoDepartmentDto[]>(
+      `${this.base}/establishments/ubigeo/departments`,
+    );
+  }
+
+  listUbigeoProvinces(departmentId: string) {
+    return this.http.get<UbigeoProvinceDto[]>(
+      `${this.base}/establishments/ubigeo/provinces/${departmentId}`,
+    );
+  }
+
+  listUbigeoDistricts(provinceId: string) {
+    return this.http.get<UbigeoDistrictDto[]>(
+      `${this.base}/establishments/ubigeo/districts/${provinceId}`,
     );
   }
 

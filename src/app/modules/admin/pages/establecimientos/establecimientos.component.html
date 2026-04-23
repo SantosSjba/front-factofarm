@@ -105,14 +105,19 @@
   [isOpen]="modalOpen()"
   (close)="closeFormModal()"
   className="w-full max-w-5xl shadow-theme-lg"
+  maxHeightClass="max-h-[min(90dvh,880px)]"
+  bodyClass="custom-scrollbar"
 >
-  <div data-modal-header>
-    <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       {{ editing() ? 'Editar Establecimiento' : 'Nuevo Establecimiento' }}
     </h3>
   </div>
 
-  <div data-modal-body class="px-4 py-4 sm:px-8 sm:py-5">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="md:col-span-2">
         <app-label>Descripción</app-label>
@@ -140,6 +145,35 @@
           [showPlaceholder]="false"
           [options]="[{ value: 'PERU', label: 'PERU' }]"
           (valueChange)="pais.set($event)"
+        />
+      </div>
+      <div>
+        <app-label>Departamento</app-label>
+        <app-form-select
+          className="mt-2"
+          [value]="departmentId()"
+          [options]="departmentOptions()"
+          (valueChange)="onDepartmentChange($event)"
+        />
+      </div>
+      <div>
+        <app-label>Provincia</app-label>
+        <app-form-select
+          className="mt-2"
+          [value]="provinceId()"
+          [disabled]="!departmentId()"
+          [options]="provinceOptions()"
+          (valueChange)="onProvinceChange($event)"
+        />
+      </div>
+      <div>
+        <app-label>Distrito</app-label>
+        <app-form-select
+          className="mt-2"
+          [value]="districtId()"
+          [disabled]="!provinceId()"
+          [options]="districtOptions()"
+          (valueChange)="districtId.set($event)"
         />
       </div>
       <div class="md:col-span-2">
@@ -232,7 +266,7 @@
 
   <div
     data-modal-footer
-    class="flex justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
     <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">
       Cancelar
@@ -246,20 +280,26 @@
 <app-modal
   [isOpen]="deleteConfirmOpen()"
   (close)="closeDeleteConfirm()"
-  className="max-w-lg p-6"
+  className="w-full max-w-lg shadow-theme-lg"
 >
-  <div data-modal-header>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5"
+  >
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       Confirmar eliminación
     </h3>
   </div>
-  <div data-modal-body class="pt-3 text-theme-sm text-gray-600 dark:text-gray-400">
+  <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
     @if (deleting(); as row) {
       ¿Seguro que desea eliminar el establecimiento <span class="font-semibold">{{ row.nombre }}</span>?
       <p class="mt-2 text-theme-xs">La acción se aplica como borrado lógico.</p>
     }
   </div>
-  <div data-modal-footer class="mt-5 flex justify-end gap-3">
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6"
+  >
     <app-button
       variant="outline"
       [disabled]="deleteEstablishmentMutation.isPending()"
@@ -283,8 +323,11 @@
   maxHeightClass="max-h-[min(90dvh,900px)]"
   bodyClass="custom-scrollbar"
 >
-  <div data-modal-header>
-    <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       Series
       @if (seriesHost(); as host) {
         <span class="text-theme-sm font-normal text-gray-500">· {{ host.nombre }}</span>
@@ -292,7 +335,7 @@
     </h3>
   </div>
 
-  <div data-modal-body class="px-4 py-4 sm:px-8 sm:py-5">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
       <div class="max-w-full overflow-x-auto">
         <table class="min-w-full text-left">
@@ -392,7 +435,7 @@
 
   <div
     data-modal-footer
-    class="flex justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
     <app-button
       variant="outline"

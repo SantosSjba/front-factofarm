@@ -61,6 +61,29 @@ export class EstablecimientosComponent {
     queryFn: () => firstValueFrom(this.api.listEstablishmentDocumentTypes()),
   }));
 
+  protected readonly departmentsQuery = injectQuery(() => ({
+    queryKey: establishmentQueryKeys.departments(),
+    queryFn: () => firstValueFrom(this.api.listUbigeoDepartments()),
+  }));
+
+  protected readonly provincesQuery = injectQuery(() => {
+    const depId = this.departmentId();
+    return {
+      queryKey: establishmentQueryKeys.provinces(depId || 'none'),
+      queryFn: () => firstValueFrom(this.api.listUbigeoProvinces(depId)),
+      enabled: !!depId,
+    };
+  });
+
+  protected readonly districtsQuery = injectQuery(() => {
+    const provId = this.provinceId();
+    return {
+      queryKey: establishmentQueryKeys.districts(provId || 'none'),
+      queryFn: () => firstValueFrom(this.api.listUbigeoDistricts(provId)),
+      enabled: !!provId,
+    };
+  });
+
   protected readonly establishments = computed(() => this.establishmentsQuery.data() ?? []);
 
   protected readonly modalOpen = signal(false);
@@ -70,6 +93,9 @@ export class EstablecimientosComponent {
   protected readonly codigo = signal('');
   protected readonly pais = signal('PERU');
   protected readonly direccionFiscal = signal('');
+  protected readonly departmentId = signal('');
+  protected readonly provinceId = signal('');
+  protected readonly districtId = signal('');
   protected readonly direccionComercial = signal('');
   protected readonly telefono = signal('');
   protected readonly correoContacto = signal('');
@@ -175,6 +201,15 @@ export class EstablecimientosComponent {
       label: d.label,
     })),
   );
+  protected readonly departmentOptions = computed(() =>
+    (this.departmentsQuery.data() ?? []).map((d) => ({ value: d.id, label: d.name })),
+  );
+  protected readonly provinceOptions = computed(() =>
+    (this.provincesQuery.data() ?? []).map((p) => ({ value: p.id, label: p.name })),
+  );
+  protected readonly districtOptions = computed(() =>
+    (this.districtsQuery.data() ?? []).map((d) => ({ value: d.id, label: d.name })),
+  );
 
   protected readonly seriesRows = computed(() => this.seriesQuery.data() ?? []);
   protected readonly selectedDocTypeLabel = computed(() => {
@@ -192,6 +227,9 @@ export class EstablecimientosComponent {
         this.nombre.set(current.nombre ?? '');
         this.codigo.set(current.codigo ?? '');
         this.pais.set(current.pais ?? 'PERU');
+        this.departmentId.set(current.departmentId ?? '');
+        this.provinceId.set(current.provinceId ?? '');
+        this.districtId.set(current.districtId ?? '');
         this.direccionFiscal.set(current.direccionFiscal ?? '');
         this.direccionComercial.set(current.direccionComercial ?? '');
         this.telefono.set(current.telefono ?? '');
@@ -236,6 +274,9 @@ export class EstablecimientosComponent {
       nombre: this.nombre().trim(),
       codigo: this.norm(this.codigo()),
       pais: this.norm(this.pais()) ?? 'PERU',
+      departmentId: this.norm(this.departmentId()),
+      provinceId: this.norm(this.provinceId()),
+      districtId: this.norm(this.districtId()),
       direccionFiscal: this.norm(this.direccionFiscal()),
       direccionComercial: this.norm(this.direccionComercial()),
       telefono: this.norm(this.telefono()),
@@ -281,6 +322,17 @@ export class EstablecimientosComponent {
     this.seriesDocumentType.set(firstType);
     this.seriesNumero.set('');
     this.seriesContingencia.set(false);
+  }
+
+  protected onDepartmentChange(v: string) {
+    this.departmentId.set(v);
+    this.provinceId.set('');
+    this.districtId.set('');
+  }
+
+  protected onProvinceChange(v: string) {
+    this.provinceId.set(v);
+    this.districtId.set('');
   }
 
   protected closeSeriesModal() {
@@ -342,6 +394,9 @@ export class EstablecimientosComponent {
     this.nombre.set('');
     this.codigo.set('');
     this.pais.set('PERU');
+    this.departmentId.set('');
+    this.provinceId.set('');
+    this.districtId.set('');
     this.direccionFiscal.set('');
     this.direccionComercial.set('');
     this.telefono.set('');
