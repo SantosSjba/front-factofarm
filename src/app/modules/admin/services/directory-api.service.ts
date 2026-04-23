@@ -2,9 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import type {
+  CreateEstablishmentRequest,
+  CreateEstablishmentSeriesRequest,
   CreateUserRequest,
   EstablishmentOptionDto,
+  EstablishmentDocumentTypeOptionDto,
+  EstablishmentSeriesItemDto,
   PermissionMenuNodeDto,
+  UpdateEstablishmentRequest,
   UpdateUserRequest,
   UserListItemDto,
 } from '../models/directory.models';
@@ -32,6 +37,46 @@ export class DirectoryApiService {
 
   listEstablishments() {
     return this.http.get<EstablishmentOptionDto[]>(`${this.base}/establishments`);
+  }
+
+  createEstablishment(body: CreateEstablishmentRequest) {
+    return this.http.post<EstablishmentOptionDto>(`${this.base}/establishments`, body);
+  }
+
+  updateEstablishment(id: string, body: UpdateEstablishmentRequest) {
+    return this.http.patch<EstablishmentOptionDto>(`${this.base}/establishments/${id}`, body);
+  }
+
+  deleteEstablishment(id: string) {
+    return this.http.delete<void>(`${this.base}/establishments/${id}`);
+  }
+
+  listEstablishmentSeries(establishmentId: string) {
+    return this.http.get<EstablishmentSeriesItemDto[]>(
+      `${this.base}/establishments/${establishmentId}/series`,
+    );
+  }
+
+  createEstablishmentSeries(
+    establishmentId: string,
+    body: CreateEstablishmentSeriesRequest,
+  ) {
+    return this.http.post<EstablishmentSeriesItemDto>(
+      `${this.base}/establishments/${establishmentId}/series`,
+      body,
+    );
+  }
+
+  deleteEstablishmentSeries(establishmentId: string, seriesId: string) {
+    return this.http.delete<void>(
+      `${this.base}/establishments/${establishmentId}/series/${seriesId}`,
+    );
+  }
+
+  listEstablishmentDocumentTypes() {
+    return this.http.get<EstablishmentDocumentTypeOptionDto[]>(
+      `${this.base}/establishments/series/document-types`,
+    );
   }
 
   getPermissionMenuTree() {
