@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { AiSidebarHistoryComponent } from '../../components/ai/ai-sidebar-history/ai-sidebar-history.component';
+import { IconComponent } from '../../components/ui/icon/icon.component';
 
 @Component({
   selector: 'app-generator-layout',
-  imports: [CommonModule, AiSidebarHistoryComponent],
+  imports: [CommonModule, AiSidebarHistoryComponent, IconComponent],
   templateUrl: './generator-layout.component.html',
   styles: ``,
 })

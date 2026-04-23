@@ -8,6 +8,7 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { UserListItemDto } from '../../models/directory.models';
 import { UsuarioFormModalComponent } from './usuario-form-modal/usuario-form-modal.component';
@@ -26,6 +27,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
     PaginationComponent,
     PageToolbarComponent,
     ModalComponent,
+    IconComponent,
     ButtonComponent,
     UsuarioFormModalComponent,
   ],

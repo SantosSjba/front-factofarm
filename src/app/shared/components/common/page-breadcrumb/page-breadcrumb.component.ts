@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { IconComponent } from '../../ui/icon/icon.component';
 
 export type BreadcrumbSegment = {
   label: string;
@@ -9,7 +10,7 @@ export type BreadcrumbSegment = {
 
 @Component({
   selector: 'app-page-breadcrumb',
-  imports: [RouterModule],
+  imports: [RouterModule, IconComponent],
   templateUrl: './page-breadcrumb.component.html',
   styles: ``,
 })

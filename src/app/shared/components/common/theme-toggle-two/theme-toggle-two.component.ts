@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { ThemeService } from '../../../services/theme.service';
+import { IconComponent } from '../../ui/icon/icon.component';
 
 
 @Component({
   selector: 'app-theme-toggle-two',
-  imports: [],
+  imports: [IconComponent],
   templateUrl: './theme-toggle-two.component.html',
   styles: ``
 })

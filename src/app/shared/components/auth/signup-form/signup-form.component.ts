@@ -3,6 +3,7 @@ import { NotifyService } from '../../../../core/services/notify.service';
 import { LabelComponent } from '../../form/label/label.component';
 import { CheckboxComponent } from '../../form/input/checkbox.component';
 import { InputFieldComponent } from '../../form/input/input-field.component';
+import { IconComponent } from '../../ui/icon/icon.component';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -13,6 +14,7 @@ import { FormsModule } from '@angular/forms';
     LabelComponent,
     CheckboxComponent,
     InputFieldComponent,
+    IconComponent,
     RouterModule,
     FormsModule
 ],
