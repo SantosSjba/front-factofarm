@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { IconComponent } from '../../ui/icon/icon.component';
 
 const baseSelect =
-  'shadow-theme-xs h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 disabled:cursor-not-allowed disabled:opacity-50';
+  'shadow-theme-xs h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent pl-4 pr-12 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Select reutilizable con el estilo FactoFarm / TailAdmin. */
 @Component({
   selector: 'app-form-select',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   templateUrl: './form-select.component.html',
 })
 export class FormSelectComponent {
