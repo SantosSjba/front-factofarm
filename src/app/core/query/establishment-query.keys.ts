@@ -1,6 +1,7 @@
 export const establishmentQueryKeys = {
   all: ['establishments'] as const,
-  list: () => [...establishmentQueryKeys.all, 'list'] as const,
+  list: (filters?: { search?: string; hospital?: string }) =>
+    [...establishmentQueryKeys.all, 'list', filters?.search ?? '', filters?.hospital ?? 'all'] as const,
   series: (establishmentId: string) =>
     [...establishmentQueryKeys.all, 'series', establishmentId] as const,
   documentTypes: () => [...establishmentQueryKeys.all, 'document-types'] as const,

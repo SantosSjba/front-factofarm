@@ -8,7 +8,9 @@ import { NotifyService } from '../../../../core/services/notify.service';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
+import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
@@ -31,6 +33,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
+    ListFiltersComponent,
+    PaginationComponent,
     ModalComponent,
     ButtonComponent,
     IconComponent,
@@ -52,8 +56,17 @@ export class EstablecimientosComponent {
   ];
 
   protected readonly establishmentsQuery = injectQuery(() => ({
-    queryKey: establishmentQueryKeys.list(),
-    queryFn: () => firstValueFrom(this.api.listEstablishments()),
+    queryKey: establishmentQueryKeys.list({
+      search: this.searchTerm().trim(),
+      hospital: this.hospitalFilter(),
+    }),
+    queryFn: () =>
+      firstValueFrom(
+        this.api.listEstablishments({
+          search: this.searchTerm(),
+          hospital: this.hospitalFilter() as 'all' | 'hospital' | 'no-hospital',
+        }),
+      ),
   }));
 
   protected readonly documentTypesQuery = injectQuery(() => ({
@@ -84,7 +97,24 @@ export class EstablecimientosComponent {
     };
   });
 
+  protected readonly searchTerm = signal('');
+  protected readonly hospitalFilter = signal('all');
+  protected readonly currentPage = signal(1);
+  protected readonly itemsPerPage = 10;
   protected readonly establishments = computed(() => this.establishmentsQuery.data() ?? []);
+  protected readonly hospitalFilterOptions = [
+    { value: 'all', label: 'Todos' },
+    { value: 'hospital', label: 'Solo hospitales' },
+    { value: 'no-hospital', label: 'No hospital' },
+  ];
+  protected readonly totalFiltered = computed(() => this.establishments().length);
+  protected readonly pageStart = computed(() =>
+    this.totalFiltered() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
+  );
+  protected readonly paginatedEstablishments = computed(() => {
+    const start = this.pageStart();
+    return this.establishments().slice(start, start + this.itemsPerPage);
+  });
 
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<EstablishmentOptionDto | null>(null);
@@ -218,6 +248,18 @@ export class EstablecimientosComponent {
   });
 
   constructor() {
+    effect(() => {
+      const total = this.totalFiltered();
+      const totalPages = Math.max(1, Math.ceil(total / this.itemsPerPage));
+      const page = this.currentPage();
+      if (page > totalPages) {
+        this.currentPage.set(totalPages);
+      }
+      if (page < 1) {
+        this.currentPage.set(1);
+      }
+    });
+
     effect(() => {
       if (!this.modalOpen()) {
         return;
@@ -388,6 +430,26 @@ export class EstablecimientosComponent {
 
   protected docTypeLabel(type: string): string {
     return this.docTypeOptions().find((x) => x.value === type)?.label ?? type;
+  }
+
+  protected onSearchChange(value: string) {
+    this.searchTerm.set(value);
+    this.currentPage.set(1);
+  }
+
+  protected onHospitalFilterChange(value: string) {
+    this.hospitalFilter.set(value);
+    this.currentPage.set(1);
+  }
+
+  protected clearFilters() {
+    this.searchTerm.set('');
+    this.hospitalFilter.set('all');
+    this.currentPage.set(1);
+  }
+
+  protected onPageChange(page: number) {
+    this.currentPage.set(page);
   }
 
   private resetForm() {

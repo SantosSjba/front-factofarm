@@ -29,6 +29,18 @@
   </div>
 }
 
+<app-list-filters
+  [searchValue]="searchTerm()"
+  searchPlaceholder="Buscar por descripción, código o dirección"
+  [selectValue]="hospitalFilter()"
+  [selectOptions]="hospitalFilterOptions"
+  selectPlaceholder="Filtrar por tipo"
+  clearLabel="Limpiar filtros"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onHospitalFilterChange($event)"
+  (clear)="clearFilters()"
+/>
+
 <app-component-card title="Listado de establecimientos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
@@ -49,9 +61,11 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of establishments(); track row.id; let i = $index) {
+          @for (row of paginatedEstablishments(); track row.id; let i = $index) {
             <tr>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ i + 1 }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+                {{ pageStart() + i + 1 }}
+              </td>
               <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigo || '—' }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
@@ -89,8 +103,12 @@
               <td colspan="5" class="px-5 py-8 text-center text-theme-sm text-gray-500">
                 @if (establishmentsQuery.isPending()) {
                   Cargando…
-                } @else {
+                } @else if (establishmentsQuery.isError()) {
+                  Use “Reintentar” arriba para volver a cargar.
+                } @else if (establishments().length === 0) {
                   No hay establecimientos registrados.
+                } @else {
+                  No hay resultados con los filtros aplicados.
                 }
               </td>
             </tr>
@@ -100,6 +118,13 @@
     </div>
   </div>
 </app-component-card>
+
+<app-pagination
+  [totalItems]="totalFiltered()"
+  [currentPage]="currentPage()"
+  [pageSize]="itemsPerPage"
+  (currentPageChange)="onPageChange($event)"
+/>
 
 <app-modal
   [isOpen]="modalOpen()"

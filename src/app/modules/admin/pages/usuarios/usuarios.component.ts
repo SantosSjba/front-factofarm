@@ -4,6 +4,7 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -24,6 +25,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
     CommonModule,
     ComponentCardComponent,
     BreadcrumbInlineComponent,
+    ListFiltersComponent,
     PaginationComponent,
     PageToolbarComponent,
     ModalComponent,
@@ -39,8 +41,17 @@ export class UsuariosComponent {
   private readonly queryClient = injectQueryClient();
 
   protected readonly usersQuery = injectQuery(() => ({
-    queryKey: userQueryKeys.list(),
-    queryFn: () => firstValueFrom(this.api.listUsers()),
+    queryKey: userQueryKeys.list({
+      search: this.searchTerm().trim(),
+      role: this.roleFilter(),
+    }),
+    queryFn: () =>
+      firstValueFrom(
+        this.api.listUsers({
+          search: this.searchTerm(),
+          role: this.roleFilter() as 'all' | 'ADMINISTRADOR' | 'VENDEDOR',
+        }),
+      ),
   }));
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
@@ -52,8 +63,15 @@ export class UsuariosComponent {
   protected readonly editingUser = signal<UserListItemDto | null>(null);
   protected readonly deleteConfirmOpen = signal(false);
   protected readonly deletingUser = signal<UserListItemDto | null>(null);
+  protected readonly searchTerm = signal('');
+  protected readonly roleFilter = signal('all');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 10;
+  protected readonly roleFilterOptions = [
+    { value: 'all', label: 'Todos los roles' },
+    { value: 'ADMINISTRADOR', label: 'Administrador' },
+    { value: 'VENDEDOR', label: 'Vendedor' },
+  ];
   protected readonly users = computed(() => this.usersQuery.data() ?? []);
   protected readonly totalUsers = computed(() => this.users().length);
   protected readonly pageStart = computed(() =>
@@ -109,6 +127,22 @@ export class UsuariosComponent {
 
   protected onPageChange(page: number) {
     this.currentPage.set(page);
+  }
+
+  protected onSearchChange(value: string) {
+    this.searchTerm.set(value);
+    this.currentPage.set(1);
+  }
+
+  protected onRoleFilterChange(value: string) {
+    this.roleFilter.set(value);
+    this.currentPage.set(1);
+  }
+
+  protected clearFilters() {
+    this.searchTerm.set('');
+    this.roleFilter.set('all');
+    this.currentPage.set(1);
   }
 
   protected apiTokenCell(): string {

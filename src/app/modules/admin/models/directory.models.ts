@@ -70,6 +70,11 @@ export interface UserListItemDto {
   updatedAt: string;
 }
 
+export interface UserListFiltersRequest {
+  search?: string;
+  role?: UserRoleDto | 'all';
+}
+
 export interface EstablishmentOptionDto {
   id: string;
   nombre: string;
@@ -91,6 +96,11 @@ export interface EstablishmentOptionDto {
   logoArchivoId?: string | null;
   sujetoIgv31556?: boolean;
   esHospital?: boolean;
+}
+
+export interface EstablishmentListFiltersRequest {
+  search?: string;
+  hospital?: 'all' | 'hospital' | 'no-hospital';
 }
 
 export interface PermissionMenuNodeDto {

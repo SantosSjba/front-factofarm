@@ -29,6 +29,18 @@
   </div>
 }
 
+<app-list-filters
+  [searchValue]="searchTerm()"
+  searchPlaceholder="Buscar por nombre o correo"
+  [selectValue]="roleFilter()"
+  [selectOptions]="roleFilterOptions"
+  selectPlaceholder="Filtrar por rol"
+  clearLabel="Limpiar filtros"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onRoleFilterChange($event)"
+  (clear)="clearFilters()"
+/>
+
 <app-component-card title="Listado de usuarios" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">

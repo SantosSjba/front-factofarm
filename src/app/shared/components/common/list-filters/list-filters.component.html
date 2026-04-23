@@ -1,0 +1,43 @@
+<div
+  class="mb-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] sm:p-5"
+>
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
+    <div class="md:col-span-7">
+      <div class="relative">
+        <span
+          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+        >
+          <app-icon name="mdi:magnify" width="18" height="18" />
+        </span>
+        <app-input-field
+          [value]="searchValue"
+          [placeholder]="searchPlaceholder"
+          className="pl-10"
+          (valueChange)="onSearchChange($event)"
+        />
+      </div>
+    </div>
+
+    @if (showSelect) {
+      <div class="md:col-span-3">
+        <app-form-select
+          [value]="selectValue"
+          [placeholder]="selectPlaceholder"
+          [options]="selectOptions"
+          (valueChange)="onSelectChange($event)"
+        />
+      </div>
+    }
+
+    <div class="md:col-span-2">
+      <button
+        type="button"
+        class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.03]"
+        (click)="onClear()"
+      >
+        <app-icon name="mdi:filter-remove-outline" width="18" height="18" />
+        {{ clearLabel }}
+      </button>
+    </div>
+  </div>
+</div>
