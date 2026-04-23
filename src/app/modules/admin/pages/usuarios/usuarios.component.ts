@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
+import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
@@ -22,6 +23,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
     CommonModule,
     ComponentCardComponent,
     BreadcrumbInlineComponent,
+    PaginationComponent,
     PageToolbarComponent,
     ModalComponent,
     ButtonComponent,
@@ -48,6 +50,17 @@ export class UsuariosComponent {
   protected readonly editingUser = signal<UserListItemDto | null>(null);
   protected readonly deleteConfirmOpen = signal(false);
   protected readonly deletingUser = signal<UserListItemDto | null>(null);
+  protected readonly currentPage = signal(1);
+  protected readonly itemsPerPage = 10;
+  protected readonly users = computed(() => this.usersQuery.data() ?? []);
+  protected readonly totalUsers = computed(() => this.users().length);
+  protected readonly pageStart = computed(() =>
+    this.totalUsers() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
+  );
+  protected readonly paginatedUsers = computed(() => {
+    const start = this.pageStart();
+    return this.users().slice(start, start + this.itemsPerPage);
+  });
   protected readonly deleteUserMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.deleteUser(id)),
     onSuccess: () => {
@@ -59,6 +72,20 @@ export class UsuariosComponent {
       this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el usuario'));
     },
   }));
+
+  constructor() {
+    effect(() => {
+      const total = this.totalUsers();
+      const totalPages = Math.max(1, Math.ceil(total / this.itemsPerPage));
+      const page = this.currentPage();
+      if (page > totalPages) {
+        this.currentPage.set(totalPages);
+      }
+      if (page < 1) {
+        this.currentPage.set(1);
+      }
+    });
+  }
 
   protected roleLabel(role: string): string {
     const m: Record<string, string> = {
@@ -76,6 +103,10 @@ export class UsuariosComponent {
   protected closeModal() {
     this.modalOpen.set(false);
     this.editingUser.set(null);
+  }
+
+  protected onPageChange(page: number) {
+    this.currentPage.set(page);
   }
 
   protected apiTokenCell(): string {
