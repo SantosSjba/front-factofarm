@@ -31,6 +31,8 @@ import type {
   EstablishmentOptionDto,
   IdentityDocumentTypeDto,
   PermissionMenuNodeDto,
+  UpdateUserRequest,
+  UserListItemDto,
 } from '../../../models/directory.models';
 
 type TabId = 'datos' | 'permisos' | 'personales' | 'documentos';
@@ -62,6 +64,14 @@ function dateInputToIsoMidday(yyyyMmDd: string): string | undefined {
   return `${t}T12:00:00.000Z`;
 }
 
+function isoDateToInput(iso: string | null | undefined): string {
+  const t = iso?.trim();
+  if (!t) {
+    return '';
+  }
+  return t.slice(0, 10);
+}
+
 function trimOrUndef(s: string): string | undefined {
   const x = s?.trim();
   return x ? x : undefined;
@@ -85,6 +95,7 @@ function trimOrUndef(s: string): string | undefined {
 })
 export class UsuarioFormModalComponent {
   readonly isOpen = input(false);
+  readonly editingUser = input<UserListItemDto | null>(null);
   readonly closed = output<void>();
 
   private readonly api = inject(DirectoryApiService);
@@ -93,6 +104,10 @@ export class UsuarioFormModalComponent {
   private readonly queryClient = injectQueryClient();
 
   protected readonly tabs = USUARIO_TABS;
+  protected readonly isEditing = computed(() => this.editingUser() != null);
+  protected readonly modalTitle = computed(() =>
+    this.isEditing() ? 'Editar usuario' : 'Nuevo usuario',
+  );
 
   protected readonly activeTab = signal<TabId>('datos');
 
@@ -144,6 +159,23 @@ export class UsuarioFormModalComponent {
     },
   }));
 
+  protected readonly updateUserMutation = injectMutation(() => ({
+    mutationFn: ({ id, body }: { id: string; body: UpdateUserRequest }) =>
+      firstValueFrom(this.api.updateUser(id, body)),
+    onSuccess: () => {
+      this.notify.success('Usuario actualizado correctamente');
+      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.list() });
+      this.onClose();
+    },
+    onError: (err) => {
+      this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el usuario'));
+    },
+  }));
+
+  protected readonly isSaving = computed(
+    () => this.createUserMutation.isPending() || this.updateUserMutation.isPending(),
+  );
+
   constructor() {
     effect(() => {
       const open = this.isOpen();
@@ -151,6 +183,7 @@ export class UsuarioFormModalComponent {
         return;
       }
       untracked(() => {
+        this.applyUserToForm();
         this.loadRefs();
       });
     });
@@ -175,11 +208,55 @@ export class UsuarioFormModalComponent {
       next: (tree) => {
         this.menuTree.set(tree);
         const next = new Set<string>();
-        tree?.children?.forEach((c) => next.add(c.code));
+        const editing = this.editingUser();
+        if (editing) {
+          const allowedCodes = new Set(tree?.children?.map((c) => c.code) ?? []);
+          for (const code of editing.permissionCodes ?? []) {
+            if (allowedCodes.has(code)) {
+              next.add(code);
+            }
+          }
+        } else {
+          tree?.children?.forEach((c) => next.add(c.code));
+        }
         this.selectedNavCodes.set(next);
       },
       error: () => this.menuTree.set(null),
     });
+  }
+
+  private applyUserToForm() {
+    const user = this.editingUser();
+    if (!user) {
+      this.resetCamposUsuario();
+      return;
+    }
+    this.nombre.set(user.nombre ?? '');
+    this.email.set(user.email ?? '');
+    this.password.set('');
+    this.password2.set('');
+    this.establecimientoId.set(user.establecimientoId ?? '');
+    this.role.set(user.role === 'ADMINISTRADOR' ? 'ADMINISTRADOR' : 'VENDEDOR');
+
+    const profile = user.profile;
+    this.tipoDoc.set(profile?.tipoDocumento ?? '');
+    this.numeroDoc.set(profile?.numeroDocumento ?? '');
+    this.nombres.set(profile?.nombres ?? '');
+    this.apellidos.set(profile?.apellidos ?? '');
+    this.fechaNac.set(isoDateToInput(profile?.fechaNacimiento));
+    this.emailPersonal.set(profile?.emailPersonal ?? '');
+    this.direccion.set(profile?.direccion ?? '');
+    this.celPersonal.set(profile?.celularPersonal ?? '');
+    this.emailCorp.set(profile?.emailCorporativo ?? '');
+    this.celCorp.set(profile?.celularCorporativo ?? '');
+    this.fechaContratacion.set(isoDateToInput(profile?.fechaContratacion));
+    this.cargo.set(profile?.cargo ?? '');
+    this.fotoArchivoId.set(profile?.fotoArchivoId ?? null);
+    this.fotoPreview.set(
+      profile?.fotoUrl ? this.filesApi.absoluteFileUrl(profile.fotoUrl) : null,
+    );
+    this.fotoUploadError.set(null);
+    this.selectedNavCodes.set(new Set(user.permissionCodes ?? []));
   }
 
   protected setRoleFromSelect(v: string) {
@@ -269,12 +346,25 @@ export class UsuarioFormModalComponent {
     this.fechaContratacion.set('');
     this.cargo.set('');
     this.fotoPreview.set(null);
+    this.fotoArchivoId.set(null);
+    this.fotoUploadError.set(null);
+    this.selectedNavCodes.set(new Set<string>());
   }
 
   protected onSave() {
     const err = this.validate();
     if (err) {
       this.notify.warning(err);
+      return;
+    }
+    if (this.isEditing()) {
+      const current = this.editingUser();
+      if (!current) {
+        this.notify.error('No se pudo identificar el usuario a editar.');
+        return;
+      }
+      const body = this.buildUpdateBody();
+      this.updateUserMutation.mutate({ id: current.id, body });
       return;
     }
     const body = this.buildCreateBody();
@@ -289,11 +379,21 @@ export class UsuarioFormModalComponent {
       return 'Indique el correo electrónico.';
     }
     const pw = this.password();
-    if (!pw || pw.length < 8) {
-      return 'La contraseña debe tener al menos 8 caracteres.';
-    }
-    if (pw !== this.password2()) {
-      return 'Las contraseñas no coinciden.';
+    const pw2 = this.password2();
+    if (!this.isEditing()) {
+      if (!pw || pw.length < 8) {
+        return 'La contraseña debe tener al menos 8 caracteres.';
+      }
+      if (pw !== pw2) {
+        return 'Las contraseñas no coinciden.';
+      }
+    } else if (pw || pw2) {
+      if (pw.length < 8) {
+        return 'La contraseña debe tener al menos 8 caracteres.';
+      }
+      if (pw !== pw2) {
+        return 'Las contraseñas no coinciden.';
+      }
     }
     if (!this.establecimientoId().trim()) {
       return 'Seleccione un establecimiento.';
@@ -301,7 +401,7 @@ export class UsuarioFormModalComponent {
     return null;
   }
 
-  private buildCreateBody(): CreateUserRequest {
+  private buildProfileBody(): CreateUserProfileBody | undefined {
     const profile: CreateUserProfileBody = {};
 
     const td = this.tipoDoc().trim();
@@ -341,7 +441,11 @@ export class UsuarioFormModalComponent {
       profile.fotoArchivoId = fid;
     }
 
-    const hasProfile = Object.keys(profile).length > 0;
+    return Object.keys(profile).length > 0 ? profile : undefined;
+  }
+
+  private buildCreateBody(): CreateUserRequest {
+    const profile = this.buildProfileBody();
 
     return {
       nombre: this.nombre().trim(),
@@ -349,7 +453,43 @@ export class UsuarioFormModalComponent {
       password: this.password(),
       role: this.role(),
       establecimientoId: this.establecimientoId().trim(),
-      ...(hasProfile ? { profile } : {}),
+      ...(profile ? { profile } : {}),
     };
+  }
+
+  private buildUpdateBody(): UpdateUserRequest {
+    const body: UpdateUserRequest = {
+      nombre: this.nombre().trim(),
+      email: this.email().trim().toLowerCase(),
+      role: this.role(),
+      establecimientoId: this.establecimientoId().trim(),
+    };
+
+    const password = this.password().trim();
+    if (password) {
+      body.password = password;
+    }
+
+    const profile = this.buildProfileBody();
+    if (profile) {
+      body.profile = profile;
+    }
+
+    return body;
+  }
+
+  protected passwordLabel(): string {
+    return this.isEditing() ? 'Contraseña (opcional)' : 'Contraseña';
+  }
+
+  protected passwordPlaceholder(): string {
+    return this.isEditing() ? 'Dejar en blanco para mantener' : '••••••••';
+  }
+
+  protected submitLabel(): string {
+    if (this.isSaving()) {
+      return 'Guardando…';
+    }
+    return this.isEditing() ? 'Actualizar' : 'Guardar';
   }
 }

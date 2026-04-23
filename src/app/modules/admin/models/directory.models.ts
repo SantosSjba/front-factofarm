@@ -31,6 +31,15 @@ export interface CreateUserRequest {
   profile?: CreateUserProfileBody;
 }
 
+export interface UpdateUserRequest {
+  nombre?: string;
+  email?: string;
+  password?: string;
+  role?: UserRoleDto;
+  establecimientoId?: string;
+  profile?: CreateUserProfileBody;
+}
+
 export interface UserProfileDto {
   tipoDocumento: string | null;
   numeroDocumento: string | null;

@@ -5,6 +5,7 @@ import type {
   CreateUserRequest,
   EstablishmentOptionDto,
   PermissionMenuNodeDto,
+  UpdateUserRequest,
   UserListItemDto,
 } from '../models/directory.models';
 
@@ -19,6 +20,14 @@ export class DirectoryApiService {
 
   createUser(body: CreateUserRequest) {
     return this.http.post<UserListItemDto>(`${this.base}/users`, body);
+  }
+
+  updateUser(id: string, body: UpdateUserRequest) {
+    return this.http.patch<UserListItemDto>(`${this.base}/users/${id}`, body);
+  }
+
+  deleteUser(id: string) {
+    return this.http.delete<void>(`${this.base}/users/${id}`);
   }
 
   listEstablishments() {

@@ -8,7 +8,7 @@
   <!-- Hijo nativo con `data-modal-header`: la proyección de `app-modal` no siempre enlaza el host de un componente hijo. -->
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
-      title="Nuevo usuario"
+      [title]="modalTitle()"
       [tabs]="tabs"
       [activeId]="activeTab()"
       (tabChange)="setTab($event)"
@@ -58,11 +58,11 @@
           />
         </div>
         <div>
-          <app-label>Contraseña</app-label>
+          <app-label>{{ passwordLabel() }}</app-label>
           <app-input-field
             type="password"
             className="mt-2"
-            placeholder="••••••••"
+            [placeholder]="passwordPlaceholder()"
             [value]="password()"
             (valueChange)="password.set($event + '')"
           />
@@ -230,14 +230,11 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="createUserMutation.isPending()" (btnClick)="onClose()">
+    <app-button variant="outline" [disabled]="isSaving()" (btnClick)="onClose()">
       Cancelar
     </app-button>
-    <app-button
-      [disabled]="createUserMutation.isPending()"
-      (btnClick)="onSave()"
-    >
-      {{ createUserMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+    <app-button [disabled]="isSaving()" (btnClick)="onSave()">
+      {{ submitLabel() }}
     </app-button>
   </div>
 </app-modal>
