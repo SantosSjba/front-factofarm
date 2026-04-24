@@ -430,17 +430,31 @@
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div>
-        <app-label>Periodo</app-label>
+        <app-label>Período</app-label>
         <app-form-select className="mt-2" [value]="exportForm().period || 'all'" [options]="[{value:'all',label:'Todos'},{value:'month',label:'Por mes'},{value:'between-months',label:'Entre meses'},{value:'seller',label:'Vendedor'}]" (valueChange)="onExportPeriodChange($event)" />
       </div>
-      <div>
-        <app-label>Mes de</app-label>
-        <app-input-field className="mt-2" [value]="exportForm().month || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('month', $event + '')" />
-      </div>
-      <div>
-        <app-label>Vendedor</app-label>
-        <app-form-select className="mt-2" [value]="exportForm().sellerId || ''" [options]="[{value:'',label:'Todos'}, ...((sellersQuery.data() ?? []).map(x => ({ value: x.id, label: x.nombre })))]" (valueChange)="updateExportField('sellerId', $event || undefined)" />
-      </div>
+      @if ((exportForm().period || 'all') === 'month') {
+        <div>
+          <app-label>Mes de</app-label>
+          <app-input-field className="mt-2" [value]="exportForm().month || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('month', $event + '')" />
+        </div>
+      }
+      @if ((exportForm().period || 'all') === 'between-months') {
+        <div>
+          <app-label>Mes de</app-label>
+          <app-input-field className="mt-2" [value]="exportForm().fromMonth || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('fromMonth', $event + '')" />
+        </div>
+        <div>
+          <app-label>Mes al</app-label>
+          <app-input-field className="mt-2" [value]="exportForm().toMonth || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('toMonth', $event + '')" />
+        </div>
+      }
+      @if ((exportForm().period || 'all') === 'seller') {
+        <div>
+          <app-label>Vendedor</app-label>
+          <app-form-select className="mt-2" [value]="exportForm().sellerId || ''" [options]="[{value:'',label:'Seleccionar'}, ...((sellersQuery.data() ?? []).map(x => ({ value: x.id, label: x.nombre })))]" (valueChange)="updateExportField('sellerId', $event || undefined)" />
+        </div>
+      }
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
@@ -464,16 +478,27 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="barcodeOpen()" (close)="barcodeOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal [isOpen]="barcodeOpen()" (close)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
   </div>
   <div data-modal-body class="px-4 py-4 sm:px-6">
     <app-label>Código</app-label>
-    <app-input-field className="mt-2" [value]="barcodeValue()" (valueChange)="barcodeValue.set($event + '')" />
+    <app-input-field className="mt-2" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
+    <div class="mt-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+      @if (barcodeSvg()) {
+        <div class="flex justify-center overflow-x-auto" [innerHTML]="barcodeSvg()"></div>
+      } @else {
+        <p class="text-center text-theme-sm text-gray-500">Ingrese un código válido para previsualizar.</p>
+      }
+    </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="barcodeOpen.set(false)">Cancelar</app-button>
+    <app-button variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button variant="outline" (btnClick)="printBarcode()">
+      <app-icon name="mdi:printer-outline" width="16" height="16" />
+      <span>Imprimir</span>
+    </app-button>
     <app-button [disabled]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>

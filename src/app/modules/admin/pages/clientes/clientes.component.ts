@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
+import JsBarcode from 'jsbarcode';
 import * as yup from 'yup';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { customerQueryKeys } from '../../../../core/query/customer-query.keys';
@@ -351,12 +352,12 @@ export class ClientesComponent {
   protected readonly extraAddresses = signal<CustomerAddressDto[]>([]);
 
   protected readonly barcodeValue = signal('');
+  protected readonly barcodeSvg = signal('');
   protected readonly tagsValue = signal('');
 
   protected readonly importFile = signal<File | null>(null);
   protected readonly exportForm = signal<ExportCustomersRequest>({
-    period: 'month',
-    month: this.currentMonth(),
+    period: 'all',
   });
 
   protected readonly departmentOptions = computed<Option[]>(() => [
@@ -658,8 +659,16 @@ export class ClientesComponent {
 
   protected openBarcodeModal(row: CustomerItemDto) {
     this.selected.set(row);
-    this.barcodeValue.set(row.codigoBarra ?? '');
+    const defaultCode = row.codigoBarra ?? row.numeroDocumento ?? row.codigoInterno ?? '';
+    this.barcodeValue.set(defaultCode);
+    this.refreshBarcodePreview(defaultCode);
     this.barcodeOpen.set(true);
+  }
+
+  protected onBarcodeInputChange(value: string | number) {
+    const next = String(value ?? '');
+    this.barcodeValue.set(next);
+    this.refreshBarcodePreview(next);
   }
 
   protected submitBarcode() {
@@ -672,6 +681,45 @@ export class ClientesComponent {
       return;
     }
     this.barcodeMutation.mutate({ id: row.id, codigoBarra });
+  }
+
+  protected printBarcode() {
+    const row = this.selected();
+    const svg = this.barcodeSvg();
+    if (!row || !svg) {
+      this.notify.warning('Primero debe registrar un código de barras válido.');
+      return;
+    }
+    const win = window.open('', '_blank', 'width=560,height=720');
+    if (!win) {
+      this.notify.warning('No se pudo abrir la ventana de impresión.');
+      return;
+    }
+    const safeName = this.escapeHtml(row.nombre);
+    const safeCode = this.escapeHtml(this.barcodeValue().trim());
+    win.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Etiqueta ${safeName}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 24px; }
+      .label { width: 420px; border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; }
+      .name { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+      .code { font-size: 12px; color: #374151; margin-top: 8px; text-align: center; }
+      .barcode { display: flex; justify-content: center; }
+    </style>
+  </head>
+  <body>
+    <div class="label">
+      <div class="name">${safeName}</div>
+      <div class="barcode">${svg}</div>
+      <div class="code">${safeCode}</div>
+    </div>
+    <script>window.onload = () => { window.print(); };</script>
+  </body>
+</html>`);
+    win.document.close();
   }
 
   protected openTagsModal(row: CustomerItemDto) {
@@ -722,7 +770,7 @@ export class ClientesComponent {
   }
 
   protected openExportModal() {
-    this.exportForm.set({ period: 'month', month: this.currentMonth() });
+    this.exportForm.set({ period: 'all' });
     this.exportOpen.set(true);
   }
 
@@ -731,7 +779,42 @@ export class ClientesComponent {
   }
 
   protected onExportPeriodChange(value: string) {
-    this.updateExportField('period', value as ExportCustomersRequest['period']);
+    const period = value as ExportCustomersRequest['period'];
+    const month = this.currentMonth();
+    if (period === 'month') {
+      this.exportForm.update((prev) => ({
+        ...prev,
+        period,
+        month: prev.month || month,
+        fromMonth: undefined,
+        toMonth: undefined,
+        sellerId: undefined,
+      }));
+      return;
+    }
+    if (period === 'between-months') {
+      this.exportForm.update((prev) => ({
+        ...prev,
+        period,
+        month: undefined,
+        fromMonth: prev.fromMonth || month,
+        toMonth: prev.toMonth || month,
+        sellerId: undefined,
+      }));
+      return;
+    }
+    if (period === 'seller') {
+      this.exportForm.update((prev) => ({
+        ...prev,
+        period,
+        month: undefined,
+        fromMonth: undefined,
+        toMonth: undefined,
+        sellerId: prev.sellerId || '',
+      }));
+      return;
+    }
+    this.exportForm.set({ period: 'all' });
   }
 
   protected async processExport() {
@@ -815,6 +898,43 @@ export class ClientesComponent {
     const d = new Date();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     return `${m}/${d.getFullYear()}`;
+  }
+
+  protected closeBarcodeModal() {
+    this.barcodeOpen.set(false);
+    this.barcodeValue.set('');
+    this.barcodeSvg.set('');
+    this.selected.set(null);
+  }
+
+  private refreshBarcodePreview(code: string) {
+    const value = code.trim();
+    if (!value) {
+      this.barcodeSvg.set('');
+      return;
+    }
+    try {
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      JsBarcode(svgEl, value, {
+        format: 'CODE128',
+        displayValue: true,
+        height: 62,
+        margin: 8,
+        fontSize: 14,
+      });
+      this.barcodeSvg.set(svgEl.outerHTML);
+    } catch {
+      this.barcodeSvg.set('');
+    }
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
   }
 
   private downloadBlob(blob: Blob, fileName: string) {
