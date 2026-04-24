@@ -2,7 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import type {
+  CreateCustomerRequest,
   CreateCustomerTypeRequest,
+  CustomerCatalogOptionDto,
+  CustomerImportResultDto,
+  CustomerItemDto,
+  CustomerListFiltersRequest,
+  CustomerListResponseDto,
+  CustomerSellerDto,
+  CustomerZoneDto,
   EstablishmentListFiltersRequest,
   CreateEstablishmentRequest,
   CreateEstablishmentSeriesRequest,
@@ -12,12 +20,14 @@ import type {
   EstablishmentOptionDto,
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
+  ExportCustomersRequest,
   PermissionMenuNodeDto,
   UbigeoDepartmentDto,
   UbigeoDistrictDto,
   UbigeoProvinceDto,
   UserListFiltersRequest,
   UpdateEstablishmentRequest,
+  UpdateCustomerRequest,
   UpdateCustomerTypeRequest,
   UpdateUserRequest,
   UserListItemDto,
@@ -86,6 +96,85 @@ export class DirectoryApiService {
 
   deleteCustomerType(id: string) {
     return this.http.delete<void>(`${this.base}/customer-types/${id}`);
+  }
+
+  listCustomers(filters?: CustomerListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.customerTypeId) params['customerTypeId'] = filters.customerTypeId;
+    if (filters?.zoneId) params['zoneId'] = filters.zoneId;
+    if (filters?.estado && filters.estado !== 'all') params['estado'] = filters.estado;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<CustomerListResponseDto>(`${this.base}/customers`, { params });
+  }
+
+  getCustomer(id: string) {
+    return this.http.get<CustomerItemDto>(`${this.base}/customers/${id}`);
+  }
+
+  createCustomer(body: CreateCustomerRequest) {
+    return this.http.post<CustomerItemDto>(`${this.base}/customers`, body);
+  }
+
+  updateCustomer(id: string, body: UpdateCustomerRequest) {
+    return this.http.patch<CustomerItemDto>(`${this.base}/customers/${id}`, body);
+  }
+
+  deleteCustomer(id: string) {
+    return this.http.delete<void>(`${this.base}/customers/${id}`);
+  }
+
+  updateCustomerStatus(id: string, habilitado: boolean) {
+    return this.http.patch<CustomerItemDto>(`${this.base}/customers/${id}/status`, { habilitado });
+  }
+
+  updateCustomerBarcode(id: string, codigoBarra: string) {
+    return this.http.patch<CustomerItemDto>(`${this.base}/customers/${id}/barcode`, { codigoBarra });
+  }
+
+  updateCustomerTags(id: string, etiquetas: string[]) {
+    return this.http.patch<CustomerItemDto>(`${this.base}/customers/${id}/tags`, { etiquetas });
+  }
+
+  listCustomerZones() {
+    return this.http.get<CustomerZoneDto[]>(`${this.base}/customers/zones`);
+  }
+
+  createCustomerZone(nombre: string) {
+    return this.http.post<CustomerZoneDto>(`${this.base}/customers/zones`, { nombre });
+  }
+
+  listCustomerSellers() {
+    return this.http.get<CustomerSellerDto[]>(`${this.base}/customers/catalogs/sellers`);
+  }
+
+  listCustomerDocumentTypes() {
+    return this.http.get<CustomerCatalogOptionDto[]>(`${this.base}/customers/catalogs/document-types`);
+  }
+
+  listCustomerNationalities() {
+    return this.http.get<CustomerCatalogOptionDto[]>(`${this.base}/customers/catalogs/nationalities`);
+  }
+
+  downloadCustomerImportTemplate() {
+    return this.http.get(`${this.base}/customers/import/template`, {
+      responseType: 'blob',
+    });
+  }
+
+  importCustomers(file: File) {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.post<CustomerImportResultDto>(`${this.base}/customers/import`, body);
+  }
+
+  exportCustomers(body: ExportCustomersRequest) {
+    return this.http.post(`${this.base}/customers/export`, body, {
+      responseType: 'blob',
+    });
   }
 
   listEstablishmentSeries(establishmentId: string) {

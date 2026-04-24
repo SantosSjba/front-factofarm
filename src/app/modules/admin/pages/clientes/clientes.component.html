@@ -9,11 +9,489 @@
   >
     Clientes
   </h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-button size="sm" variant="outline" (btnClick)="openExportModal()">
+      <app-icon name="mdi:file-export-outline" width="18" height="18" />
+      <span class="leading-none">Exportar</span>
+    </app-button>
+    <app-button size="sm" variant="outline" (btnClick)="openImportModal()">
+      <app-icon name="mdi:file-import-outline" width="18" height="18" />
+      <span class="leading-none">Importar</span>
+    </app-button>
+    <app-button size="sm" (btnClick)="openCreateModal()">
+      <app-icon name="mdi:plus" width="18" height="18" />
+      <span class="leading-none">Nuevo</span>
+    </app-button>
+  </div>
 </app-page-toolbar>
 
-<app-component-card title="Módulo de clientes">
-  <div class="flex items-center gap-2 text-theme-sm text-gray-600 dark:text-gray-300">
-    <app-icon name="mdi:tools" width="18" height="18" />
-    <span>En desarrollo.</span>
+@if (listQuery.isError()) {
+  <div
+    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+    role="alert"
+  >
+    No se pudo cargar el listado.
+    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
+  </div>
+}
+
+<app-list-filters
+  [searchValue]="searchTerm()"
+  [selectValue]="filterField()"
+  [selectOptions]="fieldFilterOptions"
+  searchPlaceholder="Buscar"
+  selectPlaceholder="Filtrar por"
+  clearLabel="Limpiar"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onFieldChange($event)"
+  (clear)="clearFilters()"
+/>
+
+<div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+  <app-form-select
+    [value]="customerTypeId()"
+    [options]="customerTypeOptions()"
+    placeholder="Tipo de cliente"
+    (valueChange)="onTypeFilterChange($event)"
+  />
+  <app-form-select
+    [value]="zoneId()"
+    [options]="zoneOptions()"
+    placeholder="Zona"
+    (valueChange)="onZoneFilterChange($event)"
+  />
+  <app-form-select
+    [value]="estado()"
+    [options]="stateOptions"
+    placeholder="Estado"
+    (valueChange)="onStateFilterChange($event)"
+  />
+</div>
+
+<app-component-card title="Listado de Clientes" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <div class="px-4 pt-4">
+    <div class="flex justify-end">
+      <app-table-dropdown>
+        <div dropdown-button>
+          <button
+            type="button"
+            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600"
+          >
+            <span>Mostrar/Ocultar columnas</span>
+            <app-icon name="mdi:chevron-down" width="18" height="18" />
+          </button>
+        </div>
+        <div dropdown-content>
+          @for (col of columns; track col.key) {
+            <label class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10">
+              <input
+                type="checkbox"
+                [checked]="isVisible(col.key)"
+                (change)="toggleColumn(col.key)"
+              />
+              <span>{{ col.label }}</span>
+            </label>
+          }
+        </div>
+      </app-table-dropdown>
+    </div>
+  </div>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
+            @if (isVisible('nombre')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Nombre</th>
+            }
+            @if (isVisible('codigoInterno')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Cód interno</th>
+            }
+            @if (isVisible('tipoDocumento')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tipo de documento</th>
+            }
+            @if (isVisible('numeroDocumento')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Número</th>
+            }
+            @if (isVisible('observaciones')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Observaciones</th>
+            }
+            @if (isVisible('zona')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Zona</th>
+            }
+            @if (isVisible('sitioWeb')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">WebSite</th>
+            }
+            @if (isVisible('puntos')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Puntos acumulados</th>
+            }
+            @if (isVisible('tipoCliente')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tipo de cliente</th>
+            }
+            @if (isVisible('diasCredito')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Días de crédito</th>
+            }
+            @if (isVisible('vendedor')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Vendedor asignado</th>
+            }
+            @if (isVisible('correoElectronico')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Correo electrónico</th>
+            }
+            @if (isVisible('telefono')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Teléfono</th>
+            }
+            @if (isVisible('departamento')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Departamento</th>
+            }
+            @if (isVisible('provincia')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Provincia</th>
+            }
+            @if (isVisible('distrito')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Distrito</th>
+            }
+            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of customers(); track row.id; let i = $index) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+                {{ (currentPage() - 1) * itemsPerPage + i + 1 }}
+              </td>
+              @if (isVisible('nombre')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
+              }
+              @if (isVisible('codigoInterno')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoInterno || '—' }}</td>
+              }
+              @if (isVisible('tipoDocumento')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ documentLabel(row) }}</td>
+              }
+              @if (isVisible('numeroDocumento')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.numeroDocumento }}</td>
+              }
+              @if (isVisible('observaciones')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.observaciones || '—' }}</td>
+              }
+              @if (isVisible('zona')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.zone?.nombre || '—' }}</td>
+              }
+              @if (isVisible('sitioWeb')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.sitioWeb || '—' }}</td>
+              }
+              @if (isVisible('puntos')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.puntosAcumulados }}</td>
+              }
+              @if (isVisible('tipoCliente')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ customerTypeLabel(row) }}</td>
+              }
+              @if (isVisible('diasCredito')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.diasCredito }}</td>
+              }
+              @if (isVisible('vendedor')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.vendedorAsignado?.nombre || '—' }}</td>
+              }
+              @if (isVisible('correoElectronico')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.correoElectronico || '—' }}</td>
+              }
+              @if (isVisible('telefono')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.telefono || '—' }}</td>
+              }
+              @if (isVisible('departamento')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ departmentLabel(row) }}</td>
+              }
+              @if (isVisible('provincia')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ provinceLabel(row) }}</td>
+              }
+              @if (isVisible('distrito')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ districtLabel(row) }}</td>
+              }
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <button
+                        type="button"
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                      >
+                        <app-icon name="mdi:dots-vertical" width="18" height="18" />
+                      </button>
+                    </div>
+                    <div dropdown-content>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openEditModal(row)">Editar</button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openDeleteModal(row)">Eliminar</button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="toggleStatus(row)">
+                        {{ row.habilitado ? 'Inhabilitar' : 'Habilitar' }}
+                      </button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openBarcodeModal(row)">Cod. Barras</button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openTagsModal(row)">Etiquetas</button>
+                    </div>
+                  </app-table-dropdown>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="20" class="px-5 py-8 text-center text-theme-sm text-gray-500">
+                @if (listQuery.isPending()) {
+                  Cargando...
+                } @else {
+                  No hay clientes registrados.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </app-component-card>
+
+<app-pagination
+  [totalItems]="totalRows()"
+  [currentPage]="currentPage()"
+  [pageSize]="itemsPerPage"
+  (currentPageChange)="onPageChange($event)"
+/>
+
+<app-modal [isOpen]="formOpen()" (close)="closeFormModal()" className="w-full max-w-7xl shadow-theme-lg" maxHeightClass="max-h-[min(95dvh,980px)]" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0">
+    <app-modal-tab-header
+      [title]="editing() ? 'Editar Cliente' : 'Nuevo Cliente'"
+      [tabs]="customerTabs"
+      [activeId]="activeTab()"
+      (tabChange)="setTab($event)"
+    />
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    @if (activeTab() === 'datos') {
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <app-label>Tipo Doc. Identidad *</app-label>
+          <app-form-select className="mt-2" [value]="form().tipoDocumento" [options]="documentTypesQuery.data() ?? []" (valueChange)="onDocumentTypeChange($event)" />
+        </div>
+        <div>
+          <app-label>Número *</app-label>
+          <app-input-field className="mt-2" [value]="form().numeroDocumento" (valueChange)="updateFormField('numeroDocumento', $event + '')" />
+        </div>
+        <div>
+          <app-label>Nombre *</app-label>
+          <app-input-field className="mt-2" [value]="form().nombre" (valueChange)="updateFormField('nombre', ($event + ''))" />
+        </div>
+        <div>
+          <app-label>Nombre comercial</app-label>
+          <app-input-field className="mt-2" [value]="form().nombreComercial ?? ''" (valueChange)="updateFormField('nombreComercial', ($event + ''))" />
+        </div>
+        <div>
+          <app-label>Días de crédito</app-label>
+          <app-input-field className="mt-2" type="number" [value]="form().diasCredito ?? 0" (valueChange)="updateFormField('diasCredito', +$event)" />
+        </div>
+        <div>
+          <app-label>Código interno</app-label>
+          <app-input-field className="mt-2" [value]="form().codigoInterno ?? ''" (valueChange)="updateFormField('codigoInterno', $event + '')" />
+        </div>
+        <div>
+          <app-label>Nacionalidad</app-label>
+          <app-form-select className="mt-2" [value]="form().nacionalidad ?? 'PERU'" [options]="nationalitiesQuery.data() ?? []" (valueChange)="updateFormField('nacionalidad', $event)" />
+        </div>
+        <div>
+          <app-label>Tipo de cliente</app-label>
+          <app-form-select className="mt-2" [value]="form().customerTypeId ?? ''" [options]="customerTypeOptions()" (valueChange)="updateFormField('customerTypeId', $event || null)" />
+        </div>
+      </div>
+    }
+
+    @if (activeTab() === 'direccion') {
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div>
+          <app-label>País</app-label>
+          <app-form-select className="mt-2" [value]="'PERU'" [options]="[{value:'PERU',label:'PERU'}]" />
+        </div>
+        <div>
+          <app-label>Departamento</app-label>
+          <app-form-select className="mt-2" [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
+        </div>
+        <div>
+          <app-label>Provincia</app-label>
+          <app-form-select className="mt-2" [value]="provinceId()" [options]="provinceOptions()" [disabled]="!departmentId()" (valueChange)="onProvinceChange($event)" />
+        </div>
+        <div>
+          <app-label>Distrito</app-label>
+          <app-form-select className="mt-2" [value]="districtId()" [options]="districtOptions()" [disabled]="!provinceId()" (valueChange)="districtId.set($event)" />
+        </div>
+        <div class="md:col-span-4">
+          <app-label>Dirección</app-label>
+          <app-input-field className="mt-2" [value]="form().addresses?.[0]?.direccion ?? ''" (valueChange)="updateMainAddressField('direccion', $event + '')" />
+        </div>
+        <div class="md:col-span-2">
+          <app-label>Teléfono</app-label>
+          <app-input-field className="mt-2" [value]="form().addresses?.[0]?.telefono ?? ''" (valueChange)="updateMainAddressField('telefono', $event + '')" />
+        </div>
+        <div class="md:col-span-2">
+          <app-label>Correo electrónico</app-label>
+          <app-input-field className="mt-2" [value]="form().addresses?.[0]?.correoElectronico ?? ''" (valueChange)="updateMainAddressField('correoElectronico', $event + '')" />
+        </div>
+        <div class="md:col-span-4">
+          <app-label>Correos opcionales</app-label>
+          <app-input-field className="mt-2" [value]="form().addresses?.[0]?.correosOpcionales ?? ''" (valueChange)="updateMainAddressField('correosOpcionales', $event + '')" />
+        </div>
+      </div>
+
+      <div class="mt-5 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+        <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Agregar dirección adicional</h4>
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <app-input-field [value]="extraAddress().direccion ?? ''" placeholder="Dirección" (valueChange)="extraAddress.set({...extraAddress(), direccion: $event + ''})" />
+          <app-input-field [value]="extraAddress().telefono ?? ''" placeholder="Teléfono" (valueChange)="extraAddress.set({...extraAddress(), telefono: $event + ''})" />
+          <app-input-field [value]="extraAddress().correoElectronico ?? ''" placeholder="Correo electrónico" (valueChange)="extraAddress.set({...extraAddress(), correoElectronico: $event + ''})" />
+        </div>
+        <div class="mt-3">
+          <app-button variant="outline" size="sm" (btnClick)="addExtraAddress()">
+            <app-icon name="mdi:plus" width="16" height="16" />
+            <span>Agregar dirección</span>
+          </app-button>
+        </div>
+        @if (extraAddresses().length) {
+          <div class="mt-4 space-y-2">
+            @for (addr of extraAddresses(); track $index; let i = $index) {
+              <div class="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-gray-700">
+                <span>{{ addr.direccion || 'Sin dirección' }} | {{ addr.telefono || 'Sin teléfono' }} | {{ addr.correoElectronico || 'Sin correo' }}</span>
+                <button type="button" class="text-error-500" (click)="removeExtraAddress(i)">Quitar</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (activeTab() === 'otros') {
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <app-label>Contacto Nombre y Apellido</app-label>
+          <app-input-field className="mt-2" [value]="form().contactoNombre ?? ''" (valueChange)="updateFormField('contactoNombre', $event + '')" />
+        </div>
+        <div>
+          <app-label>Contacto Teléfono</app-label>
+          <app-input-field className="mt-2" [value]="form().contactoTelefono ?? ''" (valueChange)="updateFormField('contactoTelefono', $event + '')" />
+        </div>
+        <div>
+          <app-label>Sitio Web</app-label>
+          <app-input-field className="mt-2" [value]="form().sitioWeb ?? ''" (valueChange)="updateFormField('sitioWeb', $event + '')" />
+        </div>
+        <div>
+          <app-label>Observaciones</app-label>
+          <app-input-field className="mt-2" [value]="form().observaciones ?? ''" (valueChange)="updateFormField('observaciones', $event + '')" />
+        </div>
+        <div>
+          <app-label>Vendedor</app-label>
+          <app-form-select className="mt-2" [value]="form().vendedorAsignadoId ?? ''" [options]="[{value:'',label:'Seleccionar'}, ...((sellersQuery.data() ?? []).map(x => ({ value: x.id, label: x.nombre })))]" (valueChange)="updateFormField('vendedorAsignadoId', $event || null)" />
+        </div>
+        <div>
+          <app-label>Zona</app-label>
+          <app-form-select className="mt-2" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
+        </div>
+      </div>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
+    <app-button variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeFormModal()">Cancelar</app-button>
+    <app-button [disabled]="saveMutation.isPending()" (btnClick)="submitForm()">
+      {{ saveMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="importOpen()" (close)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Importar Clientes</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    <button type="button" class="text-sm font-semibold text-brand-500 underline" (click)="downloadImportTemplate()">Descargar formato</button>
+    <div class="mt-6 flex items-center justify-center">
+      <label class="inline-flex cursor-pointer rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600">
+        <app-icon name="mdi:file-excel-outline" width="18" height="18" />
+        <span class="ml-2">{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
+        <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
+      </label>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
+    <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">Cancelar</app-button>
+    <app-button [disabled]="importMutation.isPending()" (btnClick)="processImport()">
+      {{ importMutation.isPending() ? 'Procesando…' : 'Procesar' }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="exportOpen()" (close)="exportOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Exportar Clientes</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div>
+        <app-label>Periodo</app-label>
+        <app-form-select className="mt-2" [value]="exportForm().period || 'all'" [options]="[{value:'all',label:'Todos'},{value:'month',label:'Por mes'},{value:'between-months',label:'Entre meses'},{value:'seller',label:'Vendedor'}]" (valueChange)="onExportPeriodChange($event)" />
+      </div>
+      <div>
+        <app-label>Mes de</app-label>
+        <app-input-field className="mt-2" [value]="exportForm().month || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('month', $event + '')" />
+      </div>
+      <div>
+        <app-label>Vendedor</app-label>
+        <app-form-select className="mt-2" [value]="exportForm().sellerId || ''" [options]="[{value:'',label:'Todos'}, ...((sellersQuery.data() ?? []).map(x => ({ value: x.id, label: x.nombre })))]" (valueChange)="updateExportField('sellerId', $event || undefined)" />
+      </div>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
+    <app-button variant="outline" (btnClick)="exportOpen.set(false)">Cancelar</app-button>
+    <app-button (btnClick)="processExport()">Procesar</app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="deleteOpen()" (close)="deleteOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-theme-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    ¿Desea eliminar el registro?
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="deleteOpen.set(false)">Cancelar</app-button>
+    <app-button [disabled]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+      {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="barcodeOpen()" (close)="barcodeOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 sm:px-6">
+    <app-label>Código</app-label>
+    <app-input-field className="mt-2" [value]="barcodeValue()" (valueChange)="barcodeValue.set($event + '')" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="barcodeOpen.set(false)">Cancelar</app-button>
+    <app-button [disabled]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+      {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="tagsOpen()" (close)="tagsOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Etiquetas</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 sm:px-6">
+    <app-label>Etiquetas (separadas por coma)</app-label>
+    <app-input-field className="mt-2" [value]="tagsValue()" (valueChange)="tagsValue.set($event + '')" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="tagsOpen.set(false)">Cancelar</app-button>
+    <app-button [disabled]="tagsMutation.isPending()" (btnClick)="submitTags()">
+      {{ tagsMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </div>
+</app-modal>
