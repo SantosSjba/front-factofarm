@@ -2,10 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import type {
+  CreateCustomerTypeRequest,
   EstablishmentListFiltersRequest,
   CreateEstablishmentRequest,
   CreateEstablishmentSeriesRequest,
   CreateUserRequest,
+  CustomerTypeItemDto,
+  CustomerTypeListFiltersRequest,
   EstablishmentOptionDto,
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
@@ -15,6 +18,7 @@ import type {
   UbigeoProvinceDto,
   UserListFiltersRequest,
   UpdateEstablishmentRequest,
+  UpdateCustomerTypeRequest,
   UpdateUserRequest,
   UserListItemDto,
 } from '../models/directory.models';
@@ -62,6 +66,26 @@ export class DirectoryApiService {
 
   deleteEstablishment(id: string) {
     return this.http.delete<void>(`${this.base}/establishments/${id}`);
+  }
+
+  listCustomerTypes(filters?: CustomerTypeListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<CustomerTypeItemDto[]>(`${this.base}/customer-types`, { params });
+  }
+
+  createCustomerType(body: CreateCustomerTypeRequest) {
+    return this.http.post<CustomerTypeItemDto>(`${this.base}/customer-types`, body);
+  }
+
+  updateCustomerType(id: string, body: UpdateCustomerTypeRequest) {
+    return this.http.patch<CustomerTypeItemDto>(`${this.base}/customer-types/${id}`, body);
+  }
+
+  deleteCustomerType(id: string) {
+    return this.http.delete<void>(`${this.base}/customer-types/${id}`);
   }
 
   listEstablishmentSeries(establishmentId: string) {

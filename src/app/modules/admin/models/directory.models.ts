@@ -185,3 +185,21 @@ export interface CreateEstablishmentSeriesRequest {
   numero: string;
   esContingencia?: boolean;
 }
+
+export interface CustomerTypeItemDto {
+  id: string;
+  descripcion: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerTypeListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'descripcion';
+}
+
+export interface CreateCustomerTypeRequest {
+  descripcion: string;
+}
+
+export type UpdateCustomerTypeRequest = Partial<CreateCustomerTypeRequest>;
