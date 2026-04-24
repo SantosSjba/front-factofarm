@@ -31,12 +31,20 @@ export class AppSidebarComponent {
     },
     {
       icon: 'lucide:users',
-      name: 'Usuarios & Series',
+      name: 'Usuarios/Establecimientos',
       subItems: [
         { name: 'Usuarios', path: '/usuarios' },
         { name: 'Establecimientos', path: '/establecimientos' },
       ],
-    }
+    },
+    {
+      icon: 'lucide:users-round',
+      name: 'Clientes',
+      subItems: [
+        { name: 'Clientes', path: '/clientes' },
+        { name: 'Tipos de Clientes', path: '/tipo-clientes' },
+      ],
+    },
   ];
 
   othersItems: NavItem[] = [];

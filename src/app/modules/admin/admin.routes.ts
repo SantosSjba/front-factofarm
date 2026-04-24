@@ -40,6 +40,22 @@ export const adminRoutes: Routes = [
           ),
         title: 'FactoFarm | Establecimientos',
       },
+      {
+        path: 'clientes',
+        loadComponent: () =>
+          import('./pages/clientes/clientes.component').then(
+            (m) => m.ClientesComponent,
+          ),
+        title: 'FactoFarm | Clientes',
+      },
+      {
+        path: 'tipo-clientes',
+        loadComponent: () =>
+          import('./pages/tipo-clientes/tipo-clientes.component').then(
+            (m) => m.TipoClientesComponent,
+          ),
+        title: 'FactoFarm | Tipos de Clientes',
+      },
     ],
   },
 ];
