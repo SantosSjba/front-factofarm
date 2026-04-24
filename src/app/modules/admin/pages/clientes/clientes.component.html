@@ -219,13 +219,13 @@
                       </button>
                     </div>
                     <div dropdown-content>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openEditModal(row)">Editar</button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openDeleteModal(row)">Eliminar</button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="toggleStatus(row)">
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openEditModal(row)">Editar</button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openDeleteModal(row)">Eliminar</button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="toggleStatus(row)">
                         {{ row.habilitado ? 'Inhabilitar' : 'Habilitar' }}
                       </button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openBarcodeModal(row)">Cod. Barras</button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-100 dark:hover:bg-white/10" (click)="openTagsModal(row)">Etiquetas</button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openBarcodeModal(row)">Cod. Barras</button>
+                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openTagsModal(row)">Etiquetas</button>
                     </div>
                   </app-table-dropdown>
                 </div>

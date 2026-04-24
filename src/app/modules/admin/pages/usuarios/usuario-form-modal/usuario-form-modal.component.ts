@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { injectMutation, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
+import * as yup from 'yup';
 import { ModalComponent } from '../../../../../shared/components/ui/modal/modal.component';
 import { ButtonComponent } from '../../../../../shared/components/ui/button/button.component';
 import { LabelComponent } from '../../../../../shared/components/form/label/label.component';
@@ -76,6 +77,63 @@ function trimOrUndef(s: string): string | undefined {
   const x = s?.trim();
   return x ? x : undefined;
 }
+
+const USER_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const usuarioDatosSchema = yup.object({
+  nombre: yup
+    .string()
+    .trim()
+    .required('Indique el nombre del usuario.')
+    .max(150, 'Nombre no debe exceder 150 caracteres'),
+  email: yup
+    .string()
+    .trim()
+    .required('Indique el correo electrónico.')
+    .email('El correo electrónico no es válido.')
+    .max(150, 'Correo electrónico no debe exceder 150 caracteres'),
+  establecimientoId: yup
+    .string()
+    .trim()
+    .required('Seleccione un establecimiento.'),
+  role: yup
+    .mixed<'ADMINISTRADOR' | 'VENDEDOR'>()
+    .oneOf(['ADMINISTRADOR', 'VENDEDOR'])
+    .required(),
+  password: yup.string().max(100, 'Contraseña no debe exceder 100 caracteres').optional(),
+  password2: yup.string().max(100, 'Confirmación no debe exceder 100 caracteres').optional(),
+});
+
+const usuarioPersonalesSchema = yup.object({
+  tipoDoc: yup.string().oneOf(['', 'DNI', 'CE', 'PASAPORTE', 'OTRO']).optional(),
+  numeroDoc: yup.string().max(20, 'Número de documento no debe exceder 20 caracteres').optional(),
+  nombres: yup.string().max(120, 'Nombres no debe exceder 120 caracteres').optional(),
+  apellidos: yup.string().max(120, 'Apellidos no debe exceder 120 caracteres').optional(),
+  fechaNac: yup.string().test(
+    'fechaNac-format',
+    'Fecha de nacimiento inválida.',
+    (v) => !v || USER_DATE_REGEX.test(v),
+  ),
+  emailPersonal: yup
+    .string()
+    .email('Correo personal no válido.')
+    .max(150, 'Correo personal no debe exceder 150 caracteres')
+    .optional(),
+  direccion: yup.string().max(250, 'Dirección no debe exceder 250 caracteres').optional(),
+  celPersonal: yup.string().max(30, 'Celular personal no debe exceder 30 caracteres').optional(),
+  emailCorp: yup
+    .string()
+    .email('Correo corporativo no válido.')
+    .max(150, 'Correo corporativo no debe exceder 150 caracteres')
+    .optional(),
+  celCorp: yup.string().max(30, 'Celular corporativo no debe exceder 30 caracteres').optional(),
+  fechaContratacion: yup.string().test(
+    'fechaContratacion-format',
+    'Fecha de contratación inválida.',
+    (v) => !v || USER_DATE_REGEX.test(v),
+  ),
+  cargo: yup.string().max(120, 'Cargo no debe exceder 120 caracteres').optional(),
+});
 
 @Component({
   selector: 'app-usuario-form-modal',
@@ -351,10 +409,10 @@ export class UsuarioFormModalComponent {
     this.selectedNavCodes.set(new Set<string>());
   }
 
-  protected onSave() {
-    const err = this.validate();
-    if (err) {
-      this.notify.warning(err);
+  protected async onSave() {
+    const errors = await this.validate();
+    if (errors.length) {
+      this.notify.warning(errors.join('\n'));
       return;
     }
     if (this.isEditing()) {
@@ -371,34 +429,81 @@ export class UsuarioFormModalComponent {
     this.createUserMutation.mutate(body);
   }
 
-  private validate(): string | null {
-    if (!this.nombre().trim()) {
-      return 'Indique el nombre del usuario.';
+  private async validate(): Promise<string[]> {
+    const errors: string[] = [];
+
+    try {
+      await usuarioDatosSchema.validate(
+        {
+          nombre: this.nombre(),
+          email: this.email(),
+          establecimientoId: this.establecimientoId(),
+          role: this.role(),
+          password: this.password(),
+          password2: this.password2(),
+        },
+        { abortEarly: false },
+      );
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        errors.push(...err.errors);
+      }
     }
-    if (!this.email().trim()) {
-      return 'Indique el correo electrónico.';
-    }
+
     const pw = this.password();
     const pw2 = this.password2();
     if (!this.isEditing()) {
       if (!pw || pw.length < 8) {
-        return 'La contraseña debe tener al menos 8 caracteres.';
+        errors.push('La contraseña debe tener al menos 8 caracteres.');
       }
       if (pw !== pw2) {
-        return 'Las contraseñas no coinciden.';
+        errors.push('Las contraseñas no coinciden.');
       }
     } else if (pw || pw2) {
       if (pw.length < 8) {
-        return 'La contraseña debe tener al menos 8 caracteres.';
+        errors.push('La contraseña debe tener al menos 8 caracteres.');
       }
       if (pw !== pw2) {
-        return 'Las contraseñas no coinciden.';
+        errors.push('Las contraseñas no coinciden.');
       }
     }
-    if (!this.establecimientoId().trim()) {
-      return 'Seleccione un establecimiento.';
+
+    if (this.selectedNavCodes().size === 0) {
+      errors.push('Debe seleccionar al menos un permiso de menú.');
     }
-    return null;
+
+    try {
+      await usuarioPersonalesSchema.validate(
+        {
+          tipoDoc: this.tipoDoc(),
+          numeroDoc: this.numeroDoc(),
+          nombres: this.nombres(),
+          apellidos: this.apellidos(),
+          fechaNac: this.fechaNac(),
+          emailPersonal: this.emailPersonal(),
+          direccion: this.direccion(),
+          celPersonal: this.celPersonal(),
+          emailCorp: this.emailCorp(),
+          celCorp: this.celCorp(),
+          fechaContratacion: this.fechaContratacion(),
+          cargo: this.cargo(),
+        },
+        { abortEarly: false },
+      );
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        errors.push(...err.errors);
+      }
+    }
+
+    if (this.tipoDoc().trim() && !this.numeroDoc().trim()) {
+      errors.push('Si selecciona tipo de documento, ingrese el número.');
+    }
+    if (this.numeroDoc().trim() && !this.tipoDoc().trim()) {
+      errors.push('Seleccione el tipo de documento para el número ingresado.');
+    }
+
+    return [...new Set(errors.map((x) => x.trim()).filter(Boolean))];
   }
 
   private buildProfileBody(): CreateUserProfileBody | undefined {

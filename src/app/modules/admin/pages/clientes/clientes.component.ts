@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
+import * as yup from 'yup';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { customerQueryKeys } from '../../../../core/query/customer-query.keys';
 import { establishmentQueryKeys } from '../../../../core/query/establishment-query.keys';
@@ -62,6 +63,102 @@ type Option = {
   value: string;
   label: string;
 };
+
+const customerAddressSchema = yup.object({
+  id: yup.string().optional(),
+  esPrincipal: yup.boolean().optional(),
+  pais: yup.string().max(80, 'País no debe exceder 80 caracteres').optional(),
+  departmentId: yup.string().nullable().optional(),
+  provinceId: yup.string().nullable().optional(),
+  districtId: yup.string().nullable().optional(),
+  direccion: yup.string().max(250, 'Dirección no debe exceder 250 caracteres').nullable().optional(),
+  telefono: yup.string().max(30, 'Teléfono no debe exceder 30 caracteres').nullable().optional(),
+  correoElectronico: yup
+    .string()
+    .email('Correo electrónico no válido')
+    .max(120, 'Correo electrónico no debe exceder 120 caracteres')
+    .nullable()
+    .optional(),
+  correosOpcionales: yup
+    .string()
+    .max(250, 'Correos opcionales no debe exceder 250 caracteres')
+    .nullable()
+    .optional(),
+});
+
+const customerCreateSchema = yup.object({
+  nombre: yup.string().trim().required('Nombre es obligatorio').max(200, 'Nombre no debe exceder 200 caracteres'),
+  nombreComercial: yup.string().max(200, 'Nombre comercial no debe exceder 200 caracteres').optional(),
+  tipoDocumento: yup
+    .mixed<CreateCustomerRequest['tipoDocumento']>()
+    .oneOf(['DNI', 'RUC', 'CE', 'PASAPORTE', 'DOC_SIN_RUC', 'OTRO'], 'Tipo de documento no válido')
+    .required('Tipo de documento es obligatorio'),
+  numeroDocumento: yup
+    .string()
+    .trim()
+    .required('Número de documento es obligatorio')
+    .max(30, 'Número de documento no debe exceder 30 caracteres'),
+  nacionalidad: yup.string().max(80, 'Nacionalidad no debe exceder 80 caracteres').optional(),
+  diasCredito: yup
+    .number()
+    .transform((v) => (Number.isNaN(v) ? 0 : v))
+    .min(0, 'Días de crédito debe ser mayor o igual a 0')
+    .optional(),
+  codigoInterno: yup.string().max(30, 'Código interno no debe exceder 30 caracteres').optional(),
+  codigoBarra: yup.string().max(60, 'Código de barra no debe exceder 60 caracteres').optional(),
+  observaciones: yup.string().max(500, 'Observaciones no debe exceder 500 caracteres').optional(),
+  sitioWeb: yup.string().max(250, 'Sitio web no debe exceder 250 caracteres').optional(),
+  contactoNombre: yup.string().max(200, 'Contacto no debe exceder 200 caracteres').optional(),
+  contactoTelefono: yup.string().max(30, 'Teléfono contacto no debe exceder 30 caracteres').optional(),
+  telefono: yup.string().max(30, 'Teléfono no debe exceder 30 caracteres').optional(),
+  correoElectronico: yup.string().email('Correo electrónico no válido').max(120).optional(),
+  correosOpcionales: yup.string().max(250, 'Correos opcionales no debe exceder 250 caracteres').optional(),
+  puntosAcumulados: yup
+    .number()
+    .transform((v) => (Number.isNaN(v) ? 0 : v))
+    .min(0, 'Puntos acumulados debe ser mayor o igual a 0')
+    .optional(),
+  activo: yup.boolean().optional(),
+  habilitado: yup.boolean().optional(),
+  etiquetas: yup.array(yup.string().required().max(80, 'Etiqueta no debe exceder 80 caracteres')).optional(),
+  customerTypeId: yup.string().nullable().optional(),
+  zoneId: yup.string().nullable().optional(),
+  vendedorAsignadoId: yup.string().nullable().optional(),
+  addresses: yup.array(customerAddressSchema).optional(),
+});
+
+const barcodeSchema = yup.object({
+  codigoBarra: yup
+    .string()
+    .trim()
+    .required('Código de barras es obligatorio')
+    .max(60, 'Código de barra no debe exceder 60 caracteres'),
+});
+
+const tagsSchema = yup.object({
+  etiquetas: yup
+    .array(yup.string().required().max(80, 'Etiqueta no debe exceder 80 caracteres'))
+    .max(30, 'No debe exceder 30 etiquetas')
+    .required('Etiquetas son obligatorias'),
+});
+
+const importSchema = yup.object({
+  file: yup
+    .mixed<File>()
+    .required('Seleccione un archivo xlsx')
+    .test('xlsx', 'El archivo debe ser .xlsx', (v) => !!v && /\.xlsx$/i.test(v.name)),
+});
+
+const exportSchema = yup.object({
+  period: yup
+    .mixed<'all' | 'month' | 'between-months' | 'seller'>()
+    .oneOf(['all', 'month', 'between-months', 'seller'])
+    .required(),
+  month: yup.string().optional(),
+  fromMonth: yup.string().optional(),
+  toMonth: yup.string().optional(),
+  sellerId: yup.string().optional(),
+});
 
 @Component({
   selector: 'app-clientes',
@@ -264,15 +361,24 @@ export class ClientesComponent {
 
   protected readonly departmentOptions = computed<Option[]>(() => [
     { value: '', label: 'Seleccionar' },
-    ...(this.departmentsQuery.data() ?? []).map((x) => ({ value: x.id, label: x.name })),
+    ...(this.departmentsQuery.data() ?? []).map((x) => ({
+      value: x.id,
+      label: (x as { name?: string; nombre?: string }).name ?? (x as { nombre?: string }).nombre ?? x.id,
+    })),
   ]);
   protected readonly provinceOptions = computed<Option[]>(() => [
     { value: '', label: 'Seleccionar' },
-    ...(this.provincesQuery.data() ?? []).map((x) => ({ value: x.id, label: x.name })),
+    ...(this.provincesQuery.data() ?? []).map((x) => ({
+      value: x.id,
+      label: (x as { name?: string; nombre?: string }).name ?? (x as { nombre?: string }).nombre ?? x.id,
+    })),
   ]);
   protected readonly districtOptions = computed<Option[]>(() => [
     { value: '', label: 'Seleccionar' },
-    ...(this.districtsQuery.data() ?? []).map((x) => ({ value: x.id, label: x.name })),
+    ...(this.districtsQuery.data() ?? []).map((x) => ({
+      value: x.id,
+      label: (x as { name?: string; nombre?: string }).name ?? (x as { nombre?: string }).nombre ?? x.id,
+    })),
   ]);
 
   protected readonly saveMutation = injectMutation(() => ({
@@ -417,6 +523,7 @@ export class ClientesComponent {
     this.activeTab.set('datos');
     this.formOpen.set(true);
     this.resetForm();
+    void this.ensureUbigeoCatalogs();
   }
 
   protected openEditModal(row: CustomerItemDto) {
@@ -452,6 +559,7 @@ export class ClientesComponent {
       addresses: row.addresses,
     });
     this.extraAddresses.set(row.addresses.filter((x) => !x.esPrincipal));
+    void this.ensureUbigeoCatalogs();
   }
 
   protected closeFormModal() {
@@ -464,12 +572,8 @@ export class ClientesComponent {
     this.activeTab.set(tab as CustomerTab);
   }
 
-  protected submitForm() {
+  protected async submitForm() {
     const body = this.form();
-    if (!body.nombre?.trim() || !body.numeroDocumento?.trim()) {
-      this.notify.warning('Complete los campos obligatorios de Datos de Cliente.');
-      return;
-    }
     const mainAddress: CustomerAddressDto = {
       esPrincipal: true,
       pais: 'PERU',
@@ -485,6 +589,13 @@ export class ClientesComponent {
       ...body,
       addresses: [mainAddress, ...this.extraAddresses()],
     };
+
+    const validation = await this.validateCustomerPayload(payload);
+    if (validation.length) {
+      this.notify.warning(validation.join('\n'));
+      return;
+    }
+
     const id = this.editing()?.id;
     this.saveMutation.mutate({ id, body: payload });
   }
@@ -554,7 +665,13 @@ export class ClientesComponent {
   protected submitBarcode() {
     const row = this.selected();
     if (!row) return;
-    this.barcodeMutation.mutate({ id: row.id, codigoBarra: this.barcodeValue().trim() });
+    const codigoBarra = this.barcodeValue().trim();
+    const valid = this.validateBarcode(codigoBarra);
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
+      return;
+    }
+    this.barcodeMutation.mutate({ id: row.id, codigoBarra });
   }
 
   protected openTagsModal(row: CustomerItemDto) {
@@ -567,6 +684,11 @@ export class ClientesComponent {
     const row = this.selected();
     if (!row) return;
     const etiquetas = this.tagsValue().split(',').map((x) => x.trim()).filter(Boolean);
+    const valid = this.validateTags(etiquetas);
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
+      return;
+    }
     this.tagsMutation.mutate({ id: row.id, etiquetas });
   }
 
@@ -591,11 +713,12 @@ export class ClientesComponent {
 
   protected processImport() {
     const file = this.importFile();
-    if (!file) {
-      this.notify.warning('Seleccione un archivo xlsx');
+    const valid = this.validateImport(file);
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
       return;
     }
-    this.importMutation.mutate(file);
+    this.importMutation.mutate(file as File);
   }
 
   protected openExportModal() {
@@ -612,6 +735,11 @@ export class ClientesComponent {
   }
 
   protected async processExport() {
+    const valid = this.validateExport(this.exportForm());
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
+      return;
+    }
     try {
       const blob = await firstValueFrom(this.api.exportCustomers(this.exportForm()));
       this.downloadBlob(blob, 'clientes-export.xlsx');
@@ -696,5 +824,99 @@ export class ClientesComponent {
     a.download = fileName;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  private async validateCustomerPayload(payload: CreateCustomerRequest): Promise<string[]> {
+    try {
+      await customerCreateSchema.validate(payload, { abortEarly: false });
+      return [];
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        const messages = [...new Set(err.errors.map((x) => x.trim()).filter(Boolean))];
+        return messages.length ? messages : ['Formulario inválido.'];
+      }
+      return ['No se pudo validar el formulario.'];
+    }
+  }
+
+  private async ensureUbigeoCatalogs(): Promise<void> {
+    const dep = await this.departmentsQuery.refetch();
+    if (dep.isError) {
+      this.notify.error(httpErrorMessage(dep.error, 'No se pudo cargar departamentos.'));
+      return;
+    }
+    if (this.departmentId()) {
+      const prov = await this.provincesQuery.refetch();
+      if (prov.isError) {
+        this.notify.error(httpErrorMessage(prov.error, 'No se pudo cargar provincias.'));
+        return;
+      }
+    }
+    if (this.provinceId()) {
+      const dist = await this.districtsQuery.refetch();
+      if (dist.isError) {
+        this.notify.error(httpErrorMessage(dist.error, 'No se pudo cargar distritos.'));
+      }
+    }
+  }
+
+  private validateTags(etiquetas: string[]): { ok: boolean; message: string } {
+    try {
+      tagsSchema.validateSync({ etiquetas }, { abortEarly: false });
+      return { ok: true, message: '' };
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        return { ok: false, message: err.errors[0] ?? 'Etiquetas inválidas' };
+      }
+      return { ok: false, message: 'No se pudo validar etiquetas' };
+    }
+  }
+
+  private validateBarcode(codigoBarra: string): { ok: boolean; message: string } {
+    try {
+      barcodeSchema.validateSync({ codigoBarra }, { abortEarly: false });
+      return { ok: true, message: '' };
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        return { ok: false, message: err.errors[0] ?? 'Código de barra inválido' };
+      }
+      return { ok: false, message: 'No se pudo validar código de barra' };
+    }
+  }
+
+  private validateImport(file: File | null): { ok: boolean; message: string } {
+    try {
+      importSchema.validateSync({ file }, { abortEarly: false });
+      return { ok: true, message: '' };
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        return { ok: false, message: err.errors[0] ?? 'Archivo inválido' };
+      }
+      return { ok: false, message: 'No se pudo validar archivo' };
+    }
+  }
+
+  private validateExport(body: ExportCustomersRequest): { ok: boolean; message: string } {
+    try {
+      exportSchema.validateSync(body, { abortEarly: false });
+      const monthRegex = /^(0[1-9]|1[0-2])\/\d{4}$/;
+      if (body.period === 'month' && !monthRegex.test(body.month ?? '')) {
+        return { ok: false, message: 'Para "Por mes", ingrese Mes de en formato MM/YYYY.' };
+      }
+      if (body.period === 'between-months') {
+        if (!monthRegex.test(body.fromMonth ?? '') || !monthRegex.test(body.toMonth ?? '')) {
+          return { ok: false, message: 'Para "Entre meses", use formato MM/YYYY en ambos campos.' };
+        }
+      }
+      if (body.period === 'seller' && !body.sellerId?.trim()) {
+        return { ok: false, message: 'Para "Vendedor", seleccione un vendedor.' };
+      }
+      return { ok: true, message: '' };
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        return { ok: false, message: err.errors[0] ?? 'Parámetros de exportación inválidos' };
+      }
+      return { ok: false, message: 'No se pudo validar exportación' };
+    }
   }
 }
