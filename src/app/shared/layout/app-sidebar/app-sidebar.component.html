@@ -72,7 +72,7 @@
               @if (nav.subItems) {
                 <button
                   (click)="toggleSubmenu('main',i)"
-                  class="menu-item group cursor-pointer"
+                  class="menu-item group min-w-0 cursor-pointer"
                   [class.menu-item-active]="openSubmenu === 'main-' + i"
                   [class.menu-item-inactive]="openSubmenu !== 'main-' + i"
                   [ngClass]="{
@@ -93,7 +93,7 @@
                   @if ((isExpanded$ | async) || (isHovered$ | async) ||
                   (isMobileOpen$ | async)) {
 
-                  <span class="menu-item-text">
+                  <span class="menu-item-text truncate">
                     {{ nav.name }}
                   </span>
                   } 
@@ -136,52 +136,87 @@
                   }"
                 >
                   <ul class="mt-2 space-y-1 ml-9">
-                    @for (subItem of nav.subItems; track $index) {
+                    @for (subItem of nav.subItems; track $index; let j = $index) {
                     <li>
-                      <a
-                        [routerLink]="subItem.path"
-                        routerLinkActive=""
-                        (click)="onSubmenuClick()"
-                        class="menu-dropdown-item"
-                        [ngClass]="{
-                              'menu-dropdown-item-inactive': !isActive(subItem.path),
-                              'menu-dropdown-item-active': isActive(subItem.path),
-                            }"
-                      >
-                        {{ subItem.name }}
-                        <span class="flex items-center gap-1 ml-auto">
-                          @if (subItem.new) {
-                          <span
-                            class="menu-dropdown-badge"
+                      @if (subItem.subItems?.length) {
+                        <button
+                          type="button"
+                          class="menu-dropdown-item w-full min-w-0"
+                          [ngClass]="{
+                            'menu-dropdown-item-inactive': !isSubItemActive(subItem),
+                            'menu-dropdown-item-active': isSubItemActive(subItem)
+                          }"
+                          (click)="toggleNestedSubmenu('main-' + i, j)"
+                        >
+                          <span class="truncate">{{ subItem.name }}</span>
+                          <app-icon
+                            name="lucide:chevron-down"
+                            class="ml-auto h-4 w-4 transition-transform duration-200"
                             [ngClass]="{
-                              'menu-dropdown-badge-active': isActive(
-                                subItem.path
-                              ),
-                              'menu-dropdown-badge-inactive': !isActive(
-                                subItem.path
-                              )
+                              'rotate-180 text-brand-500': isNestedSubmenuOpen('main-' + i, j)
                             }"
-                          >
-                            new
+                          />
+                        </button>
+                        @if (isNestedSubmenuOpen('main-' + i, j)) {
+                          <ul class="ml-4 mt-1 space-y-1">
+                            @for (childItem of subItem.subItems; track $index) {
+                              @if (childItem.path) {
+                                <li>
+                                  <a
+                                    [routerLink]="childItem.path"
+                                    routerLinkActive=""
+                                    (click)="onSubmenuClick()"
+                                    class="menu-dropdown-item min-w-0"
+                                    [ngClass]="{
+                                      'menu-dropdown-item-inactive': !isSubItemActive(childItem),
+                                      'menu-dropdown-item-active': isSubItemActive(childItem)
+                                    }"
+                                  >
+                                    <span class="truncate">{{ childItem.name }}</span>
+                                  </a>
+                                </li>
+                              }
+                            }
+                          </ul>
+                        }
+                      } @else if (subItem.path) {
+                        <a
+                          [routerLink]="subItem.path"
+                          routerLinkActive=""
+                          (click)="onSubmenuClick()"
+                          class="menu-dropdown-item min-w-0"
+                          [ngClass]="{
+                            'menu-dropdown-item-inactive': !isSubItemActive(subItem),
+                            'menu-dropdown-item-active': isSubItemActive(subItem)
+                          }"
+                        >
+                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="flex items-center gap-1 ml-auto">
+                            @if (subItem.new) {
+                            <span
+                              class="menu-dropdown-badge"
+                              [ngClass]="{
+                                'menu-dropdown-badge-active': isSubItemActive(subItem),
+                                'menu-dropdown-badge-inactive': !isSubItemActive(subItem)
+                              }"
+                            >
+                              new
+                            </span>
+                            }
+                            @if (subItem.pro) {
+                            <span
+                              class="ml-auto menu-dropdown-badge-pro"
+                              [ngClass]="{
+                                'menu-dropdown-badge-pro-active': isSubItemActive(subItem),
+                                'menu-dropdown-badge-pro-inactive': !isSubItemActive(subItem)
+                              }"
+                            >
+                              pro
+                            </span>
+                            }
                           </span>
-                          }
-                          @if (subItem.pro) {
-                          <span
-                            class="ml-auto menu-dropdown-badge-pro"
-                            [ngClass]="{
-                              'menu-dropdown-badge-pro-active': isActive(
-                                subItem.path
-                              ),
-                              'menu-dropdown-badge-pro-inactive': !isActive(
-                                subItem.path
-                              )
-                            }"
-                          >
-                            pro
-                          </span>
-                          }
-                        </span>
-                      </a>
+                        </a>
+                      }
                     </li>
                     }
                   </ul>
@@ -191,7 +226,7 @@
                 <a
                   [routerLink]="nav.path"
                   routerLinkActive="menu-item-active"
-                  class="menu-item group"
+                  class="menu-item group min-w-0"
                   [ngClass]="{ 'menu-item-inactive': !isActive(nav.path) }"
                 >
                   <span
@@ -203,9 +238,7 @@
                   >
                     <app-icon [name]="nav.icon" iconClass="size-5" />
                   </span>
-                  <span
-                    class="menu-item-text"
-                  >
+                  <span class="menu-item-text truncate">
                     @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
                     {{ nav.name }}
                     }
@@ -251,7 +284,7 @@
               @if (nav.subItems) {
                 <button
                   (click)="toggleSubmenu('others',i)"
-                  class="menu-item group cursor-pointer"
+                  class="menu-item group min-w-0 cursor-pointer"
                   [ngClass]="{
                      'menu-item-active': openSubmenu === 'others-' + i,
                      'menu-item-inactive': openSubmenu !== 'others-' + i,
@@ -274,7 +307,7 @@
                   @if ((isExpanded$ | async) || (isHovered$ | async) ||
                   (isMobileOpen$ | async)) {
 
-                  <span class="menu-item-text">
+                  <span class="menu-item-text truncate">
                     {{ nav.name }}
                   </span>
                   } 
@@ -317,52 +350,87 @@
                   }"
                 >
                   <ul class="mt-2 space-y-1 ml-9">
-                    @for (subItem of nav.subItems; track $index) {
+                    @for (subItem of nav.subItems; track $index; let j = $index) {
                     <li>
-                      <a
-                        [routerLink]="subItem.path"
-                        routerLinkActive=""
-                        (click)="onSubmenuClick()"
-                        class="menu-dropdown-item"
-                        [ngClass]="{
-                              'menu-dropdown-item-inactive': !isActive(subItem.path),
-                              'menu-dropdown-item-active': isActive(subItem.path),
-                            }"
-                      >
-                        {{ subItem.name }}
-                        <span class="flex items-center gap-1 ml-auto">
-                          @if (subItem.new) {
-                          <span
-                            class="menu-dropdown-badge"
+                      @if (subItem.subItems?.length) {
+                        <button
+                          type="button"
+                          class="menu-dropdown-item w-full min-w-0"
+                          [ngClass]="{
+                            'menu-dropdown-item-inactive': !isSubItemActive(subItem),
+                            'menu-dropdown-item-active': isSubItemActive(subItem)
+                          }"
+                          (click)="toggleNestedSubmenu('others-' + i, j)"
+                        >
+                          <span class="truncate">{{ subItem.name }}</span>
+                          <app-icon
+                            name="lucide:chevron-down"
+                            class="ml-auto h-4 w-4 transition-transform duration-200"
                             [ngClass]="{
-                              'menu-dropdown-badge-active': isActive(
-                                subItem.path
-                              ),
-                              'menu-dropdown-badge-inactive': !isActive(
-                                subItem.path
-                              )
+                              'rotate-180 text-brand-500': isNestedSubmenuOpen('others-' + i, j)
                             }"
-                          >
-                            new
+                          />
+                        </button>
+                        @if (isNestedSubmenuOpen('others-' + i, j)) {
+                          <ul class="ml-4 mt-1 space-y-1">
+                            @for (childItem of subItem.subItems; track $index) {
+                              @if (childItem.path) {
+                                <li>
+                                  <a
+                                    [routerLink]="childItem.path"
+                                    routerLinkActive=""
+                                    (click)="onSubmenuClick()"
+                                    class="menu-dropdown-item min-w-0"
+                                    [ngClass]="{
+                                      'menu-dropdown-item-inactive': !isSubItemActive(childItem),
+                                      'menu-dropdown-item-active': isSubItemActive(childItem)
+                                    }"
+                                  >
+                                    <span class="truncate">{{ childItem.name }}</span>
+                                  </a>
+                                </li>
+                              }
+                            }
+                          </ul>
+                        }
+                      } @else if (subItem.path) {
+                        <a
+                          [routerLink]="subItem.path"
+                          routerLinkActive=""
+                          (click)="onSubmenuClick()"
+                          class="menu-dropdown-item min-w-0"
+                          [ngClass]="{
+                            'menu-dropdown-item-inactive': !isSubItemActive(subItem),
+                            'menu-dropdown-item-active': isSubItemActive(subItem)
+                          }"
+                        >
+                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="flex items-center gap-1 ml-auto">
+                            @if (subItem.new) {
+                            <span
+                              class="menu-dropdown-badge"
+                              [ngClass]="{
+                                'menu-dropdown-badge-active': isSubItemActive(subItem),
+                                'menu-dropdown-badge-inactive': !isSubItemActive(subItem)
+                              }"
+                            >
+                              new
+                            </span>
+                            }
+                            @if (subItem.pro) {
+                            <span
+                              class="ml-auto menu-dropdown-badge-pro"
+                              [ngClass]="{
+                                'menu-dropdown-badge-pro-active': isSubItemActive(subItem),
+                                'menu-dropdown-badge-pro-inactive': !isSubItemActive(subItem)
+                              }"
+                            >
+                              pro
+                            </span>
+                            }
                           </span>
-                          }
-                          @if (subItem.pro) {
-                          <span
-                            class="ml-auto menu-dropdown-badge-pro"
-                            [ngClass]="{
-                              'menu-dropdown-badge-pro-active': isActive(
-                                subItem.path
-                              ),
-                              'menu-dropdown-badge-pro-inactive': !isActive(
-                                subItem.path
-                              )
-                            }"
-                          >
-                            pro
-                          </span>
-                          }
-                        </span>
-                      </a>
+                        </a>
+                      }
                     </li>
                     }
                   </ul>
@@ -372,7 +440,7 @@
                 <a
                   [routerLink]="nav.path"
                   routerLinkActive="menu-item-active"
-                  class="menu-item group"
+                  class="menu-item group min-w-0"
                   [ngClass]="{ 'menu-item-inactive': !isActive(nav.path) }"
                 >
                   <span
@@ -384,9 +452,7 @@
                   >
                     <app-icon [name]="nav.icon" iconClass="size-5" />
                   </span>
-                  <span
-                    class="menu-item-text"
-                  >
+                  <span class="menu-item-text truncate">
                     @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
                     {{ nav.name }}
                     }
