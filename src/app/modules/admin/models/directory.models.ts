@@ -222,6 +222,24 @@ export interface CreateCategoryRequest {
 
 export type UpdateCategoryRequest = Partial<CreateCategoryRequest>;
 
+export interface BrandItemDto {
+  id: string;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BrandListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre';
+}
+
+export interface CreateBrandRequest {
+  nombre: string;
+}
+
+export type UpdateBrandRequest = Partial<CreateBrandRequest>;
+
 export type CustomerDocumentTypeDto =
   | 'DNI'
   | 'RUC'

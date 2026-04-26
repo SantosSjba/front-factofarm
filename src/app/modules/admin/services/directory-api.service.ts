@@ -5,6 +5,7 @@ import type {
   CreateCustomerRequest,
   CreateCustomerTypeRequest,
   CreateCategoryRequest,
+  CreateBrandRequest,
   CustomerCatalogOptionDto,
   CustomerImportResultDto,
   CustomerItemDto,
@@ -20,6 +21,8 @@ import type {
   CustomerTypeListFiltersRequest,
   CategoryItemDto,
   CategoryListFiltersRequest,
+  BrandItemDto,
+  BrandListFiltersRequest,
   EstablishmentOptionDto,
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
@@ -33,6 +36,7 @@ import type {
   UpdateCustomerRequest,
   UpdateCustomerTypeRequest,
   UpdateCategoryRequest,
+  UpdateBrandRequest,
   UpdateUserRequest,
   UserListItemDto,
 } from '../models/directory.models';
@@ -120,6 +124,26 @@ export class DirectoryApiService {
 
   deleteCategory(id: string) {
     return this.http.delete<void>(`${this.base}/categories/${id}`);
+  }
+
+  listBrands(filters?: BrandListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<BrandItemDto[]>(`${this.base}/brands`, { params });
+  }
+
+  createBrand(body: CreateBrandRequest) {
+    return this.http.post<BrandItemDto>(`${this.base}/brands`, body);
+  }
+
+  updateBrand(id: string, body: UpdateBrandRequest) {
+    return this.http.patch<BrandItemDto>(`${this.base}/brands/${id}`, body);
+  }
+
+  deleteBrand(id: string) {
+    return this.http.delete<void>(`${this.base}/brands/${id}`);
   }
 
   listCustomers(filters?: CustomerListFiltersRequest) {
