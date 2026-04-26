@@ -204,6 +204,24 @@ export interface CreateCustomerTypeRequest {
 
 export type UpdateCustomerTypeRequest = Partial<CreateCustomerTypeRequest>;
 
+export interface CategoryItemDto {
+  id: string;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CategoryListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre';
+}
+
+export interface CreateCategoryRequest {
+  nombre: string;
+}
+
+export type UpdateCategoryRequest = Partial<CreateCategoryRequest>;
+
 export type CustomerDocumentTypeDto =
   | 'DNI'
   | 'RUC'

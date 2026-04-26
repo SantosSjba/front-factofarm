@@ -4,6 +4,7 @@ import { environment } from '../../../../environments/environment';
 import type {
   CreateCustomerRequest,
   CreateCustomerTypeRequest,
+  CreateCategoryRequest,
   CustomerCatalogOptionDto,
   CustomerImportResultDto,
   CustomerItemDto,
@@ -17,6 +18,8 @@ import type {
   CreateUserRequest,
   CustomerTypeItemDto,
   CustomerTypeListFiltersRequest,
+  CategoryItemDto,
+  CategoryListFiltersRequest,
   EstablishmentOptionDto,
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
@@ -29,6 +32,7 @@ import type {
   UpdateEstablishmentRequest,
   UpdateCustomerRequest,
   UpdateCustomerTypeRequest,
+  UpdateCategoryRequest,
   UpdateUserRequest,
   UserListItemDto,
 } from '../models/directory.models';
@@ -96,6 +100,26 @@ export class DirectoryApiService {
 
   deleteCustomerType(id: string) {
     return this.http.delete<void>(`${this.base}/customer-types/${id}`);
+  }
+
+  listCategories(filters?: CategoryListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<CategoryItemDto[]>(`${this.base}/categories`, { params });
+  }
+
+  createCategory(body: CreateCategoryRequest) {
+    return this.http.post<CategoryItemDto>(`${this.base}/categories`, body);
+  }
+
+  updateCategory(id: string, body: UpdateCategoryRequest) {
+    return this.http.patch<CategoryItemDto>(`${this.base}/categories/${id}`, body);
+  }
+
+  deleteCategory(id: string) {
+    return this.http.delete<void>(`${this.base}/categories/${id}`);
   }
 
   listCustomers(filters?: CustomerListFiltersRequest) {
