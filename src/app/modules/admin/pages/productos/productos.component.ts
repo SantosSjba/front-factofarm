@@ -121,11 +121,12 @@ export class ProductosComponent {
   private readonly filesApi = inject(FilesApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private codigoLookupTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [{ label: 'Productos' }, { label: 'Productos' }];
 
   protected readonly searchTerm = signal('');
-  protected readonly filterField = signal<'all' | 'nombre' | 'codigoInterno' | 'descripcion'>('nombre');
+  protected readonly filterField = signal<NonNullable<ProductListFiltersRequest['field']>>('nombre');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 10;
 
@@ -177,6 +178,11 @@ export class ProductosComponent {
   protected readonly attributeTypesQuery = injectQuery(() => ({
     queryKey: [...productQueryKeys.catalogs, 'attrTypes'],
     queryFn: () => firstValueFrom(this.api.listProductCatalogAttributeTypes()),
+  }));
+
+  protected readonly iscSystemsQuery = injectQuery(() => ({
+    queryKey: [...productQueryKeys.catalogs, 'iscSystems'],
+    queryFn: () => firstValueFrom(this.api.listProductCatalogIscSystems()),
   }));
 
   protected readonly categoriesQuery = injectQuery(() => ({
@@ -270,6 +276,9 @@ export class ProductosComponent {
   protected readonly creatingCategory = signal(false);
   protected readonly creatingBrand = signal(false);
   protected readonly creatingLocation = signal(false);
+  protected readonly codigoLookupLoading = signal(false);
+  protected readonly codigoSuggestions = signal<ProductListItemDto[]>([]);
+  protected readonly codigoLookupDone = signal(false);
 
   protected readonly unitOptions = computed(() =>
     (this.unitsQuery.data() ?? []).map((u) => ({ value: u.id, label: `${u.nombre} (${u.codigo})` })),
@@ -310,11 +319,31 @@ export class ProductosComponent {
     (this.unitsQuery.data() ?? []).map((u) => ({ value: u.id, label: u.nombre })),
   );
 
+  protected readonly generalCatalogsLoading = computed(
+    () =>
+      this.unitsQuery.isPending() ||
+      this.currenciesQuery.isPending() ||
+      this.taxTypesQuery.isPending() ||
+      this.warehousesQuery.isPending() ||
+      this.iscSystemsQuery.isPending(),
+  );
+
+  protected readonly atributosCatalogsLoading = computed(
+    () =>
+      this.categoriesQuery.isPending() ||
+      this.brandsQuery.isPending() ||
+      this.locationsQuery.isPending() ||
+      this.attributeTypesQuery.isPending(),
+  );
+
   protected readonly precioDefectoOptions: { value: PresentationDefaultPriceDto; label: string }[] = [
     { value: 'PRECIO_1', label: 'Precio 1' },
     { value: 'PRECIO_2', label: 'Precio 2' },
     { value: 'PRECIO_3', label: 'Precio 3' },
   ];
+  protected readonly tipoSistemaIscOptions = computed(() =>
+    (this.iscSystemsQuery.data() ?? []).map((x) => ({ value: x.id, label: x.nombre })),
+  );
 
   protected readonly saveMutation = injectMutation(() => ({
     mutationFn: (body: CreateProductRequest) => firstValueFrom(this.api.createProduct(body)),
@@ -399,6 +428,29 @@ export class ProductosComponent {
     this.form.update((f) => ({ ...f, [key]: value }));
   }
 
+  protected onCodigoBusquedaInput(value: string) {
+    const codigo = String(value ?? '');
+    this.updateForm('codigoBusqueda', codigo);
+    this.codigoLookupDone.set(false);
+    this.codigoSuggestions.set([]);
+    if (this.codigoLookupTimer) clearTimeout(this.codigoLookupTimer);
+    const clean = codigo.trim();
+    if (clean.length < 2) return;
+    this.codigoLookupTimer = setTimeout(() => {
+      void this.buscarProductoPorCodigo(clean);
+    }, 350);
+  }
+
+  protected async buscarCodigoManual() {
+    const q = (this.form().codigoBusqueda ?? '').trim();
+    if (q.length < 2) return;
+    if (this.codigoLookupTimer) {
+      clearTimeout(this.codigoLookupTimer);
+      this.codigoLookupTimer = null;
+    }
+    await this.buscarProductoPorCodigo(q);
+  }
+
   protected openCreateModal() {
     this.activeTab.set('general');
     this.formOpen.set(true);
@@ -427,6 +479,12 @@ export class ProductosComponent {
     this.creatingCategory.set(false);
     this.creatingBrand.set(false);
     this.creatingLocation.set(false);
+    this.codigoLookupDone.set(false);
+    this.codigoSuggestions.set([]);
+    if (this.codigoLookupTimer) {
+      clearTimeout(this.codigoLookupTimer);
+      this.codigoLookupTimer = null;
+    }
     this.form.set({
       nombre: '',
       precioUnitarioVenta: 0,
@@ -451,6 +509,85 @@ export class ProductosComponent {
       imagenArchivoId: undefined,
     });
     this.applyCatalogDefaults();
+  }
+
+  private async buscarProductoPorCodigo(codigo: string) {
+    const q = codigo.trim();
+    if (!q) return;
+    this.codigoLookupLoading.set(true);
+    try {
+      const res = await firstValueFrom(
+        this.api.listProducts({
+          search: q,
+          field: 'all',
+          page: 1,
+          pageSize: 20,
+        }),
+      );
+      this.codigoLookupDone.set(true);
+      this.codigoSuggestions.set(res.items.slice(0, 8));
+      const target = q.toLowerCase();
+      const exacto =
+        res.items.find((x) => (x.codigoBusqueda ?? '').toLowerCase() === target) ??
+        res.items.find((x) => (x.codigoBarra ?? '').toLowerCase() === target) ??
+        res.items.find((x) => (x.codigoInterno ?? '').toLowerCase() === target) ??
+        null;
+      const row = exacto ?? (res.items.length === 1 ? res.items[0] : null);
+      if (row) this.applyLookupProduct(row, q);
+    } catch {
+      // No interrumpe el flujo de edición si falla la búsqueda rápida.
+    } finally {
+      this.codigoLookupLoading.set(false);
+    }
+  }
+
+  protected codigoSuggestionCode(row: ProductListItemDto): string {
+    return row.codigoBusqueda || row.codigoBarra || row.codigoInterno || '';
+  }
+
+  protected onCodigoSuggestionSelect(row: ProductListItemDto) {
+    const q = (this.form().codigoBusqueda ?? '').trim();
+    this.applyLookupProduct(row, q);
+  }
+
+  private applyLookupProduct(row: ProductListItemDto, fallbackCode: string) {
+    this.form.update((f) => ({
+      ...f,
+      codigoBusqueda: row.codigoBusqueda ?? row.codigoBarra ?? row.codigoInterno ?? f.codigoBusqueda ?? fallbackCode,
+      nombre: row.nombre || f.nombre,
+      descripcion: row.descripcion ?? f.descripcion,
+      principioActivo: row.principioActivo ?? f.principioActivo,
+      concentracion: row.concentracion ?? f.concentracion,
+      formaFarmaceutica: row.formaFarmaceutica ?? f.formaFarmaceutica,
+      codigoInterno: row.codigoInterno ?? f.codigoInterno,
+      codigoBarra: row.codigoBarra ?? f.codigoBarra,
+      codigoSunat: row.codigoSunat ?? f.codigoSunat,
+      codigoMedicamentoDigemid: row.codigoMedicamentoDigemid ?? f.codigoMedicamentoDigemid,
+      registroSanitario: row.registroSanitario ?? f.registroSanitario,
+      modelo: row.modelo ?? f.modelo,
+      lineaProducto: row.lineaProducto ?? f.lineaProducto,
+      marcaLaboratorio: row.marcaLaboratorio ?? f.marcaLaboratorio,
+      tipoSistemaIscId: row.tipoSistemaIscId ?? f.tipoSistemaIscId,
+      porcentajeIsc: row.porcentajeIsc != null ? Number.parseFloat(row.porcentajeIsc) : f.porcentajeIsc,
+      codigoLote: row.codigoLote ?? f.codigoLote,
+      fechaVencimientoLote: row.fechaVencimientoLote ?? f.fechaVencimientoLote,
+      numeroPuntos: row.numeroPuntos != null ? Number.parseFloat(row.numeroPuntos) : f.numeroPuntos,
+      saleTaxAffectationId: row.saleTaxAffectationId || f.saleTaxAffectationId,
+      purchaseTaxAffectationId: row.purchaseTaxAffectationId || f.purchaseTaxAffectationId,
+      categoryId: row.categoryId ?? f.categoryId,
+      brandId: row.brandId ?? f.brandId,
+      productLocationId: row.productLocationId ?? f.productLocationId,
+      unitId: row.unit?.id || f.unitId,
+      currencyId: row.currency?.id || f.currencyId,
+      precioUnitarioVenta: Number.parseFloat(row.precioUnitarioVenta) || f.precioUnitarioVenta,
+      precioUnitarioCompra:
+        row.precioUnitarioCompra != null ? Number.parseFloat(row.precioUnitarioCompra) : f.precioUnitarioCompra,
+      incluyeIgvVenta: row.incluyeIgvVenta,
+      incluyeIgvCompra: row.incluyeIgvCompra,
+      stockMinimo: row.stockMinimo ?? f.stockMinimo,
+    }));
+    this.codigoSuggestions.set([]);
+    this.notify.success('Datos cargados desde el código');
   }
 
   private applyCatalogDefaults() {
@@ -737,11 +874,31 @@ export class ProductosComponent {
         descripcion: r.descripcion.trim(),
       }));
 
+    if ((f.incluyeIscVenta || f.incluyeIscCompra) && !f.tipoSistemaIscId) {
+      this.notify.warning('Seleccione el tipo de sistema ISC.');
+      this.activeTab.set('compra');
+      return;
+    }
+
+    const porcentajeIscValue =
+      f.porcentajeIsc !== undefined && f.porcentajeIsc !== null && Number.isFinite(f.porcentajeIsc)
+        ? f.porcentajeIsc
+        : undefined;
+    const numeroPuntosValue =
+      f.numeroPuntos !== undefined && f.numeroPuntos !== null && Number.isFinite(f.numeroPuntos)
+        ? f.numeroPuntos
+        : undefined;
+
     const body: CreateProductRequest = {
       ...f,
       categoryId: f.categoryId || undefined,
       brandId: f.brandId || undefined,
       productLocationId: f.productLocationId || undefined,
+      codigoLote: f.manejaLotes ? f.codigoLote?.trim() || undefined : undefined,
+      fechaVencimientoLote: f.manejaLotes ? f.fechaVencimientoLote || undefined : undefined,
+      tipoSistemaIscId: f.incluyeIscVenta || f.incluyeIscCompra ? f.tipoSistemaIscId : undefined,
+      porcentajeIsc: f.incluyeIscVenta || f.incluyeIscCompra ? porcentajeIscValue : undefined,
+      numeroPuntos: f.sePuedeCanjearPorPuntos ? numeroPuntosValue : undefined,
       defaultWarehouseId: dw || undefined,
       warehousePrices: warehousePrices.length ? warehousePrices : undefined,
       warehouseStocks: warehouseStocks.length ? warehouseStocks : undefined,

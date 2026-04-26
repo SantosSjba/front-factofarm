@@ -32,6 +32,7 @@ import type {
   PermissionMenuNodeDto,
   ProductCatalogAttributeTypeDto,
   ProductCatalogCurrencyDto,
+  ProductCatalogIscSystemDto,
   ProductCatalogLocationDto,
   ProductCatalogTaxAffectationDto,
   ProductCatalogUnitDto,
@@ -317,6 +318,12 @@ export class DirectoryApiService {
   listProductCatalogAttributeTypes() {
     return this.http.get<ProductCatalogAttributeTypeDto[]>(
       `${this.base}/products/catalogs/attribute-types`,
+    );
+  }
+
+  listProductCatalogIscSystems() {
+    return this.http.get<ProductCatalogIscSystemDto[]>(
+      `${this.base}/products/catalogs/isc-systems`,
     );
   }
 

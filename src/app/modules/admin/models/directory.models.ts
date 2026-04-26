@@ -411,22 +411,45 @@ export interface ProductCatalogAttributeTypeDto {
   nombre: string;
 }
 
+export interface ProductCatalogIscSystemDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
 export interface ProductListItemDto {
   id: string;
   nombre: string;
   descripcion: string | null;
+  principioActivo: string | null;
+  concentracion: string | null;
+  formaFarmaceutica: string | null;
+  codigoBusqueda: string | null;
   codigoInterno: string | null;
+  codigoBarra: string | null;
   codigoSunat: string | null;
   modelo: string | null;
+  lineaProducto: string | null;
   registroSanitario: string | null;
   codigoMedicamentoDigemid: string | null;
+  saleTaxAffectationId: string;
+  purchaseTaxAffectationId: string;
   precioUnitarioVenta: string;
   precioUnitarioCompra: string | null;
   incluyeIgvVenta: boolean;
   incluyeIgvCompra: boolean;
+  tipoSistemaIscId: string | null;
+  tipoSistemaIscNombre: string | null;
+  porcentajeIsc: string | null;
+  codigoLote: string | null;
+  fechaVencimientoLote: string | null;
+  numeroPuntos: string | null;
   stockMinimo: number;
   marcaLaboratorio: string | null;
   marcaNombre: string | null;
+  categoryId: string | null;
+  brandId: string | null;
+  productLocationId: string | null;
   unit: ProductCatalogUnitDto;
   currency: ProductCatalogCurrencyDto;
   totalStock: string;
@@ -442,7 +465,7 @@ export interface ProductListResponseDto {
 
 export interface ProductListFiltersRequest {
   search?: string;
-  field?: 'all' | 'nombre' | 'codigoInterno' | 'descripcion';
+  field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';
   page?: number;
   pageSize?: number;
 }
@@ -503,8 +526,13 @@ export interface CreateProductRequest {
   manejaLotes?: boolean;
   incluyeIscVenta?: boolean;
   incluyeIscCompra?: boolean;
+  tipoSistemaIscId?: string;
+  porcentajeIsc?: number;
   sujetoDetraccion?: boolean;
   sePuedeCanjearPorPuntos?: boolean;
+  numeroPuntos?: number;
+  codigoLote?: string;
+  fechaVencimientoLote?: string;
   aplicaGanancia?: boolean;
   porcentajeGanancia?: number;
   costoUnitario?: number;
