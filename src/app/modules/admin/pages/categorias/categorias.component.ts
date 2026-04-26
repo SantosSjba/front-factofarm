@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -91,7 +91,7 @@ export class CategoriasComponent {
     mutationFn: (body: CreateCategoryRequest) => firstValueFrom(this.api.createCategory(body)),
     onSuccess: () => {
       this.notify.success('Categoría creada correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: categoryQueryKeys.all });
     },
     onError: (err) => {
@@ -104,7 +104,7 @@ export class CategoriasComponent {
       firstValueFrom(this.api.updateCategory(id, body)),
     onSuccess: () => {
       this.notify.success('Categoría actualizada correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: categoryQueryKeys.all });
     },
     onError: (err) => {
@@ -155,8 +155,8 @@ export class CategoriasComponent {
     this.modalOpen.set(true);
   }
 
-  protected closeFormModal() {
-    if (this.isSaving()) return;
+  protected closeFormModal(force = false) {
+    if (!force && this.isSaving()) return;
     this.modalOpen.set(false);
     this.editing.set(null);
     this.nombre.set('');

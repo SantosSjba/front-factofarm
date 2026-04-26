@@ -160,7 +160,7 @@ export class EstablecimientosComponent {
       firstValueFrom(this.api.createEstablishment(body)),
     onSuccess: () => {
       this.notify.success('Establecimiento creado correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.list() });
     },
     onError: (err) => {
@@ -173,7 +173,7 @@ export class EstablecimientosComponent {
       firstValueFrom(this.api.updateEstablishment(id, body)),
     onSuccess: () => {
       this.notify.success('Establecimiento actualizado correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.list() });
     },
     onError: (err) => {
@@ -196,11 +196,12 @@ export class EstablecimientosComponent {
   protected readonly createSeriesMutation = injectMutation(() => ({
     mutationFn: (input: { establishmentId: string; body: CreateEstablishmentSeriesRequest }) =>
       firstValueFrom(this.api.createEstablishmentSeries(input.establishmentId, input.body)),
-    onSuccess: () => {
+    onSuccess: async (_data, vars) => {
       this.notify.success('Serie agregada correctamente');
-      this.seriesNumero.set('');
-      this.seriesContingencia.set(false);
-      void this.invalidateSeries();
+      await this.queryClient.invalidateQueries({
+        queryKey: establishmentQueryKeys.series(vars.establishmentId),
+      });
+      this.closeSeriesModal();
     },
     onError: (err) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo agregar la serie'));
@@ -299,8 +300,8 @@ export class EstablecimientosComponent {
     this.modalOpen.set(true);
   }
 
-  protected closeFormModal() {
-    if (this.isSaving()) return;
+  protected closeFormModal(force = false) {
+    if (!force && this.isSaving()) return;
     this.modalOpen.set(false);
     this.editing.set(null);
     this.resetForm();

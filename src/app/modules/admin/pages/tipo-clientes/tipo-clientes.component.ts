@@ -91,7 +91,7 @@ export class TipoClientesComponent {
     mutationFn: (body: CreateCustomerTypeRequest) => firstValueFrom(this.api.createCustomerType(body)),
     onSuccess: () => {
       this.notify.success('Tipo de cliente creado correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: customerTypeQueryKeys.all });
     },
     onError: (err) => {
@@ -104,7 +104,7 @@ export class TipoClientesComponent {
       firstValueFrom(this.api.updateCustomerType(id, body)),
     onSuccess: () => {
       this.notify.success('Tipo de cliente actualizado correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: customerTypeQueryKeys.all });
     },
     onError: (err) => {
@@ -155,8 +155,8 @@ export class TipoClientesComponent {
     this.modalOpen.set(true);
   }
 
-  protected closeFormModal() {
-    if (this.isSaving()) return;
+  protected closeFormModal(force = false) {
+    if (!force && this.isSaving()) return;
     this.modalOpen.set(false);
     this.editing.set(null);
     this.descripcion.set('');

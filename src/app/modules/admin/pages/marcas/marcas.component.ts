@@ -91,7 +91,7 @@ export class MarcasComponent {
     mutationFn: (body: CreateBrandRequest) => firstValueFrom(this.api.createBrand(body)),
     onSuccess: () => {
       this.notify.success('Marca creada correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: brandQueryKeys.all });
     },
     onError: (err) => {
@@ -104,7 +104,7 @@ export class MarcasComponent {
       firstValueFrom(this.api.updateBrand(id, body)),
     onSuccess: () => {
       this.notify.success('Marca actualizada correctamente');
-      this.closeFormModal();
+      this.closeFormModal(true);
       void this.queryClient.invalidateQueries({ queryKey: brandQueryKeys.all });
     },
     onError: (err) => {
@@ -155,8 +155,8 @@ export class MarcasComponent {
     this.modalOpen.set(true);
   }
 
-  protected closeFormModal() {
-    if (this.isSaving()) return;
+  protected closeFormModal(force = false) {
+    if (!force && this.isSaving()) return;
     this.modalOpen.set(false);
     this.editing.set(null);
     this.nombre.set('');
