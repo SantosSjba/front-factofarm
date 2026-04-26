@@ -1,4 +1,4 @@
-﻿<div class="mb-5">
+<div class="mb-5">
   <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 </div>
 
@@ -567,6 +567,7 @@
               <th class="px-2 py-2">Precio 1</th>
               <th class="px-2 py-2">Precio 2</th>
               <th class="px-2 py-2">Precio 3</th>
+              <th class="px-2 py-2">Precio Puntos</th>
               <th class="px-2 py-2">P. Defecto</th>
               <th class="px-2 py-2"></th>
             </tr>
@@ -623,6 +624,13 @@
                   />
                 </td>
                 <td class="px-2 py-1">
+                  <app-input-field
+                    type="number"
+                    [value]="pr.precioPuntos"
+                    (valueChange)="patchPresentationRow(pr.uid, { precioPuntos: $event + '' })"
+                  />
+                </td>
+                <td class="px-2 py-1">
                   <app-form-select
                     [value]="pr.precioDefecto"
                     [options]="precioDefectoOptions"
@@ -646,14 +654,30 @@
       <button type="button" class="mt-2 text-sm font-medium text-brand-600 hover:underline" (click)="addPresentationRow()">
         + Agregar
       </button>
-      <div class="mt-4">
-        <app-label>Precio con Puntos</app-label>
-        <p class="mt-1 text-xs text-gray-500">Opcional por fila en la grilla (campo precio puntos).</p>
-      </div>
     }
 
     @if (activeTab() === 'atributos') {
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div>
+          <app-label>Imagen</app-label>
+          <div class="mt-2">
+            @if (productImageUploadError()) {
+              <p class="mb-2 text-xs text-error-500">{{ productImageUploadError() }}</p>
+            }
+            <div class="flex flex-wrap items-end gap-3">
+              <app-image-square-picker [previewUrl]="productImagePreview()" (fileSelected)="onProductImageFile($event)" />
+              @if (form().imagenArchivoId) {
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center rounded-lg border border-error-300 px-3 text-xs font-medium text-error-700 hover:bg-error-50"
+                  (click)="clearProductImage()"
+                >
+                  Quitar imagen
+                </button>
+              }
+            </div>
+          </div>
+        </div>
         <div>
           <app-label>Categoría</app-label>
           <app-form-select
@@ -662,6 +686,22 @@
             [options]="categoryOptions()"
             (valueChange)="updateForm('categoryId', $event || undefined)"
           />
+          <div class="mt-2 flex gap-2">
+            <app-input-field
+              className="flex-1"
+              [value]="newCategoryName()"
+              placeholder="Nueva categoría"
+              (valueChange)="newCategoryName.set($event + '')"
+            />
+            <button
+              type="button"
+              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+              [disabled]="creatingCategory()"
+              (click)="createCategoryQuick()"
+            >
+              {{ creatingCategory() ? 'Guardando...' : 'Agregar' }}
+            </button>
+          </div>
         </div>
         <div>
           <app-label>Marca/Laboratorio</app-label>
@@ -671,16 +711,24 @@
             [options]="brandOptions()"
             (valueChange)="updateForm('brandId', $event || undefined)"
           />
+          <div class="mt-2 flex gap-2">
+            <app-input-field
+              className="flex-1"
+              [value]="newBrandName()"
+              placeholder="Nueva marca"
+              (valueChange)="newBrandName.set($event + '')"
+            />
+            <button
+              type="button"
+              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+              [disabled]="creatingBrand()"
+              (click)="createBrandQuick()"
+            >
+              {{ creatingBrand() ? 'Guardando...' : 'Agregar' }}
+            </button>
+          </div>
         </div>
         <div>
-          <app-label>Texto marca (si no usa catálogo)</app-label>
-          <app-input-field
-            className="mt-2"
-            [value]="form().marcaLaboratorio ?? ''"
-            (valueChange)="updateForm('marcaLaboratorio', $event + '')"
-          />
-        </div>
-        <div class="md:col-span-3">
           <app-label>Ubicación</app-label>
           <app-form-select
             className="mt-2"
@@ -688,6 +736,22 @@
             [options]="locationOptions()"
             (valueChange)="updateForm('productLocationId', $event || undefined)"
           />
+          <div class="mt-2 flex gap-2">
+            <app-input-field
+              className="flex-1"
+              [value]="newLocationName()"
+              placeholder="Nueva ubicación"
+              (valueChange)="newLocationName.set($event + '')"
+            />
+            <button
+              type="button"
+              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+              [disabled]="creatingLocation()"
+              (click)="createLocationQuick()"
+            >
+              {{ creatingLocation() ? 'Guardando...' : 'Agregar' }}
+            </button>
+          </div>
         </div>
       </div>
       <div class="mt-6">

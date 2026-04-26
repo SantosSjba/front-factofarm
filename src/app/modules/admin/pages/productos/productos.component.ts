@@ -1,10 +1,11 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import * as yup from 'yup';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { productQueryKeys } from '../../../../core/query/product-query.keys';
+import { FilesApiService } from '../../../../core/services/files-api.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
@@ -14,6 +15,7 @@ import { PaginationComponent } from '../../../../shared/components/common/pagina
 import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
+import { ImageSquarePickerComponent } from '../../../../shared/components/form/image-square-picker/image-square-picker.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
@@ -106,6 +108,7 @@ const productSchema = yup.object({
     ModalTabHeaderComponent,
     ButtonComponent,
     FormSelectComponent,
+    ImageSquarePickerComponent,
     InputFieldComponent,
     LabelComponent,
     IconComponent,
@@ -115,6 +118,7 @@ const productSchema = yup.object({
 })
 export class ProductosComponent {
   private readonly api = inject(DirectoryApiService);
+  private readonly filesApi = inject(FilesApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
 
@@ -258,6 +262,14 @@ export class ProductosComponent {
   protected readonly presentationRows = signal<PresentationRow[]>([]);
   protected readonly attributeRows = signal<AttributeRow[]>([]);
   protected readonly formErrors = signal<Record<string, string>>({});
+  protected readonly productImagePreview = signal<string | null>(null);
+  protected readonly productImageUploadError = signal<string | null>(null);
+  protected readonly newCategoryName = signal('');
+  protected readonly newBrandName = signal('');
+  protected readonly newLocationName = signal('');
+  protected readonly creatingCategory = signal(false);
+  protected readonly creatingBrand = signal(false);
+  protected readonly creatingLocation = signal(false);
 
   protected readonly unitOptions = computed(() =>
     (this.unitsQuery.data() ?? []).map((u) => ({ value: u.id, label: `${u.nombre} (${u.codigo})` })),
@@ -407,6 +419,14 @@ export class ProductosComponent {
     this.warehousePrecioInputs.set({});
     this.presentationRows.set([]);
     this.attributeRows.set([]);
+    this.productImagePreview.set(null);
+    this.productImageUploadError.set(null);
+    this.newCategoryName.set('');
+    this.newBrandName.set('');
+    this.newLocationName.set('');
+    this.creatingCategory.set(false);
+    this.creatingBrand.set(false);
+    this.creatingLocation.set(false);
     this.form.set({
       nombre: '',
       precioUnitarioVenta: 0,
@@ -428,6 +448,7 @@ export class ProductosComponent {
       aplicaGanancia: false,
       porcentajeGanancia: 0,
       costoUnitario: 0,
+      imagenArchivoId: undefined,
     });
     this.applyCatalogDefaults();
   }
@@ -470,6 +491,7 @@ export class ProductosComponent {
   protected addPresentationRow() {
     const uid = crypto.randomUUID();
     const unitId = this.form().unitId || this.unitsQuery.data()?.find((u) => u.codigo === 'NIU')?.id || '';
+    const precioBase = Number(this.form().precioUnitarioVenta ?? 0);
     this.presentationRows.update((rows) => [
       ...rows,
       {
@@ -477,11 +499,11 @@ export class ProductosComponent {
         codigoBarra: '',
         unitId,
         descripcion: '',
-        factor: 0,
-        precio1: 0,
-        precio2: 0,
-        precio3: 0,
-        precioDefecto: 'PRECIO_2',
+        factor: 1,
+        precio1: precioBase,
+        precio2: precioBase,
+        precio3: precioBase,
+        precioDefecto: 'PRECIO_1',
         precioPuntos: '',
       },
     ]);
@@ -522,6 +544,104 @@ export class ProductosComponent {
 
   protected setWarehousePrecio(warehouseId: string, value: string) {
     this.warehousePrecioInputs.update((m) => ({ ...m, [warehouseId]: value }));
+  }
+
+  protected onProductImageFile(file: File) {
+    this.productImageUploadError.set(null);
+    this.updateForm('imagenArchivoId', undefined);
+    this.productImagePreview.set(null);
+    this.filesApi.upload(file).subscribe({
+      next: (res) => {
+        this.updateForm('imagenArchivoId', res.id);
+        this.productImagePreview.set(this.filesApi.absoluteFileUrl(res.url));
+      },
+      error: (err) => {
+        this.productImageUploadError.set('No se pudo subir la imagen. Verifique su sesión.');
+        this.notify.error(httpErrorMessage(err, 'Error al subir la imagen'));
+      },
+    });
+  }
+
+  protected clearProductImage() {
+    this.updateForm('imagenArchivoId', undefined);
+    this.productImagePreview.set(null);
+    this.productImageUploadError.set(null);
+  }
+
+  protected async createCategoryQuick() {
+    const nombre = this.newCategoryName().trim();
+    if (!nombre) {
+      this.notify.warning('Ingrese el nombre de la categoría.');
+      return;
+    }
+    if (this.creatingCategory()) return;
+    this.creatingCategory.set(true);
+    try {
+      const row = await firstValueFrom(this.api.createCategory({ nombre }));
+      this.newCategoryName.set('');
+      await this.categoriesQuery.refetch();
+      this.updateForm('categoryId', row.id);
+      this.notify.success('Categoría creada correctamente');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo crear la categoría'));
+    } finally {
+      this.creatingCategory.set(false);
+    }
+  }
+
+  protected async createBrandQuick() {
+    const nombre = this.newBrandName().trim();
+    if (!nombre) {
+      this.notify.warning('Ingrese el nombre de la marca.');
+      return;
+    }
+    if (this.creatingBrand()) return;
+    this.creatingBrand.set(true);
+    try {
+      const row = await firstValueFrom(this.api.createBrand({ nombre }));
+      this.newBrandName.set('');
+      await this.brandsQuery.refetch();
+      this.updateForm('brandId', row.id);
+      this.notify.success('Marca creada correctamente');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo crear la marca'));
+    } finally {
+      this.creatingBrand.set(false);
+    }
+  }
+
+  protected async createLocationQuick() {
+    const nombre = this.newLocationName().trim();
+    if (!nombre) {
+      this.notify.warning('Ingrese el nombre de la ubicación.');
+      return;
+    }
+    const establishmentId = this.resolveEstablishmentIdForLocation();
+    if (!establishmentId) {
+      this.notify.warning('Seleccione un almacén para identificar el establecimiento.');
+      this.activeTab.set('general');
+      return;
+    }
+    if (this.creatingLocation()) return;
+    this.creatingLocation.set(true);
+    try {
+      const row = await firstValueFrom(this.api.createProductLocation({ establishmentId, nombre }));
+      this.newLocationName.set('');
+      await this.locationsQuery.refetch();
+      this.updateForm('productLocationId', row.id);
+      this.notify.success('Ubicación creada correctamente');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo crear la ubicación'));
+    } finally {
+      this.creatingLocation.set(false);
+    }
+  }
+
+  private resolveEstablishmentIdForLocation(): string | null {
+    const warehouses = this.warehousesQuery.data() ?? [];
+    const selectedWarehouseId = this.defaultWarehouseId();
+    const selectedWarehouse = warehouses.find((w) => w.id === selectedWarehouseId);
+    return selectedWarehouse?.establishment.id ?? warehouses[0]?.establishment.id ?? null;
   }
 
   protected async submitProduct() {
@@ -577,6 +697,38 @@ export class ProductosComponent {
         precioDefecto: r.precioDefecto,
         precioPuntos: r.precioPuntos ? parseFloat(r.precioPuntos.replace(',', '.')) : undefined,
       }));
+
+    for (const p of presentations) {
+      if (!Number.isFinite(p.factor) || p.factor <= 0) {
+        this.notify.warning('En Presentaciones, el factor debe ser mayor a 0.');
+        this.activeTab.set('presentaciones');
+        return;
+      }
+      if (
+        !Number.isFinite(p.precio1) ||
+        !Number.isFinite(p.precio2) ||
+        !Number.isFinite(p.precio3) ||
+        p.precio1 < 0 ||
+        p.precio2 < 0 ||
+        p.precio3 < 0
+      ) {
+        this.notify.warning('En Presentaciones, los precios deben ser números válidos.');
+        this.activeTab.set('presentaciones');
+        return;
+      }
+      if (p.precio1 <= 0 && p.precio2 <= 0 && p.precio3 <= 0) {
+        this.notify.warning('En Presentaciones, al menos un precio debe ser mayor a 0.');
+        this.activeTab.set('presentaciones');
+        return;
+      }
+      const precioElegido =
+        p.precioDefecto === 'PRECIO_1' ? p.precio1 : p.precioDefecto === 'PRECIO_2' ? p.precio2 : p.precio3;
+      if (precioElegido <= 0) {
+        this.notify.warning('En Presentaciones, el precio por defecto debe ser mayor a 0.');
+        this.activeTab.set('presentaciones');
+        return;
+      }
+    }
 
     const attributes = this.attributeRows()
       .filter((r) => r.attributeTypeId && r.descripcion.trim())

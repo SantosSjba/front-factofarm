@@ -401,6 +401,11 @@ export interface ProductCatalogLocationDto {
   establishment: { id: string; nombre: string; codigo: string | null };
 }
 
+export interface CreateProductLocationRequest {
+  establishmentId: string;
+  nombre: string;
+}
+
 export interface ProductCatalogAttributeTypeDto {
   id: string;
   nombre: string;

@@ -6,6 +6,7 @@ import type {
   CreateCustomerTypeRequest,
   CreateCategoryRequest,
   CreateBrandRequest,
+  CreateProductLocationRequest,
   CustomerCatalogOptionDto,
   CustomerImportResultDto,
   CustomerItemDto,
@@ -307,6 +308,10 @@ export class DirectoryApiService {
 
   listProductCatalogLocations() {
     return this.http.get<ProductCatalogLocationDto[]>(`${this.base}/products/catalogs/product-locations`);
+  }
+
+  createProductLocation(body: CreateProductLocationRequest) {
+    return this.http.post<ProductCatalogLocationDto>(`${this.base}/products/catalogs/product-locations`, body);
   }
 
   listProductCatalogAttributeTypes() {
