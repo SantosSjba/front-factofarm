@@ -148,7 +148,7 @@
                           }"
                           (click)="toggleNestedSubmenu('main-' + i, j)"
                         >
-                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="truncate">- {{ subItem.name }}</span>
                           <app-icon
                             name="lucide:chevron-down"
                             class="ml-auto h-4 w-4 transition-transform duration-200"
@@ -172,7 +172,7 @@
                                       'menu-dropdown-item-active': isSubItemActive(childItem)
                                     }"
                                   >
-                                    <span class="truncate">{{ childItem.name }}</span>
+                                    <span class="truncate">- {{ childItem.name }}</span>
                                   </a>
                                 </li>
                               }
@@ -190,7 +190,7 @@
                             'menu-dropdown-item-active': isSubItemActive(subItem)
                           }"
                         >
-                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="truncate">- {{ subItem.name }}</span>
                           <span class="flex items-center gap-1 ml-auto">
                             @if (subItem.new) {
                             <span
@@ -362,7 +362,7 @@
                           }"
                           (click)="toggleNestedSubmenu('others-' + i, j)"
                         >
-                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="truncate">- {{ subItem.name }}</span>
                           <app-icon
                             name="lucide:chevron-down"
                             class="ml-auto h-4 w-4 transition-transform duration-200"
@@ -404,7 +404,7 @@
                             'menu-dropdown-item-active': isSubItemActive(subItem)
                           }"
                         >
-                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="truncate">- {{ subItem.name }}</span>
                           <span class="flex items-center gap-1 ml-auto">
                             @if (subItem.new) {
                             <span

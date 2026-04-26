@@ -251,6 +251,7 @@ export class AppSidebarComponent {
   toggleNestedSubmenu(parentKey: string, index: number) {
     const key = this.getNestedSubmenuKey(parentKey, index);
     this.nestedSubmenuOpen[key] = !this.nestedSubmenuOpen[key];
+    this.updateSubmenuHeight(parentKey);
   }
 
   toggleSubmenu(section: string, index: number) {
@@ -261,14 +262,7 @@ export class AppSidebarComponent {
       this.subMenuHeights[key] = 0;
     } else {
       this.openSubmenu = key;
-
-      setTimeout(() => {
-        const el = document.getElementById(key);
-        if (el) {
-          this.subMenuHeights[key] = el.scrollHeight;
-          this.cdr.detectChanges(); // Ensure UI updates
-        }
-      });
+      this.updateSubmenuHeight(key);
     }
   }
 
@@ -296,14 +290,7 @@ export class AppSidebarComponent {
               if (subItem.subItems?.length) {
                 this.nestedSubmenuOpen[this.getNestedSubmenuKey(key, subIndex)] = true;
               }
-
-              setTimeout(() => {
-                const el = document.getElementById(key);
-                if (el) {
-                  this.subMenuHeights[key] = el.scrollHeight;
-                  this.cdr.detectChanges(); // Ensure UI updates
-                }
-              });
+              this.updateSubmenuHeight(key);
             }
           });
         }
@@ -313,6 +300,15 @@ export class AppSidebarComponent {
 
   private getNestedSubmenuKey(parentKey: string, index: number): string {
     return `${parentKey}-nested-${index}`;
+  }
+
+  private updateSubmenuHeight(key: string) {
+    setTimeout(() => {
+      const el = document.getElementById(key);
+      if (!el) return;
+      this.subMenuHeights[key] = el.scrollHeight;
+      this.cdr.detectChanges();
+    });
   }
 
   onSubmenuClick() {
