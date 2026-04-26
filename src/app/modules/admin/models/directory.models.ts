@@ -368,3 +368,149 @@ export interface ExportCustomersRequest {
   toMonth?: string;
   sellerId?: string;
 }
+
+export type PresentationDefaultPriceDto = 'PRECIO_1' | 'PRECIO_2' | 'PRECIO_3';
+
+export interface ProductCatalogUnitDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ProductCatalogCurrencyDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ProductCatalogTaxAffectationDto {
+  id: string;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface ProductCatalogWarehouseDto {
+  id: string;
+  nombre: string;
+  establishment: { id: string; nombre: string; codigo: string | null };
+}
+
+export interface ProductCatalogLocationDto {
+  id: string;
+  nombre: string;
+  establishment: { id: string; nombre: string; codigo: string | null };
+}
+
+export interface ProductCatalogAttributeTypeDto {
+  id: string;
+  nombre: string;
+}
+
+export interface ProductListItemDto {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  codigoInterno: string | null;
+  codigoSunat: string | null;
+  modelo: string | null;
+  registroSanitario: string | null;
+  codigoMedicamentoDigemid: string | null;
+  precioUnitarioVenta: string;
+  precioUnitarioCompra: string | null;
+  incluyeIgvVenta: boolean;
+  incluyeIgvCompra: boolean;
+  stockMinimo: number;
+  marcaLaboratorio: string | null;
+  marcaNombre: string | null;
+  unit: ProductCatalogUnitDto;
+  currency: ProductCatalogCurrencyDto;
+  totalStock: string;
+}
+
+export interface ProductListResponseDto {
+  items: ProductListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ProductListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre' | 'codigoInterno' | 'descripcion';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProductWarehousePriceInput {
+  warehouseId: string;
+  precio: number;
+}
+
+export interface ProductWarehouseStockInput {
+  warehouseId: string;
+  cantidad: number;
+}
+
+export interface ProductPresentationInput {
+  codigoBarra?: string;
+  unitId: string;
+  descripcion?: string;
+  factor?: number;
+  precio1?: number;
+  precio2?: number;
+  precio3?: number;
+  precioDefecto?: PresentationDefaultPriceDto;
+  precioPuntos?: number;
+}
+
+export interface ProductAttributeInput {
+  attributeTypeId: string;
+  descripcion: string;
+}
+
+export interface CreateProductRequest {
+  nombre: string;
+  descripcion?: string;
+  principioActivo?: string;
+  concentracion?: string;
+  registroSanitario?: string;
+  formaFarmaceutica?: string;
+  codigoBusqueda?: string;
+  codigoInterno?: string;
+  codigoBarra?: string;
+  codigoSunat?: string;
+  codigoMedicamentoDigemid?: string;
+  lineaProducto?: string;
+  modelo?: string;
+  marcaLaboratorio?: string;
+  unitId: string;
+  currencyId: string;
+  saleTaxAffectationId: string;
+  purchaseTaxAffectationId?: string;
+  precioUnitarioVenta: number;
+  precioUnitarioCompra?: number;
+  incluyeIgvVenta?: boolean;
+  incluyeIgvCompra?: boolean;
+  generico?: boolean;
+  necesitaRecetaMedica?: boolean;
+  calcularCantidadPorPrecio?: boolean;
+  manejaLotes?: boolean;
+  incluyeIscVenta?: boolean;
+  incluyeIscCompra?: boolean;
+  sujetoDetraccion?: boolean;
+  sePuedeCanjearPorPuntos?: boolean;
+  aplicaGanancia?: boolean;
+  porcentajeGanancia?: number;
+  costoUnitario?: number;
+  stockMinimo?: number;
+  categoryId?: string;
+  brandId?: string;
+  productLocationId?: string;
+  defaultWarehouseId?: string;
+  imagenArchivoId?: string;
+  warehousePrices?: ProductWarehousePriceInput[];
+  warehouseStocks?: ProductWarehouseStockInput[];
+  presentations?: ProductPresentationInput[];
+  attributes?: ProductAttributeInput[];
+}

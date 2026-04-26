@@ -27,7 +27,17 @@ import type {
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
   ExportCustomersRequest,
+  CreateProductRequest,
   PermissionMenuNodeDto,
+  ProductCatalogAttributeTypeDto,
+  ProductCatalogCurrencyDto,
+  ProductCatalogLocationDto,
+  ProductCatalogTaxAffectationDto,
+  ProductCatalogUnitDto,
+  ProductCatalogWarehouseDto,
+  ProductListFiltersRequest,
+  ProductListItemDto,
+  ProductListResponseDto,
   UbigeoDepartmentDto,
   UbigeoDistrictDto,
   UbigeoProvinceDto,
@@ -275,5 +285,47 @@ export class DirectoryApiService {
     return this.http.get<PermissionMenuNodeDto | null>(
       `${this.base}/permissions/menu-tree`,
     );
+  }
+
+  listProductCatalogUnits() {
+    return this.http.get<ProductCatalogUnitDto[]>(`${this.base}/products/catalogs/units`);
+  }
+
+  listProductCatalogCurrencies() {
+    return this.http.get<ProductCatalogCurrencyDto[]>(`${this.base}/products/catalogs/currencies`);
+  }
+
+  listProductCatalogTaxAffectationTypes() {
+    return this.http.get<ProductCatalogTaxAffectationDto[]>(
+      `${this.base}/products/catalogs/tax-affectation-types`,
+    );
+  }
+
+  listProductCatalogWarehouses() {
+    return this.http.get<ProductCatalogWarehouseDto[]>(`${this.base}/products/catalogs/warehouses`);
+  }
+
+  listProductCatalogLocations() {
+    return this.http.get<ProductCatalogLocationDto[]>(`${this.base}/products/catalogs/product-locations`);
+  }
+
+  listProductCatalogAttributeTypes() {
+    return this.http.get<ProductCatalogAttributeTypeDto[]>(
+      `${this.base}/products/catalogs/attribute-types`,
+    );
+  }
+
+  listProducts(filters?: ProductListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<ProductListResponseDto>(`${this.base}/products`, { params });
+  }
+
+  createProduct(body: CreateProductRequest) {
+    return this.http.post<ProductListItemDto>(`${this.base}/products`, body);
   }
 }
