@@ -2,47 +2,25 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, QueryList, ViewChildren, ChangeDetectorRef } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import { SafeHtmlPipe } from '../../pipe/safe-html.pipe';
+import { IconComponent } from '../../components/ui/icon/icon.component';
 import { combineLatest, Subscription } from 'rxjs';
-
-type NavItem = {
-  name: string;
-  icon: string;
-  path?: string;
-  new?: boolean;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
-};
+import { MAIN_NAV_ITEMS, NavItem, NavSubItem } from './sidebar-menu.config';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule, RouterModule, SafeHtmlPipe],
+  imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './app-sidebar.component.html',
 })
 export class AppSidebarComponent {
 
-  /** Solo FactoFarm: usuarios y establecimientos. */
-  navItems: NavItem[] = [
-    {
-      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 9L12 2L21 9V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 22V12H15V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-      name: 'Dashboard',
-      subItems: [
-        { name: 'Dashboard Admin', path: '/dashboard' },
-      ]
-    },
-    {
-      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-      name: 'Usuarios & Series',
-      subItems: [
-        { name: 'Usuarios', path: '/usuarios' },
-        { name: 'Establecimientos', path: '/establecimientos' },
-      ],
-    }
-  ];
+  /** Menú principal FactoFarm. */
+  navItems: NavItem[] = MAIN_NAV_ITEMS;
 
   othersItems: NavItem[] = [];
 
   openSubmenu: string | null | number = null;
   subMenuHeights: { [key: string]: number } = {};
+  nestedSubmenuOpen: Record<string, boolean> = {};
   @ViewChildren('subMenu') subMenuRefs!: QueryList<ElementRef>;
 
   readonly isExpanded$;
@@ -102,6 +80,21 @@ export class AppSidebarComponent {
     return this.router.url === path;
   }
 
+  isSubItemActive(subItem: NavSubItem): boolean {
+    if (subItem.path && this.isActive(subItem.path)) return true;
+    return (subItem.subItems ?? []).some((child) => this.isSubItemActive(child));
+  }
+
+  isNestedSubmenuOpen(parentKey: string, index: number): boolean {
+    return this.nestedSubmenuOpen[this.getNestedSubmenuKey(parentKey, index)] ?? false;
+  }
+
+  toggleNestedSubmenu(parentKey: string, index: number) {
+    const key = this.getNestedSubmenuKey(parentKey, index);
+    this.nestedSubmenuOpen[key] = !this.nestedSubmenuOpen[key];
+    this.updateSubmenuHeight(parentKey);
+  }
+
   toggleSubmenu(section: string, index: number) {
     const key = `${section}-${index}`;
 
@@ -110,14 +103,7 @@ export class AppSidebarComponent {
       this.subMenuHeights[key] = 0;
     } else {
       this.openSubmenu = key;
-
-      setTimeout(() => {
-        const el = document.getElementById(key);
-        if (el) {
-          this.subMenuHeights[key] = el.scrollHeight;
-          this.cdr.detectChanges(); // Ensure UI updates
-        }
-      });
+      this.updateSubmenuHeight(key);
     }
   }
 
@@ -138,22 +124,31 @@ export class AppSidebarComponent {
     menuGroups.forEach(group => {
       group.items.forEach((nav, i) => {
         if (nav.subItems) {
-          nav.subItems.forEach(subItem => {
-            if (currentUrl === subItem.path) {
+          nav.subItems.forEach((subItem, subIndex) => {
+            if (this.isSubItemActive(subItem)) {
               const key = `${group.prefix}-${i}`;
               this.openSubmenu = key;
-
-              setTimeout(() => {
-                const el = document.getElementById(key);
-                if (el) {
-                  this.subMenuHeights[key] = el.scrollHeight;
-                  this.cdr.detectChanges(); // Ensure UI updates
-                }
-              });
+              if (subItem.subItems?.length) {
+                this.nestedSubmenuOpen[this.getNestedSubmenuKey(key, subIndex)] = true;
+              }
+              this.updateSubmenuHeight(key);
             }
           });
         }
       });
+    });
+  }
+
+  private getNestedSubmenuKey(parentKey: string, index: number): string {
+    return `${parentKey}-nested-${index}`;
+  }
+
+  private updateSubmenuHeight(key: string) {
+    setTimeout(() => {
+      const el = document.getElementById(key);
+      if (!el) return;
+      this.subMenuHeights[key] = el.scrollHeight;
+      this.cdr.detectChanges();
     });
   }
 

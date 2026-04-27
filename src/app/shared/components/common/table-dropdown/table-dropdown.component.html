@@ -2,10 +2,10 @@
   <div #buttonRef (click)="toggle()">
     <ng-content select="[dropdown-button]"></ng-content>
   </div>
-  <div class="z-10" #contentRef>
+  <div class="z-[999]" #contentRef>
     <div 
       [ngStyle]="{ display: isOpen ? 'block' : 'none' }" 
-      class="p-2 bg-white border border-gray-200 rounded-2xl shadow-lg dark:border-gray-800 dark:bg-gray-900 w-40"
+      class="w-44 rounded-2xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
       role="menu"
       aria-orientation="vertical"
       aria-labelledby="options-menu"

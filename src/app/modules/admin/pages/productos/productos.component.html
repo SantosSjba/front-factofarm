@@ -1,0 +1,959 @@
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
+</div>
+
+<app-page-toolbar>
+  <h1
+    data-toolbar-title
+    class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
+  >
+    Productos
+  </h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-table-dropdown>
+      <div dropdown-button>
+        <button
+          type="button"
+          class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
+          (click)="noopAction()"
+        >
+          <app-icon name="mdi:download" width="18" height="18" />
+          <span>Exportar</span>
+          <app-icon name="mdi:chevron-down" width="18" height="18" />
+        </button>
+      </div>
+      <div dropdown-content>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
+          (click)="noopAction()"
+        >
+          Próximamente
+        </button>
+      </div>
+    </app-table-dropdown>
+    <app-table-dropdown>
+      <div dropdown-button>
+        <button
+          type="button"
+          class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
+          (click)="noopAction()"
+        >
+          <app-icon name="mdi:upload" width="18" height="18" />
+          <span>Importar</span>
+          <app-icon name="mdi:chevron-down" width="18" height="18" />
+        </button>
+      </div>
+      <div dropdown-content>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
+          (click)="noopAction()"
+        >
+          Próximamente
+        </button>
+      </div>
+    </app-table-dropdown>
+    <app-button size="sm" (btnClick)="openCreateModal()">
+      <app-icon name="mdi:plus" width="18" height="18" />
+      <span class="leading-none">Nuevo</span>
+    </app-button>
+  </div>
+</app-page-toolbar>
+
+@if (listQuery.isError()) {
+  <div
+    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+    role="alert"
+  >
+    No se pudo cargar el listado.
+    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
+  </div>
+}
+
+<app-list-filters
+  [searchValue]="searchTerm()"
+  [selectValue]="filterField()"
+  [selectOptions]="fieldFilterOptions"
+  searchPlaceholder="Buscar"
+  selectPlaceholder="Filtrar por"
+  clearLabel="Limpiar"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onFieldChange($event)"
+  (clear)="clearFilters()"
+/>
+
+<app-component-card title="Listado de productos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <div class="px-4 pt-4">
+    <div class="flex justify-end">
+      <app-table-dropdown>
+        <div dropdown-button>
+          <button
+            type="button"
+            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600"
+          >
+            <span>Mostrar/Ocultar columnas</span>
+            <app-icon name="mdi:chevron-down" width="18" height="18" />
+          </button>
+        </div>
+        <div dropdown-content>
+          @for (col of columns; track col.key) {
+            <label
+              class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+            >
+              <input type="checkbox" [checked]="isVisible(col.key)" (change)="toggleColumn(col.key)" />
+              <span>{{ col.label }}</span>
+            </label>
+          }
+        </div>
+      </app-table-dropdown>
+    </div>
+  </div>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-left text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">ID</th>
+            @if (isVisible('codigoInterno')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Cód. Interno</th>
+            }
+            @if (isVisible('unidad')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Unidad</th>
+            }
+            @if (isVisible('nombre')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Nombre</th>
+            }
+            @if (isVisible('descripcion')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Descripción</th>
+            }
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Historial</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Stock</th>
+            @if (isVisible('stockMinimo')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Stock Mínimo</th>
+            }
+            @if (isVisible('totalStock')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">T. Stock</th>
+            }
+            @if (isVisible('precioVenta')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">P. Unitario (Venta)</th>
+            }
+            @if (isVisible('tieneIgvVenta')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tiene Igv (Venta)</th>
+            }
+            @if (isVisible('codigoSunat')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Cód. SUNAT</th>
+            }
+            @if (isVisible('precioCompra')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">P.Unitario (Compra)</th>
+            }
+            @if (isVisible('tieneIgvCompra')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tiene Igv (Compra)</th>
+            }
+            @if (isVisible('modelo')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Modelo</th>
+            }
+            @if (isVisible('marca')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Marca/Laboratorio</th>
+            }
+            @if (isVisible('registroSanitario')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Nº Sanitario</th>
+            }
+            @if (isVisible('digemid')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">DIGEMID</th>
+            }
+            @if (isVisible('precioVentaConIgv')) {
+              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">P. venta + IGV</th>
+            }
+            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of products(); track row.id; let i = $index) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+                {{ (currentPage() - 1) * itemsPerPage + i + 1 }}
+              </td>
+              <td class="px-5 py-4 font-mono text-theme-xs text-gray-700 dark:text-gray-300">{{ row.id }}</td>
+              @if (isVisible('codigoInterno')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoInterno || '—' }}</td>
+              }
+              @if (isVisible('unidad')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.unit.codigo }}</td>
+              }
+              @if (isVisible('nombre')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
+              }
+              @if (isVisible('descripcion')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.descripcion || '—' }}</td>
+              }
+              <td class="px-5 py-4">
+                <button
+                  type="button"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
+                  (click)="noopAction()"
+                  title="Historial (próximamente)"
+                >
+                  <app-icon name="mdi:history" width="18" height="18" />
+                </button>
+              </td>
+              <td class="px-5 py-4">
+                <button
+                  type="button"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
+                  (click)="noopAction()"
+                  title="Stock (próximamente)"
+                >
+                  <app-icon name="mdi:magnify" width="18" height="18" />
+                </button>
+              </td>
+              @if (isVisible('stockMinimo')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.stockMinimo }}</td>
+              }
+              @if (isVisible('totalStock')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.totalStock }}</td>
+              }
+              @if (isVisible('precioVenta')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ formatSalePrice(row) }}</td>
+              }
+              @if (isVisible('tieneIgvVenta')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ siNo(row.incluyeIgvVenta) }}</td>
+              }
+              @if (isVisible('codigoSunat')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoSunat || '—' }}</td>
+              }
+              @if (isVisible('precioCompra')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ formatPurchasePrice(row) }}</td>
+              }
+              @if (isVisible('tieneIgvCompra')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ siNo(row.incluyeIgvCompra) }}</td>
+              }
+              @if (isVisible('modelo')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.modelo || '—' }}</td>
+              }
+              @if (isVisible('marca')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ marcaLabel(row) }}</td>
+              }
+              @if (isVisible('registroSanitario')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.registroSanitario || '—' }}</td>
+              }
+              @if (isVisible('digemid')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoMedicamentoDigemid || '—' }}</td>
+              }
+              @if (isVisible('precioVentaConIgv')) {
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ precioVentaConIgvDisplay(row) }}</td>
+              }
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <button
+                        type="button"
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                      >
+                        <app-icon name="mdi:dots-vertical" width="18" height="18" />
+                      </button>
+                    </div>
+                    <div dropdown-content>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
+                        (click)="noopAction()"
+                      >
+                        Editar (próximamente)
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
+                        (click)="noopAction()"
+                      >
+                        Eliminar (próximamente)
+                      </button>
+                    </div>
+                  </app-table-dropdown>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="24" class="px-5 py-8 text-center text-theme-sm text-gray-500">
+                @if (listQuery.isPending()) {
+                  Cargando...
+                } @else {
+                  No hay productos registrados.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-pagination
+  [totalItems]="totalRows()"
+  [currentPage]="currentPage()"
+  [pageSize]="itemsPerPage"
+  (currentPageChange)="onPageChange($event)"
+/>
+
+<app-modal
+  [isOpen]="formOpen()"
+  (close)="closeFormModal()"
+  className="w-full max-w-6xl shadow-theme-lg"
+  maxHeightClass="max-h-[min(95dvh,920px)]"
+  bodyClass="custom-scrollbar"
+>
+  <div data-modal-header class="shrink-0">
+    <app-modal-tab-header
+      title="Nuevo Producto"
+      [tabs]="productTabs"
+      [activeId]="activeTab()"
+      (tabChange)="setTab($event)"
+    />
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    @if (activeTab() === 'general') {
+      @if (generalCatalogsLoading()) {
+        <p class="mb-3 text-xs text-gray-500">Cargando catálogos de General...</p>
+      }
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <app-checkbox
+          [checked]="!!form().incluyeIgvVenta"
+          (checkedChange)="updateForm('incluyeIgvVenta', $event)"
+          label="Incluye Igv"
+        />
+        <app-checkbox [checked]="!!form().generico" (checkedChange)="updateForm('generico', $event)" label="Genérico?" />
+        <app-checkbox
+          [checked]="!!form().necesitaRecetaMedica"
+          (checkedChange)="updateForm('necesitaRecetaMedica', $event)"
+          label="Necesita receta médica?"
+        />
+        <app-checkbox
+          [checked]="!!form().calcularCantidadPorPrecio"
+          (checkedChange)="updateForm('calcularCantidadPorPrecio', $event)"
+          label="Calcular cantidad por precio"
+        />
+      </div>
+      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="md:col-span-2">
+          <app-label>Código</app-label>
+          <div class="relative mt-2">
+            <div class="flex items-center gap-2">
+              <app-input-field
+                className="flex-1"
+                [value]="form().codigoBusqueda ?? ''"
+                placeholder="Ingresa el código a buscar"
+                (valueChange)="onCodigoBusquedaInput($event + '')"
+              />
+              <button
+                type="button"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                [disabled]="codigoLookupLoading()"
+                (click)="buscarCodigoManual()"
+                title="Buscar"
+              >
+                <app-icon name="mdi:magnify" width="18" height="18" />
+              </button>
+            </div>
+            @if (codigoSuggestions().length > 0) {
+              <div class="absolute left-0 right-0 z-20 mt-1 max-h-72 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                @for (row of codigoSuggestions(); track row.id) {
+                  <button
+                    type="button"
+                    class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    (click)="onCodigoSuggestionSelect(row)"
+                  >
+                    {{ codigoSuggestionCode(row) }} - {{ row.nombre }}
+                  </button>
+                }
+              </div>
+            } @else if (codigoLookupDone() && !codigoLookupLoading() && (form().codigoBusqueda ?? '').trim().length >= 2) {
+              <div class="absolute left-0 right-0 z-20 mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-lg">
+                No se encontraron coincidencias para ese código.
+              </div>
+            }
+          </div>
+          @if (codigoLookupLoading()) {
+            <p class="mt-1 text-xs text-gray-500">Buscando datos del producto...</p>
+          }
+        </div>
+        <div class="md:col-span-2">
+          <app-label>Nombre *</app-label>
+          <app-input-field className="mt-2" [value]="form().nombre" (valueChange)="updateForm('nombre', $event + '')" />
+          @if (formErrors()['nombre']) {
+            <p class="mt-1 text-xs text-error-500">{{ formErrors()['nombre'] }}</p>
+          }
+        </div>
+        <div>
+          <app-label>Principio Activo</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().principioActivo ?? ''"
+            (valueChange)="updateForm('principioActivo', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Concentración</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().concentracion ?? ''"
+            (valueChange)="updateForm('concentracion', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Registro Sanitario</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().registroSanitario ?? ''"
+            (valueChange)="updateForm('registroSanitario', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>F.F. (Forma Farmacéutica)</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().formaFarmaceutica ?? ''"
+            (valueChange)="updateForm('formaFarmaceutica', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Unidad *</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="form().unitId"
+            [options]="unitOptions()"
+            placeholder="Seleccionar"
+            [disabled]="unitsQuery.isPending()"
+            (valueChange)="updateForm('unitId', $event)"
+          />
+          @if (formErrors()['unitId']) {
+            <p class="mt-1 text-xs text-error-500">{{ formErrors()['unitId'] }}</p>
+          }
+        </div>
+        <div class="md:col-span-2">
+          <app-label>Descripción</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().descripcion ?? ''"
+            (valueChange)="updateForm('descripcion', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Moneda *</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="form().currencyId"
+            [options]="currencyOptions()"
+            placeholder="Seleccionar"
+            [disabled]="currenciesQuery.isPending()"
+            (valueChange)="updateForm('currencyId', $event)"
+          />
+        </div>
+        <div>
+          <app-label>Precio Unitario *</app-label>
+          <app-input-field
+            className="mt-2"
+            type="number"
+            [value]="form().precioUnitarioVenta"
+            (valueChange)="updateForm('precioUnitarioVenta', +$event)"
+          />
+          @if (formErrors()['precioUnitarioVenta']) {
+            <p class="mt-1 text-xs text-error-500">{{ formErrors()['precioUnitarioVenta'] }}</p>
+          }
+        </div>
+        <div class="md:col-span-2">
+          <app-label>Tipo de afectación *</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="form().saleTaxAffectationId"
+            [options]="taxOptions()"
+            placeholder="Seleccionar"
+            [disabled]="taxTypesQuery.isPending()"
+            (valueChange)="updateForm('saleTaxAffectationId', $event)"
+          />
+          @if (formErrors()['saleTaxAffectationId']) {
+            <p class="mt-1 text-xs text-error-500">{{ formErrors()['saleTaxAffectationId'] }}</p>
+          }
+        </div>
+        <div>
+          <app-label>Almacén</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="defaultWarehouseId()"
+            [options]="warehouseSelectOptions()"
+            placeholder="Seleccionar"
+            [disabled]="warehousesQuery.isPending()"
+            (valueChange)="defaultWarehouseId.set($event)"
+          />
+        </div>
+        <div>
+          <app-label>Stock Inicial</app-label>
+          <app-input-field className="mt-2" type="number" [value]="stockInicial()" (valueChange)="stockInicial.set(+$event)" />
+        </div>
+        <div>
+          <app-label>Stock Mínimo</app-label>
+          <app-input-field
+            className="mt-2"
+            type="number"
+            [value]="form().stockMinimo ?? 1"
+            (valueChange)="updateForm('stockMinimo', +$event)"
+          />
+        </div>
+        <div>
+          <app-label>Código de barra</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().codigoBarra ?? ''"
+            (valueChange)="updateForm('codigoBarra', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Código Interno</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().codigoInterno ?? ''"
+            (valueChange)="updateForm('codigoInterno', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Línea de producto</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().lineaProducto ?? ''"
+            (valueChange)="updateForm('lineaProducto', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Código Medicamento DIGEMID</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().codigoMedicamentoDigemid ?? ''"
+            (valueChange)="updateForm('codigoMedicamentoDigemid', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Cód. SUNAT</app-label>
+          <app-input-field
+            className="mt-2"
+            [value]="form().codigoSunat ?? ''"
+            (valueChange)="updateForm('codigoSunat', $event + '')"
+          />
+        </div>
+        <div>
+          <app-label>Modelo</app-label>
+          <app-input-field className="mt-2" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
+        </div>
+        <app-checkbox
+          [checked]="!!form().manejaLotes"
+          (checkedChange)="updateForm('manejaLotes', $event)"
+          label="¿Maneja lotes?"
+        />
+        @if (form().manejaLotes) {
+          <div>
+            <app-label>Código Lote</app-label>
+            <app-input-field
+              className="mt-2"
+              [value]="form().codigoLote ?? ''"
+              (valueChange)="updateForm('codigoLote', $event + '')"
+            />
+          </div>
+          <div>
+            <app-label>Fecha Vencimiento</app-label>
+            <app-input-field
+              className="mt-2"
+              type="date"
+              [value]="form().fechaVencimientoLote ?? ''"
+              (valueChange)="updateForm('fechaVencimientoLote', $event + '')"
+            />
+          </div>
+        }
+        <app-checkbox
+          [checked]="!!form().incluyeIscVenta"
+          (checkedChange)="updateForm('incluyeIscVenta', $event)"
+          label="Incluye ISC"
+        />
+        @if (form().incluyeIscVenta) {
+          <div>
+            <app-label>Tipo de sistema ISC</app-label>
+            <app-form-select
+              className="mt-2"
+              [value]="form().tipoSistemaIscId ?? ''"
+              [options]="tipoSistemaIscOptions()"
+              placeholder="Seleccionar"
+              (valueChange)="updateForm('tipoSistemaIscId', $event || undefined)"
+            />
+          </div>
+          <div>
+            <app-label>Porcentaje ISC</app-label>
+            <app-input-field
+              className="mt-2"
+              type="number"
+              [value]="form().porcentajeIsc ?? 0"
+              (valueChange)="updateForm('porcentajeIsc', +$event)"
+            />
+          </div>
+        }
+        <app-checkbox
+          [checked]="!!form().sujetoDetraccion"
+          (checkedChange)="updateForm('sujetoDetraccion', $event)"
+          label="Sujeto a detracción"
+        />
+        <app-checkbox
+          [checked]="!!form().sePuedeCanjearPorPuntos"
+          (checkedChange)="updateForm('sePuedeCanjearPorPuntos', $event)"
+          label="¿Se puede canjear por puntos?"
+        />
+      </div>
+    }
+
+    @if (activeTab() === 'almacenes') {
+      <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Precios por almacén</h3>
+      <div class="space-y-3">
+        @for (w of warehousesQuery.data() ?? []; track w.id) {
+          <div class="flex flex-col gap-2 rounded-lg border border-gray-100 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
+            <span class="text-sm text-gray-800 dark:text-white/90">{{ w.nombre }} · {{ w.establishment.nombre }}</span>
+            <app-input-field
+              className="sm:max-w-[200px]"
+              type="number"
+              placeholder="Precio"
+              [value]="warehousePrecioInputs()[w.id] || ''"
+              (valueChange)="setWarehousePrecio(w.id, $event + '')"
+            />
+          </div>
+        } @empty {
+          <p class="text-sm text-gray-500">Cargando almacenes…</p>
+        }
+      </div>
+    }
+
+    @if (activeTab() === 'presentaciones') {
+      <div class="mb-2 flex items-center justify-between gap-2">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Listado de precios</h3>
+        <button type="button" class="text-sm font-medium text-brand-600 hover:underline" (click)="addPresentationRow()">
+          + Agregar
+        </button>
+      </div>
+      <div class="max-w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-white/[0.08]">
+        <table class="min-w-[720px] text-left text-xs text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-100 bg-gray-50 dark:border-white/[0.08] dark:bg-white/[0.04]">
+            <tr>
+              <th class="px-2 py-2">Código de barra</th>
+              <th class="px-2 py-2">Unidad</th>
+              <th class="px-2 py-2">Descripción</th>
+              <th class="px-2 py-2">Factor</th>
+              <th class="px-2 py-2">Precio 1</th>
+              <th class="px-2 py-2">Precio 2</th>
+              <th class="px-2 py-2">Precio 3</th>
+              <th class="px-2 py-2">Precio Puntos</th>
+              <th class="px-2 py-2">P. Defecto</th>
+              <th class="px-2 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pr of presentationRows(); track pr.uid) {
+              <tr class="border-b border-gray-50 dark:border-white/[0.05]">
+                <td class="px-2 py-1">
+                  <app-input-field
+                    className="min-w-[100px]"
+                    [value]="pr.codigoBarra"
+                    (valueChange)="patchPresentationRow(pr.uid, { codigoBarra: $event + '' })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-form-select
+                    [value]="pr.unitId"
+                    [options]="presentationUnitOptions()"
+                    (valueChange)="patchPresentationRow(pr.uid, { unitId: $event })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-input-field
+                    [value]="pr.descripcion"
+                    (valueChange)="patchPresentationRow(pr.uid, { descripcion: $event + '' })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-input-field
+                    type="number"
+                    [value]="pr.factor"
+                    (valueChange)="patchPresentationRow(pr.uid, { factor: +$event })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-input-field
+                    type="number"
+                    [value]="pr.precio1"
+                    (valueChange)="patchPresentationRow(pr.uid, { precio1: +$event })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-input-field
+                    type="number"
+                    [value]="pr.precio2"
+                    (valueChange)="patchPresentationRow(pr.uid, { precio2: +$event })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-input-field
+                    type="number"
+                    [value]="pr.precio3"
+                    (valueChange)="patchPresentationRow(pr.uid, { precio3: +$event })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-input-field
+                    type="number"
+                    [value]="pr.precioPuntos"
+                    (valueChange)="patchPresentationRow(pr.uid, { precioPuntos: $event + '' })"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <app-form-select
+                    [value]="pr.precioDefecto"
+                    [options]="precioDefectoOptions"
+                    (valueChange)="onPresentationPrecioDefectoChange(pr.uid, $event)"
+                  />
+                </td>
+                <td class="px-2 py-1">
+                  <button
+                    type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-error-500 text-white"
+                    (click)="removePresentationRow(pr.uid)"
+                  >
+                    <app-icon name="mdi:delete" width="18" height="18" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <button type="button" class="mt-2 text-sm font-medium text-brand-600 hover:underline" (click)="addPresentationRow()">
+        + Agregar
+      </button>
+    }
+
+    @if (activeTab() === 'atributos') {
+      @if (atributosCatalogsLoading()) {
+        <p class="mb-3 text-xs text-gray-500">Cargando catálogos de Atributos...</p>
+      }
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div>
+          <app-label>Imagen</app-label>
+          <div class="mt-2">
+            @if (productImageUploadError()) {
+              <p class="mb-2 text-xs text-error-500">{{ productImageUploadError() }}</p>
+            }
+            <div class="flex flex-wrap items-end gap-3">
+              <app-image-square-picker [previewUrl]="productImagePreview()" (fileSelected)="onProductImageFile($event)" />
+              @if (form().imagenArchivoId) {
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center rounded-lg border border-error-300 px-3 text-xs font-medium text-error-700 hover:bg-error-50"
+                  (click)="clearProductImage()"
+                >
+                  Quitar imagen
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+        <div>
+          <app-label>Categoría</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="form().categoryId ?? ''"
+            [options]="categoryOptions()"
+            [disabled]="categoriesQuery.isPending()"
+            (valueChange)="updateForm('categoryId', $event || undefined)"
+          />
+          <div class="mt-2 flex gap-2">
+            <app-input-field
+              className="flex-1"
+              [value]="newCategoryName()"
+              placeholder="Nueva categoría"
+              (valueChange)="newCategoryName.set($event + '')"
+            />
+            <button
+              type="button"
+              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+              [disabled]="creatingCategory() || categoriesQuery.isPending()"
+              (click)="createCategoryQuick()"
+            >
+              {{ creatingCategory() ? 'Guardando...' : 'Agregar' }}
+            </button>
+          </div>
+        </div>
+        <div>
+          <app-label>Marca/Laboratorio</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="form().brandId ?? ''"
+            [options]="brandOptions()"
+            [disabled]="brandsQuery.isPending()"
+            (valueChange)="updateForm('brandId', $event || undefined)"
+          />
+          <div class="mt-2 flex gap-2">
+            <app-input-field
+              className="flex-1"
+              [value]="newBrandName()"
+              placeholder="Nueva marca"
+              (valueChange)="newBrandName.set($event + '')"
+            />
+            <button
+              type="button"
+              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+              [disabled]="creatingBrand() || brandsQuery.isPending()"
+              (click)="createBrandQuick()"
+            >
+              {{ creatingBrand() ? 'Guardando...' : 'Agregar' }}
+            </button>
+          </div>
+        </div>
+        <div>
+          <app-label>Ubicación</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="form().productLocationId ?? ''"
+            [options]="locationOptions()"
+            [disabled]="locationsQuery.isPending()"
+            (valueChange)="updateForm('productLocationId', $event || undefined)"
+          />
+          <div class="mt-2 flex gap-2">
+            <app-input-field
+              className="flex-1"
+              [value]="newLocationName()"
+              placeholder="Nueva ubicación"
+              (valueChange)="newLocationName.set($event + '')"
+            />
+            <button
+              type="button"
+              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+              [disabled]="creatingLocation() || locationsQuery.isPending()"
+              (click)="createLocationQuick()"
+            >
+              {{ creatingLocation() ? 'Guardando...' : 'Agregar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6">
+        <div class="mb-2 flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Listado</h3>
+          <button type="button" class="text-sm font-medium text-brand-600 hover:underline" (click)="addAttributeRow()">
+            + Agregar
+          </button>
+        </div>
+        <div class="space-y-2">
+          @for (ar of attributeRows(); track ar.uid) {
+            <div class="flex flex-wrap items-end gap-2">
+              <div class="min-w-[160px] flex-1">
+                <app-label>Tipo</app-label>
+                <app-form-select
+                  className="mt-1"
+                  [value]="ar.attributeTypeId"
+                  [options]="attributeTypeOptions()"
+                  [disabled]="attributeTypesQuery.isPending()"
+                  (valueChange)="patchAttributeRow(ar.uid, { attributeTypeId: $event })"
+                />
+              </div>
+              <div class="min-w-[200px] flex-[2]">
+                <app-label>Descripción</app-label>
+                <app-input-field
+                  className="mt-1"
+                  [value]="ar.descripcion"
+                  (valueChange)="patchAttributeRow(ar.uid, { descripcion: $event + '' })"
+                />
+              </div>
+              <button
+                type="button"
+                class="mb-0.5 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-error-500 text-white"
+                (click)="removeAttributeRow(ar.uid)"
+              >
+                <app-icon name="mdi:close" width="18" height="18" />
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (activeTab() === 'compra') {
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <app-label>Tipo de afectación (compra)</app-label>
+          <app-form-select
+            className="mt-2"
+            [value]="form().purchaseTaxAffectationId ?? form().saleTaxAffectationId"
+            [options]="taxOptions()"
+            [disabled]="taxTypesQuery.isPending()"
+            (valueChange)="updateForm('purchaseTaxAffectationId', $event)"
+          />
+        </div>
+        <div>
+          <app-label>Costo Unitario</app-label>
+          <app-input-field
+            className="mt-2"
+            type="number"
+            [value]="form().costoUnitario ?? 0"
+            (valueChange)="updateForm('costoUnitario', +$event)"
+          />
+        </div>
+        <app-checkbox
+          [checked]="!!form().incluyeIgvCompra"
+          (checkedChange)="updateForm('incluyeIgvCompra', $event)"
+          label="Incluye Igv"
+        />
+        <app-checkbox
+          [checked]="!!form().aplicaGanancia"
+          (checkedChange)="updateForm('aplicaGanancia', $event)"
+          label="Aplica ganancia"
+        />
+        <app-checkbox
+          [checked]="!!form().incluyeIscCompra"
+          (checkedChange)="updateForm('incluyeIscCompra', $event)"
+          label="Incluye ISC"
+        />
+        @if (form().incluyeIscCompra) {
+          <div>
+            <app-label>Tipo de sistema ISC</app-label>
+            <app-form-select
+              className="mt-2"
+              [value]="form().tipoSistemaIscId ?? ''"
+              [options]="tipoSistemaIscOptions()"
+              placeholder="Seleccionar"
+              (valueChange)="updateForm('tipoSistemaIscId', $event || undefined)"
+            />
+          </div>
+          <div>
+            <app-label>Porcentaje ISC</app-label>
+            <app-input-field
+              className="mt-2"
+              type="number"
+              [value]="form().porcentajeIsc ?? 0"
+              (valueChange)="updateForm('porcentajeIsc', +$event)"
+            />
+          </div>
+        }
+        <div>
+          <app-label>Porcentaje de ganancia (%)</app-label>
+          <app-input-field
+            className="mt-2"
+            type="number"
+            [value]="form().porcentajeGanancia ?? 0"
+            (valueChange)="updateForm('porcentajeGanancia', +$event)"
+          />
+        </div>
+      </div>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
+    <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+    <app-button size="sm" [disabled]="saveMutation.isPending() || generalCatalogsLoading()" (btnClick)="submitProduct()">
+      {{ saveMutation.isPending() ? 'Guardando...' : 'Guardar' }}
+    </app-button>
+  </div>
+</app-modal>

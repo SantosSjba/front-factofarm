@@ -1,4 +1,5 @@
 import { bootstrapApplication } from '@angular/platform-browser';
+import 'iconify-icon';
 import { register as registerSwiperElements } from 'swiper/element/bundle';
 
 import { appConfig } from './app/app.config';

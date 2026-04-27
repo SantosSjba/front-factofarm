@@ -1,16 +1,24 @@
-<select
-  [id]="id || null"
-  [name]="name || null"
-  [attr.aria-label]="placeholder"
-  [disabled]="disabled"
-  [ngClass]="selectClass"
-  [value]="value"
-  (change)="onChange($event)"
->
-  @if (showPlaceholder && placeholder) {
-    <option value="">{{ placeholder }}</option>
-  }
-  @for (opt of options; track opt.value) {
-    <option [value]="opt.value">{{ opt.label }}</option>
-  }
-</select>
+<div class="relative">
+  <select
+    [id]="id || null"
+    [name]="name || null"
+    [attr.aria-label]="placeholder"
+    [disabled]="disabled"
+    [ngClass]="selectClass"
+    [value]="value"
+    (change)="onChange($event)"
+  >
+    @if (showPlaceholder && placeholder) {
+      <option value="">{{ placeholder }}</option>
+    }
+    @for (opt of options; track opt.value) {
+      <option [value]="opt.value">{{ opt.label }}</option>
+    }
+  </select>
+
+  <span
+    class="pointer-events-none absolute right-0 top-0 flex h-full w-11 items-center justify-center text-gray-500 dark:text-gray-400"
+  >
+    <app-icon name="mdi:chevron-down" width="18" height="18" iconClass="translate-y-px" />
+  </span>
+</div>

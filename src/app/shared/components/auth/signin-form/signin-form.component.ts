@@ -7,6 +7,7 @@ import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../ui/button/button.component';
 import { CheckboxComponent } from '../../form/input/checkbox.component';
 import { InputFieldComponent } from '../../form/input/input-field.component';
+import { IconComponent } from '../../ui/icon/icon.component';
 import { LabelComponent } from '../../form/label/label.component';
 
 @Component({
@@ -16,6 +17,7 @@ import { LabelComponent } from '../../form/label/label.component';
     CheckboxComponent,
     ButtonComponent,
     InputFieldComponent,
+    IconComponent,
     RouterModule,
     FormsModule,
   ],

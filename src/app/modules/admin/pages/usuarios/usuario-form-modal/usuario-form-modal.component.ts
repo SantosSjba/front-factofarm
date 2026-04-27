@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { injectMutation, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
+import * as yup from 'yup';
 import { ModalComponent } from '../../../../../shared/components/ui/modal/modal.component';
 import { ButtonComponent } from '../../../../../shared/components/ui/button/button.component';
 import { LabelComponent } from '../../../../../shared/components/form/label/label.component';
@@ -31,6 +32,8 @@ import type {
   EstablishmentOptionDto,
   IdentityDocumentTypeDto,
   PermissionMenuNodeDto,
+  UpdateUserRequest,
+  UserListItemDto,
 } from '../../../models/directory.models';
 
 type TabId = 'datos' | 'permisos' | 'personales' | 'documentos';
@@ -62,10 +65,75 @@ function dateInputToIsoMidday(yyyyMmDd: string): string | undefined {
   return `${t}T12:00:00.000Z`;
 }
 
+function isoDateToInput(iso: string | null | undefined): string {
+  const t = iso?.trim();
+  if (!t) {
+    return '';
+  }
+  return t.slice(0, 10);
+}
+
 function trimOrUndef(s: string): string | undefined {
   const x = s?.trim();
   return x ? x : undefined;
 }
+
+const USER_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const usuarioDatosSchema = yup.object({
+  nombre: yup
+    .string()
+    .trim()
+    .required('Indique el nombre del usuario.')
+    .max(150, 'Nombre no debe exceder 150 caracteres'),
+  email: yup
+    .string()
+    .trim()
+    .required('Indique el correo electrónico.')
+    .email('El correo electrónico no es válido.')
+    .max(150, 'Correo electrónico no debe exceder 150 caracteres'),
+  establecimientoId: yup
+    .string()
+    .trim()
+    .required('Seleccione un establecimiento.'),
+  role: yup
+    .mixed<'ADMINISTRADOR' | 'VENDEDOR'>()
+    .oneOf(['ADMINISTRADOR', 'VENDEDOR'])
+    .required(),
+  password: yup.string().max(100, 'Contraseña no debe exceder 100 caracteres').optional(),
+  password2: yup.string().max(100, 'Confirmación no debe exceder 100 caracteres').optional(),
+});
+
+const usuarioPersonalesSchema = yup.object({
+  tipoDoc: yup.string().oneOf(['', 'DNI', 'CE', 'PASAPORTE', 'OTRO']).optional(),
+  numeroDoc: yup.string().max(20, 'Número de documento no debe exceder 20 caracteres').optional(),
+  nombres: yup.string().max(120, 'Nombres no debe exceder 120 caracteres').optional(),
+  apellidos: yup.string().max(120, 'Apellidos no debe exceder 120 caracteres').optional(),
+  fechaNac: yup.string().test(
+    'fechaNac-format',
+    'Fecha de nacimiento inválida.',
+    (v) => !v || USER_DATE_REGEX.test(v),
+  ),
+  emailPersonal: yup
+    .string()
+    .email('Correo personal no válido.')
+    .max(150, 'Correo personal no debe exceder 150 caracteres')
+    .optional(),
+  direccion: yup.string().max(250, 'Dirección no debe exceder 250 caracteres').optional(),
+  celPersonal: yup.string().max(30, 'Celular personal no debe exceder 30 caracteres').optional(),
+  emailCorp: yup
+    .string()
+    .email('Correo corporativo no válido.')
+    .max(150, 'Correo corporativo no debe exceder 150 caracteres')
+    .optional(),
+  celCorp: yup.string().max(30, 'Celular corporativo no debe exceder 30 caracteres').optional(),
+  fechaContratacion: yup.string().test(
+    'fechaContratacion-format',
+    'Fecha de contratación inválida.',
+    (v) => !v || USER_DATE_REGEX.test(v),
+  ),
+  cargo: yup.string().max(120, 'Cargo no debe exceder 120 caracteres').optional(),
+});
 
 @Component({
   selector: 'app-usuario-form-modal',
@@ -85,6 +153,7 @@ function trimOrUndef(s: string): string | undefined {
 })
 export class UsuarioFormModalComponent {
   readonly isOpen = input(false);
+  readonly editingUser = input<UserListItemDto | null>(null);
   readonly closed = output<void>();
 
   private readonly api = inject(DirectoryApiService);
@@ -93,6 +162,10 @@ export class UsuarioFormModalComponent {
   private readonly queryClient = injectQueryClient();
 
   protected readonly tabs = USUARIO_TABS;
+  protected readonly isEditing = computed(() => this.editingUser() != null);
+  protected readonly modalTitle = computed(() =>
+    this.isEditing() ? 'Editar usuario' : 'Nuevo usuario',
+  );
 
   protected readonly activeTab = signal<TabId>('datos');
 
@@ -144,6 +217,23 @@ export class UsuarioFormModalComponent {
     },
   }));
 
+  protected readonly updateUserMutation = injectMutation(() => ({
+    mutationFn: ({ id, body }: { id: string; body: UpdateUserRequest }) =>
+      firstValueFrom(this.api.updateUser(id, body)),
+    onSuccess: () => {
+      this.notify.success('Usuario actualizado correctamente');
+      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.list() });
+      this.onClose();
+    },
+    onError: (err) => {
+      this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el usuario'));
+    },
+  }));
+
+  protected readonly isSaving = computed(
+    () => this.createUserMutation.isPending() || this.updateUserMutation.isPending(),
+  );
+
   constructor() {
     effect(() => {
       const open = this.isOpen();
@@ -151,6 +241,7 @@ export class UsuarioFormModalComponent {
         return;
       }
       untracked(() => {
+        this.applyUserToForm();
         this.loadRefs();
       });
     });
@@ -175,11 +266,55 @@ export class UsuarioFormModalComponent {
       next: (tree) => {
         this.menuTree.set(tree);
         const next = new Set<string>();
-        tree?.children?.forEach((c) => next.add(c.code));
+        const editing = this.editingUser();
+        if (editing) {
+          const allowedCodes = new Set(tree?.children?.map((c) => c.code) ?? []);
+          for (const code of editing.permissionCodes ?? []) {
+            if (allowedCodes.has(code)) {
+              next.add(code);
+            }
+          }
+        } else {
+          tree?.children?.forEach((c) => next.add(c.code));
+        }
         this.selectedNavCodes.set(next);
       },
       error: () => this.menuTree.set(null),
     });
+  }
+
+  private applyUserToForm() {
+    const user = this.editingUser();
+    if (!user) {
+      this.resetCamposUsuario();
+      return;
+    }
+    this.nombre.set(user.nombre ?? '');
+    this.email.set(user.email ?? '');
+    this.password.set('');
+    this.password2.set('');
+    this.establecimientoId.set(user.establecimientoId ?? '');
+    this.role.set(user.role === 'ADMINISTRADOR' ? 'ADMINISTRADOR' : 'VENDEDOR');
+
+    const profile = user.profile;
+    this.tipoDoc.set(profile?.tipoDocumento ?? '');
+    this.numeroDoc.set(profile?.numeroDocumento ?? '');
+    this.nombres.set(profile?.nombres ?? '');
+    this.apellidos.set(profile?.apellidos ?? '');
+    this.fechaNac.set(isoDateToInput(profile?.fechaNacimiento));
+    this.emailPersonal.set(profile?.emailPersonal ?? '');
+    this.direccion.set(profile?.direccion ?? '');
+    this.celPersonal.set(profile?.celularPersonal ?? '');
+    this.emailCorp.set(profile?.emailCorporativo ?? '');
+    this.celCorp.set(profile?.celularCorporativo ?? '');
+    this.fechaContratacion.set(isoDateToInput(profile?.fechaContratacion));
+    this.cargo.set(profile?.cargo ?? '');
+    this.fotoArchivoId.set(profile?.fotoArchivoId ?? null);
+    this.fotoPreview.set(
+      profile?.fotoUrl ? this.filesApi.absoluteFileUrl(profile.fotoUrl) : null,
+    );
+    this.fotoUploadError.set(null);
+    this.selectedNavCodes.set(new Set(user.permissionCodes ?? []));
   }
 
   protected setRoleFromSelect(v: string) {
@@ -269,39 +404,109 @@ export class UsuarioFormModalComponent {
     this.fechaContratacion.set('');
     this.cargo.set('');
     this.fotoPreview.set(null);
+    this.fotoArchivoId.set(null);
+    this.fotoUploadError.set(null);
+    this.selectedNavCodes.set(new Set<string>());
   }
 
-  protected onSave() {
-    const err = this.validate();
-    if (err) {
-      this.notify.warning(err);
+  protected async onSave() {
+    const errors = await this.validate();
+    if (errors.length) {
+      this.notify.warning(errors.join('\n'));
+      return;
+    }
+    if (this.isEditing()) {
+      const current = this.editingUser();
+      if (!current) {
+        this.notify.error('No se pudo identificar el usuario a editar.');
+        return;
+      }
+      const body = this.buildUpdateBody();
+      this.updateUserMutation.mutate({ id: current.id, body });
       return;
     }
     const body = this.buildCreateBody();
     this.createUserMutation.mutate(body);
   }
 
-  private validate(): string | null {
-    if (!this.nombre().trim()) {
-      return 'Indique el nombre del usuario.';
+  private async validate(): Promise<string[]> {
+    const errors: string[] = [];
+
+    try {
+      await usuarioDatosSchema.validate(
+        {
+          nombre: this.nombre(),
+          email: this.email(),
+          establecimientoId: this.establecimientoId(),
+          role: this.role(),
+          password: this.password(),
+          password2: this.password2(),
+        },
+        { abortEarly: false },
+      );
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        errors.push(...err.errors);
+      }
     }
-    if (!this.email().trim()) {
-      return 'Indique el correo electrónico.';
-    }
+
     const pw = this.password();
-    if (!pw || pw.length < 8) {
-      return 'La contraseña debe tener al menos 8 caracteres.';
+    const pw2 = this.password2();
+    if (!this.isEditing()) {
+      if (!pw || pw.length < 8) {
+        errors.push('La contraseña debe tener al menos 8 caracteres.');
+      }
+      if (pw !== pw2) {
+        errors.push('Las contraseñas no coinciden.');
+      }
+    } else if (pw || pw2) {
+      if (pw.length < 8) {
+        errors.push('La contraseña debe tener al menos 8 caracteres.');
+      }
+      if (pw !== pw2) {
+        errors.push('Las contraseñas no coinciden.');
+      }
     }
-    if (pw !== this.password2()) {
-      return 'Las contraseñas no coinciden.';
+
+    if (this.selectedNavCodes().size === 0) {
+      errors.push('Debe seleccionar al menos un permiso de menú.');
     }
-    if (!this.establecimientoId().trim()) {
-      return 'Seleccione un establecimiento.';
+
+    try {
+      await usuarioPersonalesSchema.validate(
+        {
+          tipoDoc: this.tipoDoc(),
+          numeroDoc: this.numeroDoc(),
+          nombres: this.nombres(),
+          apellidos: this.apellidos(),
+          fechaNac: this.fechaNac(),
+          emailPersonal: this.emailPersonal(),
+          direccion: this.direccion(),
+          celPersonal: this.celPersonal(),
+          emailCorp: this.emailCorp(),
+          celCorp: this.celCorp(),
+          fechaContratacion: this.fechaContratacion(),
+          cargo: this.cargo(),
+        },
+        { abortEarly: false },
+      );
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        errors.push(...err.errors);
+      }
     }
-    return null;
+
+    if (this.tipoDoc().trim() && !this.numeroDoc().trim()) {
+      errors.push('Si selecciona tipo de documento, ingrese el número.');
+    }
+    if (this.numeroDoc().trim() && !this.tipoDoc().trim()) {
+      errors.push('Seleccione el tipo de documento para el número ingresado.');
+    }
+
+    return [...new Set(errors.map((x) => x.trim()).filter(Boolean))];
   }
 
-  private buildCreateBody(): CreateUserRequest {
+  private buildProfileBody(): CreateUserProfileBody | undefined {
     const profile: CreateUserProfileBody = {};
 
     const td = this.tipoDoc().trim();
@@ -341,7 +546,11 @@ export class UsuarioFormModalComponent {
       profile.fotoArchivoId = fid;
     }
 
-    const hasProfile = Object.keys(profile).length > 0;
+    return Object.keys(profile).length > 0 ? profile : undefined;
+  }
+
+  private buildCreateBody(): CreateUserRequest {
+    const profile = this.buildProfileBody();
 
     return {
       nombre: this.nombre().trim(),
@@ -349,7 +558,43 @@ export class UsuarioFormModalComponent {
       password: this.password(),
       role: this.role(),
       establecimientoId: this.establecimientoId().trim(),
-      ...(hasProfile ? { profile } : {}),
+      ...(profile ? { profile } : {}),
     };
+  }
+
+  private buildUpdateBody(): UpdateUserRequest {
+    const body: UpdateUserRequest = {
+      nombre: this.nombre().trim(),
+      email: this.email().trim().toLowerCase(),
+      role: this.role(),
+      establecimientoId: this.establecimientoId().trim(),
+    };
+
+    const password = this.password().trim();
+    if (password) {
+      body.password = password;
+    }
+
+    const profile = this.buildProfileBody();
+    if (profile) {
+      body.profile = profile;
+    }
+
+    return body;
+  }
+
+  protected passwordLabel(): string {
+    return this.isEditing() ? 'Contraseña (opcional)' : 'Contraseña';
+  }
+
+  protected passwordPlaceholder(): string {
+    return this.isEditing() ? 'Dejar en blanco para mantener' : '••••••••';
+  }
+
+  protected submitLabel(): string {
+    if (this.isSaving()) {
+      return 'Guardando…';
+    }
+    return this.isEditing() ? 'Actualizar' : 'Guardar';
   }
 }

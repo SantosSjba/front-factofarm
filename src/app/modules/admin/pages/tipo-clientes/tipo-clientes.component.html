@@ -1,0 +1,186 @@
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
+</div>
+
+<app-page-toolbar>
+  <h1
+    data-toolbar-title
+    class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
+  >
+    Tipos de Clientes
+  </h1>
+  <div data-toolbar-actions>
+    <app-button size="sm" (btnClick)="openCreateModal()">
+      <app-icon name="mdi:plus" width="18" height="18" />
+      <span class="leading-none">Nuevo</span>
+    </app-button>
+  </div>
+</app-page-toolbar>
+
+@if (customerTypesQuery.isError()) {
+  <div
+    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+    role="alert"
+  >
+    No se pudo cargar el listado.
+    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
+  </div>
+}
+
+<app-list-filters
+  [searchValue]="searchTerm()"
+  [selectValue]="filterField()"
+  [selectOptions]="fieldFilterOptions"
+  searchPlaceholder="Buscar"
+  selectPlaceholder="Filtrar por"
+  clearLabel="Limpiar"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onFilterFieldChange($event)"
+  (clear)="clearFilters()"
+/>
+
+<app-component-card title="Tipos de clientes" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Descripción
+            </th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Fecha registro
+            </th>
+            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Acciones
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of paginatedRows(); track row.id; let i = $index) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ pageStart() + i + 1 }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.descripcion }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+                {{ row.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}
+              </td>
+              <td class="px-5 py-4 text-end">
+                <div class="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
+                    (click)="openEditModal(row)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-error-50 px-3 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:hover:bg-error-500/25"
+                    [disabled]="deleteMutation.isPending()"
+                    (click)="openDeleteConfirm(row)"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="px-5 py-8 text-center text-theme-sm text-gray-500">
+                @if (customerTypesQuery.isPending()) {
+                  Cargando…
+                } @else if (customerTypesQuery.isError()) {
+                  Use “Reintentar” arriba para volver a cargar.
+                } @else {
+                  No hay tipos de cliente registrados.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-pagination
+  [totalItems]="totalRows()"
+  [currentPage]="currentPage()"
+  [pageSize]="itemsPerPage"
+  (currentPageChange)="onPageChange($event)"
+/>
+
+<app-modal
+  [isOpen]="modalOpen()"
+  (close)="closeFormModal()"
+  className="w-full max-w-3xl shadow-theme-lg"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      {{ editing() ? 'Editar tipo de cliente' : 'Nuevo tipo de cliente' }}
+    </h3>
+  </div>
+
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    <app-label>Descripción</app-label>
+    <app-input-field
+      className="mt-2"
+      [value]="descripcion()"
+      (valueChange)="descripcion.set($event + '')"
+    />
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+  >
+    <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="isSaving()" (btnClick)="submitForm()">
+      {{ submitLabel() }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal
+  [isOpen]="deleteConfirmOpen()"
+  (close)="closeDeleteConfirm()"
+  className="w-full max-w-lg shadow-theme-lg"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Confirmar eliminación
+    </h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
+    @if (deleting(); as row) {
+      ¿Desea eliminar el tipo de cliente <span class="font-semibold">{{ row.descripcion }}</span>?
+    }
+  </div>
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6"
+  >
+    <app-button
+      variant="outline"
+      [disabled]="deleteMutation.isPending()"
+      (btnClick)="closeDeleteConfirm()"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      [disabled]="deleteMutation.isPending()"
+      (btnClick)="confirmDelete()"
+    >
+      {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
+    </app-button>
+  </div>
+</app-modal>
