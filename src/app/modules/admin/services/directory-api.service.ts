@@ -52,6 +52,7 @@ import type {
   ServiceCatalogUnitDto,
   CompoundProductCatalogPlatformDto,
   CompoundProductDetailDto,
+  CompoundProductImportMode,
   CompoundProductListFiltersRequest,
   CompoundProductListResponseDto,
   CreateCompoundProductRequest,
@@ -527,5 +528,19 @@ export class DirectoryApiService {
 
   deleteCompoundProduct(id: string) {
     return this.http.delete<void>(`${this.base}/compound-products/${id}`);
+  }
+
+  importCompoundProducts(mode: CompoundProductImportMode, file: File) {
+    const body = new FormData();
+    body.append('mode', mode);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/compound-products/import`, body);
+  }
+
+  downloadCompoundProductImportTemplate(mode: CompoundProductImportMode) {
+    return this.http.get(`${this.base}/compound-products/import/template`, {
+      params: { mode },
+      responseType: 'blob',
+    });
   }
 }

@@ -22,10 +22,12 @@ import { IconComponent } from '../../../../shared/components/ui/icon/icon.compon
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import type {
+  CompoundProductImportMode,
   CompoundProductDetailDto,
   CompoundProductItemInput,
   CompoundProductListFiltersRequest,
   CompoundProductListItemDto,
+  ProductImportResultDto,
   CreateCompoundProductRequest,
   ProductListItemDto,
 } from '../../models/directory.models';
@@ -198,6 +200,10 @@ export class ConjuntosPacksPromocionesComponent {
   );
 
   protected readonly formOpen = signal(false);
+  protected readonly importOpen = signal(false);
+  protected readonly importMode = signal<CompoundProductImportMode>('PRODUCTOS_COMPUESTOS');
+  protected readonly importFile = signal<File | null>(null);
+  protected readonly importResult = signal<ProductImportResultDto | null>(null);
   protected readonly addProductOpen = signal(false);
   protected readonly confirmOpen = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -257,6 +263,22 @@ export class ConjuntosPacksPromocionesComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el registro')),
   }));
 
+  protected readonly importMutation = injectMutation(() => ({
+    mutationFn: ({ mode, file }: { mode: CompoundProductImportMode; file: File }) =>
+      firstValueFrom(this.api.importCompoundProducts(mode, file)),
+    onSuccess: (result) => {
+      this.importResult.set(result);
+      this.notify.success(
+        `Importación finalizada. Creados: ${result.created}, actualizados: ${result.updated}, errores: ${result.errors.length}`,
+      );
+      this.importOpen.set(false);
+      this.importFile.set(null);
+      void this.queryClient.invalidateQueries({ queryKey: compoundProductQueryKeys.all });
+    },
+    onError: (err) =>
+      this.notify.error(httpErrorMessage(err, 'No se pudo procesar la importación de conjuntos')),
+  }));
+
   protected refetchRows() {
     void this.listQuery.refetch();
   }
@@ -279,6 +301,53 @@ export class ConjuntosPacksPromocionesComponent {
 
   protected onPageChange(page: number) {
     this.currentPage.set(page);
+  }
+
+  protected openImportModal(mode: CompoundProductImportMode) {
+    this.importMode.set(mode);
+    this.importFile.set(null);
+    this.importResult.set(null);
+    this.importOpen.set(true);
+  }
+
+  protected onImportFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.importFile.set(input.files?.[0] ?? null);
+  }
+
+  protected closeImportModal() {
+    if (this.importMutation.isPending()) return;
+    this.importOpen.set(false);
+    this.importFile.set(null);
+  }
+
+  protected processImport() {
+    const file = this.importFile();
+    if (!file) {
+      this.notify.warning('Seleccione un archivo .xlsx');
+      return;
+    }
+    this.importMutation.mutate({ mode: this.importMode(), file });
+  }
+
+  protected async downloadImportTemplate() {
+    const mode = this.importMode();
+    try {
+      const blob = await firstValueFrom(this.api.downloadCompoundProductImportTemplate(mode));
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = mode === 'DETALLE_PRODUCTOS_COMPUESTOS' ? 'item_sets_individual.xlsx' : 'item_sets.xlsx';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo descargar la plantilla de importación'));
+    }
+  }
+
+  protected importModeLabel(mode: CompoundProductImportMode): string {
+    return mode === 'DETALLE_PRODUCTOS_COMPUESTOS'
+      ? 'Detalle de productos compuestos'
+      : 'Productos compuestos';
   }
 
   protected isVisible(key: CompoundColumnKey) {

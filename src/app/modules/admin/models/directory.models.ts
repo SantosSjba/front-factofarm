@@ -811,3 +811,7 @@ export interface CreateCompoundProductRequest {
   imagenArchivoId?: string;
   items: CompoundProductItemInput[];
 }
+
+export type CompoundProductImportMode =
+  | 'PRODUCTOS_COMPUESTOS'
+  | 'DETALLE_PRODUCTOS_COMPUESTOS';

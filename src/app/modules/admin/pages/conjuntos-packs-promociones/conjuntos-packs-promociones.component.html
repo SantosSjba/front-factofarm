@@ -7,10 +7,30 @@
     Productos compuestos
   </h1>
   <div data-toolbar-actions class="flex items-center gap-2">
-    <app-button size="sm" variant="outline">
-      <app-icon name="mdi:import" width="16" height="16" />
-      <span>Importar</span>
-    </app-button>
+    <app-table-dropdown>
+      <div dropdown-button>
+        <app-button size="sm" variant="outline">
+          <app-icon name="mdi:import" width="16" height="16" />
+          <span>Importar</span>
+        </app-button>
+      </div>
+      <div dropdown-content>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+          (click)="openImportModal('PRODUCTOS_COMPUESTOS')"
+        >
+          Productos compuestos
+        </button>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+          (click)="openImportModal('DETALLE_PRODUCTOS_COMPUESTOS')"
+        >
+          Detalle productos compuestos
+        </button>
+      </div>
+    </app-table-dropdown>
     <app-button size="sm" (btnClick)="openCreateModal()">
       <app-icon name="mdi:plus" width="16" height="16" />
       <span>Nuevo</span>
@@ -183,6 +203,42 @@
   [pageSize]="itemsPerPage"
   (currentPageChange)="onPageChange($event)"
 />
+
+<app-modal [isOpen]="importOpen()" (close)="closeImportModal()" className="w-full max-w-5xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Importar {{ importModeLabel(importMode()) }}
+    </h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    <button type="button" class="text-base font-semibold text-brand-600 underline" (click)="downloadImportTemplate()">
+      Descargar formato
+    </button>
+    <div class="mt-10 flex items-center justify-center">
+      <label class="inline-flex cursor-pointer rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700">
+        <span>{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
+        <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
+      </label>
+    </div>
+    @if (importResult(); as result) {
+      <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-900">
+        <p class="font-semibold text-gray-800 dark:text-white/90">Último resultado</p>
+        <p class="mt-1 text-gray-700 dark:text-gray-300">
+          Filas: {{ result.totalRows }} | Creados: {{ result.created }} | Actualizados: {{ result.updated }} |
+          Errores: {{ result.errors.length }}
+        </p>
+      </div>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
+    <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="closeImportModal()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="importMutation.isPending()" (btnClick)="processImport()">
+      {{ importMutation.isPending() ? 'Procesando...' : 'Procesar' }}
+    </app-button>
+  </div>
+</app-modal>
 
 <app-modal [isOpen]="confirmOpen()" (close)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">

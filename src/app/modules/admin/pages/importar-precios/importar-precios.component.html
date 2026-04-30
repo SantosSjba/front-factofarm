@@ -1,4 +1,79 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Importar Precios</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 </div>
+
+<app-page-toolbar>
+  <h1
+    data-toolbar-title
+    class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
+  >
+    Importar Precios
+  </h1>
+</app-page-toolbar>
+
+<app-component-card title="Subir archivo XLS de precios" className="overflow-hidden">
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <button
+        type="button"
+        class="text-sm font-semibold text-brand-600 underline hover:text-brand-700"
+        (click)="downloadTemplate()"
+      >
+        Formato Precios-Productos
+      </button>
+    </div>
+    <div class="text-center md:text-left">
+      <p class="text-sm text-gray-700 dark:text-gray-300">Descarga de layout para Precios:</p>
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
+      Selecciona tu archivo para subir y luego da clic en el botón Subir
+    </p>
+    <div class="mt-4">
+      <label class="mb-2 block text-sm text-gray-700 dark:text-gray-300">Archivo XLS</label>
+      <div class="flex flex-col gap-3 md:flex-row md:items-center">
+        <input
+          type="file"
+          accept=".xls,.xlsx"
+          (change)="onFileChange($event)"
+          class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-gray-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-100 dark:text-gray-300 dark:file:border-gray-600 dark:file:bg-gray-800 dark:file:text-gray-200"
+        />
+        <span class="min-w-[220px] text-xs text-gray-500 dark:text-gray-400">
+          {{ selectedFile()?.name || 'Ningún archivo seleccionado' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-8 flex justify-end gap-2">
+    <app-button variant="outline" [disabled]="uploadMutation.isPending()" (btnClick)="clearFile()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="!canUpload()" (btnClick)="submitUpload()">
+      {{ uploadMutation.isPending() ? 'Subiendo…' : 'Subir' }}
+    </app-button>
+  </div>
+
+  @if (lastResult(); as result) {
+    <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+      <p class="text-sm font-semibold text-gray-800 dark:text-white/90">Resultado de importación</p>
+      <div class="mt-2 grid gap-2 text-sm text-gray-700 dark:text-gray-300 sm:grid-cols-3">
+        <p>Total filas: <strong>{{ result.totalRows }}</strong></p>
+        <p>Creados: <strong>{{ result.created }}</strong></p>
+        <p>Actualizados: <strong>{{ result.updated }}</strong></p>
+      </div>
+      @if (result.errors.length) {
+        <div class="mt-3">
+          <p class="text-sm font-semibold text-error-600 dark:text-error-400">Errores ({{ result.errors.length }}):</p>
+          <ul class="mt-1 max-h-40 list-disc overflow-auto pl-5 text-xs text-error-600 dark:text-error-400">
+            @for (err of result.errors; track $index) {
+              <li>{{ err }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+</app-component-card>
