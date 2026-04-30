@@ -38,6 +38,7 @@ import type {
   ProductCatalogUnitDto,
   ProductCatalogWarehouseDto,
   ProductImportMode,
+  ProductHistoryStockItemDto,
   ProductImportResultDto,
   ProductListFiltersRequest,
   ProductListItemDto,
@@ -365,6 +366,10 @@ export class DirectoryApiService {
 
   updateProductBarcode(id: string, codigoBarra: string) {
     return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}/barcode`, { codigoBarra });
+  }
+
+  listProductHistoryStock(id: string) {
+    return this.http.get<ProductHistoryStockItemDto[]>(`${this.base}/products/${id}/history/stock`);
   }
 
   importProducts(mode: ProductImportMode, file: File) {

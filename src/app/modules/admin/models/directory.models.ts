@@ -464,6 +464,13 @@ export interface ProductListResponseDto {
   totalPages: number;
 }
 
+export interface ProductHistoryStockItemDto {
+  warehouseId: string;
+  ubicacion: string;
+  stock: string;
+  series: string;
+}
+
 export interface ProductListFiltersRequest {
   search?: string;
   field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';

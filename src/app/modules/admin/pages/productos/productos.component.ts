@@ -35,6 +35,7 @@ import type {
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 type ProductTab = 'general' | 'almacenes' | 'presentaciones' | 'atributos' | 'compra';
+type HistoryTab = 'stock' | 'sales' | 'purchases';
 
 const PRODUCT_TABS: TabStripItem[] = [
   { id: 'general', label: 'General' },
@@ -42,6 +43,12 @@ const PRODUCT_TABS: TabStripItem[] = [
   { id: 'presentaciones', label: 'Presentaciones' },
   { id: 'atributos', label: 'Atributos' },
   { id: 'compra', label: 'Compra' },
+];
+
+const HISTORY_TABS: TabStripItem[] = [
+  { id: 'stock', label: 'Ver stock' },
+  { id: 'sales', label: 'Últimas ventas' },
+  { id: 'purchases', label: 'Últimas compras' },
 ];
 
 type ColumnKey =
@@ -216,8 +223,19 @@ export class ProductosComponent {
     queryFn: () => firstValueFrom(this.api.listBrands({ field: 'nombre' })),
   }));
 
+  protected readonly historyStockQuery = injectQuery(() => {
+    const productId = this.historyProduct()?.id ?? '';
+    const enabled = this.historyOpen() && this.historyTab() === 'stock' && !!productId;
+    return {
+      queryKey: [...productQueryKeys.all, 'history', 'stock', productId],
+      enabled,
+      queryFn: () => (productId ? firstValueFrom(this.api.listProductHistoryStock(productId)) : Promise.resolve([])),
+    };
+  });
+
   protected readonly products = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
+  protected readonly historyRows = computed(() => this.historyStockQuery.data() ?? []);
 
   protected readonly columns: ColumnConfig[] = [
     { key: 'codigoInterno', label: 'Cód. Interno' },
@@ -264,10 +282,14 @@ export class ProductosComponent {
   protected readonly confirmAction = signal<'delete' | 'status' | null>(null);
   protected readonly confirmTarget = signal<ProductListItemDto | null>(null);
   protected readonly lastActionTriggerId = signal<string | null>(null);
+  protected readonly historyOpen = signal(false);
+  protected readonly historyProduct = signal<ProductListItemDto | null>(null);
+  protected readonly historyTab = signal<HistoryTab>('stock');
   protected readonly barcodeOpen = signal(false);
   protected readonly importOpen = signal(false);
   protected readonly activeTab = signal<ProductTab>('general');
   protected readonly productTabs = PRODUCT_TABS;
+  protected readonly historyTabs = HISTORY_TABS;
   protected readonly importMode = signal<ProductImportMode>('PRODUCTOS');
   protected readonly importFile = signal<File | null>(null);
   protected readonly barcodeValue = signal('');
@@ -623,6 +645,22 @@ export class ProductosComponent {
       incluyeIscCompra: false,
       sePuedeCanjearPorPuntos: !!row.numeroPuntos,
     }));
+  }
+
+  protected openHistoryModal(row: ProductListItemDto) {
+    this.historyProduct.set(row);
+    this.historyTab.set('stock');
+    this.historyOpen.set(true);
+  }
+
+  protected closeHistoryModal() {
+    this.historyOpen.set(false);
+    this.historyTab.set('stock');
+    this.historyProduct.set(null);
+  }
+
+  protected setHistoryTab(id: string) {
+    this.historyTab.set(id as HistoryTab);
   }
 
   protected deleteProductRow(row: ProductListItemDto, triggerId?: string) {
@@ -1319,7 +1357,7 @@ export class ProductosComponent {
   }
 
   protected noopAction(): void {
-    /* reservado: exportar, importar, historial, stock, menú fila */
+    /* reservado: stock */
   }
 
   protected importModeLabel(mode: ProductImportMode): string {
