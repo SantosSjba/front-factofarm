@@ -39,6 +39,7 @@ import type {
   ProductCatalogWarehouseDto,
   ProductImportMode,
   ProductHistoryStockItemDto,
+  ProductStockSummaryDto,
   ProductImportResultDto,
   ProductListFiltersRequest,
   ProductListItemDto,
@@ -370,6 +371,10 @@ export class DirectoryApiService {
 
   listProductHistoryStock(id: string) {
     return this.http.get<ProductHistoryStockItemDto[]>(`${this.base}/products/${id}/history/stock`);
+  }
+
+  getProductStockSummary(id: string) {
+    return this.http.get<ProductStockSummaryDto>(`${this.base}/products/${id}/stock`);
   }
 
   importProducts(mode: ProductImportMode, file: File) {

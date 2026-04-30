@@ -227,9 +227,9 @@
                 <button
                   type="button"
                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
-                  (click)="noopAction()"
-                  title="Stock (próximamente)"
-                  [attr.aria-label]="'Stock de ' + row.nombre + ' (próximamente)'"
+                  (click)="openStockModal(row)"
+                  title="Stock"
+                  [attr.aria-label]="'Stock de ' + row.nombre"
                 >
                   <app-icon name="mdi:magnify" width="18" height="18" />
                 </button>
@@ -437,6 +437,87 @@
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
     <app-button variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="stockOpen()" (close)="closeStockModal()" className="w-full max-w-5xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Stock de producto</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6 sm:py-5">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[520px]">
+        <thead>
+          <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Ubicación</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (stockSummaryQuery.isPending()) {
+            <tr>
+              <td colspan="2" class="px-3 py-5 text-center text-sm text-gray-500">Cargando stock...</td>
+            </tr>
+          } @else {
+            @for (item of stockRows(); track item.warehouseId) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                <td class="px-3 py-2 text-sm text-gray-800 dark:text-white/90">{{ item.ubicacion }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ item.stock }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="2" class="px-3 py-5 text-center text-sm text-gray-500">No hay stock registrado.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="mt-4 text-sm font-semibold text-gray-700 dark:text-gray-200">Lista de Precios Creados</p>
+    <div class="mt-2 overflow-x-auto">
+      <table class="w-full min-w-[760px]">
+        <thead>
+          <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Unidad</th>
+            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Description</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Factor</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 1</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 2</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 3</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">P.Defecto</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (stockSummaryQuery.isPending()) {
+            <tr>
+              <td colspan="7" class="px-3 py-5 text-center text-sm text-gray-500">Cargando lista de precios...</td>
+            </tr>
+          } @else {
+            @for (p of stockPriceRows(); track p.id) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                <td class="px-3 py-2 text-sm text-gray-800 dark:text-white/90">{{ p.unidad }}</td>
+                <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">{{ p.descripcion || '—' }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.factor }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio1 }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio2 }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio3 }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">
+                  {{ precioDefectoLabel(p.precioDefecto) }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="px-3 py-5 text-center text-sm text-gray-500">No hay precios creados.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="closeStockModal()">Cerrar</app-button>
   </div>
 </app-modal>
 

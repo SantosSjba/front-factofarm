@@ -471,6 +471,28 @@ export interface ProductHistoryStockItemDto {
   series: string;
 }
 
+export interface ProductStockByLocationDto {
+  warehouseId: string;
+  ubicacion: string;
+  stock: string;
+}
+
+export interface ProductStockPriceRowDto {
+  id: string;
+  unidad: string;
+  descripcion: string;
+  factor: string;
+  precio1: string;
+  precio2: string;
+  precio3: string;
+  precioDefecto: PresentationDefaultPriceDto;
+}
+
+export interface ProductStockSummaryDto {
+  stockByLocation: ProductStockByLocationDto[];
+  priceList: ProductStockPriceRowDto[];
+}
+
 export interface ProductListFiltersRequest {
   search?: string;
   field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';

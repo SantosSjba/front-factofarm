@@ -233,9 +233,21 @@ export class ProductosComponent {
     };
   });
 
+  protected readonly stockSummaryQuery = injectQuery(() => {
+    const productId = this.stockProduct()?.id ?? '';
+    const enabled = this.stockOpen() && !!productId;
+    return {
+      queryKey: [...productQueryKeys.all, 'stock-summary', productId],
+      enabled,
+      queryFn: () => (productId ? firstValueFrom(this.api.getProductStockSummary(productId)) : Promise.resolve(null)),
+    };
+  });
+
   protected readonly products = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
   protected readonly historyRows = computed(() => this.historyStockQuery.data() ?? []);
+  protected readonly stockRows = computed(() => this.stockSummaryQuery.data()?.stockByLocation ?? []);
+  protected readonly stockPriceRows = computed(() => this.stockSummaryQuery.data()?.priceList ?? []);
 
   protected readonly columns: ColumnConfig[] = [
     { key: 'codigoInterno', label: 'Cód. Interno' },
@@ -285,6 +297,8 @@ export class ProductosComponent {
   protected readonly historyOpen = signal(false);
   protected readonly historyProduct = signal<ProductListItemDto | null>(null);
   protected readonly historyTab = signal<HistoryTab>('stock');
+  protected readonly stockOpen = signal(false);
+  protected readonly stockProduct = signal<ProductListItemDto | null>(null);
   protected readonly barcodeOpen = signal(false);
   protected readonly importOpen = signal(false);
   protected readonly activeTab = signal<ProductTab>('general');
@@ -657,6 +671,16 @@ export class ProductosComponent {
     this.historyOpen.set(false);
     this.historyTab.set('stock');
     this.historyProduct.set(null);
+  }
+
+  protected openStockModal(row: ProductListItemDto) {
+    this.stockProduct.set(row);
+    this.stockOpen.set(true);
+  }
+
+  protected closeStockModal() {
+    this.stockOpen.set(false);
+    this.stockProduct.set(null);
   }
 
   protected setHistoryTab(id: string) {
@@ -1354,6 +1378,12 @@ export class ProductosComponent {
     const gross = row.incluyeIgvVenta ? base : base * 1.18;
     const sym = row.currency.codigo === 'PEN' ? 'S/' : row.currency.codigo === 'USD' ? 'US$' : row.currency.codigo;
     return `${sym} ${gross % 1 === 0 ? gross.toFixed(0) : gross.toFixed(2)}`;
+  }
+
+  protected precioDefectoLabel(value: PresentationDefaultPriceDto): string {
+    if (value === 'PRECIO_2') return 'Precio 2';
+    if (value === 'PRECIO_3') return 'Precio 3';
+    return 'Precio 1';
   }
 
   protected noopAction(): void {
