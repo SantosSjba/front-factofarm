@@ -547,3 +547,12 @@ export interface CreateProductRequest {
   presentations?: ProductPresentationInput[];
   attributes?: ProductAttributeInput[];
 }
+
+export type ProductImportMode = 'PRODUCTOS' | 'L_PRECIOS' | 'ACTUALIZAR_PRECIOS';
+
+export interface ProductImportResultDto {
+  totalRows: number;
+  created: number;
+  updated: number;
+  errors: string[];
+}

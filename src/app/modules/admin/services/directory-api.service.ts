@@ -37,6 +37,8 @@ import type {
   ProductCatalogTaxAffectationDto,
   ProductCatalogUnitDto,
   ProductCatalogWarehouseDto,
+  ProductImportMode,
+  ProductImportResultDto,
   ProductListFiltersRequest,
   ProductListItemDto,
   ProductListResponseDto,
@@ -343,5 +345,19 @@ export class DirectoryApiService {
 
   createProduct(body: CreateProductRequest) {
     return this.http.post<ProductListItemDto>(`${this.base}/products`, body);
+  }
+
+  importProducts(mode: ProductImportMode, file: File) {
+    const body = new FormData();
+    body.append('mode', mode);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/products/import`, body);
+  }
+
+  downloadProductImportTemplate(mode: ProductImportMode) {
+    return this.http.get(`${this.base}/products/import/template`, {
+      params: { mode },
+      responseType: 'blob',
+    });
   }
 }

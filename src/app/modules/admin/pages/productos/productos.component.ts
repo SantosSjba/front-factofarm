@@ -27,6 +27,7 @@ import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/ta
 import type {
   CreateProductRequest,
   PresentationDefaultPriceDto,
+  ProductImportMode,
   ProductListFiltersRequest,
   ProductListItemDto,
 } from '../../models/directory.models';
@@ -91,6 +92,17 @@ const productSchema = yup.object({
   unitId: yup.string().uuid('Seleccione unidad').required(),
   currencyId: yup.string().uuid('Seleccione moneda').required(),
   saleTaxAffectationId: yup.string().uuid('Seleccione tipo de afectación').required(),
+});
+
+const importSchema = yup.object({
+  mode: yup
+    .mixed<ProductImportMode>()
+    .oneOf(['PRODUCTOS', 'L_PRECIOS', 'ACTUALIZAR_PRECIOS'], 'Modo de importación no válido')
+    .required(),
+  file: yup
+    .mixed<File>()
+    .required('Seleccione un archivo xlsx')
+    .test('xlsx', 'El archivo debe ser .xlsx', (v) => !!v && /\.xlsx$/i.test(v.name)),
 });
 
 @Component({
@@ -237,8 +249,11 @@ export class ProductosComponent {
   });
 
   protected readonly formOpen = signal(false);
+  protected readonly importOpen = signal(false);
   protected readonly activeTab = signal<ProductTab>('general');
   protected readonly productTabs = PRODUCT_TABS;
+  protected readonly importMode = signal<ProductImportMode>('PRODUCTOS');
+  protected readonly importFile = signal<File | null>(null);
 
   protected readonly form = signal<CreateProductRequest>({
     nombre: '',
@@ -363,6 +378,21 @@ export class ProductosComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar el producto')),
   }));
 
+  protected readonly importMutation = injectMutation(() => ({
+    mutationFn: ({ mode, file }: { mode: ProductImportMode; file: File }) =>
+      firstValueFrom(this.api.importProducts(mode, file)),
+    onSuccess: (res) => {
+      this.notify.success(`Importación completada. Creados: ${res.created}, actualizados: ${res.updated}`);
+      if (res.errors.length) {
+        this.notify.warning(`Se detectaron ${res.errors.length} filas con error.`);
+      }
+      this.importOpen.set(false);
+      this.importFile.set(null);
+      void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo importar productos')),
+  }));
+
   protected readonly warehouseSelectOptions = computed(() =>
     (this.warehousesQuery.data() ?? []).map((w) => ({
       value: w.id,
@@ -473,6 +503,44 @@ export class ProductosComponent {
     this.formOpen.set(true);
     this.resetForm();
     this.applyCatalogDefaults();
+  }
+
+  protected openImportModal(mode: ProductImportMode) {
+    this.importMode.set(mode);
+    this.importFile.set(null);
+    this.importOpen.set(true);
+  }
+
+  protected onImportFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.importFile.set(input.files?.[0] ?? null);
+  }
+
+  protected processImport() {
+    const mode = this.importMode();
+    const file = this.importFile();
+    const valid = this.validateImport(mode, file);
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
+      return;
+    }
+    this.importMutation.mutate({ mode, file: file as File });
+  }
+
+  protected async downloadImportTemplate() {
+    const mode = this.importMode();
+    const filename =
+      mode === 'L_PRECIOS'
+        ? 'item_price_lists.xlsx'
+        : mode === 'ACTUALIZAR_PRECIOS'
+          ? 'items_update_prices.xlsx'
+          : 'items.xlsx';
+    try {
+      const blob = await firstValueFrom(this.api.downloadProductImportTemplate(mode));
+      this.downloadBlob(blob, filename);
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo descargar la plantilla'));
+    }
   }
 
   protected closeFormModal() {
@@ -961,5 +1029,34 @@ export class ProductosComponent {
 
   protected noopAction(): void {
     /* reservado: exportar, importar, historial, stock, menú fila */
+  }
+
+  protected importModeLabel(mode: ProductImportMode): string {
+    if (mode === 'L_PRECIOS') return 'L. Precios';
+    if (mode === 'ACTUALIZAR_PRECIOS') return 'Actualizar precios';
+    return 'Productos';
+  }
+
+  private downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private validateImport(mode: ProductImportMode, file: File | null): { ok: boolean; message: string } {
+    try {
+      importSchema.validateSync({ mode, file }, { abortEarly: false });
+      return { ok: true, message: '' };
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        return { ok: false, message: err.errors[0] ?? 'Archivo inválido' };
+      }
+      return { ok: false, message: 'No se pudo validar archivo' };
+    }
   }
 }
