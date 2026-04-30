@@ -586,3 +586,133 @@ export interface ProductImportResultDto {
   updated: number;
   errors: string[];
 }
+
+export interface ServiceCatalogUnitDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ServiceCatalogCurrencyDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ServiceCatalogTaxAffectationDto {
+  id: string;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface ServiceCatalogLocationDto {
+  id: string;
+  nombre: string;
+  establishment: { id: string; nombre: string; codigo: string | null };
+}
+
+export interface ServiceCatalogAttributeTypeDto {
+  id: string;
+  nombre: string;
+}
+
+export interface ServiceCatalogIscSystemDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ServiceListItemDto {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  principioActivo: string | null;
+  concentracion: string | null;
+  formaFarmaceutica: string | null;
+  codigoBusqueda: string | null;
+  codigoInterno: string | null;
+  codigoBarra: string | null;
+  codigoSunat: string | null;
+  modelo: string | null;
+  lineaProducto: string | null;
+  registroSanitario: string | null;
+  codigoMedicamentoDigemid: string | null;
+  saleTaxAffectationId: string;
+  purchaseTaxAffectationId: string;
+  precioUnitarioVenta: string;
+  precioUnitarioCompra: string | null;
+  incluyeIgvVenta: boolean;
+  incluyeIgvCompra: boolean;
+  tipoSistemaIscId: string | null;
+  tipoSistemaIscNombre: string | null;
+  porcentajeIsc: string | null;
+  numeroPuntos: string | null;
+  marcaLaboratorio: string | null;
+  marcaNombre: string | null;
+  categoryId: string | null;
+  brandId: string | null;
+  productLocationId: string | null;
+  habilitado: boolean;
+  unit: ServiceCatalogUnitDto;
+  currency: ServiceCatalogCurrencyDto;
+  totalStock: string;
+}
+
+export interface ServiceListResponseDto {
+  items: ServiceListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ServiceListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ServiceAttributeInput {
+  attributeTypeId: string;
+  descripcion: string;
+}
+
+export interface CreateServiceRequest {
+  nombre: string;
+  descripcion?: string;
+  principioActivo?: string;
+  concentracion?: string;
+  registroSanitario?: string;
+  formaFarmaceutica?: string;
+  codigoBusqueda?: string;
+  codigoInterno?: string;
+  codigoBarra?: string;
+  codigoSunat?: string;
+  codigoMedicamentoDigemid?: string;
+  lineaProducto?: string;
+  modelo?: string;
+  marcaLaboratorio?: string;
+  unitId?: string;
+  currencyId: string;
+  saleTaxAffectationId: string;
+  purchaseTaxAffectationId?: string;
+  precioUnitarioVenta: number;
+  precioUnitarioCompra?: number;
+  incluyeIgvVenta?: boolean;
+  incluyeIgvCompra?: boolean;
+  generico?: boolean;
+  necesitaRecetaMedica?: boolean;
+  incluyeIscVenta?: boolean;
+  incluyeIscCompra?: boolean;
+  tipoSistemaIscId?: string;
+  porcentajeIsc?: number;
+  sujetoDetraccion?: boolean;
+  sePuedeCanjearPorPuntos?: boolean;
+  numeroPuntos?: number;
+  categoryId?: string;
+  brandId?: string;
+  productLocationId?: string;
+  imagenArchivoId?: string;
+  attributes?: ServiceAttributeInput[];
+}

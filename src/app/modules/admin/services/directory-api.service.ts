@@ -44,6 +44,16 @@ import type {
   ProductListFiltersRequest,
   ProductListItemDto,
   ProductListResponseDto,
+  ServiceCatalogAttributeTypeDto,
+  ServiceCatalogCurrencyDto,
+  ServiceCatalogIscSystemDto,
+  ServiceCatalogLocationDto,
+  ServiceCatalogTaxAffectationDto,
+  ServiceCatalogUnitDto,
+  CreateServiceRequest,
+  ServiceListFiltersRequest,
+  ServiceListItemDto,
+  ServiceListResponseDto,
   UbigeoDepartmentDto,
   UbigeoDistrictDto,
   UbigeoProvinceDto,
@@ -389,5 +399,69 @@ export class DirectoryApiService {
       params: { mode },
       responseType: 'blob',
     });
+  }
+
+  listServiceCatalogUnits() {
+    return this.http.get<ServiceCatalogUnitDto[]>(`${this.base}/services/catalogs/units`);
+  }
+
+  listServiceCatalogCurrencies() {
+    return this.http.get<ServiceCatalogCurrencyDto[]>(`${this.base}/services/catalogs/currencies`);
+  }
+
+  listServiceCatalogTaxAffectationTypes() {
+    return this.http.get<ServiceCatalogTaxAffectationDto[]>(
+      `${this.base}/services/catalogs/tax-affectation-types`,
+    );
+  }
+
+  listServiceCatalogLocations() {
+    return this.http.get<ServiceCatalogLocationDto[]>(`${this.base}/services/catalogs/product-locations`);
+  }
+
+  listServiceCatalogAttributeTypes() {
+    return this.http.get<ServiceCatalogAttributeTypeDto[]>(
+      `${this.base}/services/catalogs/attribute-types`,
+    );
+  }
+
+  listServiceCatalogIscSystems() {
+    return this.http.get<ServiceCatalogIscSystemDto[]>(
+      `${this.base}/services/catalogs/isc-systems`,
+    );
+  }
+
+  listServices(filters?: ServiceListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<ServiceListResponseDto>(`${this.base}/services`, { params });
+  }
+
+  createService(body: CreateServiceRequest) {
+    return this.http.post<ServiceListItemDto>(`${this.base}/services`, body);
+  }
+
+  updateService(id: string, body: CreateServiceRequest) {
+    return this.http.patch<ServiceListItemDto>(`${this.base}/services/${id}`, body);
+  }
+
+  deleteService(id: string) {
+    return this.http.delete<void>(`${this.base}/services/${id}`);
+  }
+
+  duplicateService(id: string) {
+    return this.http.post<ServiceListItemDto>(`${this.base}/services/${id}/duplicate`, {});
+  }
+
+  updateServiceStatus(id: string, habilitado: boolean) {
+    return this.http.patch<ServiceListItemDto>(`${this.base}/services/${id}/status`, { habilitado });
+  }
+
+  updateServiceBarcode(id: string, codigoBarra: string) {
+    return this.http.patch<ServiceListItemDto>(`${this.base}/services/${id}/barcode`, { codigoBarra });
   }
 }
