@@ -347,6 +347,26 @@ export class DirectoryApiService {
     return this.http.post<ProductListItemDto>(`${this.base}/products`, body);
   }
 
+  updateProduct(id: string, body: CreateProductRequest) {
+    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}`, body);
+  }
+
+  deleteProduct(id: string) {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/products/${id}`);
+  }
+
+  duplicateProduct(id: string) {
+    return this.http.post<ProductListItemDto>(`${this.base}/products/${id}/duplicate`, {});
+  }
+
+  updateProductStatus(id: string, habilitado: boolean) {
+    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}/status`, { habilitado });
+  }
+
+  updateProductBarcode(id: string, codigoBarra: string) {
+    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}/barcode`, { codigoBarra });
+  }
+
   importProducts(mode: ProductImportMode, file: File) {
     const body = new FormData();
     body.append('mode', mode);

@@ -184,7 +184,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of products(); track row.id; let i = $index) {
-            <tr>
+            <tr [class.bg-red-50/40]="!row.habilitado" [class.dark:bg-red-500/10]="!row.habilitado">
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ (currentPage() - 1) * itemsPerPage + i + 1 }}
               </td>
@@ -196,7 +196,18 @@
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.unit.codigo }}</td>
               }
               @if (isVisible('nombre')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
+                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                  <div class="flex items-center gap-2">
+                    <span>{{ row.nombre }}</span>
+                    @if (!row.habilitado) {
+                      <span
+                        class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-500/20 dark:text-red-300"
+                      >
+                        Inhabilitado
+                      </span>
+                    }
+                  </div>
+                </td>
               }
               @if (isVisible('descripcion')) {
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.descripcion || '—' }}</td>
@@ -207,6 +218,7 @@
                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
                   (click)="noopAction()"
                   title="Historial (próximamente)"
+                  [attr.aria-label]="'Historial de ' + row.nombre + ' (próximamente)'"
                 >
                   <app-icon name="mdi:history" width="18" height="18" />
                 </button>
@@ -217,6 +229,7 @@
                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
                   (click)="noopAction()"
                   title="Stock (próximamente)"
+                  [attr.aria-label]="'Stock de ' + row.nombre + ' (próximamente)'"
                 >
                   <app-icon name="mdi:magnify" width="18" height="18" />
                 </button>
@@ -262,8 +275,10 @@
                   <app-table-dropdown>
                     <div dropdown-button>
                       <button
+                        [id]="'product-actions-' + row.id"
                         type="button"
                         class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                        [attr.aria-label]="'Acciones para ' + row.nombre"
                       >
                         <app-icon name="mdi:dots-vertical" width="18" height="18" />
                       </button>
@@ -271,17 +286,73 @@
                     <div dropdown-content>
                       <button
                         type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
-                        (click)="noopAction()"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="openEditModal(row)"
                       >
-                        Editar (próximamente)
+                        Editar
                       </button>
                       <button
                         type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
-                        (click)="noopAction()"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                        [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
+                        (click)="deleteProductRow(row, 'product-actions-' + row.id)"
                       >
-                        Eliminar (próximamente)
+                        {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                        [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()"
+                        (click)="duplicateProductRow(row)"
+                      >
+                        {{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                        [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
+                        (click)="toggleProductStatus(row, 'product-actions-' + row.id)"
+                      >
+                        {{
+                          statusMutation.isPending()
+                            ? 'Procesando...'
+                            : (row.habilitado ? 'Inhabilitar' : 'Habilitar')
+                        }}
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="openBarcodeModal(row)"
+                      >
+                        Cod. Barras
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, 'single')"
+                      >
+                        Etiquetas
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, '1x1')"
+                      >
+                        Etiquetas 1x1
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, '1x2')"
+                      >
+                        Etiquetas 1x2
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, '3x3')"
+                      >
+                        Etiquetas 3x3
                       </button>
                     </div>
                   </app-table-dropdown>
@@ -343,6 +414,51 @@
   </div>
 </app-modal>
 
+<app-modal [isOpen]="confirmOpen()" (close)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ confirmActionTitle() }}</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-theme-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    {{ confirmActionMessage() }}
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button
+      [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
+      (btnClick)="confirmProductAction()"
+    >
+      {{ confirmActionButtonLabel() }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="barcodeOpen()" (close)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 sm:px-6">
+    <app-label>Código</app-label>
+    <app-input-field className="mt-2" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
+    <div class="mt-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+      @if (barcodeSvg()) {
+        <div class="flex justify-center overflow-x-auto" [innerHTML]="barcodeSvg()"></div>
+      } @else {
+        <p class="text-center text-theme-sm text-gray-500">Ingrese un código válido para previsualizar.</p>
+      }
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button variant="outline" (btnClick)="printBarcode()">
+      <app-icon name="mdi:printer-outline" width="16" height="16" />
+      <span>Imprimir</span>
+    </app-button>
+    <app-button [disabled]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+      {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </div>
+</app-modal>
+
 <app-modal
   [isOpen]="formOpen()"
   (close)="closeFormModal()"
@@ -352,7 +468,7 @@
 >
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
-      title="Nuevo Producto"
+      [title]="editingProductId() ? 'Editar Producto' : 'Nuevo Producto'"
       [tabs]="productTabs"
       [activeId]="activeTab()"
       (tabChange)="setTab($event)"
@@ -592,6 +708,7 @@
         </div>
         <app-checkbox
           [checked]="!!form().manejaLotes"
+          [disabled]="!!editingProductId()"
           (checkedChange)="updateForm('manejaLotes', $event)"
           label="¿Maneja lotes?"
         />
@@ -601,6 +718,7 @@
             <app-input-field
               className="mt-2"
               [value]="form().codigoLote ?? ''"
+              [disabled]="!!editingProductId()"
               (valueChange)="updateForm('codigoLote', $event + '')"
             />
           </div>
@@ -610,6 +728,7 @@
               className="mt-2"
               type="date"
               [value]="form().fechaVencimientoLote ?? ''"
+              [disabled]="!!editingProductId()"
               (valueChange)="updateForm('fechaVencimientoLote', $event + '')"
             />
           </div>
@@ -996,8 +1115,16 @@
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
     <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button size="sm" [disabled]="saveMutation.isPending() || generalCatalogsLoading()" (btnClick)="submitProduct()">
-      {{ saveMutation.isPending() ? 'Guardando...' : 'Guardar' }}
+    <app-button
+      size="sm"
+      [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading()"
+      (btnClick)="submitProduct()"
+    >
+      {{
+        saveMutation.isPending() || updateMutation.isPending()
+          ? (editingProductId() ? 'Actualizando...' : 'Guardando...')
+          : (editingProductId() ? 'Actualizar' : 'Guardar')
+      }}
     </app-button>
   </div>
 </app-modal>

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
+import JsBarcode from 'jsbarcode';
 import * as yup from 'yup';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { productQueryKeys } from '../../../../core/query/product-query.keys';
@@ -103,6 +104,14 @@ const importSchema = yup.object({
     .mixed<File>()
     .required('Seleccione un archivo xlsx')
     .test('xlsx', 'El archivo debe ser .xlsx', (v) => !!v && /\.xlsx$/i.test(v.name)),
+});
+
+const barcodeSchema = yup.object({
+  codigoBarra: yup
+    .string()
+    .trim()
+    .required('Código de barras es obligatorio')
+    .max(60, 'Código de barra no debe exceder 60 caracteres'),
 });
 
 @Component({
@@ -249,11 +258,20 @@ export class ProductosComponent {
   });
 
   protected readonly formOpen = signal(false);
+  protected readonly editingProductId = signal<string | null>(null);
+  protected readonly selectedProduct = signal<ProductListItemDto | null>(null);
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmAction = signal<'delete' | 'status' | null>(null);
+  protected readonly confirmTarget = signal<ProductListItemDto | null>(null);
+  protected readonly lastActionTriggerId = signal<string | null>(null);
+  protected readonly barcodeOpen = signal(false);
   protected readonly importOpen = signal(false);
   protected readonly activeTab = signal<ProductTab>('general');
   protected readonly productTabs = PRODUCT_TABS;
   protected readonly importMode = signal<ProductImportMode>('PRODUCTOS');
   protected readonly importFile = signal<File | null>(null);
+  protected readonly barcodeValue = signal('');
+  protected readonly barcodeSvg = signal('');
 
   protected readonly form = signal<CreateProductRequest>({
     nombre: '',
@@ -378,6 +396,59 @@ export class ProductosComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar el producto')),
   }));
 
+  protected readonly updateMutation = injectMutation(() => ({
+    mutationFn: ({ id, body }: { id: string; body: CreateProductRequest }) =>
+      firstValueFrom(this.api.updateProduct(id, body)),
+    onSuccess: () => {
+      this.notify.success('Producto actualizado correctamente');
+      this.formOpen.set(false);
+      this.resetForm();
+      void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el producto')),
+  }));
+
+  protected readonly deleteMutation = injectMutation(() => ({
+    mutationFn: (id: string) => firstValueFrom(this.api.deleteProduct(id)),
+    onSuccess: () => {
+      this.notify.success('Producto eliminado correctamente');
+      this.closeConfirmModal(true);
+      void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el producto')),
+  }));
+
+  protected readonly duplicateMutation = injectMutation(() => ({
+    mutationFn: (id: string) => firstValueFrom(this.api.duplicateProduct(id)),
+    onSuccess: () => {
+      this.notify.success('Producto duplicado correctamente');
+      void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo duplicar el producto')),
+  }));
+
+  protected readonly statusMutation = injectMutation(() => ({
+    mutationFn: ({ id, habilitado }: { id: string; habilitado: boolean }) =>
+      firstValueFrom(this.api.updateProductStatus(id, habilitado)),
+    onSuccess: (_row, vars) => {
+      this.notify.success(vars.habilitado ? 'Producto habilitado' : 'Producto inhabilitado');
+      this.closeConfirmModal(true);
+      void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar estado')),
+  }));
+
+  protected readonly barcodeMutation = injectMutation(() => ({
+    mutationFn: ({ id, codigoBarra }: { id: string; codigoBarra: string }) =>
+      firstValueFrom(this.api.updateProductBarcode(id, codigoBarra)),
+    onSuccess: () => {
+      this.notify.success('Código de barras actualizado');
+      this.barcodeOpen.set(false);
+      void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar código de barras')),
+  }));
+
   protected readonly importMutation = injectMutation(() => ({
     mutationFn: ({ mode, file }: { mode: ProductImportMode; file: File }) =>
       firstValueFrom(this.api.importProducts(mode, file)),
@@ -500,9 +571,223 @@ export class ProductosComponent {
 
   protected openCreateModal() {
     this.activeTab.set('general');
+    this.editingProductId.set(null);
     this.formOpen.set(true);
     this.resetForm();
     this.applyCatalogDefaults();
+  }
+
+  protected openEditModal(row: ProductListItemDto) {
+    this.activeTab.set('general');
+    this.formOpen.set(true);
+    this.resetForm();
+    this.applyCatalogDefaults();
+    this.editingProductId.set(row.id);
+
+    this.form.update((f) => ({
+      ...f,
+      nombre: row.nombre,
+      descripcion: row.descripcion ?? undefined,
+      principioActivo: row.principioActivo ?? undefined,
+      concentracion: row.concentracion ?? undefined,
+      formaFarmaceutica: row.formaFarmaceutica ?? undefined,
+      codigoBusqueda: row.codigoBusqueda ?? undefined,
+      codigoInterno: row.codigoInterno ?? undefined,
+      codigoBarra: row.codigoBarra ?? undefined,
+      codigoSunat: row.codigoSunat ?? undefined,
+      codigoMedicamentoDigemid: row.codigoMedicamentoDigemid ?? undefined,
+      modelo: row.modelo ?? undefined,
+      lineaProducto: row.lineaProducto ?? undefined,
+      registroSanitario: row.registroSanitario ?? undefined,
+      saleTaxAffectationId: row.saleTaxAffectationId,
+      purchaseTaxAffectationId: row.purchaseTaxAffectationId,
+      precioUnitarioVenta: Number.parseFloat(row.precioUnitarioVenta) || 0,
+      precioUnitarioCompra:
+        row.precioUnitarioCompra != null ? Number.parseFloat(row.precioUnitarioCompra) : undefined,
+      incluyeIgvVenta: row.incluyeIgvVenta,
+      incluyeIgvCompra: row.incluyeIgvCompra,
+      tipoSistemaIscId: row.tipoSistemaIscId ?? undefined,
+      porcentajeIsc: row.porcentajeIsc != null ? Number.parseFloat(row.porcentajeIsc) : undefined,
+      codigoLote: row.codigoLote ?? undefined,
+      fechaVencimientoLote: row.fechaVencimientoLote ?? undefined,
+      numeroPuntos: row.numeroPuntos != null ? Number.parseFloat(row.numeroPuntos) : undefined,
+      stockMinimo: row.stockMinimo,
+      marcaLaboratorio: row.marcaLaboratorio ?? undefined,
+      categoryId: row.categoryId ?? undefined,
+      brandId: row.brandId ?? undefined,
+      productLocationId: row.productLocationId ?? undefined,
+      unitId: row.unit.id,
+      currencyId: row.currency.id,
+      manejaLotes: !!(row.codigoLote || row.fechaVencimientoLote),
+      incluyeIscVenta: !!(row.tipoSistemaIscId || row.porcentajeIsc),
+      incluyeIscCompra: false,
+      sePuedeCanjearPorPuntos: !!row.numeroPuntos,
+    }));
+  }
+
+  protected deleteProductRow(row: ProductListItemDto, triggerId?: string) {
+    this.lastActionTriggerId.set(triggerId ?? null);
+    this.confirmTarget.set(row);
+    this.confirmAction.set('delete');
+    this.confirmOpen.set(true);
+  }
+
+  protected duplicateProductRow(row: ProductListItemDto) {
+    this.duplicateMutation.mutate(row.id);
+  }
+
+  protected toggleProductStatus(row: ProductListItemDto, triggerId?: string) {
+    this.lastActionTriggerId.set(triggerId ?? null);
+    this.confirmTarget.set(row);
+    this.confirmAction.set('status');
+    this.confirmOpen.set(true);
+  }
+
+  protected closeConfirmModal(force = false) {
+    if (!force && (this.deleteMutation.isPending() || this.statusMutation.isPending())) return;
+    this.confirmOpen.set(false);
+    this.confirmAction.set(null);
+    this.confirmTarget.set(null);
+    const triggerId = this.lastActionTriggerId();
+    if (triggerId) {
+      setTimeout(() => {
+        document.getElementById(triggerId)?.focus();
+      });
+    }
+    this.lastActionTriggerId.set(null);
+  }
+
+  protected confirmActionTitle(): string {
+    const action = this.confirmAction();
+    if (action === 'delete') return 'Confirmar eliminación';
+    if (action === 'status') return 'Confirmar cambio de estado';
+    return 'Confirmar acción';
+  }
+
+  protected confirmActionMessage(): string {
+    const row = this.confirmTarget();
+    const action = this.confirmAction();
+    if (!row || !action) return '¿Desea continuar?';
+    if (action === 'delete') return `¿Desea eliminar el producto "${row.nombre}"?`;
+    const target = row.habilitado ? 'inhabilitar' : 'habilitar';
+    return `¿Desea ${target} el producto "${row.nombre}"?`;
+  }
+
+  protected confirmActionButtonLabel(): string {
+    const action = this.confirmAction();
+    if (action === 'delete') return this.deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar';
+    if (action === 'status') return this.statusMutation.isPending() ? 'Procesando...' : 'Confirmar';
+    return 'Confirmar';
+  }
+
+  protected confirmProductAction() {
+    const row = this.confirmTarget();
+    const action = this.confirmAction();
+    if (!row || !action) return;
+    if (action === 'delete') {
+      this.deleteMutation.mutate(row.id);
+      return;
+    }
+    this.statusMutation.mutate({ id: row.id, habilitado: !row.habilitado });
+  }
+
+  protected openBarcodeModal(row: ProductListItemDto) {
+    this.selectedProduct.set(row);
+    const defaultCode = row.codigoBarra ?? row.codigoInterno ?? row.codigoBusqueda ?? '';
+    this.barcodeValue.set(defaultCode);
+    this.refreshBarcodePreview(defaultCode);
+    this.barcodeOpen.set(true);
+  }
+
+  protected closeBarcodeModal() {
+    this.barcodeOpen.set(false);
+    this.barcodeValue.set('');
+    this.barcodeSvg.set('');
+  }
+
+  protected onBarcodeInputChange(value: string | number) {
+    const next = String(value ?? '');
+    this.barcodeValue.set(next);
+    this.refreshBarcodePreview(next);
+  }
+
+  protected submitBarcode() {
+    const row = this.selectedProduct();
+    if (!row) return;
+    const codigoBarra = this.barcodeValue().trim();
+    const valid = this.validateBarcode(codigoBarra);
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
+      return;
+    }
+    this.barcodeMutation.mutate({ id: row.id, codigoBarra });
+  }
+
+  protected printBarcode() {
+    const row = this.selectedProduct();
+    if (!row) return;
+    this.printProductLabels(row, 'single');
+  }
+
+  protected printProductLabels(row: ProductListItemDto, format: 'single' | '1x1' | '1x2' | '3x3') {
+    const code = (row.codigoBarra ?? '').trim();
+    if (!code) {
+      this.notify.warning('El producto no tiene código de barras registrado.');
+      return;
+    }
+
+    const svg = this.buildBarcodeSvg(code);
+    if (!svg) {
+      this.notify.warning('No se pudo generar el código de barras.');
+      return;
+    }
+
+    const layouts = {
+      single: { cols: 1, rows: 1, title: 'Etiqueta' },
+      '1x1': { cols: 1, rows: 1, title: 'Etiquetas 1x1' },
+      '1x2': { cols: 2, rows: 1, title: 'Etiquetas 1x2' },
+      '3x3': { cols: 3, rows: 3, title: 'Etiquetas 3x3' },
+    } as const;
+    const layout = layouts[format];
+    const count = layout.cols * layout.rows;
+    const labels = Array.from({ length: count })
+      .map(
+        () => `
+        <div class="label">
+          <div class="name">${this.escapeHtml(row.nombre)}</div>
+          <div class="barcode">${svg}</div>
+          <div class="code">${this.escapeHtml(code)}</div>
+        </div>
+      `,
+      )
+      .join('');
+
+    const win = window.open('', '_blank', 'width=1100,height=820');
+    if (!win) {
+      this.notify.warning('No se pudo abrir la ventana de impresión.');
+      return;
+    }
+    win.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${layout.title} ${this.escapeHtml(row.nombre)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 16px; }
+      .grid { display: grid; grid-template-columns: repeat(${layout.cols}, 1fr); gap: 10px; }
+      .label { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; min-height: 120px; }
+      .name { font-size: 12px; font-weight: 700; margin-bottom: 4px; line-height: 1.2; }
+      .barcode { display: flex; justify-content: center; align-items: center; min-height: 60px; overflow: hidden; }
+      .barcode svg { width: 100%; height: 56px; }
+      .code { font-size: 11px; color: #374151; margin-top: 4px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="grid">${labels}</div>
+    <script>window.onload = () => { window.print(); };</script>
+  </body>
+</html>`);
+    win.document.close();
   }
 
   protected openImportModal(mode: ProductImportMode) {
@@ -544,12 +829,13 @@ export class ProductosComponent {
   }
 
   protected closeFormModal() {
-    if (this.saveMutation.isPending()) return;
+    if (this.saveMutation.isPending() || this.updateMutation.isPending()) return;
     this.formOpen.set(false);
     this.resetForm();
   }
 
   private resetForm() {
+    this.editingProductId.set(null);
     this.formErrors.set({});
     this.stockInicial.set(0);
     this.defaultWarehouseId.set('');
@@ -973,18 +1259,19 @@ export class ProductosComponent {
       f.numeroPuntos !== undefined && f.numeroPuntos !== null && Number.isFinite(f.numeroPuntos)
         ? f.numeroPuntos
         : undefined;
+    const editingId = this.editingProductId();
 
     const body: CreateProductRequest = {
       ...f,
       categoryId: f.categoryId || undefined,
       brandId: f.brandId || undefined,
       productLocationId: f.productLocationId || undefined,
-      codigoLote: f.manejaLotes ? f.codigoLote?.trim() || undefined : undefined,
-      fechaVencimientoLote: f.manejaLotes ? f.fechaVencimientoLote || undefined : undefined,
+      codigoLote: editingId ? undefined : f.manejaLotes ? f.codigoLote?.trim() || undefined : undefined,
+      fechaVencimientoLote: editingId ? undefined : f.manejaLotes ? f.fechaVencimientoLote || undefined : undefined,
       tipoSistemaIscId: f.incluyeIscVenta || f.incluyeIscCompra ? f.tipoSistemaIscId : undefined,
       porcentajeIsc: f.incluyeIscVenta || f.incluyeIscCompra ? porcentajeIscValue : undefined,
       numeroPuntos: f.sePuedeCanjearPorPuntos ? numeroPuntosValue : undefined,
-      defaultWarehouseId: dw || undefined,
+      defaultWarehouseId: editingId && warehouseStocks.length === 0 ? undefined : dw || undefined,
       warehousePrices: warehousePrices.length ? warehousePrices : undefined,
       warehouseStocks: warehouseStocks.length ? warehouseStocks : undefined,
       presentations: presentations.length ? presentations : undefined,
@@ -992,6 +1279,10 @@ export class ProductosComponent {
       purchaseTaxAffectationId: f.purchaseTaxAffectationId || f.saleTaxAffectationId,
     };
 
+    if (editingId) {
+      this.updateMutation.mutate({ id: editingId, body });
+      return;
+    }
     this.saveMutation.mutate(body);
   }
 
@@ -1058,5 +1349,52 @@ export class ProductosComponent {
       }
       return { ok: false, message: 'No se pudo validar archivo' };
     }
+  }
+
+  private refreshBarcodePreview(value: string) {
+    const clean = value.trim();
+    if (!clean) {
+      this.barcodeSvg.set('');
+      return;
+    }
+    const svg = this.buildBarcodeSvg(clean);
+    this.barcodeSvg.set(svg ?? '');
+  }
+
+  private buildBarcodeSvg(value: string): string | null {
+    try {
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      JsBarcode(svgEl, value, {
+        format: 'CODE128',
+        displayValue: false,
+        margin: 0,
+        width: 1.5,
+        height: 56,
+      });
+      return svgEl.outerHTML;
+    } catch {
+      return null;
+    }
+  }
+
+  private validateBarcode(codigoBarra: string): { ok: boolean; message: string } {
+    try {
+      barcodeSchema.validateSync({ codigoBarra }, { abortEarly: false });
+      return { ok: true, message: '' };
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        return { ok: false, message: err.errors[0] ?? 'Código inválido' };
+      }
+      return { ok: false, message: 'No se pudo validar código de barras' };
+    }
+  }
+
+  private escapeHtml(input: string): string {
+    return input
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }

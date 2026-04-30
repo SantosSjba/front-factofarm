@@ -444,6 +444,7 @@ export interface ProductListItemDto {
   codigoLote: string | null;
   fechaVencimientoLote: string | null;
   numeroPuntos: string | null;
+  habilitado: boolean;
   stockMinimo: number;
   marcaLaboratorio: string | null;
   marcaNombre: string | null;
