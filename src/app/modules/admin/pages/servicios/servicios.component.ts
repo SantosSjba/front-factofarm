@@ -29,6 +29,7 @@ import type { CreateServiceRequest, ServiceListFiltersRequest, ServiceListItemDt
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 type ServiceTab = 'general' | 'atributos';
+type HistoryTab = 'stock' | 'sales' | 'purchases';
 
 type ServiceColumnKey =
   | 'codigoInterno'
@@ -55,6 +56,12 @@ type AttributeRow = {
 const SERVICE_TABS: TabStripItem[] = [
   { id: 'general', label: 'General' },
   { id: 'atributos', label: 'Atributos' },
+];
+
+const HISTORY_TABS: TabStripItem[] = [
+  { id: 'stock', label: 'Ver stock' },
+  { id: 'sales', label: 'Últimas ventas' },
+  { id: 'purchases', label: 'Últimas compras' },
 ];
 
 const serviceSchema = yup.object({
@@ -104,6 +111,7 @@ export class ServiciosComponent {
   private readonly filesApi = inject(FilesApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private codigoLookupTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [{ label: 'Productos' }, { label: 'Servicios' }];
 
@@ -161,6 +169,11 @@ export class ServiciosComponent {
     queryFn: () => firstValueFrom(this.api.listBrands({ field: 'nombre' })),
   }));
 
+  protected readonly establishmentsQuery = injectQuery(() => ({
+    queryKey: ['establishments', 'list', '', 'all'],
+    queryFn: () => firstValueFrom(this.api.listEstablishments()),
+  }));
+
   protected readonly locationsQuery = injectQuery(() => ({
     queryKey: [...serviceQueryKeys.catalogs, 'locations'],
     queryFn: () => firstValueFrom(this.api.listServiceCatalogLocations()),
@@ -173,6 +186,7 @@ export class ServiciosComponent {
 
   protected readonly services = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
+  protected readonly historyRows = computed(() => this.historyStockQuery.data() ?? []);
 
   protected readonly columns: ServiceColumnConfig[] = [
     { key: 'codigoInterno', label: 'Cód. Interno' },
@@ -212,8 +226,12 @@ export class ServiciosComponent {
   protected readonly lastActionTriggerId = signal<string | null>(null);
   protected readonly barcodeOpen = signal(false);
   protected readonly selectedService = signal<ServiceListItemDto | null>(null);
+  protected readonly historyOpen = signal(false);
+  protected readonly historyService = signal<ServiceListItemDto | null>(null);
+  protected readonly historyTab = signal<HistoryTab>('stock');
   protected readonly activeTab = signal<ServiceTab>('general');
   protected readonly serviceTabs = SERVICE_TABS;
+  protected readonly historyTabs = HISTORY_TABS;
   protected readonly barcodeValue = signal('');
   protected readonly barcodeSvg = signal('');
 
@@ -238,8 +256,13 @@ export class ServiciosComponent {
   protected readonly serviceImageUploadError = signal<string | null>(null);
   protected readonly newCategoryName = signal('');
   protected readonly newBrandName = signal('');
+  protected readonly newLocationName = signal('');
   protected readonly creatingCategory = signal(false);
   protected readonly creatingBrand = signal(false);
+  protected readonly creatingLocation = signal(false);
+  protected readonly codigoLookupLoading = signal(false);
+  protected readonly codigoSuggestions = signal<ServiceListItemDto[]>([]);
+  protected readonly codigoLookupDone = signal(false);
 
   protected readonly unitOptions = computed(() =>
     (this.unitsQuery.data() ?? []).map((u) => ({ value: u.id, label: `${u.nombre} (${u.codigo})` })),
@@ -263,13 +286,16 @@ export class ServiciosComponent {
     ...(this.brandsQuery.data() ?? []).map((b) => ({ value: b.id, label: b.nombre })),
   ]);
 
-  protected readonly locationOptions = computed(() => [
-    { value: '', label: 'Seleccionar' },
-    ...(this.locationsQuery.data() ?? []).map((l) => ({
-      value: l.id,
-      label: `${l.nombre} · ${l.establishment.nombre}`,
-    })),
-  ]);
+  protected readonly locationOptions = computed(() => {
+    const unique = new Map<string, { value: string; label: string }>();
+    for (const l of this.locationsQuery.data() ?? []) {
+      const key = l.nombre.trim().toLocaleLowerCase();
+      if (!unique.has(key)) {
+        unique.set(key, { value: l.id, label: l.nombre });
+      }
+    }
+    return [{ value: '', label: 'Seleccionar' }, ...Array.from(unique.values())];
+  });
 
   protected readonly attributeTypeOptions = computed(() => [
     { value: '', label: 'Seleccionar' },
@@ -360,6 +386,16 @@ export class ServiciosComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar código de barras')),
   }));
 
+  protected readonly historyStockQuery = injectQuery(() => {
+    const serviceId = this.historyService()?.id ?? '';
+    const enabled = this.historyOpen() && this.historyTab() === 'stock' && !!serviceId;
+    return {
+      queryKey: [...serviceQueryKeys.all, 'history', 'stock', serviceId],
+      enabled,
+      queryFn: () => (serviceId ? firstValueFrom(this.api.listServiceHistoryStock(serviceId)) : Promise.resolve([])),
+    };
+  });
+
   constructor() {
     effect(() => {
       const key = 'servicios.visible.columns';
@@ -407,6 +443,29 @@ export class ServiciosComponent {
 
   protected onPageChange(page: number) {
     this.currentPage.set(page);
+  }
+
+  protected onCodigoBusquedaInput(value: string) {
+    const codigo = String(value ?? '');
+    this.updateForm('codigoBusqueda', codigo);
+    this.codigoLookupDone.set(false);
+    this.codigoSuggestions.set([]);
+    if (this.codigoLookupTimer) clearTimeout(this.codigoLookupTimer);
+    const clean = codigo.trim();
+    if (clean.length < 2) return;
+    this.codigoLookupTimer = setTimeout(() => {
+      void this.buscarServicioPorCodigo(clean);
+    }, 350);
+  }
+
+  protected async buscarCodigoManual() {
+    const q = (this.form().codigoBusqueda ?? '').trim();
+    if (q.length < 2) return;
+    if (this.codigoLookupTimer) {
+      clearTimeout(this.codigoLookupTimer);
+      this.codigoLookupTimer = null;
+    }
+    await this.buscarServicioPorCodigo(q);
   }
 
   protected isVisible(key: ServiceColumnKey) {
@@ -473,6 +532,22 @@ export class ServiciosComponent {
       incluyeIscCompra: false,
       sePuedeCanjearPorPuntos: !!row.numeroPuntos,
     }));
+  }
+
+  protected openHistoryModal(row: ServiceListItemDto) {
+    this.historyService.set(row);
+    this.historyTab.set('stock');
+    this.historyOpen.set(true);
+  }
+
+  protected closeHistoryModal() {
+    this.historyOpen.set(false);
+    this.historyTab.set('stock');
+    this.historyService.set(null);
+  }
+
+  protected setHistoryTab(id: string) {
+    this.historyTab.set(id as HistoryTab);
   }
 
   protected deleteServiceRow(row: ServiceListItemDto, triggerId?: string) {
@@ -654,8 +729,16 @@ export class ServiciosComponent {
     this.serviceImageUploadError.set(null);
     this.newCategoryName.set('');
     this.newBrandName.set('');
+    this.newLocationName.set('');
     this.creatingCategory.set(false);
     this.creatingBrand.set(false);
+    this.creatingLocation.set(false);
+    this.codigoLookupDone.set(false);
+    this.codigoSuggestions.set([]);
+    if (this.codigoLookupTimer) {
+      clearTimeout(this.codigoLookupTimer);
+      this.codigoLookupTimer = null;
+    }
     this.form.set({
       nombre: '',
       precioUnitarioVenta: 0,
@@ -773,6 +856,32 @@ export class ServiciosComponent {
     }
   }
 
+  protected async createLocationQuick() {
+    const nombre = this.newLocationName().trim();
+    if (!nombre) {
+      this.notify.warning('Ingrese el nombre de la ubicación.');
+      return;
+    }
+    const establishmentId = this.resolveEstablishmentIdForLocation();
+    if (!establishmentId) {
+      this.notify.warning('No hay establecimiento disponible para crear ubicación.');
+      return;
+    }
+    if (this.creatingLocation()) return;
+    this.creatingLocation.set(true);
+    try {
+      const row = await firstValueFrom(this.api.createProductLocation({ establishmentId, nombre }));
+      this.newLocationName.set('');
+      await this.locationsQuery.refetch();
+      this.updateForm('productLocationId', row.id);
+      this.notify.success('Ubicación creada correctamente');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo crear la ubicación'));
+    } finally {
+      this.creatingLocation.set(false);
+    }
+  }
+
   protected async submitService() {
     this.formErrors.set({});
     const f = this.form();
@@ -840,6 +949,82 @@ export class ServiciosComponent {
     this.saveMutation.mutate(body);
   }
 
+  private async buscarServicioPorCodigo(codigo: string) {
+    const q = codigo.trim();
+    if (!q) return;
+    this.codigoLookupLoading.set(true);
+    try {
+      const res = await firstValueFrom(
+        this.api.listServices({
+          search: q,
+          field: 'all',
+          page: 1,
+          pageSize: 20,
+        }),
+      );
+      this.codigoLookupDone.set(true);
+      this.codigoSuggestions.set(res.items.slice(0, 8));
+      const target = q.toLowerCase();
+      const exacto =
+        res.items.find((x) => (x.codigoBusqueda ?? '').toLowerCase() === target) ??
+        res.items.find((x) => (x.codigoBarra ?? '').toLowerCase() === target) ??
+        res.items.find((x) => (x.codigoInterno ?? '').toLowerCase() === target) ??
+        null;
+      const row = exacto ?? (res.items.length === 1 ? res.items[0] : null);
+      if (row) this.applyLookupService(row, q);
+    } catch {
+      // No interrumpe el flujo de edición si falla la búsqueda rápida.
+    } finally {
+      this.codigoLookupLoading.set(false);
+    }
+  }
+
+  protected codigoSuggestionCode(row: ServiceListItemDto): string {
+    return row.codigoBusqueda || row.codigoBarra || row.codigoInterno || '';
+  }
+
+  protected onCodigoSuggestionSelect(row: ServiceListItemDto) {
+    const q = (this.form().codigoBusqueda ?? '').trim();
+    this.applyLookupService(row, q);
+  }
+
+  private applyLookupService(row: ServiceListItemDto, fallbackCode: string) {
+    this.form.update((f) => ({
+      ...f,
+      codigoBusqueda: row.codigoBusqueda ?? row.codigoBarra ?? row.codigoInterno ?? f.codigoBusqueda ?? fallbackCode,
+      nombre: row.nombre || f.nombre,
+      descripcion: row.descripcion ?? f.descripcion,
+      principioActivo: row.principioActivo ?? f.principioActivo,
+      concentracion: row.concentracion ?? f.concentracion,
+      formaFarmaceutica: row.formaFarmaceutica ?? f.formaFarmaceutica,
+      codigoInterno: row.codigoInterno ?? f.codigoInterno,
+      codigoBarra: row.codigoBarra ?? f.codigoBarra,
+      codigoSunat: row.codigoSunat ?? f.codigoSunat,
+      codigoMedicamentoDigemid: row.codigoMedicamentoDigemid ?? f.codigoMedicamentoDigemid,
+      registroSanitario: row.registroSanitario ?? f.registroSanitario,
+      modelo: row.modelo ?? f.modelo,
+      lineaProducto: row.lineaProducto ?? f.lineaProducto,
+      marcaLaboratorio: row.marcaLaboratorio ?? f.marcaLaboratorio,
+      tipoSistemaIscId: row.tipoSistemaIscId ?? f.tipoSistemaIscId,
+      porcentajeIsc: row.porcentajeIsc != null ? Number.parseFloat(row.porcentajeIsc) : f.porcentajeIsc,
+      numeroPuntos: row.numeroPuntos != null ? Number.parseFloat(row.numeroPuntos) : f.numeroPuntos,
+      saleTaxAffectationId: row.saleTaxAffectationId || f.saleTaxAffectationId,
+      purchaseTaxAffectationId: row.purchaseTaxAffectationId || f.purchaseTaxAffectationId,
+      categoryId: row.categoryId ?? f.categoryId,
+      brandId: row.brandId ?? f.brandId,
+      productLocationId: row.productLocationId ?? f.productLocationId,
+      unitId: row.unit?.id || f.unitId,
+      currencyId: row.currency?.id || f.currencyId,
+      precioUnitarioVenta: Number.parseFloat(row.precioUnitarioVenta) || f.precioUnitarioVenta,
+      precioUnitarioCompra:
+        row.precioUnitarioCompra != null ? Number.parseFloat(row.precioUnitarioCompra) : f.precioUnitarioCompra,
+      incluyeIgvVenta: row.incluyeIgvVenta,
+      incluyeIgvCompra: row.incluyeIgvCompra,
+    }));
+    this.codigoSuggestions.set([]);
+    this.notify.success('Datos cargados desde el código');
+  }
+
   protected formatSalePrice(row: ServiceListItemDto): string {
     const sym = row.currency.codigo === 'PEN' ? 'S/' : row.currency.codigo === 'USD' ? 'US$' : row.currency.codigo;
     const n = parseFloat(row.precioUnitarioVenta);
@@ -861,6 +1046,14 @@ export class ServiciosComponent {
 
   protected marcaLabel(row: ServiceListItemDto): string {
     return row.marcaNombre ?? row.marcaLaboratorio ?? '—';
+  }
+
+  private resolveEstablishmentIdForLocation(): string | null {
+    const locationRows = this.locationsQuery.data() ?? [];
+    if (locationRows.length) return locationRows[0]?.establishment.id ?? null;
+    const estRows = this.establishmentsQuery.data() ?? [];
+    if (estRows.length) return estRows[0]?.id ?? null;
+    return null;
   }
 
   private refreshBarcodePreview(value: string) {

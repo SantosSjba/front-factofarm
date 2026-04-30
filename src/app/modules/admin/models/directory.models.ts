@@ -666,6 +666,13 @@ export interface ServiceListResponseDto {
   totalPages: number;
 }
 
+export interface ServiceHistoryStockItemDto {
+  warehouseId: string;
+  ubicacion: string;
+  stock: string;
+  series: string;
+}
+
 export interface ServiceListFiltersRequest {
   search?: string;
   field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';

@@ -51,6 +51,7 @@ import type {
   ServiceCatalogTaxAffectationDto,
   ServiceCatalogUnitDto,
   CreateServiceRequest,
+  ServiceHistoryStockItemDto,
   ServiceListFiltersRequest,
   ServiceListItemDto,
   ServiceListResponseDto,
@@ -463,5 +464,9 @@ export class DirectoryApiService {
 
   updateServiceBarcode(id: string, codigoBarra: string) {
     return this.http.patch<ServiceListItemDto>(`${this.base}/services/${id}/barcode`, { codigoBarra });
+  }
+
+  listServiceHistoryStock(id: string) {
+    return this.http.get<ServiceHistoryStockItemDto[]>(`${this.base}/services/${id}/history/stock`);
   }
 }
