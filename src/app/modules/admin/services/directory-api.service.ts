@@ -227,6 +227,14 @@ export class DirectoryApiService {
     return this.http.post<CustomerZoneDto>(`${this.base}/customers/zones`, { nombre });
   }
 
+  updateCustomerZone(id: string, nombre: string) {
+    return this.http.patch<CustomerZoneDto>(`${this.base}/customers/zones/${id}`, { nombre });
+  }
+
+  deleteCustomerZone(id: string) {
+    return this.http.delete<void>(`${this.base}/customers/zones/${id}`);
+  }
+
   listCustomerSellers() {
     return this.http.get<CustomerSellerDto[]>(`${this.base}/customers/catalogs/sellers`);
   }
