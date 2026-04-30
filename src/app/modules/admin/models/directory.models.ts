@@ -815,3 +815,33 @@ export interface CreateCompoundProductRequest {
 export type CompoundProductImportMode =
   | 'PRODUCTOS_COMPUESTOS'
   | 'DETALLE_PRODUCTOS_COMPUESTOS';
+
+export type ProductSerialStatus = 'DISPONIBLE' | 'RESERVADO' | 'VENDIDO' | 'ANULADO';
+
+export interface SeriesListItemDto {
+  id: string;
+  serie: string;
+  fecha: string;
+  estado: ProductSerialStatus;
+  vendido: boolean;
+  product: {
+    id: string;
+    nombre: string;
+    codigoInterno: string | null;
+  };
+}
+
+export interface SeriesListResponseDto {
+  items: SeriesListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface SeriesListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'serie' | 'producto' | 'estado';
+  page?: number;
+  pageSize?: number;
+}

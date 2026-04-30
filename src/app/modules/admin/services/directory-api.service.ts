@@ -61,6 +61,9 @@ import type {
   ServiceListFiltersRequest,
   ServiceListItemDto,
   ServiceListResponseDto,
+  SeriesListFiltersRequest,
+  SeriesListItemDto,
+  SeriesListResponseDto,
   UbigeoDepartmentDto,
   UbigeoDistrictDto,
   UbigeoProvinceDto,
@@ -540,6 +543,35 @@ export class DirectoryApiService {
   downloadCompoundProductImportTemplate(mode: CompoundProductImportMode) {
     return this.http.get(`${this.base}/compound-products/import/template`, {
       params: { mode },
+      responseType: 'blob',
+    });
+  }
+
+  listSeries(filters?: SeriesListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<SeriesListResponseDto>(`${this.base}/series`, { params });
+  }
+
+  updateSeriesStatus(id: string, estado: 'DISPONIBLE' | 'RESERVADO' | 'VENDIDO' | 'ANULADO', vendido: boolean) {
+    return this.http.patch<SeriesListItemDto>(`${this.base}/series/${id}/status`, { estado, vendido });
+  }
+
+  deleteSeries(id: string) {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/series/${id}`);
+  }
+
+  exportSeries(filters?: SeriesListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get(`${this.base}/series/export`, {
+      params,
       responseType: 'blob',
     });
   }
