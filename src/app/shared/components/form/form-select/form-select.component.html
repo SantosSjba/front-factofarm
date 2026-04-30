@@ -11,7 +11,7 @@
     @if (showPlaceholder && placeholder) {
       <option value="">{{ placeholder }}</option>
     }
-    @for (opt of options; track opt.value) {
+    @for (opt of renderedOptions; track opt.value) {
       <option [value]="opt.value">{{ opt.label }}</option>
     }
   </select>

@@ -28,6 +28,16 @@ export class FormSelectComponent {
     return `${baseSelect} ${this.className}`.trim();
   }
 
+  /** Evita repetir placeholder cuando options ya trae "Seleccionar" vacío. */
+  protected get renderedOptions(): { value: string; label: string }[] {
+    if (!this.showPlaceholder || !this.placeholder) return this.options;
+    const normalizedPlaceholder = this.placeholder.trim().toLowerCase();
+    return this.options.filter((opt) => {
+      if (opt.value !== '') return true;
+      return opt.label.trim().toLowerCase() !== normalizedPlaceholder;
+    });
+  }
+
   protected onChange(ev: Event) {
     const v = (ev.target as HTMLSelectElement).value;
     this.valueChange.emit(v);

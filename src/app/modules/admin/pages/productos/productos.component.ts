@@ -303,11 +303,18 @@ export class ProductosComponent {
   ]);
 
   protected readonly locationOptions = computed(() => [
-    { value: '', label: 'Seleccionar' },
-    ...(this.locationsQuery.data() ?? []).map((l) => ({
-      value: l.id,
-      label: `${l.nombre} · ${l.establishment.nombre}`,
-    })),
+    ...(() => {
+      const establishmentId = this.resolveEstablishmentIdForLocation();
+      const all = this.locationsQuery.data() ?? [];
+      const rows = establishmentId ? all.filter((l) => l.establishment.id === establishmentId) : all;
+      return [
+        { value: '', label: 'Seleccionar' },
+        ...rows.map((l) => ({
+          value: l.id,
+          label: establishmentId ? l.nombre : `${l.nombre} · ${l.establishment.nombre}`,
+        })),
+      ];
+    })(),
   ]);
 
   protected readonly attributeTypeOptions = computed(() => [
@@ -383,6 +390,16 @@ export class ProductosComponent {
       const f = this.form();
       if (!f.unitId || !f.currencyId || !f.saleTaxAffectationId) {
         this.applyCatalogDefaults();
+      }
+    });
+
+    effect(() => {
+      const establishmentId = this.resolveEstablishmentIdForLocation();
+      const selectedLocationId = this.form().productLocationId;
+      if (!establishmentId || !selectedLocationId) return;
+      const selected = (this.locationsQuery.data() ?? []).find((l) => l.id === selectedLocationId);
+      if (selected && selected.establishment.id !== establishmentId) {
+        this.updateForm('productLocationId', undefined);
       }
     });
   }
@@ -778,7 +795,7 @@ export class ProductosComponent {
     const warehouses = this.warehousesQuery.data() ?? [];
     const selectedWarehouseId = this.defaultWarehouseId();
     const selectedWarehouse = warehouses.find((w) => w.id === selectedWarehouseId);
-    return selectedWarehouse?.establishment.id ?? warehouses[0]?.establishment.id ?? null;
+    return selectedWarehouse?.establishment.id ?? null;
   }
 
   protected async submitProduct() {

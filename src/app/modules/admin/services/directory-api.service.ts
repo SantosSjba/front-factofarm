@@ -307,8 +307,12 @@ export class DirectoryApiService {
     return this.http.get<ProductCatalogWarehouseDto[]>(`${this.base}/products/catalogs/warehouses`);
   }
 
-  listProductCatalogLocations() {
-    return this.http.get<ProductCatalogLocationDto[]>(`${this.base}/products/catalogs/product-locations`);
+  listProductCatalogLocations(establishmentId?: string) {
+    const params: Record<string, string> = {};
+    if (establishmentId) params['establishmentId'] = establishmentId;
+    return this.http.get<ProductCatalogLocationDto[]>(`${this.base}/products/catalogs/product-locations`, {
+      params,
+    });
   }
 
   createProductLocation(body: CreateProductLocationRequest) {
