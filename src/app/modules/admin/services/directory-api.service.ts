@@ -50,6 +50,11 @@ import type {
   ServiceCatalogLocationDto,
   ServiceCatalogTaxAffectationDto,
   ServiceCatalogUnitDto,
+  CompoundProductCatalogPlatformDto,
+  CompoundProductDetailDto,
+  CompoundProductListFiltersRequest,
+  CompoundProductListResponseDto,
+  CreateCompoundProductRequest,
   CreateServiceRequest,
   ServiceHistoryStockItemDto,
   ServiceListFiltersRequest,
@@ -468,5 +473,51 @@ export class DirectoryApiService {
 
   listServiceHistoryStock(id: string) {
     return this.http.get<ServiceHistoryStockItemDto[]>(`${this.base}/services/${id}/history/stock`);
+  }
+
+  listCompoundProductCatalogUnits() {
+    return this.http.get<ProductCatalogUnitDto[]>(`${this.base}/compound-products/catalogs/units`);
+  }
+
+  listCompoundProductCatalogCurrencies() {
+    return this.http.get<ProductCatalogCurrencyDto[]>(`${this.base}/compound-products/catalogs/currencies`);
+  }
+
+  listCompoundProductCatalogTaxAffectationTypes() {
+    return this.http.get<ProductCatalogTaxAffectationDto[]>(
+      `${this.base}/compound-products/catalogs/tax-affectation-types`,
+    );
+  }
+
+  listCompoundProductCatalogPlatforms() {
+    return this.http.get<CompoundProductCatalogPlatformDto[]>(
+      `${this.base}/compound-products/catalogs/platforms`,
+    );
+  }
+
+  listCompoundProducts(filters?: CompoundProductListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<CompoundProductListResponseDto>(`${this.base}/compound-products`, { params });
+  }
+
+  getCompoundProduct(id: string) {
+    return this.http.get<CompoundProductDetailDto>(`${this.base}/compound-products/${id}`);
+  }
+
+  createCompoundProduct(body: CreateCompoundProductRequest) {
+    return this.http.post<CompoundProductDetailDto>(`${this.base}/compound-products`, body);
+  }
+
+  updateCompoundProduct(id: string, body: CreateCompoundProductRequest) {
+    return this.http.patch<CompoundProductDetailDto>(`${this.base}/compound-products/${id}`, body);
+  }
+
+  deleteCompoundProduct(id: string) {
+    return this.http.delete<void>(`${this.base}/compound-products/${id}`);
   }
 }

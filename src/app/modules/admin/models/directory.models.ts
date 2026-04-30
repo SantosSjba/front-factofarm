@@ -723,3 +723,91 @@ export interface CreateServiceRequest {
   imagenArchivoId?: string;
   attributes?: ServiceAttributeInput[];
 }
+
+export interface CompoundProductCatalogPlatformDto {
+  id: string;
+  nombre: string;
+}
+
+export interface CompoundProductListItemDto {
+  id: string;
+  nombre: string;
+  nombreSecundario: string | null;
+  descripcion: string | null;
+  modelo: string | null;
+  codigoSunat: string | null;
+  codigoInterno: string | null;
+  precioUnitarioVenta: string;
+  precioUnitarioCompra: string;
+  totalPrecioCompraReferencia: string;
+  incluyeIgvVenta: boolean;
+  categoryId: string | null;
+  brandId: string | null;
+  marcaNombre: string | null;
+  imagenArchivoId: string | null;
+  unit: ProductCatalogUnitDto;
+  currency: ProductCatalogCurrencyDto;
+}
+
+export interface CompoundProductDetailItemDto {
+  id: string;
+  productId: string;
+  cantidad: string;
+  precioUnitario: string;
+  total: string;
+  product: {
+    id: string;
+    nombre: string;
+    codigoInterno: string | null;
+    descripcion: string | null;
+    precioUnitarioVenta: string;
+  };
+}
+
+export interface CompoundProductDetailDto extends CompoundProductListItemDto {
+  saleTaxAffectationId: string;
+  plataformaId: string | null;
+  items: CompoundProductDetailItemDto[];
+}
+
+export interface CompoundProductListResponseDto {
+  items: CompoundProductListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface CompoundProductListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre' | 'codigoInterno' | 'descripcion';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CompoundProductItemInput {
+  productId: string;
+  cantidad: number;
+  precioUnitario?: number;
+}
+
+export interface CreateCompoundProductRequest {
+  nombre: string;
+  nombreSecundario?: string;
+  descripcion?: string;
+  modelo?: string;
+  unitId: string;
+  currencyId: string;
+  saleTaxAffectationId: string;
+  precioUnitarioVenta: number;
+  incluyeIgvVenta?: boolean;
+  plataformaId?: string;
+  codigoSunat?: string;
+  codigoInterno?: string;
+  precioUnitarioCompra: number;
+  totalPrecioCompraReferencia?: number;
+  categoryId?: string;
+  brandId?: string;
+  imagenArchivoId?: string;
+  items: CompoundProductItemInput[];
+}
