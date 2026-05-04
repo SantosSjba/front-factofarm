@@ -850,6 +850,7 @@ export interface InventoryMovementListItemDto {
   id: string;
   productId: string;
   producto: string;
+  codigoInterno: string | null;
   marca: string;
   almacen: string;
   stock: string;
@@ -878,6 +879,42 @@ export interface InventoryWarehouseOptionDto {
     nombre: string;
     codigo: string | null;
   };
+}
+
+export interface InventoryTransferReasonOptionDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export type InventoryLotSearchMode = 'INBOUND' | 'OUTBOUND';
+
+export interface InventoryLotCodeOptionDto {
+  id: string;
+  codigoLote: string;
+  stock: string;
+  fechaVencimiento: string | null;
+}
+
+export interface InventoryCreateInboundRequest {
+  productId: string;
+  warehouseId: string;
+  transferReasonId: string;
+  quantity: number;
+  lotCode?: string;
+  expirationDate?: string;
+  registeredAt?: string;
+  comment?: string;
+}
+
+export interface InventoryCreateOutboundRequest {
+  productId: string;
+  warehouseId: string;
+  transferReasonId: string;
+  quantity: number;
+  lotCode?: string;
+  registeredAt?: string;
+  comment?: string;
 }
 
 export type InventoryImportMode = 'LOTES' | 'SERIES';

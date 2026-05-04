@@ -38,6 +38,8 @@ import type {
   ProductCatalogUnitDto,
   ProductCatalogWarehouseDto,
   ProductImportMode,
+  InventoryCreateInboundRequest,
+  InventoryCreateOutboundRequest,
   ProductHistoryStockItemDto,
   ProductStockSummaryDto,
   ProductImportResultDto,
@@ -62,6 +64,9 @@ import type {
   InventoryMovementListFiltersRequest,
   InventoryMovementListResponseDto,
   InventoryWarehouseOptionDto,
+  InventoryTransferReasonOptionDto,
+  InventoryLotCodeOptionDto,
+  InventoryLotSearchMode,
   ServiceListFiltersRequest,
   ServiceListItemDto,
   ServiceListResponseDto,
@@ -592,6 +597,44 @@ export class DirectoryApiService {
 
   listInventoryMovementWarehouses() {
     return this.http.get<InventoryWarehouseOptionDto[]>(`${this.base}/inventory-movements/catalogs/warehouses`);
+  }
+
+  listInventoryMovementTransferReasons() {
+    return this.http.get<InventoryTransferReasonOptionDto[]>(
+      `${this.base}/inventory-movements/catalogs/transfer-reasons`,
+    );
+  }
+
+  listInventoryMovementOutputReasons() {
+    return this.http.get<InventoryTransferReasonOptionDto[]>(
+      `${this.base}/inventory-movements/catalogs/output-reasons`,
+    );
+  }
+
+  createInventoryInboundMovement(body: InventoryCreateInboundRequest) {
+    return this.http.post<{ ok: boolean; message: string }>(`${this.base}/inventory-movements/inbound`, body);
+  }
+
+  createInventoryOutboundMovement(body: InventoryCreateOutboundRequest) {
+    return this.http.post<{ ok: boolean; message: string }>(`${this.base}/inventory-movements/outbound`, body);
+  }
+
+  searchInventoryLotCodes(params: {
+    productId: string;
+    warehouseId: string;
+    search?: string;
+    mode?: InventoryLotSearchMode;
+  }) {
+    const query: Record<string, string> = {
+      productId: params.productId,
+      warehouseId: params.warehouseId,
+      mode: params.mode ?? 'INBOUND',
+    };
+    const search = params.search?.trim();
+    if (search) query['search'] = search;
+    return this.http.get<InventoryLotCodeOptionDto[]>(`${this.base}/inventory-movements/catalogs/lot-codes`, {
+      params: query,
+    });
   }
 
   importInventoryLots(warehouseId: string, file: File) {
