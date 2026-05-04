@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+﻿﻿import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';

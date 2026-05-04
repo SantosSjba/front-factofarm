@@ -1,4 +1,178 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Movimientos de Inventario</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 </div>
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 sm:text-title-md dark:text-white/90">
+    Inventario
+  </h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-button size="sm" variant="outline" (btnClick)="onDevAction('Imp. Ajuste de stock')">
+      <span>Imp. Ajuste de stock</span>
+    </app-button>
+    <app-button size="sm" variant="outline" (btnClick)="onDevAction('Reporte Aj. stock')">
+      <span>Reporte Aj. stock</span>
+    </app-button>
+    <app-button size="sm" variant="outline" (btnClick)="onDevAction('Reporte')">
+      <span>Reporte</span>
+    </app-button>
+    <app-table-dropdown>
+      <div dropdown-button>
+        <app-button size="sm">
+          <app-icon name="mdi:import" width="16" height="16" />
+          <span>Importar</span>
+        </app-button>
+      </div>
+      <div dropdown-content>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+          (click)="openImportModal('LOTES')"
+        >
+          Lotes
+        </button>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+          (click)="openImportModal('SERIES')"
+        >
+          Series
+        </button>
+      </div>
+    </app-table-dropdown>
+  </div>
+</app-page-toolbar>
+
+@if (listQuery.isError()) {
+  <div
+    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+    role="alert"
+  >
+    No se pudo cargar el listado.
+    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
+  </div>
+}
+
+<app-list-filters
+  [searchValue]="searchTerm()"
+  [selectValue]="filterField()"
+  [selectOptions]="fieldFilterOptions"
+  searchPlaceholder="Buscar"
+  selectPlaceholder="Filtrar por"
+  clearLabel="Limpiar"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onFieldChange($event)"
+  (clear)="clearFilters()"
+/>
+
+<app-component-card title="Listado de Inventario" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-left text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">#</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Producto</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Marca</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Almacén</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Stock</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id; let i = $index) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm">{{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.producto }}</td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.marca }}</td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.almacen }}</td>
+              <td class="px-5 py-4 text-theme-sm">{{ formatStock(row.stock) }}</td>
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex gap-2">
+                  <button
+                    type="button"
+                    class="rounded-lg bg-cyan-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-cyan-600"
+                    (click)="onDevAction('Trasladar')"
+                  >
+                    Trasladar
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-success-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-success-600"
+                    (click)="onDevAction('Incrementar')"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-error-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-error-600"
+                    (click)="onDevAction('Disminuir')"
+                  >
+                    -
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-5 py-8 text-center text-theme-sm text-gray-500">
+                @if (listQuery.isPending()) {
+                  Cargando...
+                } @else {
+                  No hay registros.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-pagination
+  [totalItems]="totalRows()"
+  [currentPage]="currentPage()"
+  [pageSize]="itemsPerPage"
+  (currentPageChange)="onPageChange($event)"
+/>
+
+<app-modal [isOpen]="importOpen()" (close)="closeImportModal()" className="w-full max-w-6xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ importTitle() }}</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-6">
+    <div class="max-w-3xl">
+      <p class="mb-2 text-lg font-medium text-gray-700 dark:text-gray-300">Almacén</p>
+      <app-form-select
+        [value]="importWarehouseId()"
+        [options]="warehouseOptions()"
+        placeholder="Seleccionar"
+        [disabled]="warehousesQuery.isPending() || importPending()"
+        (valueChange)="importWarehouseId.set($event)"
+      />
+      <div class="mt-4">
+        <label class="inline-flex cursor-pointer rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-700">
+          <span>{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
+          <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
+        </label>
+      </div>
+      <button
+        type="button"
+        class="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-brand-500 underline"
+        (click)="downloadImportTemplate()"
+      >
+        Descargar formato de ejemplo para importar
+        <app-icon name="mdi:download" width="16" height="16" />
+      </button>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="importPending()" (btnClick)="closeImportModal()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="importPending()" (btnClick)="processImport()">
+      {{ importPending() ? 'Procesando...' : 'Procesar' }}
+    </app-button>
+  </div>
+</app-modal>

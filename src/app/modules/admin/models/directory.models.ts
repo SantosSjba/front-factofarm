@@ -845,3 +845,39 @@ export interface SeriesListFiltersRequest {
   page?: number;
   pageSize?: number;
 }
+
+export interface InventoryMovementListItemDto {
+  id: string;
+  productId: string;
+  producto: string;
+  marca: string;
+  almacen: string;
+  stock: string;
+}
+
+export interface InventoryMovementListResponseDto {
+  items: InventoryMovementListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface InventoryMovementListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'producto' | 'marca' | 'almacen';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface InventoryWarehouseOptionDto {
+  id: string;
+  nombre: string;
+  establishment: {
+    id: string;
+    nombre: string;
+    codigo: string | null;
+  };
+}
+
+export type InventoryImportMode = 'LOTES' | 'SERIES';

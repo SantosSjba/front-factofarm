@@ -58,6 +58,10 @@ import type {
   CreateCompoundProductRequest,
   CreateServiceRequest,
   ServiceHistoryStockItemDto,
+  InventoryImportMode,
+  InventoryMovementListFiltersRequest,
+  InventoryMovementListResponseDto,
+  InventoryWarehouseOptionDto,
   ServiceListFiltersRequest,
   ServiceListItemDto,
   ServiceListResponseDto,
@@ -572,6 +576,41 @@ export class DirectoryApiService {
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
     return this.http.get(`${this.base}/series/export`, {
       params,
+      responseType: 'blob',
+    });
+  }
+
+  listInventoryMovements(filters?: InventoryMovementListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<InventoryMovementListResponseDto>(`${this.base}/inventory-movements`, { params });
+  }
+
+  listInventoryMovementWarehouses() {
+    return this.http.get<InventoryWarehouseOptionDto[]>(`${this.base}/inventory-movements/catalogs/warehouses`);
+  }
+
+  importInventoryLots(warehouseId: string, file: File) {
+    const body = new FormData();
+    body.append('warehouseId', warehouseId);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/inventory-movements/import/lots`, body);
+  }
+
+  importInventorySeries(warehouseId: string, file: File) {
+    const body = new FormData();
+    body.append('warehouseId', warehouseId);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/inventory-movements/import/series`, body);
+  }
+
+  downloadInventoryImportTemplate(mode: InventoryImportMode) {
+    return this.http.get(`${this.base}/inventory-movements/import/template`, {
+      params: { mode },
       responseType: 'blob',
     });
   }
