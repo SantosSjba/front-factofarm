@@ -37,9 +37,42 @@ import type {
   ProductCatalogTaxAffectationDto,
   ProductCatalogUnitDto,
   ProductCatalogWarehouseDto,
+  ProductImportMode,
+  InventoryCreateInboundRequest,
+  InventoryCreateOutboundRequest,
+  ProductHistoryStockItemDto,
+  ProductStockSummaryDto,
+  ProductImportResultDto,
   ProductListFiltersRequest,
   ProductListItemDto,
   ProductListResponseDto,
+  ServiceCatalogAttributeTypeDto,
+  ServiceCatalogCurrencyDto,
+  ServiceCatalogIscSystemDto,
+  ServiceCatalogLocationDto,
+  ServiceCatalogTaxAffectationDto,
+  ServiceCatalogUnitDto,
+  CompoundProductCatalogPlatformDto,
+  CompoundProductDetailDto,
+  CompoundProductImportMode,
+  CompoundProductListFiltersRequest,
+  CompoundProductListResponseDto,
+  CreateCompoundProductRequest,
+  CreateServiceRequest,
+  ServiceHistoryStockItemDto,
+  InventoryImportMode,
+  InventoryMovementListFiltersRequest,
+  InventoryMovementListResponseDto,
+  InventoryWarehouseOptionDto,
+  InventoryTransferReasonOptionDto,
+  InventoryLotCodeOptionDto,
+  InventoryLotSearchMode,
+  ServiceListFiltersRequest,
+  ServiceListItemDto,
+  ServiceListResponseDto,
+  SeriesListFiltersRequest,
+  SeriesListItemDto,
+  SeriesListResponseDto,
   UbigeoDepartmentDto,
   UbigeoDistrictDto,
   UbigeoProvinceDto,
@@ -207,6 +240,14 @@ export class DirectoryApiService {
     return this.http.post<CustomerZoneDto>(`${this.base}/customers/zones`, { nombre });
   }
 
+  updateCustomerZone(id: string, nombre: string) {
+    return this.http.patch<CustomerZoneDto>(`${this.base}/customers/zones/${id}`, { nombre });
+  }
+
+  deleteCustomerZone(id: string) {
+    return this.http.delete<void>(`${this.base}/customers/zones/${id}`);
+  }
+
   listCustomerSellers() {
     return this.http.get<CustomerSellerDto[]>(`${this.base}/customers/catalogs/sellers`);
   }
@@ -307,8 +348,12 @@ export class DirectoryApiService {
     return this.http.get<ProductCatalogWarehouseDto[]>(`${this.base}/products/catalogs/warehouses`);
   }
 
-  listProductCatalogLocations() {
-    return this.http.get<ProductCatalogLocationDto[]>(`${this.base}/products/catalogs/product-locations`);
+  listProductCatalogLocations(establishmentId?: string) {
+    const params: Record<string, string> = {};
+    if (establishmentId) params['establishmentId'] = establishmentId;
+    return this.http.get<ProductCatalogLocationDto[]>(`${this.base}/products/catalogs/product-locations`, {
+      params,
+    });
   }
 
   createProductLocation(body: CreateProductLocationRequest) {
@@ -339,5 +384,277 @@ export class DirectoryApiService {
 
   createProduct(body: CreateProductRequest) {
     return this.http.post<ProductListItemDto>(`${this.base}/products`, body);
+  }
+
+  updateProduct(id: string, body: CreateProductRequest) {
+    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}`, body);
+  }
+
+  deleteProduct(id: string) {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/products/${id}`);
+  }
+
+  duplicateProduct(id: string) {
+    return this.http.post<ProductListItemDto>(`${this.base}/products/${id}/duplicate`, {});
+  }
+
+  updateProductStatus(id: string, habilitado: boolean) {
+    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}/status`, { habilitado });
+  }
+
+  updateProductBarcode(id: string, codigoBarra: string) {
+    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}/barcode`, { codigoBarra });
+  }
+
+  listProductHistoryStock(id: string) {
+    return this.http.get<ProductHistoryStockItemDto[]>(`${this.base}/products/${id}/history/stock`);
+  }
+
+  getProductStockSummary(id: string) {
+    return this.http.get<ProductStockSummaryDto>(`${this.base}/products/${id}/stock`);
+  }
+
+  importProducts(mode: ProductImportMode, file: File) {
+    const body = new FormData();
+    body.append('mode', mode);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/products/import`, body);
+  }
+
+  downloadProductImportTemplate(mode: ProductImportMode) {
+    return this.http.get(`${this.base}/products/import/template`, {
+      params: { mode },
+      responseType: 'blob',
+    });
+  }
+
+  listServiceCatalogUnits() {
+    return this.http.get<ServiceCatalogUnitDto[]>(`${this.base}/services/catalogs/units`);
+  }
+
+  listServiceCatalogCurrencies() {
+    return this.http.get<ServiceCatalogCurrencyDto[]>(`${this.base}/services/catalogs/currencies`);
+  }
+
+  listServiceCatalogTaxAffectationTypes() {
+    return this.http.get<ServiceCatalogTaxAffectationDto[]>(
+      `${this.base}/services/catalogs/tax-affectation-types`,
+    );
+  }
+
+  listServiceCatalogLocations() {
+    return this.http.get<ServiceCatalogLocationDto[]>(`${this.base}/services/catalogs/product-locations`);
+  }
+
+  listServiceCatalogAttributeTypes() {
+    return this.http.get<ServiceCatalogAttributeTypeDto[]>(
+      `${this.base}/services/catalogs/attribute-types`,
+    );
+  }
+
+  listServiceCatalogIscSystems() {
+    return this.http.get<ServiceCatalogIscSystemDto[]>(
+      `${this.base}/services/catalogs/isc-systems`,
+    );
+  }
+
+  listServices(filters?: ServiceListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<ServiceListResponseDto>(`${this.base}/services`, { params });
+  }
+
+  createService(body: CreateServiceRequest) {
+    return this.http.post<ServiceListItemDto>(`${this.base}/services`, body);
+  }
+
+  updateService(id: string, body: CreateServiceRequest) {
+    return this.http.patch<ServiceListItemDto>(`${this.base}/services/${id}`, body);
+  }
+
+  deleteService(id: string) {
+    return this.http.delete<void>(`${this.base}/services/${id}`);
+  }
+
+  duplicateService(id: string) {
+    return this.http.post<ServiceListItemDto>(`${this.base}/services/${id}/duplicate`, {});
+  }
+
+  updateServiceStatus(id: string, habilitado: boolean) {
+    return this.http.patch<ServiceListItemDto>(`${this.base}/services/${id}/status`, { habilitado });
+  }
+
+  updateServiceBarcode(id: string, codigoBarra: string) {
+    return this.http.patch<ServiceListItemDto>(`${this.base}/services/${id}/barcode`, { codigoBarra });
+  }
+
+  listServiceHistoryStock(id: string) {
+    return this.http.get<ServiceHistoryStockItemDto[]>(`${this.base}/services/${id}/history/stock`);
+  }
+
+  listCompoundProductCatalogUnits() {
+    return this.http.get<ProductCatalogUnitDto[]>(`${this.base}/compound-products/catalogs/units`);
+  }
+
+  listCompoundProductCatalogCurrencies() {
+    return this.http.get<ProductCatalogCurrencyDto[]>(`${this.base}/compound-products/catalogs/currencies`);
+  }
+
+  listCompoundProductCatalogTaxAffectationTypes() {
+    return this.http.get<ProductCatalogTaxAffectationDto[]>(
+      `${this.base}/compound-products/catalogs/tax-affectation-types`,
+    );
+  }
+
+  listCompoundProductCatalogPlatforms() {
+    return this.http.get<CompoundProductCatalogPlatformDto[]>(
+      `${this.base}/compound-products/catalogs/platforms`,
+    );
+  }
+
+  listCompoundProducts(filters?: CompoundProductListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<CompoundProductListResponseDto>(`${this.base}/compound-products`, { params });
+  }
+
+  getCompoundProduct(id: string) {
+    return this.http.get<CompoundProductDetailDto>(`${this.base}/compound-products/${id}`);
+  }
+
+  createCompoundProduct(body: CreateCompoundProductRequest) {
+    return this.http.post<CompoundProductDetailDto>(`${this.base}/compound-products`, body);
+  }
+
+  updateCompoundProduct(id: string, body: CreateCompoundProductRequest) {
+    return this.http.patch<CompoundProductDetailDto>(`${this.base}/compound-products/${id}`, body);
+  }
+
+  deleteCompoundProduct(id: string) {
+    return this.http.delete<void>(`${this.base}/compound-products/${id}`);
+  }
+
+  importCompoundProducts(mode: CompoundProductImportMode, file: File) {
+    const body = new FormData();
+    body.append('mode', mode);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/compound-products/import`, body);
+  }
+
+  downloadCompoundProductImportTemplate(mode: CompoundProductImportMode) {
+    return this.http.get(`${this.base}/compound-products/import/template`, {
+      params: { mode },
+      responseType: 'blob',
+    });
+  }
+
+  listSeries(filters?: SeriesListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<SeriesListResponseDto>(`${this.base}/series`, { params });
+  }
+
+  updateSeriesStatus(id: string, estado: 'DISPONIBLE' | 'RESERVADO' | 'VENDIDO' | 'ANULADO', vendido: boolean) {
+    return this.http.patch<SeriesListItemDto>(`${this.base}/series/${id}/status`, { estado, vendido });
+  }
+
+  deleteSeries(id: string) {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/series/${id}`);
+  }
+
+  exportSeries(filters?: SeriesListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get(`${this.base}/series/export`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
+  listInventoryMovements(filters?: InventoryMovementListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<InventoryMovementListResponseDto>(`${this.base}/inventory-movements`, { params });
+  }
+
+  listInventoryMovementWarehouses() {
+    return this.http.get<InventoryWarehouseOptionDto[]>(`${this.base}/inventory-movements/catalogs/warehouses`);
+  }
+
+  listInventoryMovementTransferReasons() {
+    return this.http.get<InventoryTransferReasonOptionDto[]>(
+      `${this.base}/inventory-movements/catalogs/transfer-reasons`,
+    );
+  }
+
+  listInventoryMovementOutputReasons() {
+    return this.http.get<InventoryTransferReasonOptionDto[]>(
+      `${this.base}/inventory-movements/catalogs/output-reasons`,
+    );
+  }
+
+  createInventoryInboundMovement(body: InventoryCreateInboundRequest) {
+    return this.http.post<{ ok: boolean; message: string }>(`${this.base}/inventory-movements/inbound`, body);
+  }
+
+  createInventoryOutboundMovement(body: InventoryCreateOutboundRequest) {
+    return this.http.post<{ ok: boolean; message: string }>(`${this.base}/inventory-movements/outbound`, body);
+  }
+
+  searchInventoryLotCodes(params: {
+    productId: string;
+    warehouseId: string;
+    search?: string;
+    mode?: InventoryLotSearchMode;
+  }) {
+    const query: Record<string, string> = {
+      productId: params.productId,
+      warehouseId: params.warehouseId,
+      mode: params.mode ?? 'INBOUND',
+    };
+    const search = params.search?.trim();
+    if (search) query['search'] = search;
+    return this.http.get<InventoryLotCodeOptionDto[]>(`${this.base}/inventory-movements/catalogs/lot-codes`, {
+      params: query,
+    });
+  }
+
+  importInventoryLots(warehouseId: string, file: File) {
+    const body = new FormData();
+    body.append('warehouseId', warehouseId);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/inventory-movements/import/lots`, body);
+  }
+
+  importInventorySeries(warehouseId: string, file: File) {
+    const body = new FormData();
+    body.append('warehouseId', warehouseId);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/inventory-movements/import/series`, body);
+  }
+
+  downloadInventoryImportTemplate(mode: InventoryImportMode) {
+    return this.http.get(`${this.base}/inventory-movements/import/template`, {
+      params: { mode },
+      responseType: 'blob',
+    });
   }
 }

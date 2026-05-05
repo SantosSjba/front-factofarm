@@ -444,6 +444,7 @@ export interface ProductListItemDto {
   codigoLote: string | null;
   fechaVencimientoLote: string | null;
   numeroPuntos: string | null;
+  habilitado: boolean;
   stockMinimo: number;
   marcaLaboratorio: string | null;
   marcaNombre: string | null;
@@ -461,6 +462,35 @@ export interface ProductListResponseDto {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+export interface ProductHistoryStockItemDto {
+  warehouseId: string;
+  ubicacion: string;
+  stock: string;
+  series: string;
+}
+
+export interface ProductStockByLocationDto {
+  warehouseId: string;
+  ubicacion: string;
+  stock: string;
+}
+
+export interface ProductStockPriceRowDto {
+  id: string;
+  unidad: string;
+  descripcion: string;
+  factor: string;
+  precio1: string;
+  precio2: string;
+  precio3: string;
+  precioDefecto: PresentationDefaultPriceDto;
+}
+
+export interface ProductStockSummaryDto {
+  stockByLocation: ProductStockByLocationDto[];
+  priceList: ProductStockPriceRowDto[];
 }
 
 export interface ProductListFiltersRequest {
@@ -547,3 +577,344 @@ export interface CreateProductRequest {
   presentations?: ProductPresentationInput[];
   attributes?: ProductAttributeInput[];
 }
+
+export type ProductImportMode = 'PRODUCTOS' | 'L_PRECIOS' | 'ACTUALIZAR_PRECIOS';
+
+export interface ProductImportResultDto {
+  totalRows: number;
+  created: number;
+  updated: number;
+  errors: string[];
+}
+
+export interface ServiceCatalogUnitDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ServiceCatalogCurrencyDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ServiceCatalogTaxAffectationDto {
+  id: string;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface ServiceCatalogLocationDto {
+  id: string;
+  nombre: string;
+  establishment: { id: string; nombre: string; codigo: string | null };
+}
+
+export interface ServiceCatalogAttributeTypeDto {
+  id: string;
+  nombre: string;
+}
+
+export interface ServiceCatalogIscSystemDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export interface ServiceListItemDto {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  principioActivo: string | null;
+  concentracion: string | null;
+  formaFarmaceutica: string | null;
+  codigoBusqueda: string | null;
+  codigoInterno: string | null;
+  codigoBarra: string | null;
+  codigoSunat: string | null;
+  modelo: string | null;
+  lineaProducto: string | null;
+  registroSanitario: string | null;
+  codigoMedicamentoDigemid: string | null;
+  saleTaxAffectationId: string;
+  purchaseTaxAffectationId: string;
+  precioUnitarioVenta: string;
+  precioUnitarioCompra: string | null;
+  incluyeIgvVenta: boolean;
+  incluyeIgvCompra: boolean;
+  tipoSistemaIscId: string | null;
+  tipoSistemaIscNombre: string | null;
+  porcentajeIsc: string | null;
+  numeroPuntos: string | null;
+  marcaLaboratorio: string | null;
+  marcaNombre: string | null;
+  categoryId: string | null;
+  brandId: string | null;
+  productLocationId: string | null;
+  habilitado: boolean;
+  unit: ServiceCatalogUnitDto;
+  currency: ServiceCatalogCurrencyDto;
+  totalStock: string;
+}
+
+export interface ServiceListResponseDto {
+  items: ServiceListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ServiceHistoryStockItemDto {
+  warehouseId: string;
+  ubicacion: string;
+  stock: string;
+  series: string;
+}
+
+export interface ServiceListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ServiceAttributeInput {
+  attributeTypeId: string;
+  descripcion: string;
+}
+
+export interface CreateServiceRequest {
+  nombre: string;
+  descripcion?: string;
+  principioActivo?: string;
+  concentracion?: string;
+  registroSanitario?: string;
+  formaFarmaceutica?: string;
+  codigoBusqueda?: string;
+  codigoInterno?: string;
+  codigoBarra?: string;
+  codigoSunat?: string;
+  codigoMedicamentoDigemid?: string;
+  lineaProducto?: string;
+  modelo?: string;
+  marcaLaboratorio?: string;
+  unitId?: string;
+  currencyId: string;
+  saleTaxAffectationId: string;
+  purchaseTaxAffectationId?: string;
+  precioUnitarioVenta: number;
+  precioUnitarioCompra?: number;
+  incluyeIgvVenta?: boolean;
+  incluyeIgvCompra?: boolean;
+  generico?: boolean;
+  necesitaRecetaMedica?: boolean;
+  incluyeIscVenta?: boolean;
+  incluyeIscCompra?: boolean;
+  tipoSistemaIscId?: string;
+  porcentajeIsc?: number;
+  sujetoDetraccion?: boolean;
+  sePuedeCanjearPorPuntos?: boolean;
+  numeroPuntos?: number;
+  categoryId?: string;
+  brandId?: string;
+  productLocationId?: string;
+  imagenArchivoId?: string;
+  attributes?: ServiceAttributeInput[];
+}
+
+export interface CompoundProductCatalogPlatformDto {
+  id: string;
+  nombre: string;
+}
+
+export interface CompoundProductListItemDto {
+  id: string;
+  nombre: string;
+  nombreSecundario: string | null;
+  descripcion: string | null;
+  modelo: string | null;
+  codigoSunat: string | null;
+  codigoInterno: string | null;
+  precioUnitarioVenta: string;
+  precioUnitarioCompra: string;
+  totalPrecioCompraReferencia: string;
+  incluyeIgvVenta: boolean;
+  categoryId: string | null;
+  brandId: string | null;
+  marcaNombre: string | null;
+  imagenArchivoId: string | null;
+  unit: ProductCatalogUnitDto;
+  currency: ProductCatalogCurrencyDto;
+}
+
+export interface CompoundProductDetailItemDto {
+  id: string;
+  productId: string;
+  cantidad: string;
+  precioUnitario: string;
+  total: string;
+  product: {
+    id: string;
+    nombre: string;
+    codigoInterno: string | null;
+    descripcion: string | null;
+    precioUnitarioVenta: string;
+  };
+}
+
+export interface CompoundProductDetailDto extends CompoundProductListItemDto {
+  saleTaxAffectationId: string;
+  plataformaId: string | null;
+  items: CompoundProductDetailItemDto[];
+}
+
+export interface CompoundProductListResponseDto {
+  items: CompoundProductListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface CompoundProductListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre' | 'codigoInterno' | 'descripcion';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CompoundProductItemInput {
+  productId: string;
+  cantidad: number;
+  precioUnitario?: number;
+}
+
+export interface CreateCompoundProductRequest {
+  nombre: string;
+  nombreSecundario?: string;
+  descripcion?: string;
+  modelo?: string;
+  unitId: string;
+  currencyId: string;
+  saleTaxAffectationId: string;
+  precioUnitarioVenta: number;
+  incluyeIgvVenta?: boolean;
+  plataformaId?: string;
+  codigoSunat?: string;
+  codigoInterno?: string;
+  precioUnitarioCompra: number;
+  totalPrecioCompraReferencia?: number;
+  categoryId?: string;
+  brandId?: string;
+  imagenArchivoId?: string;
+  items: CompoundProductItemInput[];
+}
+
+export type CompoundProductImportMode =
+  | 'PRODUCTOS_COMPUESTOS'
+  | 'DETALLE_PRODUCTOS_COMPUESTOS';
+
+export type ProductSerialStatus = 'DISPONIBLE' | 'RESERVADO' | 'VENDIDO' | 'ANULADO';
+
+export interface SeriesListItemDto {
+  id: string;
+  serie: string;
+  fecha: string;
+  estado: ProductSerialStatus;
+  vendido: boolean;
+  product: {
+    id: string;
+    nombre: string;
+    codigoInterno: string | null;
+  };
+}
+
+export interface SeriesListResponseDto {
+  items: SeriesListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface SeriesListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'serie' | 'producto' | 'estado';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface InventoryMovementListItemDto {
+  id: string;
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  marca: string;
+  almacen: string;
+  stock: string;
+}
+
+export interface InventoryMovementListResponseDto {
+  items: InventoryMovementListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface InventoryMovementListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'producto' | 'marca' | 'almacen';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface InventoryWarehouseOptionDto {
+  id: string;
+  nombre: string;
+  establishment: {
+    id: string;
+    nombre: string;
+    codigo: string | null;
+  };
+}
+
+export interface InventoryTransferReasonOptionDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export type InventoryLotSearchMode = 'INBOUND' | 'OUTBOUND';
+
+export interface InventoryLotCodeOptionDto {
+  id: string;
+  codigoLote: string;
+  stock: string;
+  fechaVencimiento: string | null;
+}
+
+export interface InventoryCreateInboundRequest {
+  productId: string;
+  warehouseId: string;
+  transferReasonId: string;
+  quantity: number;
+  lotCode?: string;
+  expirationDate?: string;
+  registeredAt?: string;
+  comment?: string;
+}
+
+export interface InventoryCreateOutboundRequest {
+  productId: string;
+  warehouseId: string;
+  transferReasonId: string;
+  quantity: number;
+  lotCode?: string;
+  registeredAt?: string;
+  comment?: string;
+}
+
+export type InventoryImportMode = 'LOTES' | 'SERIES';

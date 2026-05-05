@@ -37,7 +37,6 @@
         <button
           type="button"
           class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
-          (click)="noopAction()"
         >
           <app-icon name="mdi:upload" width="18" height="18" />
           <span>Importar</span>
@@ -47,10 +46,24 @@
       <div dropdown-content>
         <button
           type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
-          (click)="noopAction()"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+          (click)="openImportModal('PRODUCTOS')"
         >
-          Próximamente
+          Productos
+        </button>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+          (click)="openImportModal('L_PRECIOS')"
+        >
+          L. Precios
+        </button>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+          (click)="openImportModal('ACTUALIZAR_PRECIOS')"
+        >
+          Actualizar precios
         </button>
       </div>
     </app-table-dropdown>
@@ -171,7 +184,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of products(); track row.id; let i = $index) {
-            <tr>
+            <tr [class.bg-red-50/40]="!row.habilitado" [class.dark:bg-red-500/10]="!row.habilitado">
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ (currentPage() - 1) * itemsPerPage + i + 1 }}
               </td>
@@ -183,7 +196,18 @@
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.unit.codigo }}</td>
               }
               @if (isVisible('nombre')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
+                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                  <div class="flex items-center gap-2">
+                    <span>{{ row.nombre }}</span>
+                    @if (!row.habilitado) {
+                      <span
+                        class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-500/20 dark:text-red-300"
+                      >
+                        Inhabilitado
+                      </span>
+                    }
+                  </div>
+                </td>
               }
               @if (isVisible('descripcion')) {
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.descripcion || '—' }}</td>
@@ -192,8 +216,9 @@
                 <button
                   type="button"
                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
-                  (click)="noopAction()"
-                  title="Historial (próximamente)"
+                  (click)="openHistoryModal(row)"
+                  title="Historial"
+                  [attr.aria-label]="'Historial de ' + row.nombre"
                 >
                   <app-icon name="mdi:history" width="18" height="18" />
                 </button>
@@ -202,8 +227,9 @@
                 <button
                   type="button"
                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
-                  (click)="noopAction()"
-                  title="Stock (próximamente)"
+                  (click)="openStockModal(row)"
+                  title="Stock"
+                  [attr.aria-label]="'Stock de ' + row.nombre"
                 >
                   <app-icon name="mdi:magnify" width="18" height="18" />
                 </button>
@@ -249,8 +275,10 @@
                   <app-table-dropdown>
                     <div dropdown-button>
                       <button
+                        [id]="'product-actions-' + row.id"
                         type="button"
                         class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                        [attr.aria-label]="'Acciones para ' + row.nombre"
                       >
                         <app-icon name="mdi:dots-vertical" width="18" height="18" />
                       </button>
@@ -258,17 +286,73 @@
                     <div dropdown-content>
                       <button
                         type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
-                        (click)="noopAction()"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="openEditModal(row)"
                       >
-                        Editar (próximamente)
+                        Editar
                       </button>
                       <button
                         type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
-                        (click)="noopAction()"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                        [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
+                        (click)="deleteProductRow(row, 'product-actions-' + row.id)"
                       >
-                        Eliminar (próximamente)
+                        {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                        [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()"
+                        (click)="duplicateProductRow(row)"
+                      >
+                        {{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                        [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
+                        (click)="toggleProductStatus(row, 'product-actions-' + row.id)"
+                      >
+                        {{
+                          statusMutation.isPending()
+                            ? 'Procesando...'
+                            : (row.habilitado ? 'Inhabilitar' : 'Habilitar')
+                        }}
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="openBarcodeModal(row)"
+                      >
+                        Cod. Barras
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, 'single')"
+                      >
+                        Etiquetas
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, '1x1')"
+                      >
+                        Etiquetas 1x1
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, '1x2')"
+                      >
+                        Etiquetas 1x2
+                      </button>
+                      <button
+                        type="button"
+                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                        (click)="printProductLabels(row, '3x3')"
+                      >
+                        Etiquetas 3x3
                       </button>
                     </div>
                   </app-table-dropdown>
@@ -299,6 +383,220 @@
   (currentPageChange)="onPageChange($event)"
 />
 
+<app-modal [isOpen]="historyOpen()" (close)="closeHistoryModal()" className="w-full max-w-6xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0">
+    <app-modal-tab-header
+      title="Historial"
+      [tabs]="historyTabs"
+      [activeId]="historyTab()"
+      (tabChange)="setHistoryTab($event)"
+    />
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    @if (historyTab() === 'stock') {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[640px]">
+          <thead>
+            <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Series</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (historyStockQuery.isPending()) {
+              <tr>
+                <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">Cargando historial de stock...</td>
+              </tr>
+            } @else {
+              @for (item of historyRows(); track item.warehouseId) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                  <td class="px-4 py-3 text-sm text-gray-800 dark:text-white/90">{{ item.ubicacion }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-700 dark:text-gray-300">{{ item.stock }}</td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-700 dark:text-gray-300">{{ item.series }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">
+                    No hay movimientos de stock para este producto.
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center dark:border-gray-700 dark:bg-gray-900">
+        <p class="text-base font-semibold text-gray-700 dark:text-gray-200">En desarrollo</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Esta sección estará disponible cuando se implemente el módulo de ventas y compras.
+        </p>
+      </div>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
+    <app-button variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="stockOpen()" (close)="closeStockModal()" className="w-full max-w-5xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Stock de producto</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6 sm:py-5">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[520px]">
+        <thead>
+          <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Ubicación</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (stockSummaryQuery.isPending()) {
+            <tr>
+              <td colspan="2" class="px-3 py-5 text-center text-sm text-gray-500">Cargando stock...</td>
+            </tr>
+          } @else {
+            @for (item of stockRows(); track item.warehouseId) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                <td class="px-3 py-2 text-sm text-gray-800 dark:text-white/90">{{ item.ubicacion }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ item.stock }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="2" class="px-3 py-5 text-center text-sm text-gray-500">No hay stock registrado.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="mt-4 text-sm font-semibold text-gray-700 dark:text-gray-200">Lista de Precios Creados</p>
+    <div class="mt-2 overflow-x-auto">
+      <table class="w-full min-w-[760px]">
+        <thead>
+          <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Unidad</th>
+            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Description</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Factor</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 1</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 2</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 3</th>
+            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">P.Defecto</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (stockSummaryQuery.isPending()) {
+            <tr>
+              <td colspan="7" class="px-3 py-5 text-center text-sm text-gray-500">Cargando lista de precios...</td>
+            </tr>
+          } @else {
+            @for (p of stockPriceRows(); track p.id) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                <td class="px-3 py-2 text-sm text-gray-800 dark:text-white/90">{{ p.unidad }}</td>
+                <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">{{ p.descripcion || '—' }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.factor }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio1 }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio2 }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio3 }}</td>
+                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">
+                  {{ precioDefectoLabel(p.precioDefecto) }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="px-3 py-5 text-center text-sm text-gray-500">No hay precios creados.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="closeStockModal()">Cerrar</app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="importOpen()" (close)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Importar: {{ importModeLabel(importMode()) }}
+    </h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    <p class="text-sm text-gray-600 dark:text-gray-300">
+      Cargue el archivo correspondiente a <strong>{{ importModeLabel(importMode()) }}</strong>.
+    </p>
+    <button type="button" class="mt-3 text-sm font-semibold text-brand-500 underline" (click)="downloadImportTemplate()">
+      Descargar plantilla
+    </button>
+    <div class="mt-6 flex items-center justify-center">
+      <label class="inline-flex cursor-pointer rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600">
+        <app-icon name="mdi:file-excel-outline" width="18" height="18" />
+        <span class="ml-2">{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
+        <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
+      </label>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
+    <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="importMutation.isPending()" (btnClick)="processImport()">
+      {{ importMutation.isPending() ? 'Procesando…' : 'Procesar' }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="confirmOpen()" (close)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ confirmActionTitle() }}</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-theme-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    {{ confirmActionMessage() }}
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button
+      [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
+      (btnClick)="confirmProductAction()"
+    >
+      {{ confirmActionButtonLabel() }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="barcodeOpen()" (close)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 sm:px-6">
+    <app-label>Código</app-label>
+    <app-input-field className="mt-2" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
+    <div class="mt-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+      @if (barcodeSvg()) {
+        <div class="flex justify-center overflow-x-auto" [innerHTML]="barcodeSvg()"></div>
+      } @else {
+        <p class="text-center text-theme-sm text-gray-500">Ingrese un código válido para previsualizar.</p>
+      }
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button variant="outline" (btnClick)="printBarcode()">
+      <app-icon name="mdi:printer-outline" width="16" height="16" />
+      <span>Imprimir</span>
+    </app-button>
+    <app-button [disabled]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+      {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </div>
+</app-modal>
+
 <app-modal
   [isOpen]="formOpen()"
   (close)="closeFormModal()"
@@ -308,7 +606,7 @@
 >
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
-      title="Nuevo Producto"
+      [title]="editingProductId() ? 'Editar Producto' : 'Nuevo Producto'"
       [tabs]="productTabs"
       [activeId]="activeTab()"
       (tabChange)="setTab($event)"
@@ -548,6 +846,7 @@
         </div>
         <app-checkbox
           [checked]="!!form().manejaLotes"
+          [disabled]="!!editingProductId()"
           (checkedChange)="updateForm('manejaLotes', $event)"
           label="¿Maneja lotes?"
         />
@@ -557,6 +856,7 @@
             <app-input-field
               className="mt-2"
               [value]="form().codigoLote ?? ''"
+              [disabled]="!!editingProductId()"
               (valueChange)="updateForm('codigoLote', $event + '')"
             />
           </div>
@@ -566,6 +866,7 @@
               className="mt-2"
               type="date"
               [value]="form().fechaVencimientoLote ?? ''"
+              [disabled]="!!editingProductId()"
               (valueChange)="updateForm('fechaVencimientoLote', $event + '')"
             />
           </div>
@@ -952,8 +1253,16 @@
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
     <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button size="sm" [disabled]="saveMutation.isPending() || generalCatalogsLoading()" (btnClick)="submitProduct()">
-      {{ saveMutation.isPending() ? 'Guardando...' : 'Guardar' }}
+    <app-button
+      size="sm"
+      [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading()"
+      (btnClick)="submitProduct()"
+    >
+      {{
+        saveMutation.isPending() || updateMutation.isPending()
+          ? (editingProductId() ? 'Actualizando...' : 'Guardando...')
+          : (editingProductId() ? 'Actualizar' : 'Guardar')
+      }}
     </app-button>
   </div>
 </app-modal>
