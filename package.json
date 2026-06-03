@@ -9,7 +9,7 @@
     "test": "ng test"
   },
   "private": true,
-  "packageManager": "npm@11.11.0",
+  "packageManager": "pnpm@10.12.1",
   "dependencies": {
     "@amcharts/amcharts5": "^5.13.5",
     "@amcharts/amcharts5-geodata": "^5.1.4",
