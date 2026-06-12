@@ -154,6 +154,40 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Proveedores',
       },
       {
+        path: 'ordenes-compra',
+        ...guarded(P.ordenesCompra),
+        loadComponent: () =>
+          import('./pages/ordenes-compra/ordenes-compra.component').then((m) => m.OrdenesCompraComponent),
+        title: 'FactoFarm | Órdenes de compra',
+      },
+      {
+        path: 'recepcion-mercaderia',
+        ...guarded(P.recepcionMercaderia),
+        loadComponent: () =>
+          import('./pages/recepcion-mercaderia/recepcion-mercaderia.component').then(
+            (m) => m.RecepcionMercaderiaComponent,
+          ),
+        title: 'FactoFarm | Recepción mercadería',
+      },
+      {
+        path: 'reporte-compras-sugerido',
+        ...guarded(P.reporteComprasSugerido),
+        loadComponent: () =>
+          import('./pages/reporte-compras-sugerido/reporte-compras-sugerido.component').then(
+            (m) => m.ReporteComprasSugeridoComponent,
+          ),
+        title: 'FactoFarm | Sugerido de compras',
+      },
+      {
+        path: 'comparativo-precios',
+        ...guarded(P.comparativoPrecios),
+        loadComponent: () =>
+          import('./pages/comparativo-precios/comparativo-precios.component').then(
+            (m) => m.ComparativoPreciosComponent,
+          ),
+        title: 'FactoFarm | Comparativo precios',
+      },
+      {
         path: 'series',
         ...guarded(P.series),
         loadComponent: () =>

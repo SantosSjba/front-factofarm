@@ -78,7 +78,13 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   {
     icon: 'lucide:truck-delivery',
     name: 'Compras',
-    subItems: [{ name: 'Proveedores', path: '/proveedores', permissionCode: 'nav.proveedores' }],
+    subItems: [
+      { name: 'Proveedores', path: '/proveedores', permissionCode: 'nav.proveedores' },
+      { name: 'Órdenes de compra', path: '/ordenes-compra', permissionCode: 'nav.ordenes_compra' },
+      { name: 'Recepción mercadería', path: '/recepcion-mercaderia', permissionCode: 'nav.recepcion_mercaderia' },
+      { name: 'Sugerido de compras', path: '/reporte-compras-sugerido', permissionCode: 'nav.reporte_compras_sugerido' },
+      { name: 'Comparativo precios', path: '/comparativo-precios', permissionCode: 'nav.comparativo_precios' },
+    ],
   },
   {
     icon: 'lucide:shopping-cart',

@@ -1,0 +1,140 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Órdenes de compra</h1>
+  <app-button variant="primary" (btnClick)="createOpen.set(true)">Nueva OC</app-button>
+</app-page-toolbar>
+
+<app-component-card title="Filtros" className="mt-4">
+  <div class="max-w-xs">
+    <app-form-select [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set('' + $event); page.set(1)" />
+  </div>
+</app-component-card>
+
+<app-component-card title="Listado" className="mt-4">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b text-xs uppercase text-gray-500">
+      <tr>
+        <th class="px-3 py-2">Número</th>
+        <th class="px-3 py-2">Fecha</th>
+        <th class="px-3 py-2">Proveedor</th>
+        <th class="px-3 py-2">Almacén</th>
+        <th class="px-3 py-2">Estado</th>
+        <th class="px-3 py-2 text-right">Total</th>
+        <th class="px-3 py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of listQuery.data()?.items ?? []; track row.id) {
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="px-3 py-2 font-medium">{{ row.numero ?? '—' }}</td>
+          <td class="px-3 py-2">{{ row.fechaEmision | date: 'shortDate' }}</td>
+          <td class="px-3 py-2">{{ row.supplier.razonSocial }}</td>
+          <td class="px-3 py-2">{{ row.warehouse.nombre }}</td>
+          <td class="px-3 py-2">
+            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-white/10">{{ row.estado }}</span>
+          </td>
+          <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+          <td class="px-3 py-2 text-right">
+            <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (listQuery.data(); as data) {
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+  }
+</app-component-card>
+
+<app-modal [isOpen]="createOpen()" (close)="createOpen.set(false)" className="w-full max-w-2xl">
+  <div class="space-y-4 p-6">
+    <h3 class="text-lg font-semibold">Nueva orden de compra</h3>
+    <app-form-select [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
+    <app-form-select [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
+    <div class="flex gap-2">
+      <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Buscar producto" />
+      <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
+    </div>
+    @if (catalog().length > 0) {
+      <div class="max-h-32 overflow-auto rounded border text-sm dark:border-gray-700">
+        @for (item of catalog(); track item.id) {
+          <button type="button" class="block w-full border-b px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="addLine(item)">
+            {{ item.nombre }} · {{ item.codigoInterno }}
+          </button>
+        }
+      </div>
+    }
+    @for (line of lines(); track line.productId) {
+      <div class="flex justify-between text-sm">
+        <span>{{ line.nombre }} × {{ line.quantity }}</span>
+        <span>{{ (line.unitPrice ?? 0) * line.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+      </div>
+    }
+    <app-input-field [value]="condicionesPago()" (valueChange)="condicionesPago.set('' + $event)" placeholder="Condiciones de pago" />
+    <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
+    <div class="flex items-center justify-between">
+      <span class="font-bold">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+      <app-button
+        variant="primary"
+        [disabled]="!supplierId() || !warehouseId() || lines().length === 0 || createMutation.isPending()"
+        (btnClick)="createMutation.mutate()"
+      >
+        Crear OC
+      </app-button>
+    </div>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="!!detailId()" (close)="closeDetail()" className="w-full max-w-3xl">
+  @if (detailQuery.data(); as po) {
+    <div class="space-y-4 p-6">
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 class="text-lg font-semibold">{{ po.numero ?? 'OC' }}</h3>
+          <p class="text-sm text-gray-500">{{ po.supplier.razonSocial }} · {{ po.warehouse.nombre }}</p>
+        </div>
+        <span class="rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">{{ po.estado }}</span>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="border-b text-xs uppercase text-gray-500">
+          <tr>
+            <th class="py-2 text-left">Producto</th>
+            <th class="py-2 text-right">Pedido</th>
+            <th class="py-2 text-right">Recibido</th>
+            <th class="py-2 text-right">Pendiente</th>
+            <th class="py-2 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of po.items; track item.id) {
+            <tr class="border-b border-gray-100 dark:border-gray-800">
+              <td class="py-2">{{ item.producto }}</td>
+              <td class="py-2 text-right">{{ item.cantidadPedida }}</td>
+              <td class="py-2 text-right">{{ item.cantidadRecibida }}</td>
+              <td class="py-2 text-right">{{ item.cantidadPendiente }}</td>
+              <td class="py-2 text-right">{{ item.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="text-right font-semibold">Total OC: {{ po.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</div>
+      @if (po.goodsReceipts.length > 0) {
+        <div class="text-sm">
+          <p class="font-medium">Recepciones:</p>
+          @for (gr of po.goodsReceipts; track gr.id) {
+            <p class="text-gray-600 dark:text-gray-400">{{ gr.numero }} · {{ gr.fechaRecepcion | date: 'short' }}</p>
+          }
+        </div>
+      }
+      <div class="flex flex-wrap gap-2">
+        @if (po.estado === 'BORRADOR') {
+          <app-button variant="primary" (btnClick)="actionMutation.mutate({ id: po.id, action: 'approve' })">Aprobar</app-button>
+          <app-button variant="outline" (btnClick)="actionMutation.mutate({ id: po.id, action: 'cancel' })">Anular</app-button>
+        }
+        @if (po.estado === 'APROBADA') {
+          <app-button variant="primary" (btnClick)="actionMutation.mutate({ id: po.id, action: 'send' })">Enviar</app-button>
+        }
+      </div>
+    </div>
+  }
+</app-modal>

@@ -1,4 +1,63 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Cuentas por pagar</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Cuentas por pagar</h1>
+</app-page-toolbar>
+
+<app-component-card title="Documentos pendientes" className="mt-4">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b text-xs uppercase text-gray-500">
+      <tr>
+        <th class="px-3 py-2">Documento</th>
+        <th class="px-3 py-2">Proveedor</th>
+        <th class="px-3 py-2">Emisión</th>
+        <th class="px-3 py-2">Vencimiento</th>
+        <th class="px-3 py-2">Estado</th>
+        <th class="px-3 py-2 text-right">Saldo</th>
+        <th class="px-3 py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of listQuery.data()?.items ?? []; track row.id) {
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="px-3 py-2">{{ row.numeroDocumento ?? '—' }}</td>
+          <td class="px-3 py-2">{{ row.supplier.razonSocial }}</td>
+          <td class="px-3 py-2">{{ row.fechaEmision | date: 'shortDate' }}</td>
+          <td class="px-3 py-2">{{ row.fechaVencimiento | date: 'shortDate' }}</td>
+          <td class="px-3 py-2">
+            <span
+              class="rounded-full px-2 py-0.5 text-xs"
+              [class.bg-red-100]="row.estado === 'VENCIDA'"
+              [class.text-red-800]="row.estado === 'VENCIDA'"
+              [class.bg-amber-100]="row.estado === 'PENDIENTE'"
+              [class.text-amber-800]="row.estado === 'PENDIENTE'"
+              [class.bg-emerald-100]="row.estado === 'PAGADA'"
+              [class.text-emerald-800]="row.estado === 'PAGADA'"
+            >{{ row.estado }}</span>
+          </td>
+          <td class="px-3 py-2 text-right font-medium">{{ row.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+          <td class="px-3 py-2 text-right">
+            @if (row.estado !== 'PAGADA' && row.estado !== 'ANULADA') {
+              <button type="button" class="text-brand-600 hover:underline" (click)="openPay(row)">Pagar</button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (listQuery.data(); as data) {
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="20" (currentPageChange)="page.set($event)" />
+  }
+</app-component-card>
+
+<app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-md">
+  <div class="space-y-4 p-6">
+    <h3 class="text-lg font-semibold">Registrar pago</h3>
+    @if (selectedAp(); as ap) {
+      <p class="text-sm text-gray-600 dark:text-gray-400">{{ ap.supplier.razonSocial }} · Saldo: {{ ap.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+    }
+    <app-input-field type="number" [value]="payAmount()" (valueChange)="payAmount.set(Number($event) || 0)" placeholder="Monto" />
+    <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Método (transferencia, cheque…)" />
+    <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" placeholder="Referencia / N° operación" />
+    <app-button variant="primary" [disabled]="payMutation.isPending()" (btnClick)="payMutation.mutate()">Confirmar pago</app-button>
+  </div>
+</app-modal>

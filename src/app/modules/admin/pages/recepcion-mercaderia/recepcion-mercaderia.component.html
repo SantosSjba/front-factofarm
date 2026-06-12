@@ -1,0 +1,62 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Recepción de mercadería</h1>
+</app-page-toolbar>
+
+<app-component-card title="Orden de compra" className="mt-4">
+  <div class="max-w-xl space-y-4">
+    <app-form-select
+      [options]="orderOptions()"
+      [value]="selectedOrderId()"
+      (valueChange)="onOrderChange($event)"
+    />
+    @if (detailQuery.data(); as po) {
+      @if (receiptLines().length === 0) {
+        <app-button variant="primary" (btnClick)="initLines(po)">Cargar ítems pendientes</app-button>
+      }
+      <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+        <p><strong>{{ po.numero }}</strong> · {{ po.supplier.razonSocial }}</p>
+        <p class="text-gray-500">Almacén: {{ po.warehouse.nombre }} · Total: {{ po.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+      </div>
+    }
+  </div>
+</app-component-card>
+
+@if (receiptLines().length > 0) {
+  <app-component-card title="Ítems a recibir" className="mt-4">
+    <div class="space-y-4">
+      @for (line of receiptLines(); track line.purchaseOrderItemId) {
+        <div class="grid gap-2 rounded-lg border border-gray-200 p-3 md:grid-cols-5 dark:border-gray-700">
+          <div class="md:col-span-2">
+            <p class="font-medium">{{ line.producto }}</p>
+            <p class="text-xs text-gray-500">Pendiente: {{ line.pendiente }}</p>
+          </div>
+          <app-input-field
+            type="number"
+            placeholder="Cantidad"
+            [value]="line.quantity"
+            (valueChange)="updateLine(line.purchaseOrderItemId, { quantity: Number($event) || 0 })"
+          />
+          @if (line.manejaLotes) {
+            <app-input-field
+              placeholder="Código lote"
+              [value]="line.lotCode"
+              (valueChange)="updateLine(line.purchaseOrderItemId, { lotCode: '' + $event })"
+            />
+            <app-input-field
+              type="date"
+              placeholder="Vencimiento"
+              [value]="line.expirationDate"
+              (valueChange)="updateLine(line.purchaseOrderItemId, { expirationDate: '' + $event })"
+            />
+          }
+        </div>
+      }
+      <app-input-field [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
+      <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
+      <app-button variant="primary" [disabled]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
+        Confirmar recepción
+      </app-button>
+    </div>
+  </app-component-card>
+}

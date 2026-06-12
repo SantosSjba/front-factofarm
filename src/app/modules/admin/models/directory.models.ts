@@ -1755,3 +1755,140 @@ export interface CreateQuotationRequest {
   comentario?: string;
   items: CreateQuotationItemRequest[];
 }
+
+// —— Compras (Fase 4) ——
+
+export type PurchaseOrderStatus =
+  | 'BORRADOR'
+  | 'APROBADA'
+  | 'ENVIADA'
+  | 'PARCIALMENTE_RECIBIDA'
+  | 'RECIBIDA'
+  | 'CERRADA'
+  | 'ANULADA';
+
+export type AccountPayableStatus = 'PENDIENTE' | 'PARCIAL' | 'PAGADA' | 'VENCIDA' | 'ANULADA';
+
+export interface PurchaseOrderListItemDto {
+  id: string;
+  numero: string | null;
+  estado: PurchaseOrderStatus;
+  total: string;
+  fechaEmision: string;
+  createdAt: string;
+  supplier: { id: string; razonSocial: string };
+  warehouse: { id: string; nombre: string };
+}
+
+export interface PurchaseOrderDetailDto {
+  id: string;
+  numero: string | null;
+  estado: PurchaseOrderStatus;
+  subtotal: string;
+  igvTotal: string;
+  total: string;
+  moneda: string;
+  comentario: string | null;
+  condicionesPago: string | null;
+  fechaEmision: string;
+  fechaEntregaEstimada: string | null;
+  createdAt: string;
+  supplier: { id: string; razonSocial: string; numeroDocumento: string; diasCredito: number };
+  warehouse: { id: string; nombre: string };
+  createdBy: { id: string; nombre: string };
+  approvedBy: { id: string; nombre: string } | null;
+  items: PurchaseOrderItemDto[];
+  goodsReceipts: {
+    id: string;
+    numero: string | null;
+    fechaRecepcion: string;
+    referenciaDoc: string | null;
+  }[];
+}
+
+export interface PurchaseOrderItemDto {
+  id: string;
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  manejaLotes: boolean;
+  cantidadPedida: string;
+  cantidadRecibida: string;
+  cantidadPendiente: string;
+  precioUnitario: string;
+  subtotalLinea: string;
+  igvLinea: string;
+  totalLinea: string;
+  codigoProveedor: string | null;
+}
+
+export interface CreatePurchaseOrderItemRequest {
+  productId: string;
+  quantity: number;
+  unitPrice?: number;
+}
+
+export interface CreatePurchaseOrderRequest {
+  supplierId: string;
+  warehouseId: string;
+  fechaEntregaEstimada?: string;
+  comentario?: string;
+  condicionesPago?: string;
+  items: CreatePurchaseOrderItemRequest[];
+}
+
+export interface CreateGoodsReceiptItemRequest {
+  purchaseOrderItemId: string;
+  quantity: number;
+  lotCode?: string;
+  expirationDate?: string;
+  unitCost?: number;
+}
+
+export interface CreateGoodsReceiptRequest {
+  items: CreateGoodsReceiptItemRequest[];
+  referenciaDoc?: string;
+  comentario?: string;
+}
+
+export interface AccountPayableListItemDto {
+  id: string;
+  numeroDocumento: string | null;
+  montoTotal: string;
+  montoPagado: string;
+  saldo: string;
+  fechaEmision: string;
+  fechaVencimiento: string;
+  estado: AccountPayableStatus;
+  supplier: { id: string; razonSocial: string };
+}
+
+export interface ReplenishmentSuggestionDto {
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  warehouseId: string;
+  warehouse: string;
+  stockActual: string;
+  stockMinimo: number;
+  cantidadSugerida: number;
+  rotacion90d: string;
+  claseAbc: 'A' | 'B' | 'C';
+  proveedorSugerido: string | null;
+  precioSugerido: string | null;
+}
+
+export interface PriceComparisonItemDto {
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  proveedores: {
+    supplierId: string;
+    razonSocial: string;
+    numeroDocumento: string;
+    precioCompra: string;
+    plazoDias: number;
+    codigoProveedor: string | null;
+  }[];
+  mejorPrecio: string | null;
+}

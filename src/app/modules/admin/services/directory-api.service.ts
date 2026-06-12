@@ -170,6 +170,14 @@ import type {
   QuotationListItemDto,
   QuotationDetailDto,
   CreateQuotationRequest,
+  PurchaseOrderListItemDto,
+  PurchaseOrderDetailDto,
+  PurchaseOrderStatus,
+  CreatePurchaseOrderRequest,
+  CreateGoodsReceiptRequest,
+  AccountPayableListItemDto,
+  ReplenishmentSuggestionDto,
+  PriceComparisonItemDto,
 } from '../models/directory.models';
 
 @Injectable({ providedIn: 'root' })
@@ -1404,5 +1412,92 @@ export class DirectoryApiService {
 
   sendQuotation(id: string) {
     return this.http.post<{ ok: boolean }>(`${this.base}/quotations/${id}/send`, {});
+  }
+
+  // —— Compras (Fase 4) ——
+  listPurchaseOrders(filters?: { page?: number; pageSize?: number; supplierId?: string; estado?: PurchaseOrderStatus }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.supplierId) params['supplierId'] = filters.supplierId;
+    if (filters?.estado) params['estado'] = filters.estado;
+    return this.http.get<PaginatedResponseDto<PurchaseOrderListItemDto>>(
+      `${this.base}/purchases/purchase-orders`,
+      { params },
+    );
+  }
+
+  getPurchaseOrder(id: string) {
+    return this.http.get<PurchaseOrderDetailDto>(`${this.base}/purchases/purchase-orders/${id}`);
+  }
+
+  createPurchaseOrder(body: CreatePurchaseOrderRequest) {
+    return this.http.post<PurchaseOrderDetailDto>(`${this.base}/purchases/purchase-orders`, body);
+  }
+
+  approvePurchaseOrder(id: string) {
+    return this.http.post<PurchaseOrderDetailDto>(`${this.base}/purchases/purchase-orders/${id}/approve`, {});
+  }
+
+  sendPurchaseOrder(id: string) {
+    return this.http.post<PurchaseOrderDetailDto>(`${this.base}/purchases/purchase-orders/${id}/send`, {});
+  }
+
+  cancelPurchaseOrder(id: string) {
+    return this.http.post<PurchaseOrderDetailDto>(`${this.base}/purchases/purchase-orders/${id}/cancel`, {});
+  }
+
+  receivePurchaseOrder(id: string, body: CreateGoodsReceiptRequest) {
+    return this.http.post<PurchaseOrderDetailDto>(
+      `${this.base}/purchases/purchase-orders/${id}/receipts`,
+      body,
+    );
+  }
+
+  listAccountsPayable(filters?: { page?: number; pageSize?: number; supplierId?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.supplierId) params['supplierId'] = filters.supplierId;
+    return this.http.get<PaginatedResponseDto<AccountPayableListItemDto>>(
+      `${this.base}/purchases/accounts-payable`,
+      { params },
+    );
+  }
+
+  registerAccountPayablePayment(id: string, body: { amount: number; metodo?: string; referencia?: string }) {
+    return this.http.post<{ ok: boolean; saldo: string; estado: string }>(
+      `${this.base}/purchases/accounts-payable/${id}/payments`,
+      body,
+    );
+  }
+
+  createSupplierCreditNote(body: {
+    supplierId: string;
+    monto: number;
+    motivo: string;
+    accountPayableId?: string;
+    purchaseOrderId?: string;
+    numero?: string;
+  }) {
+    return this.http.post<{ ok: boolean; id: string }>(`${this.base}/purchases/supplier-credit-notes`, body);
+  }
+
+  getReplenishmentReport(warehouseId?: string) {
+    const params: Record<string, string> = {};
+    if (warehouseId) params['warehouseId'] = warehouseId;
+    return this.http.get<{ items: ReplenishmentSuggestionDto[]; generatedAt: string }>(
+      `${this.base}/purchases/reports/replenishment`,
+      { params },
+    );
+  }
+
+  getPriceComparisonReport(productId?: string) {
+    const params: Record<string, string> = {};
+    if (productId) params['productId'] = productId;
+    return this.http.get<{ items: PriceComparisonItemDto[] }>(
+      `${this.base}/purchases/reports/price-comparison`,
+      { params },
+    );
   }
 }

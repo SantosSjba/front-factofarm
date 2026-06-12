@@ -1,0 +1,47 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Comparativo de precios</h1>
+</app-page-toolbar>
+
+<app-component-card title="Precios por proveedor" className="mt-4">
+  <div class="space-y-6">
+    @for (row of reportQuery.data()?.items ?? []; track row.productId) {
+      <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p class="font-medium">{{ row.producto }}</p>
+            <p class="text-xs text-gray-500">{{ row.codigoInterno ?? 'Sin código' }}</p>
+          </div>
+          @if (row.mejorPrecio) {
+            <span class="text-sm font-semibold text-emerald-600">Mejor: {{ row.mejorPrecio | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+          }
+        </div>
+        <table class="w-full text-sm">
+          <thead class="text-xs uppercase text-gray-500">
+            <tr>
+              <th class="py-1 text-left">Proveedor</th>
+              <th class="py-1 text-left">RUC</th>
+              <th class="py-1 text-right">Precio compra</th>
+              <th class="py-1 text-right">Plazo días</th>
+              <th class="py-1 text-left">Cód. proveedor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of row.proveedores; track p.supplierId; let i = $index) {
+              <tr [class.font-semibold]="i === 0" [class.text-emerald-700]="i === 0">
+                <td class="py-1">{{ p.razonSocial }}</td>
+                <td class="py-1">{{ p.numeroDocumento }}</td>
+                <td class="py-1 text-right">{{ p.precioCompra | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="py-1 text-right">{{ p.plazoDias }}</td>
+                <td class="py-1">{{ p.codigoProveedor ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+  @if ((reportQuery.data()?.items?.length ?? 0) === 0 && !reportQuery.isPending()) {
+    <p class="py-6 text-center text-gray-500">Vincule productos con precios de compra en Proveedores.</p>
+  }
+</app-component-card>

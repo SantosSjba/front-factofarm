@@ -1,0 +1,57 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Sugerido de compras</h1>
+</app-page-toolbar>
+
+<app-component-card title="Filtros" className="mt-4">
+  <div class="max-w-xs">
+    <app-form-select
+      [options]="warehouseOptions()"
+      [value]="warehouseId()"
+      (valueChange)="warehouseId.set($event)"
+    />
+  </div>
+  <p class="mt-2 text-xs text-gray-500">Basado en stock mínimo, rotación 90 días y clasificación ABC.</p>
+</app-component-card>
+
+<app-component-card title="Productos sugeridos" className="mt-4">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b text-xs uppercase text-gray-500">
+      <tr>
+        <th class="px-3 py-2">ABC</th>
+        <th class="px-3 py-2">Producto</th>
+        <th class="px-3 py-2">Almacén</th>
+        <th class="px-3 py-2 text-right">Stock</th>
+        <th class="px-3 py-2 text-right">Mín.</th>
+        <th class="px-3 py-2 text-right">Sugerido</th>
+        <th class="px-3 py-2 text-right">Rot. 90d</th>
+        <th class="px-3 py-2">Proveedor</th>
+        <th class="px-3 py-2 text-right">Precio ref.</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of reportQuery.data()?.items ?? []; track row.productId + row.warehouseId) {
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="px-3 py-2">
+            <span class="rounded px-1.5 py-0.5 text-xs font-semibold" [class.bg-emerald-100]="row.claseAbc === 'A'" [class.text-emerald-800]="row.claseAbc === 'A'" [class.bg-amber-100]="row.claseAbc === 'B'" [class.text-amber-800]="row.claseAbc === 'B'" [class.bg-gray-100]="row.claseAbc === 'C'">{{ row.claseAbc }}</span>
+          </td>
+          <td class="px-3 py-2">{{ row.producto }}</td>
+          <td class="px-3 py-2">{{ row.warehouse }}</td>
+          <td class="px-3 py-2 text-right">{{ row.stockActual }}</td>
+          <td class="px-3 py-2 text-right">{{ row.stockMinimo }}</td>
+          <td class="px-3 py-2 text-right font-semibold text-brand-600">{{ row.cantidadSugerida }}</td>
+          <td class="px-3 py-2 text-right">{{ row.rotacion90d }}</td>
+          <td class="px-3 py-2">{{ row.proveedorSugerido ?? '—' }}</td>
+          <td class="px-3 py-2 text-right">
+            @if (row.precioSugerido) {
+              {{ row.precioSugerido | currency: 'PEN' : 'symbol' : '1.2-2' }}
+            } @else { — }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if ((reportQuery.data()?.items?.length ?? 0) === 0 && !reportQuery.isPending()) {
+    <p class="py-6 text-center text-gray-500">No hay productos bajo stock mínimo.</p>
+  }
+</app-component-card>
