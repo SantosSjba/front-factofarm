@@ -59,12 +59,15 @@ export class EstablecimientosComponent {
     queryKey: establishmentQueryKeys.list({
       search: this.searchTerm().trim(),
       hospital: this.hospitalFilter(),
+      page: this.currentPage(),
     }),
     queryFn: () =>
       firstValueFrom(
-        this.api.listEstablishments({
+        this.api.listEstablishmentsPaged({
           search: this.searchTerm(),
           hospital: this.hospitalFilter() as 'all' | 'hospital' | 'no-hospital',
+          page: this.currentPage(),
+          pageSize: this.itemsPerPage,
         }),
       ),
   }));
@@ -101,20 +104,18 @@ export class EstablecimientosComponent {
   protected readonly hospitalFilter = signal('all');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 10;
-  protected readonly establishments = computed(() => this.establishmentsQuery.data() ?? []);
+  protected readonly establishments = computed(() => this.establishmentsQuery.data()?.items ?? []);
   protected readonly hospitalFilterOptions = [
     { value: 'all', label: 'Todos' },
     { value: 'hospital', label: 'Solo hospitales' },
     { value: 'no-hospital', label: 'No hospital' },
   ];
-  protected readonly totalFiltered = computed(() => this.establishments().length);
+  protected readonly totalFiltered = computed(() => this.establishmentsQuery.data()?.total ?? 0);
+  protected readonly totalPages = computed(() => this.establishmentsQuery.data()?.totalPages ?? 1);
   protected readonly pageStart = computed(() =>
     this.totalFiltered() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
   );
-  protected readonly paginatedEstablishments = computed(() => {
-    const start = this.pageStart();
-    return this.establishments().slice(start, start + this.itemsPerPage);
-  });
+  protected readonly paginatedEstablishments = computed(() => this.establishments());
 
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<EstablishmentOptionDto | null>(null);
@@ -250,8 +251,7 @@ export class EstablecimientosComponent {
 
   constructor() {
     effect(() => {
-      const total = this.totalFiltered();
-      const totalPages = Math.max(1, Math.ceil(total / this.itemsPerPage));
+      const totalPages = this.totalPages();
       const page = this.currentPage();
       if (page > totalPages) {
         this.currentPage.set(totalPages);

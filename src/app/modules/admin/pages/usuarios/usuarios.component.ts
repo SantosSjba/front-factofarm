@@ -17,6 +17,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { NotifyService } from '../../../../core/services/notify.service';
 import { userQueryKeys } from '../../../../core/query/user-query.keys';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-usuarios',
@@ -32,6 +33,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
     IconComponent,
     ButtonComponent,
     UsuarioFormModalComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './usuarios.component.html',
 })
@@ -44,12 +46,15 @@ export class UsuariosComponent {
     queryKey: userQueryKeys.list({
       search: this.searchTerm().trim(),
       role: this.roleFilter(),
+      page: this.currentPage(),
     }),
     queryFn: () =>
       firstValueFrom(
         this.api.listUsers({
           search: this.searchTerm(),
           role: this.roleFilter() as 'all' | 'ADMINISTRADOR' | 'VENDEDOR',
+          page: this.currentPage(),
+          pageSize: this.itemsPerPage,
         }),
       ),
   }));
@@ -61,6 +66,7 @@ export class UsuariosComponent {
 
   protected readonly modalOpen = signal(false);
   protected readonly editingUser = signal<UserListItemDto | null>(null);
+  protected readonly modalInitialTab = signal<'datos' | 'permisos'>('datos');
   protected readonly deleteConfirmOpen = signal(false);
   protected readonly deletingUser = signal<UserListItemDto | null>(null);
   protected readonly searchTerm = signal('');
@@ -72,15 +78,13 @@ export class UsuariosComponent {
     { value: 'ADMINISTRADOR', label: 'Administrador' },
     { value: 'VENDEDOR', label: 'Vendedor' },
   ];
-  protected readonly users = computed(() => this.usersQuery.data() ?? []);
-  protected readonly totalUsers = computed(() => this.users().length);
+  protected readonly users = computed(() => this.usersQuery.data()?.items ?? []);
+  protected readonly totalUsers = computed(() => this.usersQuery.data()?.total ?? 0);
+  protected readonly totalPages = computed(() => this.usersQuery.data()?.totalPages ?? 1);
   protected readonly pageStart = computed(() =>
     this.totalUsers() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
   );
-  protected readonly paginatedUsers = computed(() => {
-    const start = this.pageStart();
-    return this.users().slice(start, start + this.itemsPerPage);
-  });
+  protected readonly paginatedUsers = computed(() => this.users());
   protected readonly deleteUserMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.deleteUser(id)),
     onSuccess: () => {
@@ -95,8 +99,7 @@ export class UsuariosComponent {
 
   constructor() {
     effect(() => {
-      const total = this.totalUsers();
-      const totalPages = Math.max(1, Math.ceil(total / this.itemsPerPage));
+      const totalPages = this.totalPages();
       const page = this.currentPage();
       if (page > totalPages) {
         this.currentPage.set(totalPages);
@@ -116,6 +119,7 @@ export class UsuariosComponent {
   }
 
   protected openModal() {
+    this.modalInitialTab.set('datos');
     this.editingUser.set(null);
     this.modalOpen.set(true);
   }
@@ -123,6 +127,7 @@ export class UsuariosComponent {
   protected closeModal() {
     this.modalOpen.set(false);
     this.editingUser.set(null);
+    this.modalInitialTab.set('datos');
   }
 
   protected onPageChange(page: number) {
@@ -151,6 +156,7 @@ export class UsuariosComponent {
 
   protected rowAction(user: UserListItemDto, action: string) {
     if (action === 'editar') {
+      this.modalInitialTab.set('datos');
       this.editingUser.set(user);
       this.modalOpen.set(true);
       return;
@@ -163,7 +169,9 @@ export class UsuariosComponent {
       return;
     }
     if (action === 'permisos') {
-      this.notify.warning('Edición de permisos pendiente de implementación.');
+      this.modalInitialTab.set('permisos');
+      this.editingUser.set(user);
+      this.modalOpen.set(true);
     }
   }
 

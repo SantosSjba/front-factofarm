@@ -12,10 +12,12 @@
     Usuarios
   </h1>
   <div data-toolbar-actions>
-    <app-button size="sm" (btnClick)="openModal()">
-      <app-icon name="mdi:plus" width="18" height="18" iconClass="shrink-0" />
-      <span class="leading-none">Nuevo</span>
-    </app-button>
+    <ng-container *appHasPermission="'users.write'">
+      <app-button size="sm" (btnClick)="openModal()">
+        <app-icon name="mdi:plus" width="18" height="18" iconClass="shrink-0" />
+        <span class="leading-none">Nuevo</span>
+      </app-button>
+    </ng-container>
   </div>
 </app-page-toolbar>
 
@@ -146,6 +148,7 @@
 <app-usuario-form-modal
   [isOpen]="modalOpen()"
   [editingUser]="editingUser()"
+  [initialTab]="modalInitialTab()"
   (closed)="closeModal()"
 />
 

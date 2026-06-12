@@ -1,21 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, QueryList, ViewChildren, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, QueryList, ViewChildren, ChangeDetectorRef, inject, OnDestroy, OnInit } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { IconComponent } from '../../components/ui/icon/icon.component';
-import { combineLatest, Subscription } from 'rxjs';
-import { MAIN_NAV_ITEMS, NavItem, NavSubItem } from './sidebar-menu.config';
+import { Subscription } from 'rxjs';
+import { SidebarMenuService } from '../../../core/services/sidebar-menu.service';
+import { NavItem, NavSubItem } from './sidebar-menu.config';
 
 @Component({
   selector: 'app-sidebar',
   imports: [CommonModule, RouterModule, IconComponent],
   templateUrl: './app-sidebar.component.html',
 })
-export class AppSidebarComponent {
+export class AppSidebarComponent implements OnInit, OnDestroy {
+  private readonly sidebarMenu = inject(SidebarMenuService);
 
-  /** Menú principal FactoFarm. */
-  navItems: NavItem[] = MAIN_NAV_ITEMS;
-
+  navItems: NavItem[] = [];
   othersItems: NavItem[] = [];
 
   openSubmenu: string | null | number = null;
@@ -40,7 +40,14 @@ export class AppSidebarComponent {
   }
 
   ngOnInit() {
-    // Subscribe to router events
+    this.subscription.add(
+      this.sidebarMenu.getNavItems$().subscribe((items) => {
+        this.navItems = items;
+        this.setActiveMenuFromRoute(this.router.url);
+        this.cdr.detectChanges();
+      }),
+    );
+
     this.subscription.add(
       this.router.events.subscribe(event => {
         if (event instanceof NavigationEnd) {
@@ -49,30 +56,10 @@ export class AppSidebarComponent {
       })
     );
 
-    // Subscribe to combined observables to close submenus when all are false
-    this.subscription.add(
-      combineLatest([this.isExpanded$, this.isMobileOpen$, this.isHovered$]).subscribe(
-        ([isExpanded, isMobileOpen, isHovered]) => {
-          if (!isExpanded && !isMobileOpen && !isHovered) {
-            // this.openSubmenu = null;
-            // this.savedSubMenuHeights = { ...this.subMenuHeights };
-            // this.subMenuHeights = {};
-            this.cdr.detectChanges();
-          } else {
-            // Restore saved heights when reopening
-            // this.subMenuHeights = { ...this.savedSubMenuHeights };
-            // this.cdr.detectChanges();
-          }
-        }
-      )
-    );
-
-    // Initial load
     this.setActiveMenuFromRoute(this.router.url);
   }
 
   ngOnDestroy() {
-    // Clean up subscriptions
     this.subscription.unsubscribe();
   }
 
@@ -153,13 +140,10 @@ export class AppSidebarComponent {
   }
 
   onSubmenuClick() {
-    console.log('click submenu');
     this.isMobileOpen$.subscribe(isMobile => {
       if (isMobile) {
         this.sidebarService.setMobileOpen(false);
       }
     }).unsubscribe();
   }
-
-
 }

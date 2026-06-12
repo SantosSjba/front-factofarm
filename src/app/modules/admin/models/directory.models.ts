@@ -29,6 +29,7 @@ export interface CreateUserRequest {
   role: UserRoleDto;
   establecimientoId: string;
   profile?: CreateUserProfileBody;
+  permissionCodes?: string[];
 }
 
 export interface UpdateUserRequest {
@@ -38,6 +39,11 @@ export interface UpdateUserRequest {
   role?: UserRoleDto;
   establecimientoId?: string;
   profile?: CreateUserProfileBody;
+  permissionCodes?: string[];
+}
+
+export interface UpdateUserPermissionsRequest {
+  permissionCodes: string[];
 }
 
 export interface UserProfileDto {
@@ -73,7 +79,19 @@ export interface UserListItemDto {
 export interface UserListFiltersRequest {
   search?: string;
   role?: UserRoleDto | 'all';
+  page?: number;
+  pageSize?: number;
 }
+
+export interface PaginatedResponseDto<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export type UserListResponseDto = PaginatedResponseDto<UserListItemDto>;
 
 export interface EstablishmentOptionDto {
   id: string;
@@ -101,6 +119,17 @@ export interface EstablishmentOptionDto {
 export interface EstablishmentListFiltersRequest {
   search?: string;
   hospital?: 'all' | 'hospital' | 'no-hospital';
+  page?: number;
+  pageSize?: number;
+}
+
+export type EstablishmentListResponseDto = PaginatedResponseDto<EstablishmentOptionDto>;
+
+export interface DashboardStatsDto {
+  usersActive: number;
+  establishmentsActive: number;
+  customersActive: number;
+  productsActive: number;
 }
 
 export interface PermissionMenuNodeDto {

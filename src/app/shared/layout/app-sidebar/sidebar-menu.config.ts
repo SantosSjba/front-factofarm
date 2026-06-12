@@ -1,6 +1,7 @@
 export type NavSubItem = {
   name: string;
   path?: string;
+  permissionCode?: string;
   pro?: boolean;
   new?: boolean;
   subItems?: NavSubItem[];
@@ -10,6 +11,7 @@ export type NavItem = {
   name: string;
   icon: string;
   path?: string;
+  permissionCode?: string;
   new?: boolean;
   subItems?: NavSubItem[];
 };
@@ -24,8 +26,8 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     icon: 'lucide:users',
     name: 'Usuarios/Establecimientos',
     subItems: [
-      { name: 'Usuarios', path: '/usuarios' },
-      { name: 'Establecimientos', path: '/establecimientos' },
+      { name: 'Usuarios', path: '/usuarios', permissionCode: 'nav.usuarios' },
+      { name: 'Establecimientos', path: '/establecimientos', permissionCode: 'nav.establecimientos' },
     ],
   },
   {

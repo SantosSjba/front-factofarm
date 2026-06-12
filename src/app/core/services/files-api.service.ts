@@ -25,12 +25,12 @@ export class FilesApiService {
     return this.http.post<UploadedFileResponseDto>(`${this.base}/files/upload`, body);
   }
 
-  /** URL absoluta para `<img [src]>` cuando `path` es `/api/files/...`. */
+  /** URL absoluta para `<img [src]>` cuando `path` es `/api/v1/files/...`. */
   absoluteFileUrl(path: string): string {
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
-    const root = this.base.replace(/\/api\/?$/, '');
-    return `${root}${path.startsWith('/') ? '' : '/'}${path}`;
+    const serverRoot = this.base.replace(/\/api\/v\d+\/?$/, '');
+    return `${serverRoot}${path.startsWith('/') ? path : `/${path}`}`;
   }
 }

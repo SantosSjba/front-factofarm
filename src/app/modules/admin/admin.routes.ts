@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '../../core/guards/auth.guard';
+import { permissionGuard } from '../../core/guards/permission.guard';
 import { AppLayoutComponent } from '../../shared/layout/app-layout/app-layout.component';
 
 /**
@@ -26,6 +27,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'usuarios',
+        canActivate: [permissionGuard],
+        data: { permissions: ['users.read', 'nav.usuarios'] },
         loadComponent: () =>
           import('./pages/usuarios/usuarios.component').then(
             (m) => m.UsuariosComponent,
@@ -34,6 +37,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'establecimientos',
+        canActivate: [permissionGuard],
+        data: { permissions: ['nav.establecimientos'] },
         loadComponent: () =>
           import('./pages/establecimientos/establecimientos.component').then(
             (m) => m.EstablecimientosComponent,

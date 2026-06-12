@@ -154,6 +154,7 @@ const usuarioPersonalesSchema = yup.object({
 export class UsuarioFormModalComponent {
   readonly isOpen = input(false);
   readonly editingUser = input<UserListItemDto | null>(null);
+  readonly initialTab = input<TabId>('datos');
   readonly closed = output<void>();
 
   private readonly api = inject(DirectoryApiService);
@@ -241,6 +242,7 @@ export class UsuarioFormModalComponent {
         return;
       }
       untracked(() => {
+        this.activeTab.set(this.initialTab());
         this.applyUserToForm();
         this.loadRefs();
       });
@@ -252,7 +254,7 @@ export class UsuarioFormModalComponent {
   }
 
   private loadRefs() {
-    this.api.listEstablishments().subscribe({
+    this.api.listEstablishmentsAll().subscribe({
       next: (rows) => this.establishments.set(rows),
       error: () => {
         this.establishments.set([]);
@@ -558,6 +560,7 @@ export class UsuarioFormModalComponent {
       password: this.password(),
       role: this.role(),
       establecimientoId: this.establecimientoId().trim(),
+      permissionCodes: this.navCodesList(),
       ...(profile ? { profile } : {}),
     };
   }
@@ -568,6 +571,7 @@ export class UsuarioFormModalComponent {
       email: this.email().trim().toLowerCase(),
       role: this.role(),
       establecimientoId: this.establecimientoId().trim(),
+      permissionCodes: this.navCodesList(),
     };
 
     const password = this.password().trim();

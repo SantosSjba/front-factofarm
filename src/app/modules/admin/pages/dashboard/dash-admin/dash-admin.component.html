@@ -1,3 +1,99 @@
-<div>
-    <h1 class="text-2xl font-bold tracking-tight text-gray-900">Dashboard Administrador</h1>
+<div class="mb-6">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white/90">
+    Dashboard Administrador
+  </h1>
+  <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
+    Resumen operativo de FactoFarm
+  </p>
+</div>
+
+@if (statsQuery.isError()) {
+  <div
+    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+    role="alert"
+  >
+    No se pudieron cargar los indicadores.
+  </div>
+}
+
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
+  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+    <div class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"
+      >
+        <app-icon name="lucide:users" width="24" height="24" />
+      </div>
+      <div>
+        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Usuarios activos</p>
+        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
+          @if (statsQuery.isPending()) {
+            …
+          } @else {
+            {{ formatCount(statsQuery.data()?.usersActive) }}
+          }
+        </p>
+      </div>
+    </div>
+  </app-component-card>
+
+  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+    <div class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400"
+      >
+        <app-icon name="lucide:building-2" width="24" height="24" />
+      </div>
+      <div>
+        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Establecimientos</p>
+        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
+          @if (statsQuery.isPending()) {
+            …
+          } @else {
+            {{ formatCount(statsQuery.data()?.establishmentsActive) }}
+          }
+        </p>
+      </div>
+    </div>
+  </app-component-card>
+
+  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+    <div class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400"
+      >
+        <app-icon name="lucide:users-round" width="24" height="24" />
+      </div>
+      <div>
+        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Clientes activos</p>
+        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
+          @if (statsQuery.isPending()) {
+            …
+          } @else {
+            {{ formatCount(statsQuery.data()?.customersActive) }}
+          }
+        </p>
+      </div>
+    </div>
+  </app-component-card>
+
+  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+    <div class="flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/10 dark:text-blue-light-400"
+      >
+        <app-icon name="lucide:package" width="24" height="24" />
+      </div>
+      <div>
+        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Productos habilitados</p>
+        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
+          @if (statsQuery.isPending()) {
+            …
+          } @else {
+            {{ formatCount(statsQuery.data()?.productsActive) }}
+          }
+        </p>
+      </div>
+    </div>
+  </app-component-card>
 </div>

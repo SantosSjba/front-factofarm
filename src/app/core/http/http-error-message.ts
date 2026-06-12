@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 /** Extrae mensaje legible de errores HTTP de la API Nest (ValidationPipe, etc.). */
 export function httpErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof HttpErrorResponse) {
-    const body = err.error as { message?: string | string[] } | null;
+    const body = err.error as { message?: string | string[]; code?: string } | null;
     if (body && typeof body.message === 'string') {
       return body.message;
     }

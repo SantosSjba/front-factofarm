@@ -82,8 +82,12 @@ import type {
   UpdateCustomerTypeRequest,
   UpdateCategoryRequest,
   UpdateBrandRequest,
+  UpdateUserPermissionsRequest,
   UpdateUserRequest,
   UserListItemDto,
+  UserListResponseDto,
+  DashboardStatsDto,
+  EstablishmentListResponseDto,
 } from '../models/directory.models';
 
 @Injectable({ providedIn: 'root' })
@@ -96,7 +100,9 @@ export class DirectoryApiService {
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.role && filters.role !== 'all') params['role'] = filters.role;
-    return this.http.get<UserListItemDto[]>(`${this.base}/users`, { params });
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<UserListResponseDto>(`${this.base}/users`, { params });
   }
 
   createUser(body: CreateUserRequest) {
@@ -107,16 +113,34 @@ export class DirectoryApiService {
     return this.http.patch<UserListItemDto>(`${this.base}/users/${id}`, body);
   }
 
+  updateUserPermissions(id: string, body: UpdateUserPermissionsRequest) {
+    return this.http.patch<UserListItemDto>(`${this.base}/users/${id}/permissions`, body);
+  }
+
   deleteUser(id: string) {
     return this.http.delete<void>(`${this.base}/users/${id}`);
   }
 
-  listEstablishments(filters?: EstablishmentListFiltersRequest) {
+  getDashboardStats() {
+    return this.http.get<DashboardStatsDto>(`${this.base}/dashboard/stats`);
+  }
+
+  listEstablishmentsAll(filters?: Omit<EstablishmentListFiltersRequest, 'page' | 'pageSize'>) {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.hospital && filters.hospital !== 'all') params['hospital'] = filters.hospital;
     return this.http.get<EstablishmentOptionDto[]>(`${this.base}/establishments`, { params });
+  }
+
+  listEstablishmentsPaged(filters?: EstablishmentListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.hospital && filters.hospital !== 'all') params['hospital'] = filters.hospital;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<EstablishmentListResponseDto>(`${this.base}/establishments`, { params });
   }
 
   createEstablishment(body: CreateEstablishmentRequest) {

@@ -171,7 +171,7 @@ export class ServiciosComponent {
 
   protected readonly establishmentsQuery = injectQuery(() => ({
     queryKey: ['establishments', 'list', '', 'all'],
-    queryFn: () => firstValueFrom(this.api.listEstablishments()),
+    queryFn: () => firstValueFrom(this.api.listEstablishmentsAll()),
   }));
 
   protected readonly locationsQuery = injectQuery(() => ({

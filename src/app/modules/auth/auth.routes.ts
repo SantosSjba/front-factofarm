@@ -20,4 +20,22 @@ export const authRoutes: Routes = [
     canActivate: [guestGuard],
     title: 'FactoFarm | Registro',
   },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./pages/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+    canActivate: [guestGuard],
+    title: 'FactoFarm | Recuperar contraseña',
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./pages/reset-password/reset-password.component').then(
+        (m) => m.ResetPasswordComponent,
+      ),
+    canActivate: [guestGuard],
+    title: 'FactoFarm | Nueva contraseña',
+  },
 ];
