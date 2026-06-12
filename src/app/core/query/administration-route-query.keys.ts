@@ -1,8 +1,8 @@
-export const categoryQueryKeys = {
-  all: ['categories'] as const,
+export const administrationRouteQueryKeys = {
+  all: ['administration-routes'] as const,
   list: (filters?: { search?: string; field?: string; page?: number }) =>
     [
-      ...categoryQueryKeys.all,
+      ...administrationRouteQueryKeys.all,
       'list',
       filters?.search ?? '',
       filters?.field ?? 'all',

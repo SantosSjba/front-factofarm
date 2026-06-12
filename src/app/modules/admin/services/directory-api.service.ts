@@ -20,10 +20,49 @@ import type {
   CreateUserRequest,
   CustomerTypeItemDto,
   CustomerTypeListFiltersRequest,
+  CustomerTypeListResponseDto,
   CategoryItemDto,
   CategoryListFiltersRequest,
+  CategoryListResponseDto,
+  CategoryTreeNodeDto,
   BrandItemDto,
   BrandListFiltersRequest,
+  BrandListResponseDto,
+  LaboratoryItemDto,
+  LaboratoryListFiltersRequest,
+  LaboratoryListResponseDto,
+  CreateLaboratoryRequest,
+  UpdateLaboratoryRequest,
+  UnitItemDto,
+  UnitListFiltersRequest,
+  UnitListResponseDto,
+  CreateUnitRequest,
+  UpdateUnitRequest,
+  PharmaceuticalFormItemDto,
+  PharmaceuticalFormListFiltersRequest,
+  PharmaceuticalFormListResponseDto,
+  CreatePharmaceuticalFormRequest,
+  UpdatePharmaceuticalFormRequest,
+  ActivePrincipleItemDto,
+  ActivePrincipleListFiltersRequest,
+  ActivePrincipleListResponseDto,
+  CreateActivePrincipleRequest,
+  UpdateActivePrincipleRequest,
+  AdministrationRouteItemDto,
+  AdministrationRouteListFiltersRequest,
+  AdministrationRouteListResponseDto,
+  CreateAdministrationRouteRequest,
+  UpdateAdministrationRouteRequest,
+  ProductEquivalentItemDto,
+  SupplierPurchaseHistoryResponseDto,
+  SupplierItemDto,
+  SupplierOptionDto,
+  SupplierListFiltersRequest,
+  SupplierListResponseDto,
+  CreateSupplierRequest,
+  UpdateSupplierRequest,
+  SupplierProductItemDto,
+  UpsertSupplierProductRequest,
   EstablishmentOptionDto,
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
@@ -41,11 +80,15 @@ import type {
   InventoryCreateInboundRequest,
   InventoryCreateOutboundRequest,
   ProductHistoryStockItemDto,
+  ProductPriceHistoryListResponseDto,
   ProductStockSummaryDto,
   ProductImportResultDto,
   ProductListFiltersRequest,
   ProductListItemDto,
+  ProductDetailDto,
   ProductListResponseDto,
+  ProductSupplierLinkDto,
+  UpsertProductSupplierRequest,
   ServiceCatalogAttributeTypeDto,
   ServiceCatalogCurrencyDto,
   ServiceCatalogIscSystemDto,
@@ -155,12 +198,29 @@ export class DirectoryApiService {
     return this.http.delete<void>(`${this.base}/establishments/${id}`);
   }
 
-  listCustomerTypes(filters?: CustomerTypeListFiltersRequest) {
+  listCustomerTypesAll(
+    filters?: Omit<CustomerTypeListFiltersRequest, 'page' | 'pageSize'>,
+  ) {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
     return this.http.get<CustomerTypeItemDto[]>(`${this.base}/customer-types`, { params });
+  }
+
+  listCustomerTypesPaged(filters?: CustomerTypeListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<CustomerTypeListResponseDto>(`${this.base}/customer-types`, { params });
+  }
+
+  /** Sin paginación (combos y catálogos). */
+  listCustomerTypes(filters?: Omit<CustomerTypeListFiltersRequest, 'page' | 'pageSize'>) {
+    return this.listCustomerTypesAll(filters);
   }
 
   createCustomerType(body: CreateCustomerTypeRequest) {
@@ -175,12 +235,27 @@ export class DirectoryApiService {
     return this.http.delete<void>(`${this.base}/customer-types/${id}`);
   }
 
-  listCategories(filters?: CategoryListFiltersRequest) {
+  listCategoriesAll(filters?: Omit<CategoryListFiltersRequest, 'page' | 'pageSize'>) {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
     return this.http.get<CategoryItemDto[]>(`${this.base}/categories`, { params });
+  }
+
+  listCategoriesPaged(filters?: CategoryListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<CategoryListResponseDto>(`${this.base}/categories`, { params });
+  }
+
+  /** Sin paginación (combos y catálogos). */
+  listCategories(filters?: Omit<CategoryListFiltersRequest, 'page' | 'pageSize'>) {
+    return this.listCategoriesAll(filters);
   }
 
   createCategory(body: CreateCategoryRequest) {
@@ -195,12 +270,31 @@ export class DirectoryApiService {
     return this.http.delete<void>(`${this.base}/categories/${id}`);
   }
 
-  listBrands(filters?: BrandListFiltersRequest) {
+  listCategoryTree() {
+    return this.http.get<CategoryTreeNodeDto[]>(`${this.base}/categories/tree`);
+  }
+
+  listBrandsAll(filters?: Omit<BrandListFiltersRequest, 'page' | 'pageSize'>) {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
     return this.http.get<BrandItemDto[]>(`${this.base}/brands`, { params });
+  }
+
+  listBrandsPaged(filters?: BrandListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<BrandListResponseDto>(`${this.base}/brands`, { params });
+  }
+
+  /** Sin paginación (combos y catálogos). */
+  listBrands(filters?: Omit<BrandListFiltersRequest, 'page' | 'pageSize'>) {
+    return this.listBrandsAll(filters);
   }
 
   createBrand(body: CreateBrandRequest) {
@@ -213,6 +307,239 @@ export class DirectoryApiService {
 
   deleteBrand(id: string) {
     return this.http.delete<void>(`${this.base}/brands/${id}`);
+  }
+
+  listLaboratoriesAll(filters?: Omit<LaboratoryListFiltersRequest, 'page' | 'pageSize'>) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<LaboratoryItemDto[]>(`${this.base}/laboratories`, { params });
+  }
+
+  listLaboratoriesPaged(filters?: LaboratoryListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<LaboratoryListResponseDto>(`${this.base}/laboratories`, { params });
+  }
+
+  listLaboratories(filters?: Omit<LaboratoryListFiltersRequest, 'page' | 'pageSize'>) {
+    return this.listLaboratoriesAll(filters);
+  }
+
+  createLaboratory(body: CreateLaboratoryRequest) {
+    return this.http.post<LaboratoryItemDto>(`${this.base}/laboratories`, body);
+  }
+
+  updateLaboratory(id: string, body: UpdateLaboratoryRequest) {
+    return this.http.patch<LaboratoryItemDto>(`${this.base}/laboratories/${id}`, body);
+  }
+
+  deleteLaboratory(id: string) {
+    return this.http.delete<void>(`${this.base}/laboratories/${id}`);
+  }
+
+  listUnitsAll(filters?: Omit<UnitListFiltersRequest, 'page' | 'pageSize'>) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<UnitItemDto[]>(`${this.base}/units`, { params });
+  }
+
+  listUnitsPaged(filters?: UnitListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<UnitListResponseDto>(`${this.base}/units`, { params });
+  }
+
+  listUnits(filters?: Omit<UnitListFiltersRequest, 'page' | 'pageSize'>) {
+    return this.listUnitsAll(filters);
+  }
+
+  createUnit(body: CreateUnitRequest) {
+    return this.http.post<UnitItemDto>(`${this.base}/units`, body);
+  }
+
+  updateUnit(id: string, body: UpdateUnitRequest) {
+    return this.http.patch<UnitItemDto>(`${this.base}/units/${id}`, body);
+  }
+
+  deleteUnit(id: string) {
+    return this.http.delete<void>(`${this.base}/units/${id}`);
+  }
+
+  listPharmaceuticalFormsAll(
+    filters?: Omit<PharmaceuticalFormListFiltersRequest, 'page' | 'pageSize'>,
+  ) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<PharmaceuticalFormItemDto[]>(`${this.base}/pharmaceutical-forms`, { params });
+  }
+
+  listPharmaceuticalFormsPaged(filters?: PharmaceuticalFormListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PharmaceuticalFormListResponseDto>(`${this.base}/pharmaceutical-forms`, {
+      params,
+    });
+  }
+
+  listPharmaceuticalForms(
+    filters?: Omit<PharmaceuticalFormListFiltersRequest, 'page' | 'pageSize'>,
+  ) {
+    return this.listPharmaceuticalFormsAll(filters);
+  }
+
+  createPharmaceuticalForm(body: CreatePharmaceuticalFormRequest) {
+    return this.http.post<PharmaceuticalFormItemDto>(`${this.base}/pharmaceutical-forms`, body);
+  }
+
+  updatePharmaceuticalForm(id: string, body: UpdatePharmaceuticalFormRequest) {
+    return this.http.patch<PharmaceuticalFormItemDto>(
+      `${this.base}/pharmaceutical-forms/${id}`,
+      body,
+    );
+  }
+
+  deletePharmaceuticalForm(id: string) {
+    return this.http.delete<void>(`${this.base}/pharmaceutical-forms/${id}`);
+  }
+
+  listActivePrinciplesAll(
+    filters?: Omit<ActivePrincipleListFiltersRequest, 'page' | 'pageSize'>,
+  ) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<ActivePrincipleItemDto[]>(`${this.base}/active-principles`, { params });
+  }
+
+  listActivePrinciplesPaged(filters?: ActivePrincipleListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<ActivePrincipleListResponseDto>(`${this.base}/active-principles`, {
+      params,
+    });
+  }
+
+  listActivePrinciples(filters?: Omit<ActivePrincipleListFiltersRequest, 'page' | 'pageSize'>) {
+    return this.listActivePrinciplesAll(filters);
+  }
+
+  createActivePrinciple(body: CreateActivePrincipleRequest) {
+    return this.http.post<ActivePrincipleItemDto>(`${this.base}/active-principles`, body);
+  }
+
+  updateActivePrinciple(id: string, body: UpdateActivePrincipleRequest) {
+    return this.http.patch<ActivePrincipleItemDto>(`${this.base}/active-principles/${id}`, body);
+  }
+
+  deleteActivePrinciple(id: string) {
+    return this.http.delete<void>(`${this.base}/active-principles/${id}`);
+  }
+
+  listAdministrationRoutesAll(
+    filters?: Omit<AdministrationRouteListFiltersRequest, 'page' | 'pageSize'>,
+  ) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    return this.http.get<AdministrationRouteItemDto[]>(`${this.base}/administration-routes`, {
+      params,
+    });
+  }
+
+  listAdministrationRoutesPaged(filters?: AdministrationRouteListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<AdministrationRouteListResponseDto>(`${this.base}/administration-routes`, {
+      params,
+    });
+  }
+
+  createAdministrationRoute(body: CreateAdministrationRouteRequest) {
+    return this.http.post<AdministrationRouteItemDto>(`${this.base}/administration-routes`, body);
+  }
+
+  updateAdministrationRoute(id: string, body: UpdateAdministrationRouteRequest) {
+    return this.http.patch<AdministrationRouteItemDto>(
+      `${this.base}/administration-routes/${id}`,
+      body,
+    );
+  }
+
+  deleteAdministrationRoute(id: string) {
+    return this.http.delete<void>(`${this.base}/administration-routes/${id}`);
+  }
+
+  listSuppliersPaged(filters?: SupplierListFiltersRequest) {
+    const params: Record<string, string> = {};
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
+    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<SupplierListResponseDto>(`${this.base}/suppliers`, { params });
+  }
+
+  listSupplierOptions() {
+    return this.http.get<SupplierOptionDto[]>(`${this.base}/suppliers/options`);
+  }
+
+  getSupplier(id: string) {
+    return this.http.get<SupplierItemDto>(`${this.base}/suppliers/${id}`);
+  }
+
+  createSupplier(body: CreateSupplierRequest) {
+    return this.http.post<SupplierItemDto>(`${this.base}/suppliers`, body);
+  }
+
+  updateSupplier(id: string, body: UpdateSupplierRequest) {
+    return this.http.patch<SupplierItemDto>(`${this.base}/suppliers/${id}`, body);
+  }
+
+  deleteSupplier(id: string) {
+    return this.http.delete<void>(`${this.base}/suppliers/${id}`);
+  }
+
+  listSupplierProducts(supplierId: string) {
+    return this.http.get<SupplierProductItemDto[]>(`${this.base}/suppliers/${supplierId}/products`);
+  }
+
+  upsertSupplierProduct(supplierId: string, body: UpsertSupplierProductRequest) {
+    return this.http.post<SupplierProductItemDto>(
+      `${this.base}/suppliers/${supplierId}/products`,
+      body,
+    );
+  }
+
+  removeSupplierProduct(supplierId: string, productId: string) {
+    return this.http.delete<void>(`${this.base}/suppliers/${supplierId}/products/${productId}`);
   }
 
   listCustomers(filters?: CustomerListFiltersRequest) {
@@ -290,6 +617,12 @@ export class DirectoryApiService {
     });
   }
 
+  previewImportCustomers(file: File) {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.post<CustomerImportResultDto>(`${this.base}/customers/import/preview`, body);
+  }
+
   importCustomers(file: File) {
     const body = new FormData();
     body.append('file', file);
@@ -354,6 +687,10 @@ export class DirectoryApiService {
     );
   }
 
+  getPermissionMenuTrees() {
+    return this.http.get<PermissionMenuNodeDto[]>(`${this.base}/permissions/menu-trees`);
+  }
+
   listProductCatalogUnits() {
     return this.http.get<ProductCatalogUnitDto[]>(`${this.base}/products/catalogs/units`);
   }
@@ -401,17 +738,40 @@ export class DirectoryApiService {
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.categoryId) params['categoryId'] = filters.categoryId;
+    if (filters?.brandId) params['brandId'] = filters.brandId;
+    if (filters?.habilitado !== undefined) params['habilitado'] = String(filters.habilitado);
+    if (filters?.generico !== undefined) params['generico'] = String(filters.generico);
+    if (filters?.necesitaRecetaMedica !== undefined) {
+      params['necesitaRecetaMedica'] = String(filters.necesitaRecetaMedica);
+    }
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     return this.http.get<ProductListResponseDto>(`${this.base}/products`, { params });
   }
 
+  listProductSuppliers(productId: string) {
+    return this.http.get<ProductSupplierLinkDto[]>(`${this.base}/products/${productId}/suppliers`);
+  }
+
+  upsertProductSupplier(productId: string, body: UpsertProductSupplierRequest) {
+    return this.http.post<ProductSupplierLinkDto>(`${this.base}/products/${productId}/suppliers`, body);
+  }
+
+  removeProductSupplier(productId: string, supplierId: string) {
+    return this.http.delete<void>(`${this.base}/products/${productId}/suppliers/${supplierId}`);
+  }
+
+  getProduct(id: string) {
+    return this.http.get<ProductDetailDto>(`${this.base}/products/${id}`);
+  }
+
   createProduct(body: CreateProductRequest) {
-    return this.http.post<ProductListItemDto>(`${this.base}/products`, body);
+    return this.http.post<ProductDetailDto>(`${this.base}/products`, body);
   }
 
   updateProduct(id: string, body: CreateProductRequest) {
-    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}`, body);
+    return this.http.patch<ProductDetailDto>(`${this.base}/products/${id}`, body);
   }
 
   deleteProduct(id: string) {
@@ -419,7 +779,7 @@ export class DirectoryApiService {
   }
 
   duplicateProduct(id: string) {
-    return this.http.post<ProductListItemDto>(`${this.base}/products/${id}/duplicate`, {});
+    return this.http.post<ProductDetailDto>(`${this.base}/products/${id}/duplicate`, {});
   }
 
   updateProductStatus(id: string, habilitado: boolean) {
@@ -434,8 +794,22 @@ export class DirectoryApiService {
     return this.http.get<ProductHistoryStockItemDto[]>(`${this.base}/products/${id}/history/stock`);
   }
 
+  listProductPriceHistory(id: string, page = 1, pageSize = 20) {
+    return this.http.get<ProductPriceHistoryListResponseDto>(
+      `${this.base}/products/${id}/history/prices`,
+      { params: { page: String(page), pageSize: String(pageSize) } },
+    );
+  }
+
   getProductStockSummary(id: string) {
     return this.http.get<ProductStockSummaryDto>(`${this.base}/products/${id}/stock`);
+  }
+
+  previewImportProducts(mode: ProductImportMode, file: File) {
+    const body = new FormData();
+    body.append('mode', mode);
+    body.append('file', file);
+    return this.http.post<ProductImportResultDto>(`${this.base}/products/import/preview`, body);
   }
 
   importProducts(mode: ProductImportMode, file: File) {
@@ -443,6 +817,29 @@ export class DirectoryApiService {
     body.append('mode', mode);
     body.append('file', file);
     return this.http.post<ProductImportResultDto>(`${this.base}/products/import`, body);
+  }
+
+  exportProducts() {
+    return this.http.post(`${this.base}/products/export`, {}, { responseType: 'blob' });
+  }
+
+  listProductEquivalents(productId: string) {
+    return this.http.get<ProductEquivalentItemDto[]>(
+      `${this.base}/products/${productId}/equivalents`,
+    );
+  }
+
+  setProductEquivalents(productId: string, equivalentProductIds: string[]) {
+    return this.http.post<ProductEquivalentItemDto[]>(
+      `${this.base}/products/${productId}/equivalents`,
+      { equivalentProductIds },
+    );
+  }
+
+  listSupplierPurchaseHistory(supplierId: string) {
+    return this.http.get<SupplierPurchaseHistoryResponseDto>(
+      `${this.base}/suppliers/${supplierId}/purchase-history`,
+    );
   }
 
   downloadProductImportTemplate(mode: ProductImportMode) {

@@ -3,7 +3,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
-import { customerTypeQueryKeys } from '../../../../core/query/customer-type-query.keys';
+import { activePrincipleQueryKeys } from '../../../../core/query/active-principle-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
@@ -16,12 +16,12 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
-import type { CreateCustomerTypeRequest, CustomerTypeItemDto } from '../../models/directory.models';
+import type { ActivePrincipleItemDto, CreateActivePrincipleRequest } from '../../models/directory.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
-  selector: 'app-tipo-clientes',
+  selector: 'app-principios-activos',
   standalone: true,
   imports: [
     CommonModule,
@@ -37,36 +37,36 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     IconComponent,
     HasPermissionDirective,
   ],
-  templateUrl: './tipo-clientes.component.html',
+  templateUrl: './principios-activos.component.html',
 })
-export class TipoClientesComponent {
+export class PrincipiosActivosComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
-    { label: 'Clientes' },
-    { label: 'Tipos de Clientes' },
+    { label: 'Productos' },
+    { label: 'Principios activos' },
   ];
 
   protected readonly searchTerm = signal('');
-  protected readonly filterField = signal<'all' | 'descripcion'>('descripcion');
+  protected readonly filterField = signal<'all' | 'nombre'>('nombre');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 10;
   protected readonly fieldFilterOptions = [
-    { value: 'descripcion', label: 'Descripción' },
+    { value: 'nombre', label: 'Nombre' },
     { value: 'all', label: 'Todos' },
   ];
 
-  protected readonly customerTypesQuery = injectQuery(() => ({
-    queryKey: customerTypeQueryKeys.list({
+  protected readonly listQuery = injectQuery(() => ({
+    queryKey: activePrincipleQueryKeys.list({
       search: this.searchTerm().trim(),
       field: this.filterField(),
       page: this.currentPage(),
     }),
     queryFn: () =>
       firstValueFrom(
-        this.api.listCustomerTypesPaged({
+        this.api.listActivePrinciplesPaged({
           search: this.searchTerm(),
           field: this.filterField(),
           page: this.currentPage(),
@@ -75,54 +75,55 @@ export class TipoClientesComponent {
       ),
   }));
 
-  protected readonly rows = computed(() => this.customerTypesQuery.data()?.items ?? []);
-  protected readonly totalRows = computed(() => this.customerTypesQuery.data()?.total ?? 0);
+  protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
+  protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
   protected readonly pageStart = computed(() =>
     this.totalRows() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
   );
   protected readonly paginatedRows = computed(() => this.rows());
 
   protected readonly modalOpen = signal(false);
-  protected readonly editing = signal<CustomerTypeItemDto | null>(null);
-  protected readonly descripcion = signal('');
+  protected readonly editing = signal<ActivePrincipleItemDto | null>(null);
+  protected readonly nombre = signal('');
 
   protected readonly deleteConfirmOpen = signal(false);
-  protected readonly deleting = signal<CustomerTypeItemDto | null>(null);
+  protected readonly deleting = signal<ActivePrincipleItemDto | null>(null);
 
   protected readonly createMutation = injectMutation(() => ({
-    mutationFn: (body: CreateCustomerTypeRequest) => firstValueFrom(this.api.createCustomerType(body)),
+    mutationFn: (body: CreateActivePrincipleRequest) =>
+      firstValueFrom(this.api.createActivePrinciple(body)),
     onSuccess: () => {
-      this.notify.success('Tipo de cliente creado correctamente');
+      this.notify.success('Principio activo creado correctamente');
       this.closeFormModal(true);
-      void this.queryClient.invalidateQueries({ queryKey: customerTypeQueryKeys.all });
+      void this.queryClient.invalidateQueries({ queryKey: activePrincipleQueryKeys.all });
     },
     onError: (err) => {
-      this.notify.error(httpErrorMessage(err, 'No se pudo crear el tipo de cliente'));
+      this.notify.error(httpErrorMessage(err, 'No se pudo crear el principio activo'));
     },
   }));
 
   protected readonly updateMutation = injectMutation(() => ({
-    mutationFn: ({ id, body }: { id: string; body: CreateCustomerTypeRequest }) =>
-      firstValueFrom(this.api.updateCustomerType(id, body)),
+    mutationFn: ({ id, body }: { id: string; body: CreateActivePrincipleRequest }) =>
+      firstValueFrom(this.api.updateActivePrinciple(id, body)),
     onSuccess: () => {
-      this.notify.success('Tipo de cliente actualizado correctamente');
+      this.notify.success('Principio activo actualizado correctamente');
       this.closeFormModal(true);
-      void this.queryClient.invalidateQueries({ queryKey: customerTypeQueryKeys.all });
+      void this.queryClient.invalidateQueries({ queryKey: activePrincipleQueryKeys.all });
     },
     onError: (err) => {
-      this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el tipo de cliente'));
+      this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el principio activo'));
     },
   }));
 
   protected readonly deleteMutation = injectMutation(() => ({
-    mutationFn: (id: string) => firstValueFrom(this.api.deleteCustomerType(id)),
+    mutationFn: (id: string) => firstValueFrom(this.api.deleteActivePrinciple(id)),
     onSuccess: () => {
-      this.notify.success('Tipo de cliente eliminado correctamente');
+      this.notify.success('Principio activo eliminado correctamente');
       this.closeDeleteConfirm();
-      void this.queryClient.invalidateQueries({ queryKey: customerTypeQueryKeys.all });
+      void this.queryClient.invalidateQueries({ queryKey: activePrincipleQueryKeys.all });
     },
     onError: (err) => {
-      this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el tipo de cliente'));
+      this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el principio activo'));
     },
   }));
 
@@ -132,7 +133,7 @@ export class TipoClientesComponent {
 
   constructor() {
     effect(() => {
-      const totalPages = this.customerTypesQuery.data()?.totalPages ?? 1;
+      const totalPages = this.listQuery.data()?.totalPages ?? 1;
       const page = this.currentPage();
       if (page > totalPages) this.currentPage.set(totalPages);
       if (page < 1) this.currentPage.set(1);
@@ -141,17 +142,17 @@ export class TipoClientesComponent {
     effect(() => {
       if (!this.modalOpen()) return;
       const row = this.editing();
-      this.descripcion.set(row?.descripcion ?? '');
+      this.nombre.set(row?.nombre ?? '');
     });
   }
 
   protected openCreateModal() {
     this.editing.set(null);
-    this.descripcion.set('');
+    this.nombre.set('');
     this.modalOpen.set(true);
   }
 
-  protected openEditModal(row: CustomerTypeItemDto) {
+  protected openEditModal(row: ActivePrincipleItemDto) {
     this.editing.set(row);
     this.modalOpen.set(true);
   }
@@ -160,16 +161,16 @@ export class TipoClientesComponent {
     if (!force && this.isSaving()) return;
     this.modalOpen.set(false);
     this.editing.set(null);
-    this.descripcion.set('');
+    this.nombre.set('');
   }
 
   protected submitForm() {
-    const descripcion = this.descripcion().trim();
-    if (!descripcion) {
-      this.notify.warning('Ingrese la descripción.');
+    const nombre = this.nombre().trim();
+    if (!nombre) {
+      this.notify.warning('Ingrese el nombre.');
       return;
     }
-    const body: CreateCustomerTypeRequest = { descripcion };
+    const body: CreateActivePrincipleRequest = { nombre };
     const current = this.editing();
     if (current) {
       this.updateMutation.mutate({ id: current.id, body });
@@ -178,7 +179,7 @@ export class TipoClientesComponent {
     this.createMutation.mutate(body);
   }
 
-  protected openDeleteConfirm(row: CustomerTypeItemDto) {
+  protected openDeleteConfirm(row: ActivePrincipleItemDto) {
     this.deleting.set(row);
     this.deleteConfirmOpen.set(true);
   }
@@ -201,13 +202,13 @@ export class TipoClientesComponent {
   }
 
   protected onFilterFieldChange(value: string) {
-    this.filterField.set((value || 'descripcion') as 'all' | 'descripcion');
+    this.filterField.set((value || 'nombre') as 'all' | 'nombre');
     this.currentPage.set(1);
   }
 
   protected clearFilters() {
     this.searchTerm.set('');
-    this.filterField.set('descripcion');
+    this.filterField.set('nombre');
     this.currentPage.set(1);
   }
 
@@ -221,7 +222,7 @@ export class TipoClientesComponent {
   }
 
   protected async refetchRows() {
-    const r = await this.customerTypesQuery.refetch();
+    const r = await this.listQuery.refetch();
     if (r.isError) {
       this.notify.error(httpErrorMessage(r.error, 'No se pudo actualizar el listado.'));
     }

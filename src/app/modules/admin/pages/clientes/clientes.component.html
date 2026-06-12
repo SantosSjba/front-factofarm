@@ -10,18 +10,22 @@
     Clientes
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <app-button size="sm" variant="outline" (btnClick)="openExportModal()">
-      <app-icon name="mdi:file-export-outline" width="18" height="18" />
-      <span class="leading-none">Exportar</span>
-    </app-button>
-    <app-button size="sm" variant="outline" (btnClick)="openImportModal()">
-      <app-icon name="mdi:file-import-outline" width="18" height="18" />
-      <span class="leading-none">Importar</span>
-    </app-button>
-    <app-button size="sm" (btnClick)="openCreateModal()">
-      <app-icon name="mdi:plus" width="18" height="18" />
-      <span class="leading-none">Nuevo</span>
-    </app-button>
+    <ng-container *appHasPermission="'customers.read'">
+      <app-button size="sm" variant="outline" (btnClick)="openExportModal()">
+        <app-icon name="mdi:file-export-outline" width="18" height="18" />
+        <span class="leading-none">Exportar</span>
+      </app-button>
+    </ng-container>
+    <ng-container *appHasPermission="'customers.write'">
+      <app-button size="sm" variant="outline" (btnClick)="openImportModal()">
+        <app-icon name="mdi:file-import-outline" width="18" height="18" />
+        <span class="leading-none">Importar</span>
+      </app-button>
+      <app-button size="sm" (btnClick)="openCreateModal()">
+        <app-icon name="mdi:plus" width="18" height="18" />
+        <span class="leading-none">Nuevo</span>
+      </app-button>
+    </ng-container>
   </div>
 </app-page-toolbar>
 
@@ -219,13 +223,17 @@
                       </button>
                     </div>
                     <div dropdown-content>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openEditModal(row)">Editar</button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openDeleteModal(row)">Eliminar</button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="toggleStatus(row)">
-                        {{ row.habilitado ? 'Inhabilitar' : 'Habilitar' }}
-                      </button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openBarcodeModal(row)">Cod. Barras</button>
-                      <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openTagsModal(row)">Etiquetas</button>
+                      <ng-container *appHasPermission="'customers.write'">
+                        <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openEditModal(row)">Editar</button>
+                        <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="toggleStatus(row)">
+                          {{ row.habilitado ? 'Inhabilitar' : 'Habilitar' }}
+                        </button>
+                        <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openBarcodeModal(row)">Cod. Barras</button>
+                        <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" (click)="openTagsModal(row)">Etiquetas</button>
+                      </ng-container>
+                      <ng-container *appHasPermission="'customers.delete'">
+                        <button class="w-full rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10" (click)="openDeleteModal(row)">Eliminar</button>
+                      </ng-container>
                     </div>
                   </app-table-dropdown>
                 </div>
@@ -273,7 +281,12 @@
         </div>
         <div>
           <app-label>Número *</app-label>
-          <app-input-field className="mt-2" [value]="form().numeroDocumento" (valueChange)="updateFormField('numeroDocumento', $event + '')" />
+          <div class="mt-2 flex gap-2">
+            <app-input-field className="flex-1" [value]="form().numeroDocumento" (valueChange)="updateFormField('numeroDocumento', $event + '')" />
+            <app-button variant="outline" [disabled]="true" title="Consulta RUC/DNI disponible en Fase 8">
+              Consultar SUNAT
+            </app-button>
+          </div>
         </div>
         <div>
           <app-label>Nombre *</app-label>
@@ -286,6 +299,10 @@
         <div>
           <app-label>Días de crédito</app-label>
           <app-input-field className="mt-2" type="number" [value]="form().diasCredito ?? 0" (valueChange)="updateFormField('diasCredito', +$event)" />
+        </div>
+        <div>
+          <app-label>Límite de crédito (S/)</app-label>
+          <app-input-field className="mt-2" type="number" [value]="form().limiteCredito ?? ''" (valueChange)="updateFormField('limiteCredito', $event === '' ? null : +$event)" />
         </div>
         <div>
           <app-label>Código interno</app-label>
@@ -407,18 +424,33 @@
   </div>
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
     <button type="button" class="text-sm font-semibold text-brand-500 underline" (click)="downloadImportTemplate()">Descargar formato</button>
-    <div class="mt-6 flex items-center justify-center">
+    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
       <label class="inline-flex cursor-pointer rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600">
         <app-icon name="mdi:file-excel-outline" width="18" height="18" />
         <span class="ml-2">{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
         <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
       </label>
+      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" (btnClick)="runImportPreview()">
+        {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
+      </app-button>
     </div>
+    @if (importPreviewResult(); as preview) {
+      <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-white/5">
+        <p><strong>Filas:</strong> {{ preview.totalRows }} · <strong>Crearían:</strong> {{ preview.created }} · <strong>Actualizarían:</strong> {{ preview.updated }}</p>
+        @if (preview.errors.length) {
+          <ul class="mt-2 max-h-40 list-disc overflow-y-auto pl-5 text-theme-xs text-gray-600 dark:text-gray-400">
+            @for (err of preview.errors.slice(0, 20); track err) {
+              <li>{{ err }}</li>
+            }
+          </ul>
+        }
+      </div>
+    }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
     <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">Cancelar</app-button>
-    <app-button [disabled]="importMutation.isPending()" (btnClick)="processImport()">
-      {{ importMutation.isPending() ? 'Procesando…' : 'Procesar' }}
+    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" (btnClick)="processImport()">
+      {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
     </app-button>
   </div>
 </app-modal>

@@ -17,6 +17,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BrandItemDto, CreateBrandRequest } from '../../models/directory.models';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -34,6 +35,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     InputFieldComponent,
     LabelComponent,
     IconComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './marcas.component.html',
 })
@@ -60,25 +62,25 @@ export class MarcasComponent {
     queryKey: brandQueryKeys.list({
       search: this.searchTerm().trim(),
       field: this.filterField(),
+      page: this.currentPage(),
     }),
     queryFn: () =>
       firstValueFrom(
-        this.api.listBrands({
+        this.api.listBrandsPaged({
           search: this.searchTerm(),
           field: this.filterField(),
+          page: this.currentPage(),
+          pageSize: this.itemsPerPage,
         }),
       ),
   }));
 
-  protected readonly rows = computed(() => this.brandsQuery.data() ?? []);
-  protected readonly totalRows = computed(() => this.rows().length);
+  protected readonly rows = computed(() => this.brandsQuery.data()?.items ?? []);
+  protected readonly totalRows = computed(() => this.brandsQuery.data()?.total ?? 0);
   protected readonly pageStart = computed(() =>
     this.totalRows() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
   );
-  protected readonly paginatedRows = computed(() => {
-    const start = this.pageStart();
-    return this.rows().slice(start, start + this.itemsPerPage);
-  });
+  protected readonly paginatedRows = computed(() => this.rows());
 
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<BrandItemDto | null>(null);
@@ -130,8 +132,7 @@ export class MarcasComponent {
 
   constructor() {
     effect(() => {
-      const total = this.totalRows();
-      const totalPages = Math.max(1, Math.ceil(total / this.itemsPerPage));
+      const totalPages = this.brandsQuery.data()?.totalPages ?? 1;
       const page = this.currentPage();
       if (page > totalPages) this.currentPage.set(totalPages);
       if (page < 1) this.currentPage.set(1);

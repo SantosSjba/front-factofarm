@@ -1,0 +1,48 @@
+/**
+ * Lee `.env` del frontend y genera `src/environments/env.overrides.ts`.
+ * Ejecutado en prestart/prebuild para alinear con el patrón del API.
+ */
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const root = process.cwd();
+const envPath = join(root, '.env');
+const outPath = join(root, 'src/environments/env.overrides.ts');
+
+const prodBuild = process.env.NODE_ENV === 'production';
+const defaults = {
+  NG_APP_API_BASE_URL: prodBuild ? '/api/v1' : 'http://localhost:3000/api/v1',
+  NG_APP_PRODUCTION: prodBuild ? 'true' : 'false',
+};
+
+const vars = { ...defaults };
+
+if (existsSync(envPath)) {
+  for (const rawLine of readFileSync(envPath, 'utf8').split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq <= 0) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    vars[key] = value;
+  }
+}
+
+const production = vars.NG_APP_PRODUCTION === 'true';
+
+const content = `/** Generado por scripts/sync-env.mjs — no editar a mano */
+export const envOverrides = {
+  production: ${production},
+  apiBaseUrl: ${JSON.stringify(vars.NG_APP_API_BASE_URL)},
+};
+`;
+
+writeFileSync(outPath, content, 'utf8');
+console.info('[sync-env] env.overrides.ts actualizado desde .env');

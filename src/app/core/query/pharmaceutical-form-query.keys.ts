@@ -1,8 +1,8 @@
-export const categoryQueryKeys = {
-  all: ['categories'] as const,
+export const pharmaceuticalFormQueryKeys = {
+  all: ['pharmaceutical-forms'] as const,
   list: (filters?: { search?: string; field?: string; page?: number }) =>
     [
-      ...categoryQueryKeys.all,
+      ...pharmaceuticalFormQueryKeys.all,
       'list',
       filters?.search ?? '',
       filters?.field ?? 'all',

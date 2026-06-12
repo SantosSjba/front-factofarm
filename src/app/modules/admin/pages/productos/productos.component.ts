@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { productQueryKeys } from '../../../../core/query/product-query.keys';
 import { FilesApiService } from '../../../../core/services/files-api.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
@@ -28,14 +29,16 @@ import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/ta
 import type {
   CreateProductRequest,
   PresentationDefaultPriceDto,
+  ProductDetailDto,
   ProductImportMode,
+  ProductImportResultDto,
   ProductListFiltersRequest,
   ProductListItemDto,
 } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
-type ProductTab = 'general' | 'almacenes' | 'presentaciones' | 'atributos' | 'compra';
-type HistoryTab = 'stock' | 'sales' | 'purchases';
+type ProductTab = 'general' | 'almacenes' | 'presentaciones' | 'atributos' | 'compra' | 'proveedores';
+type HistoryTab = 'stock' | 'prices' | 'sales' | 'purchases';
 
 const PRODUCT_TABS: TabStripItem[] = [
   { id: 'general', label: 'General' },
@@ -43,10 +46,12 @@ const PRODUCT_TABS: TabStripItem[] = [
   { id: 'presentaciones', label: 'Presentaciones' },
   { id: 'atributos', label: 'Atributos' },
   { id: 'compra', label: 'Compra' },
+  { id: 'proveedores', label: 'Proveedores' },
 ];
 
 const HISTORY_TABS: TabStripItem[] = [
   { id: 'stock', label: 'Ver stock' },
+  { id: 'prices', label: 'Historial precios' },
   { id: 'sales', label: 'Últimas ventas' },
   { id: 'purchases', label: 'Últimas compras' },
 ];
@@ -141,6 +146,7 @@ const barcodeSchema = yup.object({
     LabelComponent,
     IconComponent,
     CheckboxComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './productos.component.html',
 })
@@ -161,14 +167,35 @@ export class ProductosComponent {
   protected readonly fieldFilterOptions = [
     { value: 'nombre', label: 'Nombre' },
     { value: 'codigoInterno', label: 'Cód. interno' },
+    { value: 'codigoBarra', label: 'Cód. barras' },
     { value: 'descripcion', label: 'Descripción' },
     { value: 'all', label: 'Todos' },
   ];
 
+  protected readonly filterCategoryId = signal('');
+  protected readonly filterBrandId = signal('');
+  protected readonly filterHabilitado = signal<'all' | 'true' | 'false'>('all');
+  protected readonly filterGenerico = signal<'all' | 'true' | 'false'>('all');
+  protected readonly filterReceta = signal<'all' | 'true' | 'false'>('all');
+
+  protected readonly boolFilterOptions = [
+    { value: 'all', label: 'Todos' },
+    { value: 'true', label: 'Sí' },
+    { value: 'false', label: 'No' },
+  ];
+
   protected readonly listQuery = injectQuery(() => {
+    const hab = this.filterHabilitado();
+    const gen = this.filterGenerico();
+    const rec = this.filterReceta();
     const filters: ProductListFiltersRequest = {
       search: this.searchTerm().trim() || undefined,
       field: this.filterField(),
+      categoryId: this.filterCategoryId() || undefined,
+      brandId: this.filterBrandId() || undefined,
+      habilitado: hab === 'all' ? undefined : hab === 'true',
+      generico: gen === 'all' ? undefined : gen === 'true',
+      necesitaRecetaMedica: rec === 'all' ? undefined : rec === 'true',
       page: this.currentPage(),
       pageSize: this.itemsPerPage,
     };
@@ -233,6 +260,23 @@ export class ProductosComponent {
     };
   });
 
+  protected readonly historyPricePage = signal(1);
+  protected readonly historyPricePageSize = 15;
+
+  protected readonly historyPricesQuery = injectQuery(() => {
+    const productId = this.historyProduct()?.id ?? '';
+    const page = this.historyPricePage();
+    const enabled = this.historyOpen() && this.historyTab() === 'prices' && !!productId;
+    return {
+      queryKey: [...productQueryKeys.all, 'history', 'prices', productId, page],
+      enabled,
+      queryFn: () =>
+        productId
+          ? firstValueFrom(this.api.listProductPriceHistory(productId, page, this.historyPricePageSize))
+          : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 15, totalPages: 1 }),
+    };
+  });
+
   protected readonly stockSummaryQuery = injectQuery(() => {
     const productId = this.stockProduct()?.id ?? '';
     const enabled = this.stockOpen() && !!productId;
@@ -246,6 +290,8 @@ export class ProductosComponent {
   protected readonly products = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
   protected readonly historyRows = computed(() => this.historyStockQuery.data() ?? []);
+  protected readonly historyPriceRows = computed(() => this.historyPricesQuery.data()?.items ?? []);
+  protected readonly historyPriceTotal = computed(() => this.historyPricesQuery.data()?.total ?? 0);
   protected readonly stockRows = computed(() => this.stockSummaryQuery.data()?.stockByLocation ?? []);
   protected readonly stockPriceRows = computed(() => this.stockSummaryQuery.data()?.priceList ?? []);
 
@@ -288,6 +334,7 @@ export class ProductosComponent {
   });
 
   protected readonly formOpen = signal(false);
+  protected readonly editLoading = signal(false);
   protected readonly editingProductId = signal<string | null>(null);
   protected readonly selectedProduct = signal<ProductListItemDto | null>(null);
   protected readonly confirmOpen = signal(false);
@@ -306,6 +353,7 @@ export class ProductosComponent {
   protected readonly historyTabs = HISTORY_TABS;
   protected readonly importMode = signal<ProductImportMode>('PRODUCTOS');
   protected readonly importFile = signal<File | null>(null);
+  protected readonly importPreviewResult = signal<ProductImportResultDto | null>(null);
   protected readonly barcodeValue = signal('');
   protected readonly barcodeSvg = signal('');
 
@@ -319,6 +367,9 @@ export class ProductosComponent {
     incluyeIgvVenta: true,
     incluyeIgvCompra: true,
     generico: false,
+    esControlado: false,
+    esRefrigerado: false,
+    esHospitalario: false,
     necesitaRecetaMedica: false,
     calcularCantidadPorPrecio: false,
     manejaLotes: false,
@@ -485,6 +536,20 @@ export class ProductosComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar código de barras')),
   }));
 
+  protected readonly previewImportMutation = injectMutation(() => ({
+    mutationFn: ({ mode, file }: { mode: ProductImportMode; file: File }) =>
+      firstValueFrom(this.api.previewImportProducts(mode, file)),
+    onSuccess: (res) => {
+      this.importPreviewResult.set(res);
+      if (res.errors.length) {
+        this.notify.warning(`Vista previa: ${res.errors.length} fila(s) con error.`);
+      } else {
+        this.notify.success('Vista previa lista. Revise y confirme la importación.');
+      }
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo validar el archivo')),
+  }));
+
   protected readonly importMutation = injectMutation(() => ({
     mutationFn: ({ mode, file }: { mode: ProductImportMode; file: File }) =>
       firstValueFrom(this.api.importProducts(mode, file)),
@@ -495,6 +560,7 @@ export class ProductosComponent {
       }
       this.importOpen.set(false);
       this.importFile.set(null);
+      this.importPreviewResult.set(null);
       void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo importar productos')),
@@ -556,10 +622,125 @@ export class ProductosComponent {
     this.currentPage.set(1);
   }
 
+  protected onBoolFilterChange(
+    key: 'habilitado' | 'generico' | 'receta',
+    value: string,
+  ) {
+    const v = (value || 'all') as 'all' | 'true' | 'false';
+    if (key === 'habilitado') this.filterHabilitado.set(v);
+    if (key === 'generico') this.filterGenerico.set(v);
+    if (key === 'receta') this.filterReceta.set(v);
+    this.currentPage.set(1);
+  }
+
   protected clearFilters() {
     this.searchTerm.set('');
     this.filterField.set('nombre');
+    this.filterCategoryId.set('');
+    this.filterBrandId.set('');
+    this.filterHabilitado.set('all');
+    this.filterGenerico.set('all');
+    this.filterReceta.set('all');
     this.currentPage.set(1);
+  }
+
+  protected readonly categoryFilterOptions = computed(() => [
+    { value: '', label: 'Todas las categorías' },
+    ...(this.categoriesQuery.data() ?? []).map((c) => ({ value: c.id, label: c.nombre })),
+  ]);
+
+  protected readonly brandFilterOptions = computed(() => [
+    { value: '', label: 'Todas las marcas' },
+    ...(this.brandsQuery.data() ?? []).map((b) => ({ value: b.id, label: b.nombre })),
+  ]);
+
+  protected readonly productSupplierLinks = signal<
+    import('../../models/directory.models').ProductSupplierLinkDto[]
+  >([]);
+  protected readonly newSupplierId = signal('');
+  protected readonly newSupplierCodigo = signal('');
+  protected readonly newSupplierPrecio = signal('');
+  protected readonly newSupplierPlazo = signal('0');
+
+  protected readonly supplierOptionsQuery = injectQuery(() => ({
+    queryKey: ['suppliers', 'options'],
+    queryFn: () => firstValueFrom(this.api.listSupplierOptions()),
+    enabled: this.formOpen() && this.activeTab() === 'proveedores',
+  }));
+
+  protected readonly supplierSelectOptions = computed(() =>
+    (this.supplierOptionsQuery.data() ?? []).map((s) => ({
+      value: s.id,
+      label: `${s.razonSocial} (${s.numeroDocumento})`,
+    })),
+  );
+
+  protected readonly upsertProductSupplierMutation = injectMutation(() => ({
+    mutationFn: ({
+      productId,
+      body,
+    }: {
+      productId: string;
+      body: import('../../models/directory.models').UpsertProductSupplierRequest;
+    }) => firstValueFrom(this.api.upsertProductSupplier(productId, body)),
+    onSuccess: (row) => {
+      this.notify.success('Proveedor vinculado');
+      this.productSupplierLinks.update((links) => {
+        const idx = links.findIndex((l) => l.supplierId === row.supplierId);
+        if (idx >= 0) {
+          const next = [...links];
+          next[idx] = row;
+          return next;
+        }
+        return [...links, row];
+      });
+      this.newSupplierId.set('');
+      this.newSupplierCodigo.set('');
+      this.newSupplierPrecio.set('');
+      this.newSupplierPlazo.set('0');
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo vincular el proveedor')),
+  }));
+
+  protected readonly removeProductSupplierMutation = injectMutation(() => ({
+    mutationFn: ({ productId, supplierId }: { productId: string; supplierId: string }) =>
+      firstValueFrom(this.api.removeProductSupplier(productId, supplierId)),
+    onSuccess: (_, vars) => {
+      this.notify.success('Proveedor desvinculado');
+      this.productSupplierLinks.update((links) =>
+        links.filter((l) => l.supplierId !== vars.supplierId),
+      );
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo desvincular')),
+  }));
+
+  protected linkProductSupplier() {
+    const productId = this.editingProductId();
+    const supplierId = this.newSupplierId();
+    if (!productId) {
+      this.notify.warning('Guarde el producto antes de vincular proveedores.');
+      return;
+    }
+    if (!supplierId) {
+      this.notify.warning('Seleccione un proveedor.');
+      return;
+    }
+    const body: import('../../models/directory.models').UpsertProductSupplierRequest = {
+      supplierId,
+    };
+    const codigo = this.newSupplierCodigo().trim();
+    if (codigo) body.codigoProveedor = codigo;
+    const precio = Number.parseFloat(this.newSupplierPrecio());
+    if (Number.isFinite(precio)) body.precioCompra = precio;
+    const plazo = Number.parseInt(this.newSupplierPlazo(), 10);
+    if (Number.isFinite(plazo)) body.plazoDias = plazo;
+    this.upsertProductSupplierMutation.mutate({ productId, body });
+  }
+
+  protected unlinkProductSupplier(supplierId: string) {
+    const productId = this.editingProductId();
+    if (!productId) return;
+    this.removeProductSupplierMutation.mutate({ productId, supplierId });
   }
 
   protected onPageChange(page: number) {
@@ -613,57 +794,132 @@ export class ProductosComponent {
     this.applyCatalogDefaults();
   }
 
-  protected openEditModal(row: ProductListItemDto) {
+  protected async openEditModal(row: ProductListItemDto) {
     this.activeTab.set('general');
     this.formOpen.set(true);
     this.resetForm();
     this.applyCatalogDefaults();
     this.editingProductId.set(row.id);
+    this.editLoading.set(true);
+    try {
+      const detail = await firstValueFrom(this.api.getProduct(row.id));
+      this.applyProductDetail(detail);
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo cargar el detalle del producto'));
+      this.formOpen.set(false);
+      this.editingProductId.set(null);
+    } finally {
+      this.editLoading.set(false);
+    }
+  }
 
+  private applyProductDetail(detail: ProductDetailDto) {
     this.form.update((f) => ({
       ...f,
-      nombre: row.nombre,
-      descripcion: row.descripcion ?? undefined,
-      principioActivo: row.principioActivo ?? undefined,
-      concentracion: row.concentracion ?? undefined,
-      formaFarmaceutica: row.formaFarmaceutica ?? undefined,
-      codigoBusqueda: row.codigoBusqueda ?? undefined,
-      codigoInterno: row.codigoInterno ?? undefined,
-      codigoBarra: row.codigoBarra ?? undefined,
-      codigoSunat: row.codigoSunat ?? undefined,
-      codigoMedicamentoDigemid: row.codigoMedicamentoDigemid ?? undefined,
-      modelo: row.modelo ?? undefined,
-      lineaProducto: row.lineaProducto ?? undefined,
-      registroSanitario: row.registroSanitario ?? undefined,
-      saleTaxAffectationId: row.saleTaxAffectationId,
-      purchaseTaxAffectationId: row.purchaseTaxAffectationId,
-      precioUnitarioVenta: Number.parseFloat(row.precioUnitarioVenta) || 0,
+      nombre: detail.nombre,
+      descripcion: detail.descripcion ?? undefined,
+      principioActivo: detail.principioActivo ?? undefined,
+      concentracion: detail.concentracion ?? undefined,
+      formaFarmaceutica: detail.formaFarmaceutica ?? undefined,
+      codigoBusqueda: detail.codigoBusqueda ?? undefined,
+      codigoInterno: detail.codigoInterno ?? undefined,
+      codigoBarra: detail.codigoBarra ?? undefined,
+      codigoSunat: detail.codigoSunat ?? undefined,
+      codigoMedicamentoDigemid: detail.codigoMedicamentoDigemid ?? undefined,
+      modelo: detail.modelo ?? undefined,
+      lineaProducto: detail.lineaProducto ?? undefined,
+      registroSanitario: detail.registroSanitario ?? undefined,
+      saleTaxAffectationId: detail.saleTaxAffectationId,
+      purchaseTaxAffectationId: detail.purchaseTaxAffectationId,
+      precioUnitarioVenta: Number.parseFloat(detail.precioUnitarioVenta) || 0,
       precioUnitarioCompra:
-        row.precioUnitarioCompra != null ? Number.parseFloat(row.precioUnitarioCompra) : undefined,
-      incluyeIgvVenta: row.incluyeIgvVenta,
-      incluyeIgvCompra: row.incluyeIgvCompra,
-      tipoSistemaIscId: row.tipoSistemaIscId ?? undefined,
-      porcentajeIsc: row.porcentajeIsc != null ? Number.parseFloat(row.porcentajeIsc) : undefined,
-      codigoLote: row.codigoLote ?? undefined,
-      fechaVencimientoLote: row.fechaVencimientoLote ?? undefined,
-      numeroPuntos: row.numeroPuntos != null ? Number.parseFloat(row.numeroPuntos) : undefined,
-      stockMinimo: row.stockMinimo,
-      marcaLaboratorio: row.marcaLaboratorio ?? undefined,
-      categoryId: row.categoryId ?? undefined,
-      brandId: row.brandId ?? undefined,
-      productLocationId: row.productLocationId ?? undefined,
-      unitId: row.unit.id,
-      currencyId: row.currency.id,
-      manejaLotes: !!(row.codigoLote || row.fechaVencimientoLote),
-      incluyeIscVenta: !!(row.tipoSistemaIscId || row.porcentajeIsc),
-      incluyeIscCompra: false,
-      sePuedeCanjearPorPuntos: !!row.numeroPuntos,
+        detail.precioUnitarioCompra != null ? Number.parseFloat(detail.precioUnitarioCompra) : undefined,
+      incluyeIgvVenta: detail.incluyeIgvVenta,
+      incluyeIgvCompra: detail.incluyeIgvCompra,
+      tipoSistemaIscId: detail.tipoSistemaIscId ?? undefined,
+      porcentajeIsc: detail.porcentajeIsc != null ? Number.parseFloat(detail.porcentajeIsc) : undefined,
+      codigoLote: detail.codigoLote ?? undefined,
+      fechaVencimientoLote: detail.fechaVencimientoLote ?? undefined,
+      numeroPuntos: detail.numeroPuntos != null ? Number.parseFloat(detail.numeroPuntos) : undefined,
+      stockMinimo: detail.stockMinimo,
+      marcaLaboratorio: detail.marcaLaboratorio ?? undefined,
+      categoryId: detail.categoryId ?? undefined,
+      brandId: detail.brandId ?? undefined,
+      productLocationId: detail.productLocationId ?? undefined,
+      unitId: detail.unit.id,
+      currencyId: detail.currency.id,
+      generico: detail.generico,
+      esControlado: detail.esControlado,
+      esRefrigerado: detail.esRefrigerado,
+      esHospitalario: detail.esHospitalario,
+      stockMaximo: detail.stockMaximo ?? undefined,
+      administrationRouteId: detail.administrationRouteId ?? undefined,
+      necesitaRecetaMedica: detail.necesitaRecetaMedica,
+      calcularCantidadPorPrecio: detail.calcularCantidadPorPrecio,
+      manejaLotes: detail.manejaLotes,
+      incluyeIscVenta: detail.incluyeIscVenta,
+      incluyeIscCompra: detail.incluyeIscCompra,
+      sujetoDetraccion: detail.sujetoDetraccion,
+      sePuedeCanjearPorPuntos: detail.sePuedeCanjearPorPuntos,
+      aplicaGanancia: detail.aplicaGanancia,
+      porcentajeGanancia:
+        detail.porcentajeGanancia != null ? Number.parseFloat(detail.porcentajeGanancia) : 0,
+      costoUnitario: detail.costoUnitario != null ? Number.parseFloat(detail.costoUnitario) : 0,
+      imagenArchivoId: detail.imagenArchivoId ?? undefined,
     }));
+
+    if (detail.imagenUrl) {
+      this.productImagePreview.set(this.filesApi.absoluteFileUrl(detail.imagenUrl));
+    } else {
+      this.productImagePreview.set(null);
+    }
+
+    if (detail.defaultWarehouseId) {
+      this.defaultWarehouseId.set(detail.defaultWarehouseId);
+      const defaultStock = detail.warehouseStocks.find(
+        (s) => s.warehouseId === detail.defaultWarehouseId,
+      );
+      if (defaultStock) {
+        this.stockInicial.set(defaultStock.cantidad);
+      }
+    }
+
+    const precioInputs: Record<string, string> = {};
+    for (const wp of detail.warehousePrices) {
+      precioInputs[wp.warehouseId] = String(wp.precio);
+    }
+    this.warehousePrecioInputs.set(precioInputs);
+
+    this.presentationRows.set(
+      detail.presentations.map((pr) => ({
+        uid: crypto.randomUUID(),
+        codigoBarra: pr.codigoBarra ?? '',
+        unitId: pr.unitId,
+        descripcion: pr.descripcion ?? '',
+        factor: pr.factor ?? 0,
+        precio1: pr.precio1 ?? 0,
+        precio2: pr.precio2 ?? 0,
+        precio3: pr.precio3 ?? 0,
+        precioDefecto: pr.precioDefecto ?? 'PRECIO_1',
+        precioPuntos: pr.precioPuntos != null ? String(pr.precioPuntos) : '',
+      })),
+    );
+
+    this.attributeRows.set(
+      detail.attributes.map((at) => ({
+        uid: crypto.randomUUID(),
+        attributeTypeId: at.attributeTypeId,
+        descripcion: at.descripcion,
+      })),
+    );
+
+    this.productSupplierLinks.set(detail.supplierLinks ?? []);
   }
 
   protected openHistoryModal(row: ProductListItemDto) {
     this.historyProduct.set(row);
     this.historyTab.set('stock');
+    this.historyPricePage.set(1);
     this.historyOpen.set(true);
   }
 
@@ -671,6 +927,11 @@ export class ProductosComponent {
     this.historyOpen.set(false);
     this.historyTab.set('stock');
     this.historyProduct.set(null);
+    this.historyPricePage.set(1);
+  }
+
+  protected onHistoryPricePageChange(page: number) {
+    this.historyPricePage.set(page);
   }
 
   protected openStockModal(row: ProductListItemDto) {
@@ -855,12 +1116,25 @@ export class ProductosComponent {
   protected openImportModal(mode: ProductImportMode) {
     this.importMode.set(mode);
     this.importFile.set(null);
+    this.importPreviewResult.set(null);
     this.importOpen.set(true);
   }
 
   protected onImportFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     this.importFile.set(input.files?.[0] ?? null);
+    this.importPreviewResult.set(null);
+  }
+
+  protected runImportPreview() {
+    const mode = this.importMode();
+    const file = this.importFile();
+    const valid = this.validateImport(mode, file);
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
+      return;
+    }
+    this.previewImportMutation.mutate({ mode, file: file as File });
   }
 
   protected processImport() {
@@ -871,7 +1145,21 @@ export class ProductosComponent {
       this.notify.warning(valid.message);
       return;
     }
+    if (!this.importPreviewResult()) {
+      this.notify.warning('Ejecute la vista previa antes de confirmar.');
+      return;
+    }
     this.importMutation.mutate({ mode, file: file as File });
+  }
+
+  protected async exportProducts() {
+    try {
+      const blob = await firstValueFrom(this.api.exportProducts());
+      this.downloadBlob(blob, 'productos-export.xlsx');
+      this.notify.success('Exportación descargada');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo exportar productos'));
+    }
   }
 
   protected async downloadImportTemplate() {
@@ -929,6 +1217,9 @@ export class ProductosComponent {
       incluyeIgvVenta: true,
       incluyeIgvCompra: true,
       generico: false,
+      esControlado: false,
+      esRefrigerado: false,
+      esHospitalario: false,
       necesitaRecetaMedica: false,
       calcularCantidadPorPrecio: false,
       manejaLotes: false,

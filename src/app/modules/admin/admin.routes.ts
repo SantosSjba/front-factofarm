@@ -47,6 +47,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'clientes',
+        canActivate: [permissionGuard],
+        data: { permissions: ['customers.read', 'nav.clientes_list'] },
         loadComponent: () =>
           import('./pages/clientes/clientes.component').then(
             (m) => m.ClientesComponent,
@@ -55,6 +57,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'tipo-clientes',
+        canActivate: [permissionGuard],
+        data: { permissions: ['customer-types.read', 'nav.tipo_clientes'] },
         loadComponent: () =>
           import('./pages/tipo-clientes/tipo-clientes.component').then(
             (m) => m.TipoClientesComponent,
@@ -63,6 +67,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'productos',
+        canActivate: [permissionGuard],
+        data: { permissions: ['products.read', 'nav.productos'] },
         loadComponent: () =>
           import('./pages/productos/productos.component').then((m) => m.ProductosComponent),
         title: 'FactoFarm | Productos',
@@ -83,15 +89,73 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'categorias',
+        canActivate: [permissionGuard],
+        data: { permissions: ['categories.read', 'nav.categorias'] },
         loadComponent: () =>
           import('./pages/categorias/categorias.component').then((m) => m.CategoriasComponent),
         title: 'FactoFarm | Categorías',
       },
       {
         path: 'marcas',
+        canActivate: [permissionGuard],
+        data: { permissions: ['brands.read', 'nav.marcas'] },
         loadComponent: () =>
           import('./pages/marcas/marcas.component').then((m) => m.MarcasComponent),
         title: 'FactoFarm | Marcas',
+      },
+      {
+        path: 'laboratorios',
+        canActivate: [permissionGuard],
+        data: { permissions: ['laboratories.read', 'nav.laboratorios'] },
+        loadComponent: () =>
+          import('./pages/laboratorios/laboratorios.component').then((m) => m.LaboratoriosComponent),
+        title: 'FactoFarm | Laboratorios',
+      },
+      {
+        path: 'unidades',
+        canActivate: [permissionGuard],
+        data: { permissions: ['units.read', 'nav.unidades'] },
+        loadComponent: () =>
+          import('./pages/unidades/unidades.component').then((m) => m.UnidadesComponent),
+        title: 'FactoFarm | Unidades',
+      },
+      {
+        path: 'formas-farmaceuticas',
+        canActivate: [permissionGuard],
+        data: { permissions: ['pharma-forms.read', 'nav.formas_farmaceuticas'] },
+        loadComponent: () =>
+          import('./pages/formas-farmaceuticas/formas-farmaceuticas.component').then(
+            (m) => m.FormasFarmaceuticasComponent,
+          ),
+        title: 'FactoFarm | Formas farmacéuticas',
+      },
+      {
+        path: 'principios-activos',
+        canActivate: [permissionGuard],
+        data: { permissions: ['active-principles.read', 'nav.principios_activos'] },
+        loadComponent: () =>
+          import('./pages/principios-activos/principios-activos.component').then(
+            (m) => m.PrincipiosActivosComponent,
+          ),
+        title: 'FactoFarm | Principios activos',
+      },
+      {
+        path: 'vias-administracion',
+        canActivate: [permissionGuard],
+        data: { permissions: ['admin-routes.read', 'nav.vias_administracion'] },
+        loadComponent: () =>
+          import('./pages/vias-administracion/vias-administracion.component').then(
+            (m) => m.ViasAdministracionComponent,
+          ),
+        title: 'FactoFarm | Vías de administración',
+      },
+      {
+        path: 'proveedores',
+        canActivate: [permissionGuard],
+        data: { permissions: ['suppliers.read', 'nav.proveedores'] },
+        loadComponent: () =>
+          import('./pages/proveedores/proveedores.component').then((m) => m.ProveedoresComponent),
+        title: 'FactoFarm | Proveedores',
       },
       {
         path: 'series',

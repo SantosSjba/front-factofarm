@@ -25,52 +25,54 @@
       <div dropdown-content>
         <button
           type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400"
-          (click)="noopAction()"
+          class="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+          (click)="exportProducts()"
         >
-          Próximamente
+          Exportar Excel
         </button>
       </div>
     </app-table-dropdown>
-    <app-table-dropdown>
-      <div dropdown-button>
-        <button
-          type="button"
-          class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
-        >
-          <app-icon name="mdi:upload" width="18" height="18" />
-          <span>Importar</span>
-          <app-icon name="mdi:chevron-down" width="18" height="18" />
-        </button>
-      </div>
-      <div dropdown-content>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-          (click)="openImportModal('PRODUCTOS')"
-        >
-          Productos
-        </button>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-          (click)="openImportModal('L_PRECIOS')"
-        >
-          L. Precios
-        </button>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-          (click)="openImportModal('ACTUALIZAR_PRECIOS')"
-        >
-          Actualizar precios
-        </button>
-      </div>
-    </app-table-dropdown>
-    <app-button size="sm" (btnClick)="openCreateModal()">
-      <app-icon name="mdi:plus" width="18" height="18" />
-      <span class="leading-none">Nuevo</span>
-    </app-button>
+    <ng-container *appHasPermission="'products.write'">
+      <app-table-dropdown>
+        <div dropdown-button>
+          <button
+            type="button"
+            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
+          >
+            <app-icon name="mdi:upload" width="18" height="18" />
+            <span>Importar</span>
+            <app-icon name="mdi:chevron-down" width="18" height="18" />
+          </button>
+        </div>
+        <div dropdown-content>
+          <button
+            type="button"
+            class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+            (click)="openImportModal('PRODUCTOS')"
+          >
+            Productos
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+            (click)="openImportModal('L_PRECIOS')"
+          >
+            L. Precios
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
+            (click)="openImportModal('ACTUALIZAR_PRECIOS')"
+          >
+            Actualizar precios
+          </button>
+        </div>
+      </app-table-dropdown>
+      <app-button size="sm" (btnClick)="openCreateModal()">
+        <app-icon name="mdi:plus" width="18" height="18" />
+        <span class="leading-none">Nuevo</span>
+      </app-button>
+    </ng-container>
   </div>
 </app-page-toolbar>
 
@@ -95,6 +97,39 @@
   (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
 />
+
+<div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+  <app-form-select
+    [value]="filterCategoryId()"
+    [options]="categoryFilterOptions()"
+    placeholder="Categoría"
+    (valueChange)="filterCategoryId.set($event); currentPage.set(1)"
+  />
+  <app-form-select
+    [value]="filterBrandId()"
+    [options]="brandFilterOptions()"
+    placeholder="Marca"
+    (valueChange)="filterBrandId.set($event); currentPage.set(1)"
+  />
+  <app-form-select
+    [value]="filterHabilitado()"
+    [options]="boolFilterOptions"
+    placeholder="Habilitado"
+    (valueChange)="onBoolFilterChange('habilitado', $event)"
+  />
+  <app-form-select
+    [value]="filterGenerico()"
+    [options]="boolFilterOptions"
+    placeholder="Genérico"
+    (valueChange)="onBoolFilterChange('generico', $event)"
+  />
+  <app-form-select
+    [value]="filterReceta()"
+    [options]="boolFilterOptions"
+    placeholder="Requiere receta"
+    (valueChange)="onBoolFilterChange('receta', $event)"
+  />
+</div>
 
 <app-component-card title="Listado de productos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
   <div class="px-4 pt-4">
@@ -284,48 +319,52 @@
                       </button>
                     </div>
                     <div dropdown-content>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                        (click)="openEditModal(row)"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
-                        [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
-                        (click)="deleteProductRow(row, 'product-actions-' + row.id)"
-                      >
-                        {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
-                        [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()"
-                        (click)="duplicateProductRow(row)"
-                      >
-                        {{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
-                        [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
-                        (click)="toggleProductStatus(row, 'product-actions-' + row.id)"
-                      >
-                        {{
-                          statusMutation.isPending()
-                            ? 'Procesando...'
-                            : (row.habilitado ? 'Inhabilitar' : 'Habilitar')
-                        }}
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                        (click)="openBarcodeModal(row)"
-                      >
-                        Cod. Barras
-                      </button>
+                      <ng-container *appHasPermission="'products.write'">
+                        <button
+                          type="button"
+                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                          (click)="openEditModal(row)"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                          [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()"
+                          (click)="duplicateProductRow(row)"
+                        >
+                          {{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                          [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
+                          (click)="toggleProductStatus(row, 'product-actions-' + row.id)"
+                        >
+                          {{
+                            statusMutation.isPending()
+                              ? 'Procesando...'
+                              : (row.habilitado ? 'Inhabilitar' : 'Habilitar')
+                          }}
+                        </button>
+                        <button
+                          type="button"
+                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
+                          (click)="openBarcodeModal(row)"
+                        >
+                          Cod. Barras
+                        </button>
+                      </ng-container>
+                      <ng-container *appHasPermission="'products.delete'">
+                        <button
+                          type="button"
+                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                          [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
+                          (click)="deleteProductRow(row, 'product-actions-' + row.id)"
+                        >
+                          {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
+                        </button>
+                      </ng-container>
                       <button
                         type="button"
                         class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
@@ -426,6 +465,70 @@
           </tbody>
         </table>
       </div>
+    } @else if (historyTab() === 'prices') {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[900px]">
+          <thead>
+            <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Campo</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Detalle</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Anterior</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Nuevo</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origen</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (historyPricesQuery.isPending()) {
+              <tr>
+                <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500">Cargando historial de precios...</td>
+              </tr>
+            } @else {
+              @for (item of historyPriceRows(); track item.id) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                  <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                    {{ item.createdAt | date: 'yyyy-MM-dd HH:mm' }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-800 dark:text-white/90">{{ item.fieldLabel }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    @if (item.warehouseNombre) {
+                      {{ item.warehouseNombre }}
+                    } @else if (item.presentationKey) {
+                      Presentación {{ item.presentationKey }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
+                    {{ item.previousValue ?? '—' }}
+                  </td>
+                  <td class="px-4 py-3 text-right text-sm font-medium text-gray-800 dark:text-white/90">
+                    {{ item.newValue }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ item.sourceLabel }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {{ item.changedBy?.nombre ?? '—' }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500">
+                    No hay cambios de precio registrados para este producto.
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination
+        class="mt-4 block"
+        [totalItems]="historyPriceTotal()"
+        [currentPage]="historyPricePage()"
+        [pageSize]="historyPricePageSize"
+        (currentPageChange)="onHistoryPricePageChange($event)"
+      />
     } @else {
       <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center dark:border-gray-700 dark:bg-gray-900">
         <p class="text-base font-semibold text-gray-700 dark:text-gray-200">En desarrollo</p>
@@ -534,20 +637,36 @@
     <button type="button" class="mt-3 text-sm font-semibold text-brand-500 underline" (click)="downloadImportTemplate()">
       Descargar plantilla
     </button>
-    <div class="mt-6 flex items-center justify-center">
+    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
       <label class="inline-flex cursor-pointer rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600">
         <app-icon name="mdi:file-excel-outline" width="18" height="18" />
         <span class="ml-2">{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
         <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
       </label>
+      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" (btnClick)="runImportPreview()">
+        {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
+      </app-button>
     </div>
+    @if (importPreviewResult(); as preview) {
+      <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-white/5">
+        <p><strong>Filas:</strong> {{ preview.totalRows }} · <strong>Crearían:</strong> {{ preview.created }} · <strong>Actualizarían:</strong> {{ preview.updated }}</p>
+        @if (preview.errors.length) {
+          <p class="mt-2 font-medium text-warning-600">Errores ({{ preview.errors.length }}):</p>
+          <ul class="mt-1 max-h-40 list-disc overflow-y-auto pl-5 text-theme-xs text-gray-600 dark:text-gray-400">
+            @for (err of preview.errors.slice(0, 20); track err) {
+              <li>{{ err }}</li>
+            }
+          </ul>
+        }
+      </div>
+    }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
     <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">
       Cancelar
     </app-button>
-    <app-button [disabled]="importMutation.isPending()" (btnClick)="processImport()">
-      {{ importMutation.isPending() ? 'Procesando…' : 'Procesar' }}
+    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" (btnClick)="processImport()">
+      {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
     </app-button>
   </div>
 </app-modal>
@@ -613,6 +732,9 @@
     />
   </div>
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    @if (editLoading()) {
+      <p class="mb-3 text-sm text-gray-500">Cargando detalle del producto…</p>
+    }
     @if (activeTab() === 'general') {
       @if (generalCatalogsLoading()) {
         <p class="mb-3 text-xs text-gray-500">Cargando catálogos de General...</p>
@@ -624,6 +746,9 @@
           label="Incluye Igv"
         />
         <app-checkbox [checked]="!!form().generico" (checkedChange)="updateForm('generico', $event)" label="Genérico?" />
+        <app-checkbox [checked]="!!form().esControlado" (checkedChange)="updateForm('esControlado', $event)" label="Controlado" />
+        <app-checkbox [checked]="!!form().esRefrigerado" (checkedChange)="updateForm('esRefrigerado', $event)" label="Refrigerado" />
+        <app-checkbox [checked]="!!form().esHospitalario" (checkedChange)="updateForm('esHospitalario', $event)" label="Hospitalario" />
         <app-checkbox
           [checked]="!!form().necesitaRecetaMedica"
           (checkedChange)="updateForm('necesitaRecetaMedica', $event)"
@@ -798,6 +923,15 @@
             type="number"
             [value]="form().stockMinimo ?? 1"
             (valueChange)="updateForm('stockMinimo', +$event)"
+          />
+        </div>
+        <div>
+          <app-label>Stock Máximo</app-label>
+          <app-input-field
+            className="mt-2"
+            type="number"
+            [value]="form().stockMaximo ?? ''"
+            (valueChange)="updateForm('stockMaximo', $event === '' ? undefined : +$event)"
           />
         </div>
         <div>
@@ -1249,6 +1383,68 @@
           />
         </div>
       </div>
+    }
+
+    @if (activeTab() === 'proveedores') {
+      @if (!editingProductId()) {
+        <p class="text-theme-sm text-gray-500">Guarde el producto primero para vincular proveedores.</p>
+      } @else {
+        <ng-container *appHasPermission="'products.write'">
+          <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-white/10">
+            <p class="mb-3 text-theme-sm font-medium">Vincular proveedor</p>
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <app-form-select
+                [value]="newSupplierId()"
+                [options]="supplierSelectOptions()"
+                placeholder="Proveedor"
+                (valueChange)="newSupplierId.set($event)"
+              />
+              <app-input-field placeholder="Cód. proveedor" [value]="newSupplierCodigo()" (valueChange)="newSupplierCodigo.set($event + '')" />
+              <app-input-field type="number" placeholder="Precio compra" [value]="newSupplierPrecio()" (valueChange)="newSupplierPrecio.set($event + '')" />
+              <app-input-field type="number" placeholder="Plazo días" [value]="newSupplierPlazo()" (valueChange)="newSupplierPlazo.set($event + '')" />
+            </div>
+            <div class="mt-3">
+              <app-button size="sm" [disabled]="upsertProductSupplierMutation.isPending()" (btnClick)="linkProductSupplier()">
+                Vincular
+              </app-button>
+            </div>
+          </div>
+        </ng-container>
+        <div class="overflow-x-auto rounded-lg border border-gray-100 dark:border-white/10">
+          <table class="min-w-full text-left">
+            <thead class="border-b border-gray-100 dark:border-white/10">
+              <tr>
+                <th class="px-4 py-2 text-theme-xs text-gray-500">Proveedor</th>
+                <th class="px-4 py-2 text-theme-xs text-gray-500">Cód. proveedor</th>
+                <th class="px-4 py-2 text-theme-xs text-gray-500">Precio compra</th>
+                <th class="px-4 py-2 text-theme-xs text-gray-500">Plazo</th>
+                <th class="px-4 py-2 text-end text-theme-xs text-gray-500">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+              @for (link of productSupplierLinks(); track link.id) {
+                <tr>
+                  <td class="px-4 py-2 text-theme-sm">{{ link.supplier.razonSocial }}</td>
+                  <td class="px-4 py-2 text-theme-sm">{{ link.codigoProveedor || '—' }}</td>
+                  <td class="px-4 py-2 text-theme-sm">{{ link.precioCompra ?? '—' }}</td>
+                  <td class="px-4 py-2 text-theme-sm">{{ link.plazoDias ?? '—' }}</td>
+                  <td class="px-4 py-2 text-end">
+                    <ng-container *appHasPermission="'products.write'">
+                      <button type="button" class="text-theme-xs text-error-600 hover:underline" (click)="unlinkProductSupplier(link.supplierId)">
+                        Quitar
+                      </button>
+                    </ng-container>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">Sin proveedores vinculados.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">

@@ -7,10 +7,10 @@
     data-toolbar-title
     class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
   >
-    Marcas
+    Formas farmacéuticas
   </h1>
   <div data-toolbar-actions>
-    <ng-container *appHasPermission="'brands.write'">
+    <ng-container *appHasPermission="'pharma-forms.write'">
       <app-button size="sm" (btnClick)="openCreateModal()">
         <app-icon name="mdi:plus" width="18" height="18" />
         <span class="leading-none">Nuevo</span>
@@ -19,7 +19,7 @@
   </div>
 </app-page-toolbar>
 
-@if (brandsQuery.isError()) {
+@if (listQuery.isError()) {
   <div
     class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
     role="alert"
@@ -41,7 +41,7 @@
   (clear)="clearFilters()"
 />
 
-<app-component-card title="Listado de Marcas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+<app-component-card title="Listado de Formas farmacéuticas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-left">
@@ -69,7 +69,7 @@
               </td>
               <td class="px-5 py-4 text-end">
                 <div class="flex flex-wrap justify-end gap-2">
-                  <ng-container *appHasPermission="'brands.write'">
+                  <ng-container *appHasPermission="'pharma-forms.write'">
                     <button
                       type="button"
                       class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
@@ -92,12 +92,12 @@
           } @empty {
             <tr>
               <td colspan="4" class="px-5 py-8 text-center text-theme-sm text-gray-500">
-                @if (brandsQuery.isPending()) {
+                @if (listQuery.isPending()) {
                   Cargando…
-                } @else if (brandsQuery.isError()) {
+                } @else if (listQuery.isError()) {
                   Use “Reintentar” arriba para volver a cargar.
                 } @else {
-                  No hay marcas registradas.
+                  No hay formas farmacéuticas registradas.
                 }
               </td>
             </tr>
@@ -125,7 +125,7 @@
     class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
   >
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      {{ editing() ? 'Editar marca' : 'Nueva marca' }}
+      {{ editing() ? 'Editar forma farmacéutica' : 'Nueva forma farmacéutica' }}
     </h3>
   </div>
 
@@ -166,7 +166,7 @@
   </div>
   <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
     @if (deleting(); as row) {
-      ¿Desea eliminar la marca <span class="font-semibold">{{ row.nombre }}</span>?
+      ¿Desea eliminar la forma farmacéutica <span class="font-semibold">{{ row.nombre }}</span>?
     }
   </div>
   <div

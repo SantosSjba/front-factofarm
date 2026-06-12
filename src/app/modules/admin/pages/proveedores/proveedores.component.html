@@ -1,0 +1,448 @@
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
+</div>
+
+<app-page-toolbar>
+  <h1
+    data-toolbar-title
+    class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
+  >
+    Proveedores
+  </h1>
+  <div data-toolbar-actions>
+    <ng-container *appHasPermission="'suppliers.write'">
+      <app-button size="sm" (btnClick)="openCreateModal()">
+        <app-icon name="mdi:plus" width="18" height="18" />
+        <span class="leading-none">Nuevo</span>
+      </app-button>
+    </ng-container>
+  </div>
+</app-page-toolbar>
+
+@if (suppliersQuery.isError()) {
+  <div
+    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+    role="alert"
+  >
+    No se pudo cargar el listado.
+    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
+  </div>
+}
+
+<app-list-filters
+  [searchValue]="searchTerm()"
+  [selectValue]="filterField()"
+  [selectOptions]="fieldFilterOptions"
+  searchPlaceholder="Buscar"
+  selectPlaceholder="Filtrar por"
+  clearLabel="Limpiar"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onFilterFieldChange($event)"
+  (clear)="clearFilters()"
+/>
+
+<app-component-card title="Proveedores" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Razón social
+            </th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Documento
+            </th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Teléfono
+            </th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Días crédito
+            </th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Estado
+            </th>
+            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Acciones
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of paginatedRows(); track row.id; let i = $index) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ pageStart() + i + 1 }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.razonSocial }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+                {{ docTypeLabel(row.tipoDocumento) }} · {{ row.numeroDocumento }}
+              </td>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.telefono || '—' }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.diasCredito }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                @if (row.habilitado) {
+                  <span class="text-success-600 dark:text-success-400">Habilitado</span>
+                } @else {
+                  <span class="text-gray-500">Inhabilitado</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-end">
+                <div class="flex flex-wrap justify-end gap-2">
+                  <ng-container *appHasPermission="'suppliers.read'">
+                    <button
+                      type="button"
+                      class="rounded-lg bg-gray-50 px-3 py-1.5 text-theme-xs font-medium text-gray-700 hover:bg-gray-100 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10"
+                      (click)="openPurchaseHistoryModal(row)"
+                    >
+                      Compras
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-lg bg-gray-50 px-3 py-1.5 text-theme-xs font-medium text-gray-700 hover:bg-gray-100 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10"
+                      (click)="openProductsModal(row)"
+                    >
+                      Productos
+                    </button>
+                  </ng-container>
+                  <ng-container *appHasPermission="'suppliers.write'">
+                    <button
+                      type="button"
+                      class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
+                      (click)="openEditModal(row)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-lg bg-error-50 px-3 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:hover:bg-error-500/25"
+                      [disabled]="deleteMutation.isPending()"
+                      (click)="openDeleteConfirm(row)"
+                    >
+                      Eliminar
+                    </button>
+                  </ng-container>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="px-5 py-8 text-center text-theme-sm text-gray-500">
+                @if (suppliersQuery.isPending()) {
+                  Cargando…
+                } @else if (suppliersQuery.isError()) {
+                  Use “Reintentar” arriba para volver a cargar.
+                } @else {
+                  No hay proveedores registrados.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-pagination
+  [totalItems]="totalRows()"
+  [currentPage]="currentPage()"
+  [pageSize]="itemsPerPage"
+  (currentPageChange)="onPageChange($event)"
+/>
+
+<app-modal
+  [isOpen]="modalOpen()"
+  (close)="closeFormModal()"
+  className="w-full max-w-3xl shadow-theme-lg"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      {{ editing() ? 'Editar proveedor' : 'Nuevo proveedor' }}
+    </h3>
+  </div>
+
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-8 sm:py-5">
+    <div>
+      <app-label>Razón social</app-label>
+      <app-input-field
+        className="mt-2"
+        [value]="razonSocial()"
+        (valueChange)="razonSocial.set($event + '')"
+      />
+    </div>
+    <div>
+      <app-label>Nombre comercial</app-label>
+      <app-input-field
+        className="mt-2"
+        [value]="nombreComercial()"
+        (valueChange)="nombreComercial.set($event + '')"
+      />
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <app-label>Tipo de documento</app-label>
+        <app-form-select
+          className="mt-2"
+          [value]="tipoDocumento()"
+          [options]="documentTypesQuery.data() ?? []"
+          (valueChange)="onTipoDocumentoChange($event)"
+        />
+      </div>
+      <div>
+        <app-label>Número de documento</app-label>
+        <app-input-field
+          className="mt-2"
+          [value]="numeroDocumento()"
+          (valueChange)="numeroDocumento.set($event + '')"
+        />
+      </div>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <app-label>Teléfono</app-label>
+        <app-input-field
+          className="mt-2"
+          [value]="telefono()"
+          (valueChange)="telefono.set($event + '')"
+        />
+      </div>
+      <div>
+        <app-label>Correo electrónico</app-label>
+        <app-input-field
+          className="mt-2"
+          [value]="correoElectronico()"
+          (valueChange)="correoElectronico.set($event + '')"
+        />
+      </div>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <app-label>Contacto</app-label>
+        <app-input-field
+          className="mt-2"
+          [value]="contactoNombre()"
+          (valueChange)="contactoNombre.set($event + '')"
+        />
+      </div>
+      <div>
+        <app-label>Días de crédito</app-label>
+        <app-input-field
+          className="mt-2"
+          type="number"
+          [value]="diasCredito()"
+          (valueChange)="diasCredito.set($event + '')"
+        />
+      </div>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <app-label>Departamento</app-label>
+        <app-form-select className="mt-2" [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
+      </div>
+      <div>
+        <app-label>Provincia</app-label>
+        <app-form-select className="mt-2" [value]="provinceId()" [options]="provinceOptions()" [disabled]="!departmentId()" (valueChange)="onProvinceChange($event)" />
+      </div>
+      <div>
+        <app-label>Distrito</app-label>
+        <app-form-select className="mt-2" [value]="districtId()" [options]="districtOptions()" [disabled]="!provinceId()" (valueChange)="districtId.set($event)" />
+      </div>
+    </div>
+    <div>
+      <app-label>Dirección</app-label>
+      <app-input-field className="mt-2" [value]="direccion()" (valueChange)="direccion.set($event + '')" />
+    </div>
+    <div>
+      <app-label>Condiciones de pago</app-label>
+      <app-input-field className="mt-2" [value]="condicionesPago()" (valueChange)="condicionesPago.set($event + '')" />
+    </div>
+    <div>
+      <app-label>Observaciones</app-label>
+      <app-input-field className="mt-2" [value]="observaciones()" (valueChange)="observaciones.set($event + '')" />
+    </div>
+    <div class="flex items-center gap-2">
+      <app-checkbox [checked]="habilitado()" (checkedChange)="habilitado.set($event)" />
+      <span class="text-theme-sm text-gray-700 dark:text-gray-300">Habilitado</span>
+    </div>
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+  >
+    <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="isSaving()" (btnClick)="submitForm()">
+      {{ submitLabel() }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="purchaseHistoryOpen()" (close)="closePurchaseHistoryModal()" className="w-full max-w-2xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Historial de compras — {{ purchaseHistorySupplier()?.razonSocial }}
+    </h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-8">
+    @if (purchaseHistoryQuery.isPending()) {
+      Cargando…
+    } @else {
+      <p>{{ purchaseHistoryQuery.data()?.message ?? 'Sin registros de compra.' }}</p>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
+    <app-button variant="outline" (btnClick)="closePurchaseHistoryModal()">Cerrar</app-button>
+  </div>
+</app-modal>
+
+<app-modal
+  [isOpen]="deleteConfirmOpen()"
+  (close)="closeDeleteConfirm()"
+  className="w-full max-w-lg shadow-theme-lg"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Confirmar eliminación
+    </h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
+    @if (deleting(); as row) {
+      ¿Desea eliminar el proveedor <span class="font-semibold">{{ row.razonSocial }}</span>?
+    }
+  </div>
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6"
+  >
+    <app-button
+      variant="outline"
+      [disabled]="deleteMutation.isPending()"
+      (btnClick)="closeDeleteConfirm()"
+    >
+      Cancelar
+    </app-button>
+    <app-button [disabled]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+      {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal
+  [isOpen]="productsModalOpen()"
+  (close)="closeProductsModal()"
+  className="w-full max-w-4xl shadow-theme-lg"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Productos del proveedor
+      @if (productsSupplier(); as s) {
+        <span class="mt-1 block text-theme-sm font-normal text-gray-500">{{ s.razonSocial }}</span>
+      }
+    </h3>
+  </div>
+
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-8 sm:py-5">
+    <ng-container *appHasPermission="'suppliers.write'">
+      <div class="rounded-lg border border-gray-100 p-4 dark:border-white/10">
+        <p class="mb-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">Vincular producto</p>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <app-form-select
+            [value]="newProductId()"
+            [options]="productSelectOptions()"
+            placeholder="Producto"
+            (valueChange)="newProductId.set($event)"
+          />
+          <app-input-field
+            placeholder="Cód. proveedor"
+            [value]="newCodigoProveedor()"
+            (valueChange)="newCodigoProveedor.set($event + '')"
+          />
+          <app-input-field
+            type="number"
+            placeholder="Precio compra"
+            [value]="newPrecioCompra()"
+            (valueChange)="newPrecioCompra.set($event + '')"
+          />
+          <app-input-field
+            type="number"
+            placeholder="Plazo días"
+            [value]="newPlazoDias()"
+            (valueChange)="newPlazoDias.set($event + '')"
+          />
+        </div>
+        <div class="mt-3">
+          <app-button
+            size="sm"
+            [disabled]="upsertProductMutation.isPending()"
+            (btnClick)="submitProductLink()"
+          >
+            Vincular
+          </app-button>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="overflow-x-auto rounded-lg border border-gray-100 dark:border-white/10">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100 dark:border-white/10">
+          <tr>
+            <th class="px-4 py-2 text-theme-xs text-gray-500">Producto</th>
+            <th class="px-4 py-2 text-theme-xs text-gray-500">Cód. proveedor</th>
+            <th class="px-4 py-2 text-theme-xs text-gray-500">Precio compra</th>
+            <th class="px-4 py-2 text-theme-xs text-gray-500">Plazo</th>
+            <th class="px-4 py-2 text-end text-theme-xs text-gray-500">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+          @for (link of productsQuery.data() ?? []; track link.id) {
+            <tr>
+              <td class="px-4 py-2 text-theme-sm">{{ link.product.nombre }}</td>
+              <td class="px-4 py-2 text-theme-sm">{{ link.codigoProveedor || '—' }}</td>
+              <td class="px-4 py-2 text-theme-sm">{{ link.precioCompra ?? '—' }}</td>
+              <td class="px-4 py-2 text-theme-sm">{{ link.plazoDias ?? '—' }}</td>
+              <td class="px-4 py-2 text-end">
+                <ng-container *appHasPermission="'suppliers.write'">
+                  <button
+                    type="button"
+                    class="text-theme-xs text-error-600 hover:underline"
+                    [disabled]="removeProductMutation.isPending()"
+                    (click)="removeProduct(link)"
+                  >
+                    Quitar
+                  </button>
+                </ng-container>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">
+                @if (productsQuery.isPending()) {
+                  Cargando…
+                } @else {
+                  Sin productos vinculados.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8"
+  >
+    <app-button variant="outline" (btnClick)="closeProductsModal()">Cerrar</app-button>
+  </div>
+</app-modal>

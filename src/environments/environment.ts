@@ -1,5 +1,7 @@
-/** Valores por defecto del build de producción (sobrescribir en despliegue o usar proxy inverso hacia la API). */
+import { envOverrides } from './env.overrides';
+
+/** Producción: `NG_APP_*` en CI/CD o proxy inverso `/api/v1`. */
 export const environment = {
-  production: true,
-  apiBaseUrl: '/api/v1',
+  production: envOverrides.production ?? true,
+  apiBaseUrl: envOverrides.apiBaseUrl || '/api/v1',
 };

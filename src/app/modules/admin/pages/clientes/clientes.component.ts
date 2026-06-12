@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { customerQueryKeys } from '../../../../core/query/customer-query.keys';
 import { establishmentQueryKeys } from '../../../../core/query/establishment-query.keys';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
@@ -26,6 +27,7 @@ import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/ta
 import type {
   CreateCustomerRequest,
   CustomerAddressDto,
+  CustomerImportResultDto,
   CustomerItemDto,
   CustomerListFiltersRequest,
   ExportCustomersRequest,
@@ -105,6 +107,12 @@ const customerCreateSchema = yup.object({
     .transform((v) => (Number.isNaN(v) ? 0 : v))
     .min(0, 'Días de crédito debe ser mayor o igual a 0')
     .optional(),
+  limiteCredito: yup
+    .number()
+    .transform((v) => (Number.isNaN(v) ? undefined : v))
+    .min(0, 'Límite de crédito debe ser mayor o igual a 0')
+    .nullable()
+    .optional(),
   codigoInterno: yup.string().max(30, 'Código interno no debe exceder 30 caracteres').optional(),
   codigoBarra: yup.string().max(60, 'Código de barra no debe exceder 60 caracteres').optional(),
   observaciones: yup.string().max(500, 'Observaciones no debe exceder 500 caracteres').optional(),
@@ -179,6 +187,7 @@ const exportSchema = yup.object({
     InputFieldComponent,
     LabelComponent,
     IconComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './clientes.component.html',
 })
@@ -337,6 +346,7 @@ export class ClientesComponent {
     tipoDocumento: 'DNI',
     numeroDocumento: '',
     diasCredito: 0,
+    limiteCredito: null,
     nacionalidad: 'PERU',
     addresses: [],
     etiquetas: [],
@@ -356,6 +366,7 @@ export class ClientesComponent {
   protected readonly tagsValue = signal('');
 
   protected readonly importFile = signal<File | null>(null);
+  protected readonly importPreviewResult = signal<CustomerImportResultDto | null>(null);
   protected readonly exportForm = signal<ExportCustomersRequest>({
     period: 'all',
   });
@@ -443,6 +454,19 @@ export class ClientesComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar etiquetas')),
   }));
 
+  protected readonly previewImportMutation = injectMutation(() => ({
+    mutationFn: (file: File) => firstValueFrom(this.api.previewImportCustomers(file)),
+    onSuccess: (res) => {
+      this.importPreviewResult.set(res);
+      if (res.errors.length) {
+        this.notify.warning(`Vista previa: ${res.errors.length} fila(s) con error.`);
+      } else {
+        this.notify.success('Vista previa lista. Revise y confirme.');
+      }
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo validar el archivo')),
+  }));
+
   protected readonly importMutation = injectMutation(() => ({
     mutationFn: (file: File) => firstValueFrom(this.api.importCustomers(file)),
     onSuccess: (res) => {
@@ -452,6 +476,7 @@ export class ClientesComponent {
       }
       this.importOpen.set(false);
       this.importFile.set(null);
+      this.importPreviewResult.set(null);
       void this.queryClient.invalidateQueries({ queryKey: customerQueryKeys.all });
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo importar clientes')),
@@ -541,6 +566,7 @@ export class ClientesComponent {
       numeroDocumento: row.numeroDocumento,
       nacionalidad: row.nacionalidad ?? 'PERU',
       diasCredito: row.diasCredito,
+      limiteCredito: row.limiteCredito ?? null,
       codigoInterno: row.codigoInterno ?? undefined,
       codigoBarra: row.codigoBarra ?? undefined,
       observaciones: row.observaciones ?? undefined,
@@ -743,11 +769,23 @@ export class ClientesComponent {
   protected openImportModal() {
     this.importOpen.set(true);
     this.importFile.set(null);
+    this.importPreviewResult.set(null);
   }
 
   protected onImportFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     this.importFile.set(input.files?.[0] ?? null);
+    this.importPreviewResult.set(null);
+  }
+
+  protected runImportPreview() {
+    const file = this.importFile();
+    const valid = this.validateImport(file);
+    if (!valid.ok) {
+      this.notify.warning(valid.message);
+      return;
+    }
+    this.previewImportMutation.mutate(file as File);
   }
 
   protected async downloadImportTemplate() {
@@ -764,6 +802,10 @@ export class ClientesComponent {
     const valid = this.validateImport(file);
     if (!valid.ok) {
       this.notify.warning(valid.message);
+      return;
+    }
+    if (!this.importPreviewResult()) {
+      this.notify.warning('Ejecute la vista previa antes de confirmar.');
       return;
     }
     this.importMutation.mutate(file as File);

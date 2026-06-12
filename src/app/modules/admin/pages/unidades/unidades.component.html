@@ -7,10 +7,10 @@
     data-toolbar-title
     class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
   >
-    Marcas
+    Unidades
   </h1>
   <div data-toolbar-actions>
-    <ng-container *appHasPermission="'brands.write'">
+    <ng-container *appHasPermission="'units.write'">
       <app-button size="sm" (btnClick)="openCreateModal()">
         <app-icon name="mdi:plus" width="18" height="18" />
         <span class="leading-none">Nuevo</span>
@@ -19,7 +19,7 @@
   </div>
 </app-page-toolbar>
 
-@if (brandsQuery.isError()) {
+@if (listQuery.isError()) {
   <div
     class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
     role="alert"
@@ -41,13 +41,16 @@
   (clear)="clearFilters()"
 />
 
-<app-component-card title="Listado de Marcas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+<app-component-card title="Listado de Unidades" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-left">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
+              Código
+            </th>
             <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
               Nombre
             </th>
@@ -63,13 +66,14 @@
           @for (row of paginatedRows(); track row.id; let i = $index) {
             <tr>
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ pageStart() + i + 1 }}</td>
+              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.codigo }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ row.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}
               </td>
               <td class="px-5 py-4 text-end">
                 <div class="flex flex-wrap justify-end gap-2">
-                  <ng-container *appHasPermission="'brands.write'">
+                  <ng-container *appHasPermission="'units.write'">
                     <button
                       type="button"
                       class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
@@ -91,13 +95,13 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="px-5 py-8 text-center text-theme-sm text-gray-500">
-                @if (brandsQuery.isPending()) {
+              <td colspan="5" class="px-5 py-8 text-center text-theme-sm text-gray-500">
+                @if (listQuery.isPending()) {
                   Cargando…
-                } @else if (brandsQuery.isError()) {
+                } @else if (listQuery.isError()) {
                   Use “Reintentar” arriba para volver a cargar.
                 } @else {
-                  No hay marcas registradas.
+                  No hay unidades registradas.
                 }
               </td>
             </tr>
@@ -125,17 +129,27 @@
     class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
   >
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      {{ editing() ? 'Editar marca' : 'Nueva marca' }}
+      {{ editing() ? 'Editar unidad' : 'Nueva unidad' }}
     </h3>
   </div>
 
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
-    <app-label>Nombre</app-label>
-    <app-input-field
-      className="mt-2"
-      [value]="nombre()"
-      (valueChange)="nombre.set($event + '')"
-    />
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-8 sm:py-5">
+    <div>
+      <app-label>Código</app-label>
+      <app-input-field
+        className="mt-2"
+        [value]="codigo()"
+        (valueChange)="codigo.set($event + '')"
+      />
+    </div>
+    <div>
+      <app-label>Nombre</app-label>
+      <app-input-field
+        className="mt-2"
+        [value]="nombre()"
+        (valueChange)="nombre.set($event + '')"
+      />
+    </div>
   </div>
 
   <div
@@ -166,7 +180,7 @@
   </div>
   <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
     @if (deleting(); as row) {
-      ¿Desea eliminar la marca <span class="font-semibold">{{ row.nombre }}</span>?
+      ¿Desea eliminar la unidad <span class="font-semibold">{{ row.codigo }} — {{ row.nombre }}</span>?
     }
   </div>
   <div

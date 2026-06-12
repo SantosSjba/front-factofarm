@@ -1,8 +1,8 @@
-export const categoryQueryKeys = {
-  all: ['categories'] as const,
+export const activePrincipleQueryKeys = {
+  all: ['active-principles'] as const,
   list: (filters?: { search?: string; field?: string; page?: number }) =>
     [
-      ...categoryQueryKeys.all,
+      ...activePrincipleQueryKeys.all,
       'list',
       filters?.search ?? '',
       filters?.field ?? 'all',

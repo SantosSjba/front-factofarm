@@ -44,3 +44,7 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Entorno local (no commitear secretos)
+.env
+src/environments/env.overrides.ts

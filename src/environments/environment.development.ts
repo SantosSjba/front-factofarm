@@ -1,5 +1,7 @@
+import { envOverrides } from './env.overrides';
+
 export const environment = {
-  production: false,
+  production: envOverrides.production,
   /** Origen de la API Nest (`main.ts` usa prefijo global `api`). */
-  apiBaseUrl: 'http://localhost:3000/api/v1',
+  apiBaseUrl: envOverrides.apiBaseUrl,
 };

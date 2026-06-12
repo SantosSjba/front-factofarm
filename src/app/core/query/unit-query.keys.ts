@@ -1,8 +1,8 @@
-export const categoryQueryKeys = {
-  all: ['categories'] as const,
+export const unitQueryKeys = {
+  all: ['units'] as const,
   list: (filters?: { search?: string; field?: string; page?: number }) =>
     [
-      ...categoryQueryKeys.all,
+      ...unitQueryKeys.all,
       'list',
       filters?.search ?? '',
       filters?.field ?? 'all',

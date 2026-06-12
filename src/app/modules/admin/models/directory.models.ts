@@ -225,7 +225,11 @@ export interface CustomerTypeItemDto {
 export interface CustomerTypeListFiltersRequest {
   search?: string;
   field?: 'all' | 'descripcion';
+  page?: number;
+  pageSize?: number;
 }
+
+export type CustomerTypeListResponseDto = PaginatedResponseDto<CustomerTypeItemDto>;
 
 export interface CreateCustomerTypeRequest {
   descripcion: string;
@@ -236,17 +240,27 @@ export type UpdateCustomerTypeRequest = Partial<CreateCustomerTypeRequest>;
 export interface CategoryItemDto {
   id: string;
   nombre: string;
+  parentId?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CategoryTreeNodeDto extends CategoryItemDto {
+  children: CategoryTreeNodeDto[];
 }
 
 export interface CategoryListFiltersRequest {
   search?: string;
   field?: 'all' | 'nombre';
+  page?: number;
+  pageSize?: number;
 }
+
+export type CategoryListResponseDto = PaginatedResponseDto<CategoryItemDto>;
 
 export interface CreateCategoryRequest {
   nombre: string;
+  parentId?: string;
 }
 
 export type UpdateCategoryRequest = Partial<CreateCategoryRequest>;
@@ -261,13 +275,129 @@ export interface BrandItemDto {
 export interface BrandListFiltersRequest {
   search?: string;
   field?: 'all' | 'nombre';
+  page?: number;
+  pageSize?: number;
 }
+
+export type BrandListResponseDto = PaginatedResponseDto<BrandItemDto>;
 
 export interface CreateBrandRequest {
   nombre: string;
 }
 
 export type UpdateBrandRequest = Partial<CreateBrandRequest>;
+
+export interface LaboratoryItemDto {
+  id: string;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LaboratoryListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre';
+  page?: number;
+  pageSize?: number;
+}
+
+export type LaboratoryListResponseDto = PaginatedResponseDto<LaboratoryItemDto>;
+
+export interface CreateLaboratoryRequest {
+  nombre: string;
+}
+
+export type UpdateLaboratoryRequest = Partial<CreateLaboratoryRequest>;
+
+export interface UnitItemDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UnitListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'codigo' | 'nombre';
+  page?: number;
+  pageSize?: number;
+}
+
+export type UnitListResponseDto = PaginatedResponseDto<UnitItemDto>;
+
+export interface CreateUnitRequest {
+  codigo: string;
+  nombre: string;
+}
+
+export type UpdateUnitRequest = Partial<CreateUnitRequest>;
+
+export interface PharmaceuticalFormItemDto {
+  id: string;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PharmaceuticalFormListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre';
+  page?: number;
+  pageSize?: number;
+}
+
+export type PharmaceuticalFormListResponseDto = PaginatedResponseDto<PharmaceuticalFormItemDto>;
+
+export interface CreatePharmaceuticalFormRequest {
+  nombre: string;
+}
+
+export type UpdatePharmaceuticalFormRequest = Partial<CreatePharmaceuticalFormRequest>;
+
+export interface ActivePrincipleItemDto {
+  id: string;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActivePrincipleListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre';
+  page?: number;
+  pageSize?: number;
+}
+
+export type ActivePrincipleListResponseDto = PaginatedResponseDto<ActivePrincipleItemDto>;
+
+export interface CreateActivePrincipleRequest {
+  nombre: string;
+}
+
+export type UpdateActivePrincipleRequest = Partial<CreateActivePrincipleRequest>;
+
+export interface AdministrationRouteItemDto {
+  id: string;
+  nombre: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdministrationRouteListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'nombre';
+  page?: number;
+  pageSize?: number;
+}
+
+export type AdministrationRouteListResponseDto = PaginatedResponseDto<AdministrationRouteItemDto>;
+
+export interface CreateAdministrationRouteRequest {
+  nombre: string;
+}
+
+export type UpdateAdministrationRouteRequest = Partial<CreateAdministrationRouteRequest>;
 
 export type CustomerDocumentTypeDto =
   | 'DNI'
@@ -276,6 +406,87 @@ export type CustomerDocumentTypeDto =
   | 'PASAPORTE'
   | 'DOC_SIN_RUC'
   | 'OTRO';
+
+export interface SupplierItemDto {
+  id: string;
+  razonSocial: string;
+  nombreComercial: string | null;
+  tipoDocumento: CustomerDocumentTypeDto;
+  numeroDocumento: string;
+  departmentId: string | null;
+  provinceId: string | null;
+  districtId: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  correoElectronico: string | null;
+  contactoNombre: string | null;
+  contactoTelefono: string | null;
+  diasCredito: number;
+  condicionesPago: string | null;
+  observaciones: string | null;
+  habilitado: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierOptionDto {
+  id: string;
+  razonSocial: string;
+  numeroDocumento: string;
+}
+
+export interface SupplierListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'razonSocial' | 'numeroDocumento';
+  page?: number;
+  pageSize?: number;
+}
+
+export type SupplierListResponseDto = PaginatedResponseDto<SupplierItemDto>;
+
+export interface CreateSupplierRequest {
+  razonSocial: string;
+  nombreComercial?: string;
+  tipoDocumento: CustomerDocumentTypeDto;
+  numeroDocumento: string;
+  departmentId?: string;
+  provinceId?: string;
+  districtId?: string;
+  direccion?: string;
+  telefono?: string;
+  correoElectronico?: string;
+  contactoNombre?: string;
+  contactoTelefono?: string;
+  diasCredito?: number;
+  condicionesPago?: string;
+  observaciones?: string;
+  habilitado?: boolean;
+}
+
+export type UpdateSupplierRequest = Partial<CreateSupplierRequest>;
+
+export interface SupplierProductItemDto {
+  id: string;
+  supplierId: string;
+  productId: string;
+  codigoProveedor: string | null;
+  precioCompra: number | null;
+  plazoDias: number | null;
+  createdAt: string;
+  updatedAt: string;
+  product: {
+    id: string;
+    nombre: string;
+    codigoInterno: string | null;
+  };
+}
+
+export interface UpsertSupplierProductRequest {
+  productId: string;
+  codigoProveedor?: string;
+  precioCompra?: number;
+  plazoDias?: number;
+}
 
 export interface CustomerAddressDto {
   id?: string;
@@ -313,6 +524,7 @@ export interface CustomerItemDto {
   numeroDocumento: string;
   nacionalidad: string | null;
   diasCredito: number;
+  limiteCredito: number | null;
   codigoInterno: string | null;
   codigoBarra: string | null;
   observaciones: string | null;
@@ -362,6 +574,7 @@ export interface CreateCustomerRequest {
   numeroDocumento: string;
   nacionalidad?: string;
   diasCredito?: number;
+  limiteCredito?: number | null;
   codigoInterno?: string;
   codigoBarra?: string;
   observaciones?: string;
@@ -388,6 +601,15 @@ export interface CustomerImportResultDto {
   created: number;
   updated: number;
   errors: string[];
+  preview?: boolean;
+}
+
+export interface SupplierPurchaseHistoryResponseDto {
+  items: unknown[];
+  total: number;
+  page: number;
+  pageSize: number;
+  message: string;
 }
 
 export interface ExportCustomersRequest {
@@ -493,12 +715,77 @@ export interface ProductListResponseDto {
   totalPages: number;
 }
 
+export interface ProductEquivalentItemDto {
+  id: string;
+  nombre: string;
+  codigoInterno: string | null;
+  generico: boolean;
+}
+
+export interface ProductDetailDto extends ProductListItemDto {
+  generico: boolean;
+  esControlado: boolean;
+  esRefrigerado: boolean;
+  esHospitalario: boolean;
+  stockMaximo: number | null;
+  administrationRouteId: string | null;
+  administrationRouteNombre: string | null;
+  imagenUrl: string | null;
+  equivalents: ProductEquivalentItemDto[];
+  necesitaRecetaMedica: boolean;
+  calcularCantidadPorPrecio: boolean;
+  manejaLotes: boolean;
+  incluyeIscVenta: boolean;
+  incluyeIscCompra: boolean;
+  sujetoDetraccion: boolean;
+  sePuedeCanjearPorPuntos: boolean;
+  aplicaGanancia: boolean;
+  porcentajeGanancia: string | null;
+  costoUnitario: string | null;
+  defaultWarehouseId: string | null;
+  imagenArchivoId: string | null;
+  warehousePrices: ProductWarehousePriceInput[];
+  warehouseStocks: ProductWarehouseStockInput[];
+  presentations: ProductPresentationInput[];
+  attributes: ProductAttributeInput[];
+  supplierLinks: ProductSupplierLinkDto[];
+}
+
 export interface ProductHistoryStockItemDto {
   warehouseId: string;
   ubicacion: string;
   stock: string;
   series: string;
 }
+
+export type ProductPriceFieldDto =
+  | 'PRECIO_VENTA'
+  | 'PRECIO_COMPRA'
+  | 'COSTO_UNITARIO'
+  | 'PRECIO_ALMACEN'
+  | 'PRESENTACION_PRECIO_1'
+  | 'PRESENTACION_PRECIO_2'
+  | 'PRESENTACION_PRECIO_3';
+
+export type ProductPriceChangeSourceDto = 'MANUAL' | 'IMPORT' | 'DUPLICATE';
+
+export interface ProductPriceHistoryItemDto {
+  id: string;
+  productId: string;
+  field: ProductPriceFieldDto;
+  fieldLabel: string;
+  warehouseId: string | null;
+  warehouseNombre: string | null;
+  presentationKey: string | null;
+  previousValue: string | null;
+  newValue: string;
+  source: ProductPriceChangeSourceDto;
+  sourceLabel: string;
+  changedBy: { id: string; nombre: string; email: string } | null;
+  createdAt: string;
+}
+
+export type ProductPriceHistoryListResponseDto = PaginatedResponseDto<ProductPriceHistoryItemDto>;
 
 export interface ProductStockByLocationDto {
   warehouseId: string;
@@ -525,8 +812,34 @@ export interface ProductStockSummaryDto {
 export interface ProductListFiltersRequest {
   search?: string;
   field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';
+  categoryId?: string;
+  brandId?: string;
+  habilitado?: boolean;
+  generico?: boolean;
+  necesitaRecetaMedica?: boolean;
   page?: number;
   pageSize?: number;
+}
+
+export interface ProductSupplierLinkDto {
+  id: string;
+  supplierId: string;
+  codigoProveedor: string | null;
+  precioCompra: number | null;
+  plazoDias: number | null;
+  supplier: {
+    id: string;
+    razonSocial: string;
+    numeroDocumento: string;
+    habilitado: boolean;
+  };
+}
+
+export interface UpsertProductSupplierRequest {
+  supplierId: string;
+  codigoProveedor?: string;
+  precioCompra?: number;
+  plazoDias?: number;
 }
 
 export interface ProductWarehousePriceInput {
@@ -580,6 +893,9 @@ export interface CreateProductRequest {
   incluyeIgvVenta?: boolean;
   incluyeIgvCompra?: boolean;
   generico?: boolean;
+  esControlado?: boolean;
+  esRefrigerado?: boolean;
+  esHospitalario?: boolean;
   necesitaRecetaMedica?: boolean;
   calcularCantidadPorPrecio?: boolean;
   manejaLotes?: boolean;
@@ -596,6 +912,8 @@ export interface CreateProductRequest {
   porcentajeGanancia?: number;
   costoUnitario?: number;
   stockMinimo?: number;
+  stockMaximo?: number;
+  administrationRouteId?: string;
   categoryId?: string;
   brandId?: string;
   productLocationId?: string;
@@ -614,6 +932,7 @@ export interface ProductImportResultDto {
   created: number;
   updated: number;
   errors: string[];
+  preview?: boolean;
 }
 
 export interface ServiceCatalogUnitDto {

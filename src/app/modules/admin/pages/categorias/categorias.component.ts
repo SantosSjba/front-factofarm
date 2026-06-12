@@ -16,7 +16,13 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
-import type { CategoryItemDto, CreateCategoryRequest } from '../../models/directory.models';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
+import type {
+  CategoryItemDto,
+  CategoryTreeNodeDto,
+  CreateCategoryRequest,
+} from '../../models/directory.models';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -34,6 +40,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     InputFieldComponent,
     LabelComponent,
     IconComponent,
+    HasPermissionDirective,
+    FormSelectComponent,
   ],
   templateUrl: './categorias.component.html',
 })
@@ -60,29 +68,47 @@ export class CategoriasComponent {
     queryKey: categoryQueryKeys.list({
       search: this.searchTerm().trim(),
       field: this.filterField(),
+      page: this.currentPage(),
     }),
     queryFn: () =>
       firstValueFrom(
-        this.api.listCategories({
+        this.api.listCategoriesPaged({
           search: this.searchTerm(),
           field: this.filterField(),
+          page: this.currentPage(),
+          pageSize: this.itemsPerPage,
         }),
       ),
   }));
 
-  protected readonly rows = computed(() => this.categoriesQuery.data() ?? []);
-  protected readonly totalRows = computed(() => this.rows().length);
+  protected readonly rows = computed(() => this.categoriesQuery.data()?.items ?? []);
+  protected readonly totalRows = computed(() => this.categoriesQuery.data()?.total ?? 0);
   protected readonly pageStart = computed(() =>
     this.totalRows() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
   );
-  protected readonly paginatedRows = computed(() => {
-    const start = this.pageStart();
-    return this.rows().slice(start, start + this.itemsPerPage);
+  protected readonly paginatedRows = computed(() => this.rows());
+
+  protected readonly treeQuery = injectQuery(() => ({
+    queryKey: [...categoryQueryKeys.all, 'tree'],
+    queryFn: () => firstValueFrom(this.api.listCategoryTree()),
+  }));
+
+  protected readonly parentOptionsQuery = injectQuery(() => ({
+    queryKey: [...categoryQueryKeys.all, 'parents'],
+    queryFn: () => firstValueFrom(this.api.listCategories({ field: 'nombre' })),
+  }));
+
+  protected readonly parentSelectOptions = computed(() => {
+    const editingId = this.editing()?.id;
+    return (this.parentOptionsQuery.data() ?? [])
+      .filter((c) => c.id !== editingId)
+      .map((c) => ({ value: c.id, label: c.nombre }));
   });
 
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<CategoryItemDto | null>(null);
   protected readonly nombre = signal('');
+  protected readonly parentId = signal('');
 
   protected readonly deleteConfirmOpen = signal(false);
   protected readonly deleting = signal<CategoryItemDto | null>(null);
@@ -130,8 +156,7 @@ export class CategoriasComponent {
 
   constructor() {
     effect(() => {
-      const total = this.totalRows();
-      const totalPages = Math.max(1, Math.ceil(total / this.itemsPerPage));
+      const totalPages = this.categoriesQuery.data()?.totalPages ?? 1;
       const page = this.currentPage();
       if (page > totalPages) this.currentPage.set(totalPages);
       if (page < 1) this.currentPage.set(1);
@@ -141,12 +166,32 @@ export class CategoriasComponent {
       if (!this.modalOpen()) return;
       const row = this.editing();
       this.nombre.set(row?.nombre ?? '');
+      this.parentId.set(row?.parentId ?? '');
     });
   }
+
+  protected flattenTree(
+    nodes: CategoryTreeNodeDto[],
+    depth = 0,
+  ): { id: string; label: string; depth: number }[] {
+    const out: { id: string; label: string; depth: number }[] = [];
+    for (const node of nodes) {
+      out.push({ id: node.id, label: node.nombre, depth });
+      if (node.children?.length) {
+        out.push(...this.flattenTree(node.children, depth + 1));
+      }
+    }
+    return out;
+  }
+
+  protected readonly treeRows = computed(() =>
+    this.flattenTree(this.treeQuery.data() ?? []),
+  );
 
   protected openCreateModal() {
     this.editing.set(null);
     this.nombre.set('');
+    this.parentId.set('');
     this.modalOpen.set(true);
   }
 
@@ -160,6 +205,7 @@ export class CategoriasComponent {
     this.modalOpen.set(false);
     this.editing.set(null);
     this.nombre.set('');
+    this.parentId.set('');
   }
 
   protected submitForm() {
@@ -168,7 +214,10 @@ export class CategoriasComponent {
       this.notify.warning('Ingrese el nombre.');
       return;
     }
-    const body: CreateCategoryRequest = { nombre };
+    const body: CreateCategoryRequest = {
+      nombre,
+      parentId: this.parentId() || undefined,
+    };
     const current = this.editing();
     if (current) {
       this.updateMutation.mutate({ id: current.id, body });

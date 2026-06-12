@@ -10,7 +10,13 @@ import {
 import { PERMISSION_ROUTE_MAP } from '../../shared/layout/app-sidebar/sidebar-route.map';
 import { map, Observable, of, catchError } from 'rxjs';
 
-const DYNAMIC_ROOT_CODE = 'nav.usuarios_series';
+const TREE_SECTION_MATCHERS: Record<string, (item: NavItem) => boolean> = {
+  'nav.usuarios_series': (item) =>
+    item.subItems?.some((s) => s.permissionCode === 'nav.usuarios') ?? false,
+  'nav.clientes': (item) => item.name === 'Clientes',
+  'nav.productos_catalogo': (item) => item.icon === 'lucide:package-search',
+  'nav.compras': (item) => item.name === 'Compras',
+};
 
 function filterNavSubItems(
   items: NavSubItem[],
@@ -53,21 +59,39 @@ function navSubItemsFromTree(tree: PermissionMenuNodeDto): NavSubItem[] {
   return items;
 }
 
-function mergeDynamicSection(staticNav: NavItem[], tree: PermissionMenuNodeDto | null): NavItem[] {
-  if (!tree?.children?.length) return staticNav;
+function mergeDynamicSections(staticNav: NavItem[], trees: PermissionMenuNodeDto[]): NavItem[] {
+  let result = staticNav;
 
-  const dynamicSubItems = navSubItemsFromTree(tree);
-  if (dynamicSubItems.length === 0) return staticNav;
+  for (const tree of trees) {
+    const matcher = TREE_SECTION_MATCHERS[tree.code];
+    if (!matcher || !tree.children?.length) continue;
 
-  return staticNav.map((item) => {
-    const hasManagedChild = item.subItems?.some((s) => s.permissionCode?.startsWith('nav.'));
-    if (!hasManagedChild) return item;
-    return {
-      ...item,
-      name: tree.label ?? item.name,
-      subItems: dynamicSubItems,
-    };
-  });
+    const dynamicSubItems = navSubItemsFromTree(tree);
+    if (dynamicSubItems.length === 0) continue;
+
+    result = result.map((item) => {
+      if (!matcher(item)) return item;
+
+      if (tree.code === 'nav.productos_catalogo') {
+        const dynamicPaths = new Set(dynamicSubItems.map((s) => s.path));
+        const staticRest = (item.subItems ?? []).filter(
+          (s) => !s.permissionCode || !dynamicPaths.has(s.path),
+        );
+        return {
+          ...item,
+          name: tree.label ?? item.name,
+          subItems: [
+            ...dynamicSubItems,
+            ...staticRest.filter((s) => !dynamicSubItems.some((d) => d.path === s.path)),
+          ],
+        };
+      }
+
+      return { ...item, name: tree.label ?? item.name, subItems: dynamicSubItems };
+    });
+  }
+
+  return result;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -78,12 +102,9 @@ export class SidebarMenuService {
   getNavItems$(): Observable<NavItem[]> {
     const canAccess = (code?: string) => (code ? this.auth.hasPermission(code) : true);
 
-    return this.api.getPermissionMenuTree().pipe(
-      map((tree) => {
-        const merged =
-          tree?.code === DYNAMIC_ROOT_CODE
-            ? mergeDynamicSection(MAIN_NAV_ITEMS, tree)
-            : MAIN_NAV_ITEMS;
+    return this.api.getPermissionMenuTrees().pipe(
+      map((trees) => {
+        const merged = trees?.length ? mergeDynamicSections(MAIN_NAV_ITEMS, trees) : MAIN_NAV_ITEMS;
         return filterNavItems(merged, canAccess);
       }),
       catchError(() => of(filterNavItems(MAIN_NAV_ITEMS, canAccess))),
