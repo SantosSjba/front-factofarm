@@ -56,6 +56,10 @@ export class CuentasPagarComponent {
     this.payModalOpen.set(true);
   }
 
+  protected parseNum(value: unknown): number {
+    return Number(value) || 0;
+  }
+
   protected readonly payMutation = injectMutation(() => ({
     mutationFn: () => {
       const ap = this.selectedAp();

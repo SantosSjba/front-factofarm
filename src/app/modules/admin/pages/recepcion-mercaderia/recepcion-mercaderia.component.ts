@@ -1,4 +1,4 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -30,7 +30,6 @@ type ReceiptLine = {
   imports: [
     CommonModule,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -96,6 +95,10 @@ export class RecepcionMercaderiaComponent {
 
   protected updateLine(id: string, patch: Partial<ReceiptLine>) {
     this.receiptLines.update((rows) => rows.map((l) => (l.purchaseOrderItemId === id ? { ...l, ...patch } : l)));
+  }
+
+  protected parseNum(value: unknown): number {
+    return Number(value) || 0;
   }
 
   protected readonly receiveMutation = injectMutation(() => ({

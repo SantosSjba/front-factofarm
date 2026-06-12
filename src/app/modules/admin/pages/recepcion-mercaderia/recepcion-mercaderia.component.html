@@ -35,7 +35,7 @@
             type="number"
             placeholder="Cantidad"
             [value]="line.quantity"
-            (valueChange)="updateLine(line.purchaseOrderItemId, { quantity: Number($event) || 0 })"
+            (valueChange)="updateLine(line.purchaseOrderItemId, { quantity: parseNum($event) })"
           />
           @if (line.manejaLotes) {
             <app-input-field
