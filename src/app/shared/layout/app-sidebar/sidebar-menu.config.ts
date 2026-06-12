@@ -135,6 +135,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
         permissionCode: 'nav.kardex_valorizado',
       },
       { name: 'Lotes', path: '/lotes', permissionCode: 'nav.lotes' },
+      {
+        name: 'Salida venta (lotes)',
+        path: '/salida-venta-lotes',
+        permissionCode: 'nav.salida_venta_lotes',
+      },
     ],
   },
   {

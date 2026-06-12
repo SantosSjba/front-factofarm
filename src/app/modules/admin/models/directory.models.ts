@@ -114,6 +114,10 @@ export interface EstablishmentOptionDto {
   logoArchivoId?: string | null;
   sujetoIgv31556?: boolean;
   esHospital?: boolean;
+  inventoryValuationMethod?: 'PEPS' | 'PROMEDIO_PONDERADO';
+  inventoryLotAllocationMethod?: 'FEFO' | 'FIFO';
+  blockExpiredProductSales?: boolean;
+  adjustmentQtyThreshold?: string;
 }
 
 export interface EstablishmentListFiltersRequest {
@@ -125,11 +129,21 @@ export interface EstablishmentListFiltersRequest {
 
 export type EstablishmentListResponseDto = PaginatedResponseDto<EstablishmentOptionDto>;
 
+export interface DashboardInventoryAlertsDto {
+  stockBajo: number;
+  lotesVencidos: number;
+  porVencer30: number;
+  porVencer60: number;
+  porVencer90: number;
+  zonasFrioSinLogHoy: number;
+}
+
 export interface DashboardStatsDto {
   usersActive: number;
   establishmentsActive: number;
   customersActive: number;
   productsActive: number;
+  inventoryAlerts: DashboardInventoryAlertsDto;
 }
 
 export interface PermissionMenuNodeDto {
@@ -196,9 +210,50 @@ export interface CreateEstablishmentRequest {
   logoArchivoId?: string;
   sujetoIgv31556?: boolean;
   esHospital?: boolean;
+  inventoryValuationMethod?: 'PEPS' | 'PROMEDIO_PONDERADO';
+  inventoryLotAllocationMethod?: 'FEFO' | 'FIFO';
+  blockExpiredProductSales?: boolean;
+  adjustmentQtyThreshold?: number;
 }
 
 export type UpdateEstablishmentRequest = Partial<CreateEstablishmentRequest>;
+
+export type SaleLotAllocationMode = 'AUTO' | 'MANUAL';
+
+export interface SaleLotAllocationPreviewRequest {
+  productId: string;
+  warehouseId: string;
+  quantity: number;
+  mode?: SaleLotAllocationMode;
+  manualLots?: { lotCode: string; quantity: number }[];
+}
+
+export interface SaleLotAllocationLineDto {
+  lotId: string;
+  codigoLote: string;
+  cantidad: string;
+  fechaVencimiento: string | null;
+  vencido: boolean;
+}
+
+export interface SaleLotAllocationPreviewDto {
+  mode: SaleLotAllocationMode;
+  quantity: string;
+  metodoAsignacion: 'FEFO' | 'FIFO';
+  blockExpiredProductSales: boolean;
+  lotesDisponibles: {
+    codigoLote: string;
+    stock: string;
+    fechaVencimiento: string | null;
+    vencido: boolean;
+  }[];
+  asignacion: SaleLotAllocationLineDto[];
+}
+
+export interface DispatchSaleStockRequest extends SaleLotAllocationPreviewRequest {
+  reference?: string;
+  comment?: string;
+}
 
 export interface EstablishmentSeriesItemDto {
   id: string;
@@ -1266,3 +1321,205 @@ export interface InventoryCreateOutboundRequest {
 }
 
 export type InventoryImportMode = 'LOTES' | 'SERIES';
+
+export interface InventoryLotListItemDto {
+  id: string;
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  categoria: string;
+  almacen: string;
+  establecimiento: string;
+  codigoLote: string;
+  stock: string;
+  costoUnitario: string | null;
+  fechaVencimiento: string | null;
+  stockMinimo: number;
+}
+
+export type InventoryLotListResponseDto = PaginatedResponseDto<InventoryLotListItemDto>;
+
+export interface InventoryLotListFiltersRequest {
+  search?: string;
+  field?: 'all' | 'producto' | 'lote' | 'almacen';
+  warehouseId?: string;
+  establishmentId?: string;
+  categoryId?: string;
+  expiryFilter?: 'all' | 'expired' | '30' | '60' | '90';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface KardexLineDto {
+  id: string;
+  fecha: string;
+  tipo: string;
+  motivo: string;
+  almacen: string;
+  lote: string | null;
+  cantidad: string;
+  saldo: string;
+  costoUnitario: string | null;
+  valorLinea: string;
+  referencia: string | null;
+  comentario: string | null;
+  usuario: string | null;
+}
+
+export type KardexListResponseDto = PaginatedResponseDto<KardexLineDto>;
+
+export interface KardexFiltersRequest {
+  productId: string;
+  warehouseId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface InventoryTransferItemDto {
+  id: string;
+  cantidad: string;
+  codigoLote: string | null;
+  product: { id: string; nombre: string; codigoInterno: string | null };
+}
+
+export interface InventoryTransferDto {
+  id: string;
+  estado: 'BORRADOR' | 'EN_TRANSITO' | 'RECIBIDO' | 'ANULADO';
+  guiaNumero: string | null;
+  comentario: string | null;
+  fechaEnvio: string | null;
+  fechaRecepcion: string | null;
+  createdAt: string;
+  fromWarehouse: { id: string; nombre: string };
+  toWarehouse: { id: string; nombre: string };
+  user: { nombre: string } | null;
+  items: InventoryTransferItemDto[];
+}
+
+export type InventoryTransferListResponseDto = PaginatedResponseDto<InventoryTransferDto>;
+
+export interface InventoryTransferListFiltersRequest {
+  estado?: 'BORRADOR' | 'EN_TRANSITO' | 'RECIBIDO' | 'ANULADO';
+  warehouseId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CreateInventoryTransferRequest {
+  fromWarehouseId: string;
+  toWarehouseId: string;
+  guiaNumero?: string;
+  comentario?: string;
+  items: {
+    productId: string;
+    codigoLote?: string;
+    cantidad: number;
+    costoUnitario?: number;
+  }[];
+}
+
+export interface CreateInventoryAdjustmentRequest {
+  productId: string;
+  warehouseId: string;
+  countedQuantity: number;
+  lotCode?: string;
+  reason: string;
+}
+
+export interface InventoryAdjustmentResultDto {
+  ok: boolean;
+  applied?: boolean;
+  pendingApproval?: boolean;
+  pendingId?: string;
+  message: string;
+}
+
+export interface InventoryPendingAdjustmentDto {
+  id: string;
+  cantidadAjuste: string;
+  codigoLote: string | null;
+  motivo: string;
+  createdAt: string;
+  product: { id: string; nombre: string; codigoInterno: string | null };
+  warehouse: { id: string; nombre: string };
+  requestedBy: { id: string; nombre: string };
+}
+
+export interface InventoryValuationRowDto {
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  almacen: string;
+  establecimiento: string;
+  metodoValoracion: 'PEPS' | 'PROMEDIO_PONDERADO';
+  stock: string;
+  costoUnitario: string;
+  valorTotal: string;
+}
+
+export interface InventoryValuationReportResponseDto extends PaginatedResponseDto<InventoryValuationRowDto> {
+  valorTotalPagina: string;
+}
+
+export interface InventoryValuationFiltersRequest {
+  warehouseId?: string;
+  establishmentId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface InventoryPhysicalCountListItemDto {
+  id: string;
+  estado: string;
+  fecha: string;
+  comentario: string | null;
+  almacen: string;
+  usuario: string | null;
+  itemsCount: number;
+}
+
+export interface InventoryPhysicalCountDetailDto {
+  id: string;
+  estado: string;
+  comentario: string | null;
+  almacen: string;
+  warehouseId: string;
+  usuario: string | null;
+  items: {
+    id: string;
+    productId: string;
+    producto: string;
+    codigoInterno: string | null;
+    codigoLote: string | null;
+    stockSistema: string;
+    stockContado: string;
+    diferencia: string;
+  }[];
+}
+
+export interface CreatePhysicalCountRequest {
+  warehouseId: string;
+  comentario?: string;
+}
+
+export interface UpsertPhysicalCountItemRequest {
+  productId: string;
+  codigoLote?: string;
+  stockContado: number;
+}
+
+export interface WarehouseZoneDto {
+  id: string;
+  nombre: string;
+  tipo: string;
+  activo: boolean;
+  warehouse?: { id: string; nombre: string };
+}
+
+export interface CreateWarehouseZoneRequest {
+  warehouseId: string;
+  nombre: string;
+  tipo: 'RECEPCION' | 'CUARENTENA' | 'LIBERADO' | 'DEVOLUCION' | 'CADENA_FRIO' | 'OTRO';
+}

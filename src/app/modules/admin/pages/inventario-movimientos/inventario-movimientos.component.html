@@ -7,14 +7,8 @@
     Inventario
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <app-button size="sm" variant="outline" (btnClick)="onDevAction('Imp. Ajuste de stock')">
-      <span>Imp. Ajuste de stock</span>
-    </app-button>
-    <app-button size="sm" variant="outline" (btnClick)="onDevAction('Reporte Aj. stock')">
-      <span>Reporte Aj. stock</span>
-    </app-button>
-    <app-button size="sm" variant="outline" (btnClick)="onDevAction('Reporte')">
-      <span>Reporte</span>
+    <app-button size="sm" variant="outline" (btnClick)="openPendingAdjustmentsModal()">
+      <span>Ajustes pendientes</span>
     </app-button>
     <app-table-dropdown>
       <div dropdown-button>
@@ -91,10 +85,10 @@
                 <div class="inline-flex gap-2">
                   <button
                     type="button"
-                    class="rounded-lg bg-cyan-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-cyan-600"
-                    (click)="onDevAction('Trasladar')"
+                    class="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
+                    (click)="openAdjustmentModal(row)"
                   >
-                    Trasladar
+                    Ajustar
                   </button>
                   <button
                     type="button"
@@ -439,5 +433,124 @@
     <app-button [disabled]="inboundPending()" (btnClick)="processInbound()">
       {{ inboundPending() ? 'Procesando...' : 'Aceptar' }}
     </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="adjustmentOpen()" (close)="closeAdjustmentModal()" className="w-full max-w-3xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajuste de stock</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-6">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="md:col-span-2">
+        <app-label>Producto</app-label>
+        <app-input-field
+          className="mt-2"
+          [value]="(adjustmentProduct()?.producto || '') + (adjustmentProduct()?.codigoInterno ? ' | ' + adjustmentProduct()?.codigoInterno : '')"
+          [disabled]="true"
+        />
+      </div>
+      <div>
+        <app-label>Stock sistema</app-label>
+        <app-input-field className="mt-2" [value]="formatStock(adjustmentProduct()?.stock || '0')" [disabled]="true" />
+      </div>
+      <div>
+        <app-label>Cantidad contada</app-label>
+        <app-input-field
+          className="mt-2"
+          type="number"
+          [disabled]="adjustmentPending()"
+          [value]="adjustmentCountedQty()"
+          (valueChange)="adjustmentCountedQty.set(+$event || 0)"
+        />
+      </div>
+      <div class="md:col-span-2">
+        <app-label>Almacén</app-label>
+        <app-form-select
+          className="mt-2"
+          [value]="adjustmentWarehouseId()"
+          [options]="warehouseOptions()"
+          placeholder="Seleccionar"
+          [disabled]="adjustmentPending()"
+          (valueChange)="adjustmentWarehouseId.set($event)"
+        />
+      </div>
+      <div class="md:col-span-2">
+        <app-label>Código lote (opcional)</app-label>
+        <app-input-field
+          className="mt-2"
+          [disabled]="adjustmentPending()"
+          [value]="adjustmentLotCode()"
+          (valueChange)="adjustmentLotCode.set($event + '')"
+        />
+      </div>
+      <div class="md:col-span-2">
+        <app-label>Motivo</app-label>
+        <textarea
+          rows="3"
+          class="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          [disabled]="adjustmentPending()"
+          [value]="adjustmentReason()"
+          (input)="onAdjustmentReasonInput($event)"
+        ></textarea>
+      </div>
+      <p class="md:col-span-2 text-theme-xs text-gray-500">
+        Si la diferencia supera el umbral del establecimiento, el ajuste requerirá aprobación de otro usuario.
+      </p>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="adjustmentPending()" (btnClick)="closeAdjustmentModal()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="adjustmentPending()" (btnClick)="processAdjustment()">
+      {{ adjustmentPending() ? 'Procesando...' : 'Registrar ajuste' }}
+    </app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="pendingOpen()" (close)="closePendingAdjustmentsModal()" className="w-full max-w-5xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajustes pendientes de aprobación</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-6">
+    @if (pendingAdjustmentsQuery.isPending()) {
+      <p class="text-theme-sm text-gray-500">Cargando…</p>
+    } @else if (pendingRows().length === 0) {
+      <p class="text-theme-sm text-gray-500">No hay ajustes pendientes.</p>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-theme-sm">
+          <thead class="border-b border-gray-100">
+            <tr>
+              <th class="px-3 py-2 text-theme-xs text-gray-500">Producto</th>
+              <th class="px-3 py-2 text-theme-xs text-gray-500">Almacén</th>
+              <th class="px-3 py-2 text-theme-xs text-gray-500">Delta</th>
+              <th class="px-3 py-2 text-theme-xs text-gray-500">Solicitó</th>
+              <th class="px-3 py-2 text-end text-theme-xs text-gray-500">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            @for (row of pendingRows(); track row.id) {
+              <tr>
+                <td class="px-3 py-2">{{ row.product.nombre }}</td>
+                <td class="px-3 py-2">{{ row.warehouse.nombre }}</td>
+                <td class="px-3 py-2">{{ formatAdjustmentQty(row.cantidadAjuste) }}</td>
+                <td class="px-3 py-2">{{ row.requestedBy.nombre }}</td>
+                <td class="px-3 py-2 text-end">
+                  <div class="inline-flex gap-2">
+                    <app-button size="sm" (btnClick)="approvePending(row)">Aprobar</app-button>
+                    <app-button size="sm" variant="outline" (btnClick)="rejectPending(row)">Rechazar</app-button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="closePendingAdjustmentsModal()">Cerrar</app-button>
   </div>
 </app-modal>

@@ -19,11 +19,13 @@ import { IconComponent } from '../../../../shared/components/ui/icon/icon.compon
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import type {
+  CreateInventoryAdjustmentRequest,
   InventoryCreateInboundRequest,
   InventoryCreateOutboundRequest,
   InventoryImportMode,
   InventoryMovementListFiltersRequest,
   InventoryMovementListItemDto,
+  InventoryPendingAdjustmentDto,
 } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
@@ -142,6 +144,13 @@ export class InventarioMovimientosComponent {
   protected readonly outboundRegisteredAt = signal(this.nowForDatetimeLocal());
   protected readonly outboundTransferReasonId = signal('');
   protected readonly outboundComment = signal('');
+  protected readonly adjustmentOpen = signal(false);
+  protected readonly adjustmentProduct = signal<InventoryMovementListItemDto | null>(null);
+  protected readonly adjustmentWarehouseId = signal('');
+  protected readonly adjustmentCountedQty = signal<number>(0);
+  protected readonly adjustmentLotCode = signal('');
+  protected readonly adjustmentReason = signal('');
+  protected readonly pendingOpen = signal(false);
 
   protected readonly importLotsMutation = injectMutation(() => ({
     mutationFn: ({ warehouseId, file }: { warehouseId: string; file: File }) =>
@@ -236,6 +245,46 @@ export class InventarioMovimientosComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la salida')),
   }));
   protected readonly outboundPending = computed(() => this.outboundMutation.isPending());
+
+  protected readonly adjustmentMutation = injectMutation(() => ({
+    mutationFn: (body: CreateInventoryAdjustmentRequest) =>
+      firstValueFrom(this.api.createInventoryAdjustment(body)),
+    onSuccess: (result) => {
+      this.notify.success(result.message);
+      this.closeAdjustmentModal(true);
+      void this.queryClient.invalidateQueries({ queryKey: inventoryMovementQueryKeys.all });
+      void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'adjustments', 'pending'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el ajuste')),
+  }));
+  protected readonly adjustmentPending = computed(() => this.adjustmentMutation.isPending());
+
+  protected readonly pendingAdjustmentsQuery = injectQuery(() => ({
+    queryKey: ['inventory', 'adjustments', 'pending'] as const,
+    enabled: this.pendingOpen(),
+    queryFn: () => firstValueFrom(this.api.listPendingInventoryAdjustments()),
+  }));
+
+  protected readonly approveAdjustmentMutation = injectMutation(() => ({
+    mutationFn: (id: string) => firstValueFrom(this.api.approveInventoryAdjustment(id)),
+    onSuccess: (res) => {
+      this.notify.success(res.message);
+      void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'adjustments', 'pending'] });
+      void this.queryClient.invalidateQueries({ queryKey: inventoryMovementQueryKeys.all });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo aprobar')),
+  }));
+
+  protected readonly rejectAdjustmentMutation = injectMutation(() => ({
+    mutationFn: (id: string) => firstValueFrom(this.api.rejectInventoryAdjustment(id)),
+    onSuccess: (res) => {
+      this.notify.success(res.message);
+      void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'adjustments', 'pending'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo rechazar')),
+  }));
+
+  protected readonly pendingRows = computed(() => this.pendingAdjustmentsQuery.data() ?? []);
 
   protected refetchRows() {
     void this.listQuery.refetch();
@@ -490,8 +539,78 @@ export class InventarioMovimientosComponent {
     return parsed.toLocaleString('es-PE', { maximumFractionDigits: 2 });
   }
 
-  protected onDevAction(message: string) {
-    this.notify.info(`${message}: En desarrollo`);
+  protected openAdjustmentModal(row: InventoryMovementListItemDto) {
+    this.adjustmentProduct.set(row);
+    this.adjustmentWarehouseId.set(this.findWarehouseIdByName(row.almacen));
+    this.adjustmentCountedQty.set(Number.parseFloat(row.stock) || 0);
+    this.adjustmentLotCode.set('');
+    this.adjustmentReason.set('');
+    this.adjustmentOpen.set(true);
+  }
+
+  protected closeAdjustmentModal(force = false) {
+    if (!force && this.adjustmentPending()) return;
+    this.adjustmentOpen.set(false);
+    this.adjustmentProduct.set(null);
+  }
+
+  protected processAdjustment() {
+    const product = this.adjustmentProduct();
+    const warehouseId = this.adjustmentWarehouseId();
+    const countedQuantity = this.adjustmentCountedQty();
+    const reason = this.adjustmentReason().trim();
+    if (!product) {
+      this.notify.warning('Seleccione un producto.');
+      return;
+    }
+    if (!warehouseId) {
+      this.notify.warning('Seleccione un almacén.');
+      return;
+    }
+    if (!reason) {
+      this.notify.warning('Indique el motivo del ajuste.');
+      return;
+    }
+    if (!Number.isFinite(countedQuantity) || countedQuantity < 0) {
+      this.notify.warning('La cantidad contada debe ser válida.');
+      return;
+    }
+    this.adjustmentMutation.mutate({
+      productId: product.productId,
+      warehouseId,
+      countedQuantity,
+      lotCode: this.adjustmentLotCode().trim() || undefined,
+      reason,
+    });
+  }
+
+  protected onAdjustmentReasonInput(event: Event) {
+    const target = event.target as HTMLTextAreaElement | null;
+    this.adjustmentReason.set(target?.value ?? '');
+  }
+
+  protected openPendingAdjustmentsModal() {
+    this.pendingOpen.set(true);
+    void this.pendingAdjustmentsQuery.refetch();
+  }
+
+  protected closePendingAdjustmentsModal() {
+    this.pendingOpen.set(false);
+  }
+
+  protected approvePending(row: InventoryPendingAdjustmentDto) {
+    this.approveAdjustmentMutation.mutate(row.id);
+  }
+
+  protected rejectPending(row: InventoryPendingAdjustmentDto) {
+    this.rejectAdjustmentMutation.mutate(row.id);
+  }
+
+  protected formatAdjustmentQty(value: string) {
+    const parsed = Number.parseFloat(value || '0');
+    if (!Number.isFinite(parsed)) return value;
+    const sign = parsed > 0 ? '+' : '';
+    return `${sign}${parsed.toLocaleString('es-PE', { maximumFractionDigits: 4 })}`;
   }
 
   private findWarehouseIdByName(name: string): string {

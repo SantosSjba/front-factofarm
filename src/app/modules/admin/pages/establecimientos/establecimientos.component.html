@@ -286,6 +286,46 @@
           (checkedChange)="esHospital.set($event)"
         />
       </div>
+
+      <div class="md:col-span-2 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <h4 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y BPA</h4>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <app-label>Valorización de stock</app-label>
+            <app-form-select
+              className="mt-2"
+              [value]="inventoryValuationMethod()"
+              [options]="valuationMethodOptions"
+              (valueChange)="inventoryValuationMethod.set($any($event))"
+            />
+          </div>
+          <div>
+            <app-label>Asignación de lotes en ventas</app-label>
+            <app-form-select
+              className="mt-2"
+              [value]="inventoryLotAllocationMethod()"
+              [options]="lotAllocationOptions"
+              (valueChange)="inventoryLotAllocationMethod.set($any($event))"
+            />
+          </div>
+          <div>
+            <app-label>Umbral ajuste (2da autorización)</app-label>
+            <app-input-field
+              className="mt-2"
+              type="number"
+              [value]="adjustmentQtyThreshold()"
+              (valueChange)="adjustmentQtyThreshold.set(+$event || 0)"
+            />
+          </div>
+          <div class="flex items-end">
+            <app-checkbox
+              label="Bloquear venta de lotes vencidos"
+              [checked]="blockExpiredProductSales()"
+              (checkedChange)="blockExpiredProductSales.set($event)"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

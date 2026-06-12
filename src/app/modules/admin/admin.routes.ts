@@ -288,6 +288,15 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Lotes',
       },
       {
+        path: 'salida-venta-lotes',
+        ...guarded(P.salidaVentaLotes),
+        loadComponent: () =>
+          import('./pages/salida-venta-lotes/salida-venta-lotes.component').then(
+            (m) => m.SalidaVentaLotesComponent,
+          ),
+        title: 'FactoFarm | Salida venta (lotes)',
+      },
+      {
         path: 'retenciones',
         ...guarded(P.retenciones),
         loadComponent: () =>

@@ -1,0 +1,147 @@
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
+</div>
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md">
+    Salida de venta con lotes
+  </h1>
+</app-page-toolbar>
+
+<p class="mb-4 text-theme-sm text-gray-500">
+  Simula y registra el despacho de stock para venta con asignación automática FEFO/FIFO o selección manual de lotes.
+  Respeta la configuración del establecimiento (bloqueo de vencidos).
+</p>
+
+<app-component-card title="Datos de la salida" className="mb-6">
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div>
+      <app-label>Almacén</app-label>
+      <app-form-select
+        className="mt-2"
+        [value]="warehouseId()"
+        [options]="warehouseOptions()"
+        (valueChange)="warehouseId.set($event)"
+      />
+    </div>
+    <div>
+      <app-label>Cantidad total</app-label>
+      <app-input-field
+        className="mt-2"
+        type="number"
+        [value]="quantity()"
+        (valueChange)="quantity.set(+$event || 0)"
+      />
+    </div>
+    <div class="md:col-span-2">
+      <app-label>Producto</app-label>
+      @if (productId()) {
+        <p class="mt-2 text-theme-sm text-brand-600">{{ productLabel() }}</p>
+      } @else {
+        <div class="mt-2 flex gap-2">
+          <app-input-field
+            className="flex-1"
+            placeholder="Buscar por nombre o código"
+            [value]="productSearch()"
+            (valueChange)="productSearch.set($event + '')"
+          />
+          <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
+        </div>
+        @if (productOptions().length > 0) {
+          <div class="mt-2 max-h-40 overflow-auto rounded border border-gray-100">
+            @for (p of productOptions(); track p.id) {
+              <button
+                type="button"
+                class="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5"
+                (click)="selectProduct(p)"
+              >
+                {{ p.nombre }} ({{ p.codigoInterno ?? 'sin código' }})
+              </button>
+            }
+          </div>
+        }
+      }
+    </div>
+    <div>
+      <app-label>Modo de asignación</app-label>
+      <app-form-select
+        className="mt-2"
+        [value]="mode()"
+        [options]="[
+          { value: 'AUTO', label: 'Automático (FEFO/FIFO del establecimiento)' },
+          { value: 'MANUAL', label: 'Manual (elegir lotes)' },
+        ]"
+        (valueChange)="setMode($event)"
+      />
+    </div>
+    <div>
+      <app-label>Referencia venta</app-label>
+      <app-input-field className="mt-2" [value]="reference()" (valueChange)="reference.set($event + '')" />
+    </div>
+    <div class="md:col-span-2">
+      <app-label>Comentario</app-label>
+      <textarea
+        rows="2"
+        class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+        [value]="comment()"
+        (input)="onCommentInput($event)"
+      ></textarea>
+    </div>
+  </div>
+
+  @if (mode() === 'MANUAL') {
+    <div class="mt-6 rounded-lg border border-gray-100 p-4 dark:border-gray-800">
+      <p class="mb-3 text-sm font-medium">Lotes manuales</p>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <app-input-field placeholder="Código lote" [value]="manualLotCode()" (valueChange)="manualLotCode.set($event + '')" />
+        <app-input-field type="number" placeholder="Cantidad" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event || 0)" />
+        <app-button size="sm" variant="outline" (btnClick)="addManualLine()">Agregar lote</app-button>
+      </div>
+      @if (manualLines().length > 0) {
+        <ul class="mt-3 space-y-1 text-theme-sm">
+          @for (line of manualLines(); track $index; let i = $index) {
+            <li class="flex justify-between">
+              <span>{{ line.lotCode }} · {{ line.quantity }}</span>
+              <button type="button" class="text-error-500" (click)="removeManualLine(i)">Quitar</button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</app-component-card>
+
+@if (preview()) {
+  <app-component-card title="Previsualización" className="mb-6 overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+    <p class="border-b border-gray-100 px-4 py-3 text-theme-sm text-gray-600 dark:border-gray-800">
+      Método: <strong>{{ preview()!.metodoAsignacion }}</strong>
+      · Bloqueo vencidos: <strong>{{ preview()!.blockExpiredProductSales ? 'Sí' : 'No' }}</strong>
+    </p>
+    <table class="min-w-full text-left">
+      <thead class="border-b border-gray-100">
+        <tr>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Lote</th>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Cantidad</th>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Vencimiento</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of allocationRows(); track row.lotId) {
+          <tr class="border-b border-gray-50">
+            <td class="px-4 py-3 text-theme-sm">{{ row.codigoLote }}</td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.cantidad }}</td>
+            <td class="px-4 py-3 text-theme-sm">
+              {{ row.fechaVencimiento ? (row.fechaVencimiento | date: 'yyyy-MM-dd') : '—' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </app-component-card>
+}
+
+<div *appHasPermission="'inventory.write'">
+  <app-button [disabled]="dispatchMutation.isPending()" (btnClick)="dispatch()">
+    {{ dispatchMutation.isPending() ? 'Despachando…' : 'Registrar salida de venta' }}
+  </app-button>
+</div>

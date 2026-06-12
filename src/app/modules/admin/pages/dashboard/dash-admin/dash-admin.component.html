@@ -97,3 +97,31 @@
     </div>
   </app-component-card>
 </div>
+
+@if (statsQuery.data()?.inventoryAlerts; as alerts) {
+  <div class="mt-8 mb-4">
+    <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Alertas de inventario</h2>
+    <p class="mt-1 text-theme-sm text-gray-500">Stock, vencimientos y cadena de frío (BPA)</p>
+  </div>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-6">
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <p class="text-theme-sm text-gray-500">Stock bajo mínimo</p>
+      <p class="mt-1 text-title-sm font-bold text-warning-600">{{ formatCount(alerts.stockBajo) }}</p>
+    </app-component-card>
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <p class="text-theme-sm text-gray-500">Lotes vencidos</p>
+      <p class="mt-1 text-title-sm font-bold text-error-600">{{ formatCount(alerts.lotesVencidos) }}</p>
+    </app-component-card>
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <p class="text-theme-sm text-gray-500">Por vencer (30 / 60 / 90 días)</p>
+      <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
+        {{ formatCount(alerts.porVencer30) }} / {{ formatCount(alerts.porVencer60) }} /
+        {{ formatCount(alerts.porVencer90) }}
+      </p>
+    </app-component-card>
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <p class="text-theme-sm text-gray-500">Zonas frío sin registro hoy</p>
+      <p class="mt-1 text-title-sm font-bold text-blue-light-600">{{ formatCount(alerts.zonasFrioSinLogHoy) }}</p>
+    </app-component-card>
+  </div>
+}

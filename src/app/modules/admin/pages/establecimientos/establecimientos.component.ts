@@ -137,6 +137,19 @@ export class EstablecimientosComponent {
   protected readonly clienteDefault = signal('');
   protected readonly sujetoIgv31556 = signal(false);
   protected readonly esHospital = signal(false);
+  protected readonly inventoryValuationMethod = signal<'PEPS' | 'PROMEDIO_PONDERADO'>('PEPS');
+  protected readonly inventoryLotAllocationMethod = signal<'FEFO' | 'FIFO'>('FEFO');
+  protected readonly blockExpiredProductSales = signal(true);
+  protected readonly adjustmentQtyThreshold = signal(50);
+
+  protected readonly valuationMethodOptions = [
+    { value: 'PEPS', label: 'PEPS (primeras entradas, primeras salidas)' },
+    { value: 'PROMEDIO_PONDERADO', label: 'Promedio ponderado' },
+  ];
+  protected readonly lotAllocationOptions = [
+    { value: 'FEFO', label: 'FEFO (primero por vencer)' },
+    { value: 'FIFO', label: 'FIFO (primero en ingresar)' },
+  ];
 
   protected readonly deleting = signal<EstablishmentOptionDto | null>(null);
   protected readonly deleteConfirmOpen = signal(false);
@@ -284,6 +297,12 @@ export class EstablecimientosComponent {
         this.clienteDefault.set(current.clienteDefault ?? '');
         this.sujetoIgv31556.set(current.sujetoIgv31556 ?? false);
         this.esHospital.set(current.esHospital ?? false);
+        this.inventoryValuationMethod.set(current.inventoryValuationMethod ?? 'PEPS');
+        this.inventoryLotAllocationMethod.set(current.inventoryLotAllocationMethod ?? 'FEFO');
+        this.blockExpiredProductSales.set(current.blockExpiredProductSales ?? true);
+        this.adjustmentQtyThreshold.set(
+          Number.parseFloat(current.adjustmentQtyThreshold ?? '50') || 50,
+        );
         return;
       }
       this.resetForm();
@@ -331,6 +350,10 @@ export class EstablecimientosComponent {
       clienteDefault: this.norm(this.clienteDefault()),
       sujetoIgv31556: this.sujetoIgv31556(),
       esHospital: this.esHospital(),
+      inventoryValuationMethod: this.inventoryValuationMethod(),
+      inventoryLotAllocationMethod: this.inventoryLotAllocationMethod(),
+      blockExpiredProductSales: this.blockExpiredProductSales(),
+      adjustmentQtyThreshold: this.adjustmentQtyThreshold(),
       activo: true,
     };
 
@@ -471,6 +494,10 @@ export class EstablecimientosComponent {
     this.clienteDefault.set('');
     this.sujetoIgv31556.set(false);
     this.esHospital.set(false);
+    this.inventoryValuationMethod.set('PEPS');
+    this.inventoryLotAllocationMethod.set('FEFO');
+    this.blockExpiredProductSales.set(true);
+    this.adjustmentQtyThreshold.set(50);
   }
 
   private norm(value: string): string | undefined {

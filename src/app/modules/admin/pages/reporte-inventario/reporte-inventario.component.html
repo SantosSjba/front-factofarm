@@ -1,4 +1,256 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Reporte Inventario</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
+﻿<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 </div>
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md">
+    Reporte de inventario
+  </h1>
+</app-page-toolbar>
+
+<div class="mb-4 flex flex-wrap gap-2">
+  <app-button size="sm" [variant]="activeTab() === 'valorizacion' ? 'primary' : 'outline'" (btnClick)="setTab('valorizacion')">
+    Valorización
+  </app-button>
+  <app-button size="sm" [variant]="activeTab() === 'conteo' ? 'primary' : 'outline'" (btnClick)="setTab('conteo')">
+    Conteo físico
+  </app-button>
+  <app-button size="sm" [variant]="activeTab() === 'zonas' ? 'primary' : 'outline'" (btnClick)="setTab('zonas')">
+    Zonas BPA
+  </app-button>
+</div>
+
+@if (activeTab() === 'valorizacion') {
+  <div class="mb-4 max-w-md">
+    <app-label>Almacén</app-label>
+    <app-form-select
+      className="mt-2"
+      [value]="warehouseId()"
+      [options]="warehouseOptions()"
+      (valueChange)="onWarehouseChange($event)"
+    />
+  </div>
+
+  <app-component-card title="Inventario valorizado (PEPS / promedio)" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100">
+          <tr>
+            <th class="px-4 py-3 text-theme-xs text-gray-500">Producto</th>
+            <th class="px-4 py-3 text-theme-xs text-gray-500">Almacén</th>
+            <th class="px-4 py-3 text-theme-xs text-gray-500">Método</th>
+            <th class="px-4 py-3 text-theme-xs text-gray-500">Stock</th>
+            <th class="px-4 py-3 text-theme-xs text-gray-500">Costo unit.</th>
+            <th class="px-4 py-3 text-theme-xs text-gray-500">Valor total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          @if (valuationQuery.isPending()) {
+            <tr><td colspan="6" class="px-4 py-6 text-center text-theme-sm">Cargando…</td></tr>
+          } @else if (valuationRows().length === 0) {
+            <tr><td colspan="6" class="px-4 py-6 text-center text-theme-sm">Sin stock valorizable.</td></tr>
+          } @else {
+            @for (row of valuationRows(); track row.productId + row.almacen) {
+              <tr>
+                <td class="px-4 py-3 text-theme-sm">{{ row.producto }}</td>
+                <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
+                <td class="px-4 py-3 text-theme-sm">{{ row.metodoValoracion }}</td>
+                <td class="px-4 py-3 text-theme-sm">{{ formatQty(row.stock) }}</td>
+                <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.costoUnitario) }}</td>
+                <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.valorTotal) }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="border-t border-gray-100 px-4 py-3 text-theme-sm font-medium">
+      Total página: {{ formatMoney(valorTotalPagina()) }}
+    </p>
+  </app-component-card>
+
+  <app-pagination
+    class="mt-4"
+    [currentPage]="valuationPage()"
+    [totalItems]="valuationTotal()"
+    [pageSize]="itemsPerPage"
+    (currentPageChange)="onValuationPageChange($event)"
+  />
+}
+
+@if (activeTab() === 'conteo') {
+  <div class="mb-6 grid grid-cols-1 gap-4 rounded-xl border border-gray-100 p-4 md:grid-cols-3 dark:border-gray-800">
+    <div>
+      <app-label>Almacén a contar</app-label>
+      <app-form-select
+        className="mt-2"
+        [value]="countWarehouseId()"
+        [options]="warehouseOptions()"
+        (valueChange)="countWarehouseId.set($event)"
+      />
+    </div>
+    <div class="md:col-span-2">
+      <app-label>Comentario</app-label>
+      <app-input-field className="mt-2" [value]="countComment()" (valueChange)="countComment.set($event + '')" />
+    </div>
+    <div class="md:col-span-3">
+      <app-button size="sm" (btnClick)="startCount()">Iniciar conteo físico</app-button>
+    </div>
+  </div>
+
+  @if (activeCountId() && countDetail()) {
+    <app-component-card [title]="'Conteo en curso — ' + countDetail()!.almacen" className="mb-6">
+      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+        @if (!countProductId()) {
+          <div class="md:col-span-2 flex gap-2">
+            <app-input-field
+              className="flex-1"
+              placeholder="Buscar producto"
+              [value]="countProductSearch()"
+              (valueChange)="countProductSearch.set($event + '')"
+            />
+            <app-button size="sm" variant="outline" (btnClick)="searchCountProducts()">Buscar</app-button>
+          </div>
+        } @else {
+          <p class="md:col-span-2 text-theme-sm text-brand-600">{{ countProductLabel() }}</p>
+        }
+        <app-input-field placeholder="Lote" [value]="countLotCode()" (valueChange)="countLotCode.set($event + '')" />
+        <app-input-field type="number" placeholder="Cant. contada" [value]="countQty()" (valueChange)="countQty.set(+$event || 0)" />
+        <app-button size="sm" (btnClick)="addCountLine()">Registrar línea</app-button>
+      </div>
+
+      @if (countProductOptions().length > 0) {
+        <div class="mb-4 max-h-32 overflow-auto rounded border">
+          @for (p of countProductOptions(); track p.id) {
+            <button type="button" class="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50" (click)="selectCountProduct(p)">
+              {{ p.nombre }}
+            </button>
+          }
+        </div>
+      }
+
+      <table class="min-w-full text-left text-theme-sm">
+        <thead>
+          <tr class="border-b">
+            <th class="py-2">Producto</th>
+            <th class="py-2">Lote</th>
+            <th class="py-2">Sistema</th>
+            <th class="py-2">Contado</th>
+            <th class="py-2">Diferencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of countDetail()!.items; track item.id) {
+            <tr class="border-b border-gray-50">
+              <td class="py-2">{{ item.producto }}</td>
+              <td class="py-2">{{ item.codigoLote || '—' }}</td>
+              <td class="py-2">{{ formatQty(item.stockSistema) }}</td>
+              <td class="py-2">{{ formatQty(item.stockContado) }}</td>
+              <td class="py-2">{{ formatQty(item.diferencia) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="mt-4">
+        <app-button (btnClick)="finalizeCount()">Finalizar y generar ajustes</app-button>
+      </div>
+    </app-component-card>
+  }
+
+  <app-component-card title="Historial de conteos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+    <table class="min-w-full text-left">
+      <thead class="border-b border-gray-100">
+        <tr>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Fecha</th>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Almacén</th>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Estado</th>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Líneas</th>
+          <th class="px-4 py-3 text-theme-xs text-gray-500">Usuario</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of countRows(); track row.id) {
+          <tr class="border-b border-gray-50">
+            <td class="px-4 py-3 text-theme-sm">{{ row.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
+            <td class="px-4 py-3 text-theme-sm">
+              <button
+                type="button"
+                class="text-brand-600 underline"
+                [disabled]="row.estado !== 'EN_PROCESO'"
+                (click)="openCount(row)"
+              >
+                {{ row.estado }}
+              </button>
+            </td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.itemsCount }}</td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.usuario || '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </app-component-card>
+
+  <app-pagination
+    class="mt-4"
+    [currentPage]="countsPage()"
+    [totalItems]="countsTotal()"
+    [pageSize]="itemsPerPage"
+    (currentPageChange)="onCountsPageChange($event)"
+  />
+}
+
+@if (activeTab() === 'zonas') {
+  <div class="mb-4 grid max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
+    <div>
+      <app-label>Almacén</app-label>
+      <app-form-select
+        className="mt-2"
+        [value]="zoneWarehouseId()"
+        [options]="warehouseOptions()"
+        (valueChange)="zoneWarehouseId.set($event)"
+      />
+    </div>
+    <div>
+      <app-label>Nueva zona</app-label>
+      <app-input-field className="mt-2" [value]="newZoneName()" (valueChange)="newZoneName.set($event + '')" />
+    </div>
+    <div>
+      <app-label>Tipo BPA</app-label>
+      <app-form-select
+        className="mt-2"
+        [value]="newZoneTipo()"
+        [options]="zoneTypeOptions"
+        (valueChange)="newZoneTipo.set($any($event))"
+      />
+    </div>
+    <div class="md:col-span-3">
+      <app-button size="sm" (btnClick)="createZone()">Agregar zona</app-button>
+    </div>
+  </div>
+
+  <app-component-card title="Mapa de zonas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+    @if (!zoneWarehouseId()) {
+      <p class="px-4 py-6 text-theme-sm text-gray-500">Seleccione un almacén para ver sus zonas.</p>
+    } @else if (zonesQuery.isPending()) {
+      <p class="px-4 py-6 text-theme-sm">Cargando…</p>
+    } @else if (zoneRows().length === 0) {
+      <p class="px-4 py-6 text-theme-sm text-gray-500">Sin zonas registradas.</p>
+    } @else {
+      <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (zone of zoneRows(); track zone.id) {
+          <div
+            class="rounded-xl border border-gray-200 p-4 dark:border-gray-700"
+            [class.opacity-50]="!zone.activo"
+          >
+            <p class="font-medium text-gray-800 dark:text-white/90">{{ zone.nombre }}</p>
+            <p class="mt-1 text-theme-xs text-gray-500">{{ zone.tipo }}</p>
+            <p class="mt-2 text-theme-xs" [class.text-success-600]="zone.activo" [class.text-gray-400]="!zone.activo">
+              {{ zone.activo ? 'Activa' : 'Inactiva' }}
+            </p>
+          </div>
+        }
+      </div>
+    }
+  </app-component-card>
+}

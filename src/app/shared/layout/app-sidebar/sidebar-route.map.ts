@@ -33,6 +33,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.reporte_inventario': { path: '/reporte-inventario' },
   'nav.kardex_valorizado': { path: '/kardex-valorizado' },
   'nav.lotes': { path: '/lotes' },
+  'nav.salida_venta_lotes': { path: '/salida-venta-lotes' },
   'nav.retenciones': { path: '/retenciones' },
   'nav.percepciones': { path: '/percepciones' },
   'nav.ordenes_pedido': { path: '/ordenes-pedido' },

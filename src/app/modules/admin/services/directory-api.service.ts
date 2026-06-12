@@ -131,6 +131,28 @@ import type {
   UserListResponseDto,
   DashboardStatsDto,
   EstablishmentListResponseDto,
+  InventoryLotListFiltersRequest,
+  InventoryLotListResponseDto,
+  KardexFiltersRequest,
+  KardexListResponseDto,
+  InventoryTransferListFiltersRequest,
+  InventoryTransferListResponseDto,
+  CreateInventoryTransferRequest,
+  CreateInventoryAdjustmentRequest,
+  InventoryAdjustmentResultDto,
+  InventoryPendingAdjustmentDto,
+  InventoryValuationFiltersRequest,
+  InventoryValuationReportResponseDto,
+  InventoryPhysicalCountListItemDto,
+  InventoryPhysicalCountDetailDto,
+  CreatePhysicalCountRequest,
+  UpsertPhysicalCountItemRequest,
+  WarehouseZoneDto,
+  CreateWarehouseZoneRequest,
+  PaginatedResponseDto,
+  SaleLotAllocationPreviewRequest,
+  SaleLotAllocationPreviewDto,
+  DispatchSaleStockRequest,
 } from '../models/directory.models';
 
 @Injectable({ providedIn: 'root' })
@@ -1077,5 +1099,174 @@ export class DirectoryApiService {
       params: { mode },
       responseType: 'blob',
     });
+  }
+
+  listInventoryLots(filters?: InventoryLotListFiltersRequest) {
+    const params: Record<string, string> = {};
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    if (filters?.field) params['field'] = filters.field;
+    if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
+    if (filters?.establishmentId) params['establishmentId'] = filters.establishmentId;
+    if (filters?.categoryId) params['categoryId'] = filters.categoryId;
+    if (filters?.expiryFilter) params['expiryFilter'] = filters.expiryFilter;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<InventoryLotListResponseDto>(
+      `${this.base}/inventory-movements/lots`,
+      { params },
+    );
+  }
+
+  getInventoryKardex(filters: KardexFiltersRequest) {
+    const params: Record<string, string> = { productId: filters.productId };
+    if (filters.warehouseId) params['warehouseId'] = filters.warehouseId;
+    if (filters.from) params['from'] = filters.from;
+    if (filters.to) params['to'] = filters.to;
+    if (filters.page) params['page'] = String(filters.page);
+    if (filters.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<KardexListResponseDto>(
+      `${this.base}/inventory-movements/kardex`,
+      { params },
+    );
+  }
+
+  listInventoryTransfers(filters?: InventoryTransferListFiltersRequest) {
+    const params: Record<string, string> = {};
+    if (filters?.estado) params['estado'] = filters.estado;
+    if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<InventoryTransferListResponseDto>(
+      `${this.base}/inventory-transfers`,
+      { params },
+    );
+  }
+
+  createInventoryTransfer(body: CreateInventoryTransferRequest) {
+    return this.http.post<{ id: string; message: string }>(`${this.base}/inventory-transfers`, body);
+  }
+
+  dispatchInventoryTransfer(id: string) {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.base}/inventory-transfers/${id}/dispatch`,
+      {},
+    );
+  }
+
+  receiveInventoryTransfer(id: string) {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.base}/inventory-transfers/${id}/receive`,
+      {},
+    );
+  }
+
+  createInventoryAdjustment(body: CreateInventoryAdjustmentRequest) {
+    return this.http.post<InventoryAdjustmentResultDto>(
+      `${this.base}/inventory-movements/adjustments`,
+      body,
+    );
+  }
+
+  listPendingInventoryAdjustments() {
+    return this.http.get<InventoryPendingAdjustmentDto[]>(
+      `${this.base}/inventory-movements/adjustments/pending`,
+    );
+  }
+
+  approveInventoryAdjustment(id: string) {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.base}/inventory-movements/adjustments/${id}/approve`,
+      {},
+    );
+  }
+
+  rejectInventoryAdjustment(id: string) {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.base}/inventory-movements/adjustments/${id}/reject`,
+      {},
+    );
+  }
+
+  getInventoryValuationReport(filters?: InventoryValuationFiltersRequest) {
+    const params: Record<string, string> = {};
+    if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
+    if (filters?.establishmentId) params['establishmentId'] = filters.establishmentId;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<InventoryValuationReportResponseDto>(
+      `${this.base}/inventory-movements/valuation-report`,
+      { params },
+    );
+  }
+
+  listInventoryPhysicalCounts(page = 1, pageSize = 10) {
+    return this.http.get<PaginatedResponseDto<InventoryPhysicalCountListItemDto>>(
+      `${this.base}/inventory-physical-counts`,
+      { params: { page: String(page), pageSize: String(pageSize) } },
+    );
+  }
+
+  getInventoryPhysicalCount(id: string) {
+    return this.http.get<InventoryPhysicalCountDetailDto>(
+      `${this.base}/inventory-physical-counts/${id}`,
+    );
+  }
+
+  createInventoryPhysicalCount(body: CreatePhysicalCountRequest) {
+    return this.http.post<{ id: string }>(`${this.base}/inventory-physical-counts`, body);
+  }
+
+  upsertInventoryPhysicalCountItem(countId: string, body: UpsertPhysicalCountItemRequest) {
+    return this.http.post<{ ok: boolean }>(
+      `${this.base}/inventory-physical-counts/${countId}/items`,
+      body,
+    );
+  }
+
+  finalizeInventoryPhysicalCount(countId: string) {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.base}/inventory-physical-counts/${countId}/finalize`,
+      {},
+    );
+  }
+
+  listWarehouseZones(warehouseId: string) {
+    return this.http.get<WarehouseZoneDto[]>(`${this.base}/warehouse-zones`, {
+      params: { warehouseId },
+    });
+  }
+
+  createWarehouseZone(body: CreateWarehouseZoneRequest) {
+    return this.http.post<WarehouseZoneDto>(`${this.base}/warehouse-zones`, body);
+  }
+
+  listSaleAvailableLots(productId: string, warehouseId: string) {
+    return this.http.get<{
+      metodoAsignacion: 'FEFO' | 'FIFO';
+      blockExpiredProductSales: boolean;
+      items: {
+        id: string;
+        codigoLote: string;
+        stock: string;
+        fechaVencimiento: string | null;
+        vencido: boolean;
+      }[];
+    }>(`${this.base}/inventory-movements/sales/available-lots`, {
+      params: { productId, warehouseId },
+    });
+  }
+
+  previewSaleLotAllocation(body: SaleLotAllocationPreviewRequest) {
+    return this.http.post<SaleLotAllocationPreviewDto>(
+      `${this.base}/inventory-movements/sales/allocation-preview`,
+      body,
+    );
+  }
+
+  dispatchSaleStock(body: DispatchSaleStockRequest) {
+    return this.http.post<{ ok: boolean; message: string; asignacion: SaleLotAllocationPreviewDto['asignacion'] }>(
+      `${this.base}/inventory-movements/sales/dispatch`,
+      body,
+    );
   }
 }
