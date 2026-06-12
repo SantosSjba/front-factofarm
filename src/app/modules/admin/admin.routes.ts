@@ -2,6 +2,12 @@ import { Routes } from '@angular/router';
 import { authGuard } from '../../core/guards/auth.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { AppLayoutComponent } from '../../shared/layout/app-layout/app-layout.component';
+import { ADMIN_ROUTE_PERMISSIONS as P } from './admin-route-permissions';
+
+const guarded = (permissions: readonly string[]) => ({
+  canActivate: [permissionGuard],
+  data: { permissions: [...permissions] },
+});
 
 /**
  * Panel administrativo (layout + rutas protegidas).
@@ -19,6 +25,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'dashboard',
+        ...guarded(P.dashboard),
         loadComponent: () =>
           import('./pages/dashboard/dash-admin/dash-admin.component').then(
             (m) => m.DashAdminComponent,
@@ -27,8 +34,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'usuarios',
-        canActivate: [permissionGuard],
-        data: { permissions: ['users.read', 'nav.usuarios'] },
+        ...guarded(P.usuarios),
         loadComponent: () =>
           import('./pages/usuarios/usuarios.component').then(
             (m) => m.UsuariosComponent,
@@ -37,8 +43,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'establecimientos',
-        canActivate: [permissionGuard],
-        data: { permissions: ['nav.establecimientos'] },
+        ...guarded(P.establecimientos),
         loadComponent: () =>
           import('./pages/establecimientos/establecimientos.component').then(
             (m) => m.EstablecimientosComponent,
@@ -47,8 +52,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'clientes',
-        canActivate: [permissionGuard],
-        data: { permissions: ['customers.read', 'nav.clientes_list'] },
+        ...guarded(P.clientes),
         loadComponent: () =>
           import('./pages/clientes/clientes.component').then(
             (m) => m.ClientesComponent,
@@ -57,8 +61,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'tipo-clientes',
-        canActivate: [permissionGuard],
-        data: { permissions: ['customer-types.read', 'nav.tipo_clientes'] },
+        ...guarded(P.tipoClientes),
         loadComponent: () =>
           import('./pages/tipo-clientes/tipo-clientes.component').then(
             (m) => m.TipoClientesComponent,
@@ -67,14 +70,14 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'productos',
-        canActivate: [permissionGuard],
-        data: { permissions: ['products.read', 'nav.productos'] },
+        ...guarded(P.productos),
         loadComponent: () =>
           import('./pages/productos/productos.component').then((m) => m.ProductosComponent),
         title: 'FactoFarm | Productos',
       },
       {
         path: 'conjuntos-packs-promociones',
+        ...guarded(P.conjuntosPacks),
         loadComponent: () =>
           import('./pages/conjuntos-packs-promociones/conjuntos-packs-promociones.component').then(
             (m) => m.ConjuntosPacksPromocionesComponent,
@@ -83,46 +86,42 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'servicios',
+        ...guarded(P.servicios),
         loadComponent: () =>
           import('./pages/servicios/servicios.component').then((m) => m.ServiciosComponent),
         title: 'FactoFarm | Servicios',
       },
       {
         path: 'categorias',
-        canActivate: [permissionGuard],
-        data: { permissions: ['categories.read', 'nav.categorias'] },
+        ...guarded(P.categorias),
         loadComponent: () =>
           import('./pages/categorias/categorias.component').then((m) => m.CategoriasComponent),
         title: 'FactoFarm | Categorías',
       },
       {
         path: 'marcas',
-        canActivate: [permissionGuard],
-        data: { permissions: ['brands.read', 'nav.marcas'] },
+        ...guarded(P.marcas),
         loadComponent: () =>
           import('./pages/marcas/marcas.component').then((m) => m.MarcasComponent),
         title: 'FactoFarm | Marcas',
       },
       {
         path: 'laboratorios',
-        canActivate: [permissionGuard],
-        data: { permissions: ['laboratories.read', 'nav.laboratorios'] },
+        ...guarded(P.laboratorios),
         loadComponent: () =>
           import('./pages/laboratorios/laboratorios.component').then((m) => m.LaboratoriosComponent),
         title: 'FactoFarm | Laboratorios',
       },
       {
         path: 'unidades',
-        canActivate: [permissionGuard],
-        data: { permissions: ['units.read', 'nav.unidades'] },
+        ...guarded(P.unidades),
         loadComponent: () =>
           import('./pages/unidades/unidades.component').then((m) => m.UnidadesComponent),
         title: 'FactoFarm | Unidades',
       },
       {
         path: 'formas-farmaceuticas',
-        canActivate: [permissionGuard],
-        data: { permissions: ['pharma-forms.read', 'nav.formas_farmaceuticas'] },
+        ...guarded(P.formasFarmaceuticas),
         loadComponent: () =>
           import('./pages/formas-farmaceuticas/formas-farmaceuticas.component').then(
             (m) => m.FormasFarmaceuticasComponent,
@@ -131,8 +130,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'principios-activos',
-        canActivate: [permissionGuard],
-        data: { permissions: ['active-principles.read', 'nav.principios_activos'] },
+        ...guarded(P.principiosActivos),
         loadComponent: () =>
           import('./pages/principios-activos/principios-activos.component').then(
             (m) => m.PrincipiosActivosComponent,
@@ -141,8 +139,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'vias-administracion',
-        canActivate: [permissionGuard],
-        data: { permissions: ['admin-routes.read', 'nav.vias_administracion'] },
+        ...guarded(P.viasAdministracion),
         loadComponent: () =>
           import('./pages/vias-administracion/vias-administracion.component').then(
             (m) => m.ViasAdministracionComponent,
@@ -151,26 +148,28 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'proveedores',
-        canActivate: [permissionGuard],
-        data: { permissions: ['suppliers.read', 'nav.proveedores'] },
+        ...guarded(P.proveedores),
         loadComponent: () =>
           import('./pages/proveedores/proveedores.component').then((m) => m.ProveedoresComponent),
         title: 'FactoFarm | Proveedores',
       },
       {
         path: 'series',
+        ...guarded(P.series),
         loadComponent: () =>
           import('./pages/series/series.component').then((m) => m.SeriesComponent),
         title: 'FactoFarm | Series',
       },
       {
         path: 'zonas',
+        ...guarded(P.zonas),
         loadComponent: () =>
           import('./pages/zonas/zonas.component').then((m) => m.ZonasComponent),
         title: 'FactoFarm | Zonas',
       },
       {
         path: 'importar-precios',
+        ...guarded(P.importarPrecios),
         loadComponent: () =>
           import('./pages/importar-precios/importar-precios.component').then(
             (m) => m.ImportarPreciosComponent,
@@ -179,12 +178,14 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'punto-venta',
+        ...guarded(P.puntoVenta),
         loadComponent: () =>
           import('./pages/punto-venta/punto-venta.component').then((m) => m.PuntoVentaComponent),
         title: 'FactoFarm | Punto de Venta',
       },
       {
         path: 'caja-chica-pos',
+        ...guarded(P.cajaChicaPos),
         loadComponent: () =>
           import('./pages/caja-chica-pos/caja-chica-pos.component').then(
             (m) => m.CajaChicaPosComponent,
@@ -193,6 +194,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'comprobante-electronico',
+        ...guarded(P.comprobanteElectronico),
         loadComponent: () =>
           import('./pages/comprobante-electronico/comprobante-electronico.component').then(
             (m) => m.ComprobanteElectronicoComponent,
@@ -201,30 +203,35 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'notas-venta',
+        ...guarded(P.notasVenta),
         loadComponent: () =>
           import('./pages/notas-venta/notas-venta.component').then((m) => m.NotasVentaComponent),
         title: 'FactoFarm | Notas de venta',
       },
       {
         path: 'resumenes',
+        ...guarded(P.resumenes),
         loadComponent: () =>
           import('./pages/resumenes/resumenes.component').then((m) => m.ResumenesComponent),
         title: 'FactoFarm | Resúmenes',
       },
       {
         path: 'anulaciones',
+        ...guarded(P.anulaciones),
         loadComponent: () =>
           import('./pages/anulaciones/anulaciones.component').then((m) => m.AnulacionesComponent),
         title: 'FactoFarm | Anulaciones',
       },
       {
         path: 'cotizaciones',
+        ...guarded(P.cotizaciones),
         loadComponent: () =>
           import('./pages/cotizaciones/cotizaciones.component').then((m) => m.CotizacionesComponent),
         title: 'FactoFarm | Cotizaciones',
       },
       {
         path: 'inventario-movimientos',
+        ...guarded(P.inventarioMovimientos),
         loadComponent: () =>
           import('./pages/inventario-movimientos/inventario-movimientos.component').then(
             (m) => m.InventarioMovimientosComponent,
@@ -233,12 +240,14 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'traslados',
+        ...guarded(P.traslados),
         loadComponent: () =>
           import('./pages/traslados/traslados.component').then((m) => m.TrasladosComponent),
         title: 'FactoFarm | Traslados',
       },
       {
         path: 'devolucion-retiro',
+        ...guarded(P.devolucionRetiro),
         loadComponent: () =>
           import('./pages/devolucion-retiro/devolucion-retiro.component').then(
             (m) => m.DevolucionRetiroComponent,
@@ -247,6 +256,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'reporte-kardex',
+        ...guarded(P.reporteKardex),
         loadComponent: () =>
           import('./pages/reporte-kardex/reporte-kardex.component').then(
             (m) => m.ReporteKardexComponent,
@@ -255,6 +265,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'reporte-inventario',
+        ...guarded(P.reporteInventario),
         loadComponent: () =>
           import('./pages/reporte-inventario/reporte-inventario.component').then(
             (m) => m.ReporteInventarioComponent,
@@ -263,6 +274,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'kardex-valorizado',
+        ...guarded(P.kardexValorizado),
         loadComponent: () =>
           import('./pages/kardex-valorizado/kardex-valorizado.component').then(
             (m) => m.KardexValorizadoComponent,
@@ -271,23 +283,27 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'lotes',
+        ...guarded(P.lotes),
         loadComponent: () => import('./pages/lotes/lotes.component').then((m) => m.LotesComponent),
         title: 'FactoFarm | Lotes',
       },
       {
         path: 'retenciones',
+        ...guarded(P.retenciones),
         loadComponent: () =>
           import('./pages/retenciones/retenciones.component').then((m) => m.RetencionesComponent),
         title: 'FactoFarm | Retenciones',
       },
       {
         path: 'percepciones',
+        ...guarded(P.percepciones),
         loadComponent: () =>
           import('./pages/percepciones/percepciones.component').then((m) => m.PercepcionesComponent),
         title: 'FactoFarm | Percepciones',
       },
       {
         path: 'ordenes-pedido',
+        ...guarded(P.ordenesPedido),
         loadComponent: () =>
           import('./pages/ordenes-pedido/ordenes-pedido.component').then(
             (m) => m.OrdenesPedidoComponent,
@@ -296,12 +312,14 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'gr-remitente',
+        ...guarded(P.grRemitente),
         loadComponent: () =>
           import('./pages/gr-remitente/gr-remitente.component').then((m) => m.GrRemitenteComponent),
         title: 'FactoFarm | G.R. Remitente',
       },
       {
         path: 'gr-transportista',
+        ...guarded(P.grTransportista),
         loadComponent: () =>
           import('./pages/gr-transportista/gr-transportista.component').then(
             (m) => m.GrTransportistaComponent,
@@ -310,6 +328,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'transportistas',
+        ...guarded(P.transportistas),
         loadComponent: () =>
           import('./pages/transportistas/transportistas.component').then(
             (m) => m.TransportistasComponent,
@@ -318,18 +337,21 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'conductores',
+        ...guarded(P.conductores),
         loadComponent: () =>
           import('./pages/conductores/conductores.component').then((m) => m.ConductoresComponent),
         title: 'FactoFarm | Conductores',
       },
       {
         path: 'vehiculos',
+        ...guarded(P.vehiculos),
         loadComponent: () =>
           import('./pages/vehiculos/vehiculos.component').then((m) => m.VehiculosComponent),
         title: 'FactoFarm | Vehículos',
       },
       {
         path: 'direcciones-partida',
+        ...guarded(P.direccionesPartida),
         loadComponent: () =>
           import('./pages/direcciones-partida/direcciones-partida.component').then(
             (m) => m.DireccionesPartidaComponent,
@@ -338,12 +360,14 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'reportes',
+        ...guarded(P.reportes),
         loadComponent: () =>
           import('./pages/reportes/reportes.component').then((m) => m.ReportesComponent),
         title: 'FactoFarm | Reportes',
       },
       {
         path: 'contabilidad-exportar-reporte',
+        ...guarded(P.contabilidadExportarReporte),
         loadComponent: () =>
           import('./pages/contabilidad-exportar-reporte/contabilidad-exportar-reporte.component').then(
             (m) => m.ContabilidadExportarReporteComponent,
@@ -352,6 +376,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'contabilidad-resumen-venta',
+        ...guarded(P.contabilidadResumenVenta),
         loadComponent: () =>
           import('./pages/contabilidad-resumen-venta/contabilidad-resumen-venta.component').then(
             (m) => m.ContabilidadResumenVentaComponent,
@@ -360,6 +385,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'contabilidad-exportar-formatos',
+        ...guarded(P.contabilidadExportarFormatos),
         loadComponent: () =>
           import('./pages/contabilidad-exportar-formatos/contabilidad-exportar-formatos.component').then(
             (m) => m.ContabilidadExportarFormatosComponent,
@@ -368,6 +394,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'contabilidad-reporte-resumido',
+        ...guarded(P.contabilidadReporteResumido),
         loadComponent: () =>
           import('./pages/contabilidad-reporte-resumido/contabilidad-reporte-resumido.component').then(
             (m) => m.ContabilidadReporteResumidoComponent,
@@ -376,24 +403,28 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'libro-mayor',
+        ...guarded(P.libroMayor),
         loadComponent: () =>
           import('./pages/libro-mayor/libro-mayor.component').then((m) => m.LibroMayorComponent),
         title: 'FactoFarm | Libro Mayor',
       },
       {
         path: 'sire-ventas',
+        ...guarded(P.sireVentas),
         loadComponent: () =>
           import('./pages/sire-ventas/sire-ventas.component').then((m) => m.SireVentasComponent),
         title: 'FactoFarm | SIRE Ventas',
       },
       {
         path: 'sire-compras',
+        ...guarded(P.sireCompras),
         loadComponent: () =>
           import('./pages/sire-compras/sire-compras.component').then((m) => m.SireComprasComponent),
         title: 'FactoFarm | SIRE Compras',
       },
       {
         path: 'finanzas-movimientos',
+        ...guarded(P.finanzasMovimientos),
         loadComponent: () =>
           import('./pages/finanzas-movimientos/finanzas-movimientos.component').then(
             (m) => m.FinanzasMovimientosComponent,
@@ -402,6 +433,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'transacciones',
+        ...guarded(P.transacciones),
         loadComponent: () =>
           import('./pages/transacciones/transacciones.component').then(
             (m) => m.TransaccionesComponent,
@@ -410,6 +442,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'finanzas-ingresos',
+        ...guarded(P.finanzasIngresos),
         loadComponent: () =>
           import('./pages/finanzas-ingresos/finanzas-ingresos.component').then(
             (m) => m.FinanzasIngresosComponent,
@@ -418,6 +451,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'cuentas-cobrar',
+        ...guarded(P.cuentasCobrar),
         loadComponent: () =>
           import('./pages/cuentas-cobrar/cuentas-cobrar.component').then(
             (m) => m.CuentasCobrarComponent,
@@ -426,6 +460,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'cuentas-pagar',
+        ...guarded(P.cuentasPagar),
         loadComponent: () =>
           import('./pages/cuentas-pagar/cuentas-pagar.component').then(
             (m) => m.CuentasPagarComponent,
@@ -434,18 +469,21 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'pagos',
+        ...guarded(P.pagos),
         loadComponent: () =>
           import('./pages/pagos/pagos.component').then((m) => m.PagosComponent),
         title: 'FactoFarm | Pagos',
       },
       {
         path: 'balance',
+        ...guarded(P.balance),
         loadComponent: () =>
           import('./pages/balance/balance.component').then((m) => m.BalanceComponent),
         title: 'FactoFarm | Balance',
       },
       {
         path: 'ingresos-egresos-medio-pago',
+        ...guarded(P.ingresosEgresosMedioPago),
         loadComponent: () =>
           import('./pages/ingresos-egresos-medio-pago/ingresos-egresos-medio-pago.component').then(
             (m) => m.IngresosEgresosMedioPagoComponent,
@@ -454,6 +492,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'reporte-digemid',
+        ...guarded(P.reporteDigemid),
         loadComponent: () =>
           import('./pages/reporte-digemid/reporte-digemid.component').then(
             (m) => m.ReporteDigemidComponent,
@@ -462,18 +501,21 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'medicos',
+        ...guarded(P.medicos),
         loadComponent: () =>
           import('./pages/medicos/medicos.component').then((m) => m.MedicosComponent),
         title: 'FactoFarm | Médicos',
       },
       {
         path: 'cie-10',
+        ...guarded(P.cie10),
         loadComponent: () =>
           import('./pages/cie-10/cie-10.component').then((m) => m.Cie10Component),
         title: 'FactoFarm | CIE 10',
       },
       {
         path: 'reporte-psicotropicos-estupefacientes',
+        ...guarded(P.reportePsicotropicos),
         loadComponent: () =>
           import(
             './pages/reporte-psicotropicos-estupefacientes/reporte-psicotropicos-estupefacientes.component'
@@ -482,6 +524,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'recepcion-productos-farmaceuticos',
+        ...guarded(P.recepcionProductosFarmaceuticos),
         loadComponent: () =>
           import(
             './pages/recepcion-productos-farmaceuticos/recepcion-productos-farmaceuticos.component'

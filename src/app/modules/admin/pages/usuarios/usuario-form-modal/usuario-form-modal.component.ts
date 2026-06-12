@@ -171,7 +171,8 @@ export class UsuarioFormModalComponent {
   protected readonly activeTab = signal<TabId>('datos');
 
   protected readonly establishments = signal<EstablishmentOptionDto[]>([]);
-  protected readonly menuTree = signal<PermissionMenuNodeDto | null>(null);
+  /** Árboles `nav.*` alineados al menú lateral completo (14 secciones). */
+  protected readonly menuTrees = signal<PermissionMenuNodeDto[]>([]);
 
   protected readonly selectedNavCodes = signal<Set<string>>(new Set());
   protected readonly navCodesList = computed(() => [...this.selectedNavCodes()]);
@@ -264,24 +265,29 @@ export class UsuarioFormModalComponent {
         );
       },
     });
-    this.api.getPermissionMenuTree().subscribe({
-      next: (tree) => {
-        this.menuTree.set(tree);
-        const next = new Set<string>();
+    this.api.getPermissionMenuTrees().subscribe({
+      next: (trees) => {
+        this.menuTrees.set(trees ?? []);
+        const allNavCodes = new Set(
+          (trees ?? []).flatMap((t) => (t.children ?? []).map((c) => c.code)),
+        );
         const editing = this.editingUser();
         if (editing) {
-          const allowedCodes = new Set(tree?.children?.map((c) => c.code) ?? []);
+          const next = new Set<string>();
           for (const code of editing.permissionCodes ?? []) {
-            if (allowedCodes.has(code)) {
+            if (allNavCodes.has(code)) {
               next.add(code);
             }
           }
-        } else {
-          tree?.children?.forEach((c) => next.add(c.code));
+          this.selectedNavCodes.set(next);
+        } else if (this.selectedNavCodes().size === 0) {
+          this.selectedNavCodes.set(allNavCodes);
         }
-        this.selectedNavCodes.set(next);
       },
-      error: () => this.menuTree.set(null),
+      error: () => {
+        this.menuTrees.set([]);
+        this.notify.error('No se pudo cargar el catálogo de permisos.');
+      },
     });
   }
 
@@ -316,7 +322,9 @@ export class UsuarioFormModalComponent {
       profile?.fotoUrl ? this.filesApi.absoluteFileUrl(profile.fotoUrl) : null,
     );
     this.fotoUploadError.set(null);
-    this.selectedNavCodes.set(new Set(user.permissionCodes ?? []));
+    this.selectedNavCodes.set(
+      new Set((user.permissionCodes ?? []).filter((code) => code.startsWith('nav.'))),
+    );
   }
 
   protected setRoleFromSelect(v: string) {
@@ -335,14 +343,16 @@ export class UsuarioFormModalComponent {
     this.selectedNavCodes.set(s);
   }
 
-  protected onPermissionParent(checked: boolean) {
-    const tree = this.menuTree();
-    if (!tree?.children?.length) {
+  protected onPermissionParent(tree: PermissionMenuNodeDto, checked: boolean) {
+    const childCodes = tree.children?.map((c) => c.code) ?? [];
+    if (!childCodes.length) {
       return;
     }
-    const next = new Set<string>();
+    const next = new Set(this.selectedNavCodes());
     if (checked) {
-      tree.children.forEach((c) => next.add(c.code));
+      childCodes.forEach((code) => next.add(code));
+    } else {
+      childCodes.forEach((code) => next.delete(code));
     }
     this.selectedNavCodes.set(next);
   }

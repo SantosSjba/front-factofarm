@@ -83,15 +83,19 @@
     @if (activeTab() === 'permisos') {
       <div class="space-y-4">
         <p class="text-theme-sm text-gray-500 dark:text-gray-400">
-          Seleccione el acceso al menú (FactoFarm). La asignación definitiva se conectará al guardar el
-          usuario.
+          Marque los módulos del menú lateral. Al guardar, el sistema asigna automáticamente los permisos
+          técnicos del módulo (consultar, crear, editar y eliminar cuando aplique).
         </p>
-        <app-permission-menu-tree
-          [tree]="menuTree()"
-          [selectedCodes]="navCodesList()"
-          (parentToggle)="onPermissionParent($event)"
-          (childToggle)="onPermissionChild($event)"
-        />
+        @for (tree of menuTrees(); track tree.id) {
+          <app-permission-menu-tree
+            [tree]="tree"
+            [selectedCodes]="navCodesList()"
+            (parentToggle)="onPermissionParent(tree, $event)"
+            (childToggle)="onPermissionChild($event)"
+          />
+        } @empty {
+          <p class="text-theme-sm text-gray-500">Cargando permisos del menú…</p>
+        }
       </div>
     }
 
