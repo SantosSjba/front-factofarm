@@ -22,13 +22,7 @@ import type {
 
 type ReportTab = 'valorizacion' | 'conteo' | 'zonas';
 
-type CreateWarehouseZoneTipo =
-  | 'RECEPCION'
-  | 'CUARENTENA'
-  | 'LIBERADO'
-  | 'DEVOLUCION'
-  | 'CADENA_FRIO'
-  | 'OTRO';
+type CreateWarehouseZoneTipo = 'NORMAL' | 'REFRIGERADO' | 'CONTROLADO';
 
 @Component({
   selector: 'app-reporte-inventario',
@@ -74,7 +68,7 @@ export class ReporteInventarioComponent {
 
   protected readonly zoneWarehouseId = signal('');
   protected readonly newZoneName = signal('');
-  protected readonly newZoneTipo = signal<CreateWarehouseZoneTipo>('LIBERADO');
+  protected readonly newZoneTipo = signal<CreateWarehouseZoneTipo>('NORMAL');
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
@@ -159,9 +153,14 @@ export class ReporteInventarioComponent {
   protected readonly finalizeCountMutation = injectMutation(() => ({
     mutationFn: (countId: string) => firstValueFrom(this.api.finalizeInventoryPhysicalCount(countId)),
     onSuccess: (res) => {
-      this.notify.success(res.message);
-      this.activeCountId.set(null);
+      if (res.pendingApproval && res.pendingApproval > 0) {
+        this.notify.warning(res.message);
+      } else {
+        this.notify.success(res.message);
+        this.activeCountId.set(null);
+      }
       void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'physical-counts'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'adjustments'] });
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo finalizar')),
   }));
@@ -283,11 +282,8 @@ export class ReporteInventarioComponent {
   }
 
   protected readonly zoneTypeOptions = [
-    { value: 'RECEPCION', label: 'Recepción' },
-    { value: 'CUARENTENA', label: 'Cuarentena' },
-    { value: 'LIBERADO', label: 'Liberado' },
-    { value: 'DEVOLUCION', label: 'Devolución' },
-    { value: 'CADENA_FRIO', label: 'Cadena de frío' },
-    { value: 'OTRO', label: 'Otro' },
+    { value: 'NORMAL', label: 'Normal / recepción' },
+    { value: 'REFRIGERADO', label: 'Cadena de frío (refrigerado)' },
+    { value: 'CONTROLADO', label: 'Controlado' },
   ];
 }

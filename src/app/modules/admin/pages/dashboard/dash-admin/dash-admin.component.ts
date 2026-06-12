@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { LocaleService } from '../../../../../core/services/locale.service';
@@ -8,7 +9,7 @@ import { IconComponent } from '../../../../../shared/components/ui/icon/icon.com
 
 @Component({
   selector: 'app-dash-admin',
-  imports: [ComponentCardComponent, IconComponent],
+  imports: [ComponentCardComponent, IconComponent, RouterLink],
   templateUrl: './dash-admin.component.html',
 })
 export class DashAdminComponent {

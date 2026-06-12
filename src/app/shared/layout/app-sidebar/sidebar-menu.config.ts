@@ -140,6 +140,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
         path: '/salida-venta-lotes',
         permissionCode: 'nav.salida_venta_lotes',
       },
+      { name: 'Cadena de frío', path: '/cadena-frio', permissionCode: 'nav.cadena_frio' },
     ],
   },
   {

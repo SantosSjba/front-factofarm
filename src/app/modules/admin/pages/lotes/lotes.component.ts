@@ -1,5 +1,5 @@
 ﻿import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +10,7 @@ import { ListFiltersComponent } from '../../../../shared/components/common/list-
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -23,12 +24,21 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     ListFiltersComponent,
     PaginationComponent,
     RouterLink,
+    FormSelectComponent,
   ],
   templateUrl: './lotes.component.html',
 })
 export class LotesComponent {
   private readonly api = inject(DirectoryApiService);
+  private readonly route = inject(ActivatedRoute);
   protected readonly locale = inject(LocaleService);
+
+  constructor() {
+    const expiry = this.route.snapshot.queryParamMap.get('expiry');
+    if (expiry === 'expired' || expiry === '30' || expiry === '60' || expiry === '90') {
+      this.expiryFilter.set(expiry);
+    }
+  }
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
     { label: 'Inventario' },
@@ -37,6 +47,7 @@ export class LotesComponent {
 
   protected readonly searchTerm = signal('');
   protected readonly filterField = signal<'all' | 'producto' | 'lote' | 'almacen'>('producto');
+  protected readonly warehouseId = signal('');
   protected readonly expiryFilter = signal<'all' | 'expired' | '30' | '60' | '90'>('all');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 10;
@@ -56,6 +67,19 @@ export class LotesComponent {
     { value: '90', label: 'Por vencer 90 días' },
   ];
 
+  protected readonly warehousesQuery = injectQuery(() => ({
+    queryKey: ['inventory', 'warehouses'] as const,
+    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()),
+  }));
+
+  protected readonly warehouseOptions = computed(() => [
+    { value: '', label: 'Todos los almacenes' },
+    ...(this.warehousesQuery.data() ?? []).map((w) => ({
+      value: w.id,
+      label: `${w.nombre} · ${w.establishment.nombre}`,
+    })),
+  ]);
+
   protected readonly lotsQuery = injectQuery(() => ({
     queryKey: [
       'inventory',
@@ -63,6 +87,7 @@ export class LotesComponent {
       {
         search: this.searchTerm().trim(),
         field: this.filterField(),
+        warehouseId: this.warehouseId(),
         expiry: this.expiryFilter(),
         page: this.currentPage(),
       },
@@ -72,6 +97,7 @@ export class LotesComponent {
         this.api.listInventoryLots({
           search: this.searchTerm(),
           field: this.filterField(),
+          warehouseId: this.warehouseId() || undefined,
           expiryFilter: this.expiryFilter(),
           page: this.currentPage(),
           pageSize: this.itemsPerPage,
@@ -95,6 +121,11 @@ export class LotesComponent {
 
   protected onExpiryChange(value: string) {
     this.expiryFilter.set(value as 'all' | 'expired' | '30' | '60' | '90');
+    this.currentPage.set(1);
+  }
+
+  protected onWarehouseChange(value: string) {
+    this.warehouseId.set(value);
     this.currentPage.set(1);
   }
 

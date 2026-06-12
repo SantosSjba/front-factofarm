@@ -9,7 +9,7 @@
 </app-page-toolbar>
 
 <app-component-card title="Filtros" className="mb-4">
-  <div class="grid gap-4 md:grid-cols-2">
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
     <div>
       <label class="text-theme-sm text-gray-600">Producto</label>
       @if (selectedProductId()) {
@@ -54,6 +54,24 @@
           <option [value]="w.id">{{ w.nombre }} — {{ w.establishment.nombre }}</option>
         }
       </select>
+    </div>
+    <div>
+      <label class="text-theme-sm text-gray-600">Desde</label>
+      <input
+        type="date"
+        class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
+        [value]="dateFrom()"
+        (input)="dateFrom.set($any($event.target).value); currentPage.set(1)"
+      />
+    </div>
+    <div>
+      <label class="text-theme-sm text-gray-600">Hasta</label>
+      <input
+        type="date"
+        class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
+        [value]="dateTo()"
+        (input)="dateTo.set($any($event.target).value); currentPage.set(1)"
+      />
     </div>
   </div>
 </app-component-card>

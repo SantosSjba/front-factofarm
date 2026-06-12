@@ -38,17 +38,28 @@
   (clear)="clearFilters()"
 />
 
-<div class="mb-4">
-  <label class="text-theme-sm text-gray-600 dark:text-gray-400">Vencimiento</label>
-  <select
-    class="mt-1 block w-full max-w-xs rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
-    [value]="expiryFilter()"
-    (change)="onExpiryChange($any($event.target).value)"
-  >
-    @for (opt of expiryOptions; track opt.value) {
-      <option [value]="opt.value">{{ opt.label }}</option>
-    }
-  </select>
+<div class="mb-4 grid gap-4 sm:grid-cols-2">
+  <div>
+    <label class="text-theme-sm text-gray-600 dark:text-gray-400">Almacén</label>
+    <app-form-select
+      class="mt-1 block"
+      [options]="warehouseOptions()"
+      [value]="warehouseId()"
+      (valueChange)="onWarehouseChange($event)"
+    />
+  </div>
+  <div>
+    <label class="text-theme-sm text-gray-600 dark:text-gray-400">Vencimiento</label>
+    <select
+      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
+      [value]="expiryFilter()"
+      (change)="onExpiryChange($any($event.target).value)"
+    >
+      @for (opt of expiryOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+  </div>
 </div>
 
 <app-component-card title="Stock por lote" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">

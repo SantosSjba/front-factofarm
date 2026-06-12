@@ -1513,7 +1513,7 @@ export interface UpsertPhysicalCountItemRequest {
 export interface WarehouseZoneDto {
   id: string;
   nombre: string;
-  tipo: string;
+  tipo: 'NORMAL' | 'REFRIGERADO' | 'CONTROLADO';
   activo: boolean;
   warehouse?: { id: string; nombre: string };
 }
@@ -1521,5 +1521,219 @@ export interface WarehouseZoneDto {
 export interface CreateWarehouseZoneRequest {
   warehouseId: string;
   nombre: string;
-  tipo: 'RECEPCION' | 'CUARENTENA' | 'LIBERADO' | 'DEVOLUCION' | 'CADENA_FRIO' | 'OTRO';
+  tipo: 'NORMAL' | 'REFRIGERADO' | 'CONTROLADO';
+}
+
+export interface ColdChainTemperatureLogDto {
+  id: string;
+  fecha: string;
+  temperaturaCelsius: string;
+  observacion: string | null;
+  user?: { nombre: string };
+}
+
+export interface CreateTemperatureLogRequest {
+  warehouseZoneId: string;
+  temperaturaCelsius: number;
+  observacion?: string;
+  fecha?: string;
+}
+
+export type SaleDocumentType = 'BOLETA' | 'FACTURA' | 'NOTA_VENTA' | 'TICKET';
+export type PaymentMethod =
+  | 'EFECTIVO'
+  | 'TARJETA'
+  | 'YAPE'
+  | 'PLIN'
+  | 'TRANSFERENCIA'
+  | 'CREDITO'
+  | 'MIXTO';
+export type SaleStatus = 'COMPLETADA' | 'ANULADA' | 'PARCIALMENTE_DEVUELTA';
+export type CashMovementType = 'APERTURA' | 'CIERRE' | 'INGRESO' | 'EGRESO' | 'VENTA' | 'DEVOLUCION';
+export type QuotationStatus = 'BORRADOR' | 'ENVIADA' | 'CONVERTIDA' | 'VENCIDA' | 'ANULADA';
+
+export interface PosCatalogItemDto {
+  id: string;
+  nombre: string;
+  codigoInterno: string | null;
+  codigoBarra: string | null;
+  precio: string;
+  stock: string;
+  necesitaRecetaMedica: boolean;
+  manejaLotes: boolean;
+}
+
+export interface SaleListItemDto {
+  id: string;
+  documentType: SaleDocumentType;
+  serie: string | null;
+  numero: string | null;
+  estado: SaleStatus;
+  subtotal: string;
+  descuentoTotal: string;
+  igvTotal: string;
+  total: string;
+  createdAt: string;
+  customer: { id: string; nombre: string } | null;
+  seller: { id: string; nombre: string };
+}
+
+export interface SaleDetailDto {
+  id: string;
+  documentType: SaleDocumentType;
+  serie: string | null;
+  numero: string | null;
+  estado: SaleStatus;
+  subtotal: string;
+  descuentoTotal: string;
+  igvTotal: string;
+  total: string;
+  prescriptionValidated: boolean;
+  prescriptionNote: string | null;
+  comentario: string | null;
+  createdAt: string;
+  customer: { id: string; nombre: string; numeroDocumento: string } | null;
+  seller: { id: string; nombre: string };
+  items: {
+    id: string;
+    producto: string;
+    codigoInterno: string | null;
+    cantidad: string;
+    precioUnitario: string;
+    subtotalLinea: string;
+    igvLinea: string;
+    totalLinea: string;
+    lotes: { codigoLote: string; cantidad: string }[];
+  }[];
+  payments: { metodo: PaymentMethod; monto: string; referencia: string | null }[];
+}
+
+export interface CreateSaleItemRequest {
+  productId: string;
+  quantity: number;
+  unitPrice?: number;
+  lotAllocationMode?: SaleLotAllocationMode;
+  manualLots?: { lotCode: string; quantity: number }[];
+}
+
+export interface CreateSalePaymentRequest {
+  metodo: PaymentMethod;
+  monto: number;
+  referencia?: string;
+}
+
+export interface CreateSaleRequest {
+  warehouseId: string;
+  cashSessionId?: string;
+  customerId?: string;
+  documentType: SaleDocumentType;
+  prescriptionValidated?: boolean;
+  prescriptionNote?: string;
+  promotionCode?: string;
+  comentario?: string;
+  items: CreateSaleItemRequest[];
+  payments: CreateSalePaymentRequest[];
+}
+
+export interface SaleListFiltersRequest {
+  page?: number;
+  pageSize?: number;
+  customerId?: string;
+  estado?: SaleStatus;
+  documentType?: SaleDocumentType;
+  from?: string;
+  to?: string;
+}
+
+export interface CashRegisterDto {
+  id: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface CashActiveSessionDto {
+  id: string;
+  montoApertura: string;
+  openedAt: string;
+  cashRegister: { id: string; nombre: string };
+}
+
+export interface OpenCashSessionRequest {
+  cashRegisterId: string;
+  montoApertura?: number;
+}
+
+export interface CloseCashSessionRequest {
+  montoCierreFisico: number;
+  notasCierre?: string;
+}
+
+export interface CashMovementRequest {
+  tipo: 'INGRESO' | 'EGRESO';
+  monto: number;
+  metodoPago?: PaymentMethod;
+  comentario?: string;
+}
+
+export interface CashSessionSummaryDto {
+  id: string;
+  estado: string;
+  montoApertura: string;
+  saldoActual: string;
+  movimientos: {
+    id: string;
+    tipo: CashMovementType;
+    monto: string;
+    metodoPago: PaymentMethod | null;
+    comentario: string | null;
+    createdAt: string;
+  }[];
+  ventas: {
+    id: string;
+    documentType: SaleDocumentType;
+    numero: string | null;
+    total: string;
+  }[];
+}
+
+export interface QuotationListItemDto {
+  id: string;
+  estado: QuotationStatus;
+  total: string;
+  createdAt: string;
+  customer: { nombre: string } | null;
+  seller: { nombre: string };
+}
+
+export interface QuotationDetailDto {
+  id: string;
+  estado: QuotationStatus;
+  warehouseId: string;
+  customerId: string | null;
+  total: string;
+  subtotal: string;
+  igvTotal: string;
+  comentario: string | null;
+  customer: { id: string; nombre: string } | null;
+  items: {
+    id: string;
+    productId: string;
+    producto: string;
+    cantidad: string;
+    precioUnitario: string;
+    totalLinea: string;
+  }[];
+}
+
+export interface CreateQuotationItemRequest {
+  productId: string;
+  quantity: number;
+  unitPrice?: number;
+}
+
+export interface CreateQuotationRequest {
+  warehouseId: string;
+  customerId?: string;
+  comentario?: string;
+  items: CreateQuotationItemRequest[];
 }

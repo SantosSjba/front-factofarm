@@ -149,10 +149,26 @@ import type {
   UpsertPhysicalCountItemRequest,
   WarehouseZoneDto,
   CreateWarehouseZoneRequest,
+  ColdChainTemperatureLogDto,
+  CreateTemperatureLogRequest,
   PaginatedResponseDto,
   SaleLotAllocationPreviewRequest,
   SaleLotAllocationPreviewDto,
   DispatchSaleStockRequest,
+  PosCatalogItemDto,
+  SaleListItemDto,
+  SaleDetailDto,
+  CreateSaleRequest,
+  SaleListFiltersRequest,
+  CashRegisterDto,
+  CashActiveSessionDto,
+  OpenCashSessionRequest,
+  CloseCashSessionRequest,
+  CashMovementRequest,
+  CashSessionSummaryDto,
+  QuotationListItemDto,
+  QuotationDetailDto,
+  CreateQuotationRequest,
 } from '../models/directory.models';
 
 @Injectable({ providedIn: 'root' })
@@ -1160,6 +1176,27 @@ export class DirectoryApiService {
     );
   }
 
+  cancelInventoryTransfer(id: string) {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.base}/inventory-transfers/${id}/cancel`,
+      {},
+    );
+  }
+
+  listColdChainTemperatureLogs(warehouseZoneId: string) {
+    return this.http.get<ColdChainTemperatureLogDto[]>(
+      `${this.base}/cold-chain/temperature-logs`,
+      { params: { warehouseZoneId } },
+    );
+  }
+
+  createColdChainTemperatureLog(body: CreateTemperatureLogRequest) {
+    return this.http.post<ColdChainTemperatureLogDto>(
+      `${this.base}/cold-chain/temperature-logs`,
+      body,
+    );
+  }
+
   createInventoryAdjustment(body: CreateInventoryAdjustmentRequest) {
     return this.http.post<InventoryAdjustmentResultDto>(
       `${this.base}/inventory-movements/adjustments`,
@@ -1224,10 +1261,13 @@ export class DirectoryApiService {
   }
 
   finalizeInventoryPhysicalCount(countId: string) {
-    return this.http.post<{ ok: boolean; message: string }>(
-      `${this.base}/inventory-physical-counts/${countId}/finalize`,
-      {},
-    );
+    return this.http.post<{
+      ok: boolean;
+      finalized?: boolean;
+      applied?: number;
+      pendingApproval?: number;
+      message: string;
+    }>(`${this.base}/inventory-physical-counts/${countId}/finalize`, {});
   }
 
   listWarehouseZones(warehouseId: string) {
@@ -1268,5 +1308,94 @@ export class DirectoryApiService {
       `${this.base}/inventory-movements/sales/dispatch`,
       body,
     );
+  }
+
+  // —— Ventas / POS ——
+  listSales(filters?: SaleListFiltersRequest) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.customerId) params['customerId'] = filters.customerId;
+    if (filters?.estado) params['estado'] = filters.estado;
+    if (filters?.documentType) params['documentType'] = filters.documentType;
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    return this.http.get<PaginatedResponseDto<SaleListItemDto>>(`${this.base}/sales`, { params });
+  }
+
+  getSale(id: string) {
+    return this.http.get<SaleDetailDto>(`${this.base}/sales/${id}`);
+  }
+
+  getPosCatalog(warehouseId: string, search?: string) {
+    const params: Record<string, string> = { warehouseId };
+    if (search?.trim()) params['search'] = search.trim();
+    return this.http.get<PosCatalogItemDto[]>(`${this.base}/sales/pos-catalog`, { params });
+  }
+
+  createSale(body: CreateSaleRequest, idempotencyKey?: string) {
+    const headers = idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined;
+    return this.http.post<SaleDetailDto>(`${this.base}/sales`, body, { headers });
+  }
+
+  voidSale(id: string, reason: string) {
+    return this.http.post<SaleDetailDto>(`${this.base}/sales/${id}/void`, { reason });
+  }
+
+  // —— Caja ——
+  listCashRegisters() {
+    return this.http.get<CashRegisterDto[]>(`${this.base}/cash-registers`);
+  }
+
+  getActiveCashSession() {
+    return this.http.get<CashActiveSessionDto | null>(`${this.base}/cash-registers/sessions/active`);
+  }
+
+  openCashSession(body: OpenCashSessionRequest) {
+    return this.http.post<{ id: string; montoApertura: string; openedAt: string }>(
+      `${this.base}/cash-registers/sessions/open`,
+      body,
+    );
+  }
+
+  closeCashSession(sessionId: string, body: CloseCashSessionRequest) {
+    return this.http.post<{
+      ok: boolean;
+      montoCierreSistema: string;
+      montoCierreFisico: string;
+      diferenciaArqueo: string;
+    }>(`${this.base}/cash-registers/sessions/${sessionId}/close`, body);
+  }
+
+  getCashSessionSummary(sessionId: string) {
+    return this.http.get<CashSessionSummaryDto>(
+      `${this.base}/cash-registers/sessions/${sessionId}/summary`,
+    );
+  }
+
+  addCashMovement(sessionId: string, body: CashMovementRequest) {
+    return this.http.post<{ ok: boolean }>(
+      `${this.base}/cash-registers/sessions/${sessionId}/movements`,
+      body,
+    );
+  }
+
+  // —— Cotizaciones ——
+  listQuotations(page = 1, pageSize = 10) {
+    return this.http.get<PaginatedResponseDto<QuotationListItemDto>>(`${this.base}/quotations`, {
+      params: { page: String(page), pageSize: String(pageSize) },
+    });
+  }
+
+  getQuotation(id: string) {
+    return this.http.get<QuotationDetailDto>(`${this.base}/quotations/${id}`);
+  }
+
+  createQuotation(body: CreateQuotationRequest) {
+    return this.http.post<QuotationDetailDto>(`${this.base}/quotations`, body);
+  }
+
+  sendQuotation(id: string) {
+    return this.http.post<{ ok: boolean }>(`${this.base}/quotations/${id}/send`, {});
   }
 }

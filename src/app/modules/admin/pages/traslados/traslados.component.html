@@ -57,6 +57,7 @@
                 <div class="flex justify-end gap-2" *appHasPermission="'inventory.write'">
                   @if (row.estado === 'BORRADOR') {
                     <app-button size="sm" (btnClick)="dispatch(row)">Despachar</app-button>
+                    <app-button size="sm" variant="outline" (btnClick)="cancel(row)">Anular</app-button>
                   }
                   @if (row.estado === 'EN_TRANSITO') {
                     <app-button size="sm" (btnClick)="receive(row)">Recibir</app-button>

@@ -1,4 +1,99 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Caja Chica POS</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Caja chica POS</h1>
+</app-page-toolbar>
+
+@if (!session()) {
+  <app-component-card title="Apertura de caja" className="mt-4">
+    <div class="grid gap-4 sm:grid-cols-2 lg:max-w-xl">
+      <div>
+        <app-label>Caja</app-label>
+        <app-form-select
+          [options]="registerOptions()"
+          [value]="cashRegisterId()"
+          (valueChange)="cashRegisterId.set($event)"
+        />
+      </div>
+      <div>
+        <app-label>Monto inicial (S/)</app-label>
+        <app-input-field type="number" [value]="montoApertura()" (valueChange)="montoApertura.set(+$event)" />
+      </div>
+      <div class="sm:col-span-2">
+        <app-button
+          variant="primary"
+          [disabled]="!cashRegisterId() || openMutation.isPending()"
+          (btnClick)="openMutation.mutate()"
+        >
+          Abrir caja
+        </app-button>
+      </div>
+    </div>
+  </app-component-card>
+} @else {
+  <div class="mt-4 grid gap-4 lg:grid-cols-3">
+    <app-component-card title="Sesión activa" className="lg:col-span-1">
+      <p class="text-sm text-gray-600 dark:text-gray-400">{{ session()!.cashRegister.nombre }}</p>
+      <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white">
+        {{ summary()?.saldoActual ?? session()!.montoApertura | currency: 'PEN' : 'symbol' : '1.2-2' }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500">Apertura: {{ session()!.openedAt | date: 'short' }}</p>
+    </app-component-card>
+
+    <app-component-card title="Movimiento manual" className="lg:col-span-1">
+      <div class="space-y-3">
+        <app-form-select
+          [options]="[
+            { value: 'INGRESO', label: 'Ingreso' },
+            { value: 'EGRESO', label: 'Egreso' },
+          ]"
+          [value]="movTipo()"
+          (valueChange)="movTipo.set($any($event))"
+        />
+        <app-input-field type="number" [value]="movMonto()" (valueChange)="movMonto.set(+$event)" placeholder="Monto" />
+        <app-input-field [value]="movComentario()" (valueChange)="movComentario.set('' + $event)" placeholder="Comentario" />
+        <app-button variant="primary" [disabled]="movMonto() <= 0" (btnClick)="movementMutation.mutate()">
+          Registrar
+        </app-button>
+      </div>
+    </app-component-card>
+
+    <app-component-card title="Cierre de caja" className="lg:col-span-1">
+      <div class="space-y-3">
+        <app-input-field type="number" [value]="montoCierre()" (valueChange)="montoCierre.set(+$event)" placeholder="Monto físico contado" />
+        <app-input-field [value]="notasCierre()" (valueChange)="notasCierre.set('' + $event)" placeholder="Notas" />
+        <app-button variant="outline" (btnClick)="closeMutation.mutate()">Cerrar caja</app-button>
+      </div>
+    </app-component-card>
+  </div>
+
+  @if (summary(); as s) {
+    <app-component-card title="Movimientos y ventas" className="mt-4">
+      <div class="grid gap-6 lg:grid-cols-2">
+        <div>
+          <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Movimientos</h4>
+          <div class="max-h-64 overflow-auto text-sm">
+            @for (m of s.movimientos; track m.id) {
+              <div class="flex justify-between border-b border-gray-100 py-2 dark:border-gray-800">
+                <span>{{ m.tipo }} · {{ m.comentario ?? '—' }}</span>
+                <span [class.text-rose-600]="m.monto.startsWith('-')">{{ m.monto | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+        <div>
+          <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Ventas de sesión</h4>
+          <div class="max-h-64 overflow-auto text-sm">
+            @for (v of s.ventas; track v.id) {
+              <div class="flex justify-between border-b border-gray-100 py-2 dark:border-gray-800">
+                <span>{{ v.documentType }} {{ v.numero }}</span>
+                <span>{{ v.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+              </div>
+            } @empty {
+              <p class="text-gray-500">Sin ventas en esta sesión</p>
+            }
+          </div>
+        </div>
+      </div>
+    </app-component-card>
+  }
+}

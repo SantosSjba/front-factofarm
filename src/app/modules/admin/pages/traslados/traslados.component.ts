@@ -117,6 +117,15 @@ export class TrasladosComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo recibir')),
   }));
 
+  protected readonly cancelMutation = injectMutation(() => ({
+    mutationFn: (id: string) => firstValueFrom(this.api.cancelInventoryTransfer(id)),
+    onSuccess: (res) => {
+      this.notify.success(res.message);
+      void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'transfers'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo anular')),
+  }));
+
   protected readonly createMutation = injectMutation(() => ({
     mutationFn: (body: CreateInventoryTransferRequest) =>
       firstValueFrom(this.api.createInventoryTransfer(body)),
@@ -147,6 +156,10 @@ export class TrasladosComponent {
 
   protected receive(row: InventoryTransferDto) {
     this.receiveMutation.mutate(row.id);
+  }
+
+  protected cancel(row: InventoryTransferDto) {
+    this.cancelMutation.mutate(row.id);
   }
 
   protected openCreateModal() {

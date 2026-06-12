@@ -297,6 +297,13 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Salida venta (lotes)',
       },
       {
+        path: 'cadena-frio',
+        ...guarded(P.cadenaFrio),
+        loadComponent: () =>
+          import('./pages/cadena-frio/cadena-frio.component').then((m) => m.CadenaFrioComponent),
+        title: 'FactoFarm | Cadena de frío',
+      },
+      {
         path: 'retenciones',
         ...guarded(P.retenciones),
         loadComponent: () =>

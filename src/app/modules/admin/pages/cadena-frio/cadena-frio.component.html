@@ -1,0 +1,86 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">
+    Cadena de frío (BPA)
+  </h1>
+</app-page-toolbar>
+
+<p class="mb-4 text-theme-sm text-gray-500">
+  Registro diario de temperatura en zonas refrigeradas. Requerido para cumplimiento BPA.
+</p>
+
+<div class="grid gap-4 lg:grid-cols-2">
+  <app-component-card title="Registrar temperatura">
+    <div class="space-y-4">
+      <div>
+        <app-label>Almacén</app-label>
+        <app-form-select
+          [options]="warehouseOptions()"
+          [value]="warehouseId()"
+          (valueChange)="warehouseId.set($event); zoneId.set('')"
+        />
+      </div>
+      <div>
+        <app-label>Zona refrigerada</app-label>
+        <app-form-select
+          [options]="zoneOptions()"
+          [value]="zoneId()"
+          (valueChange)="zoneId.set($event)"
+        />
+        @if (warehouseId() && coldZones().length === 0) {
+          <p class="mt-2 text-theme-xs text-amber-600">
+            No hay zonas tipo REFRIGERADO. Créelas en Reporte Inventario → Mapa de zonas.
+          </p>
+        }
+      </div>
+      <div>
+        <app-label>Temperatura (°C)</app-label>
+        <app-input-field type="number" [value]="temperatura()" (valueChange)="temperatura.set(+$event)" />
+      </div>
+      <div>
+        <app-label>Observación</app-label>
+        <app-input-field [value]="observacion()" (valueChange)="observacion.set('' + $event)" />
+      </div>
+      <app-button
+        variant="primary"
+        [disabled]="!zoneId() || registerMutation.isPending()"
+        (btnClick)="registerMutation.mutate()"
+      >
+        Registrar
+      </app-button>
+    </div>
+  </app-component-card>
+
+  <app-component-card title="Historial de la zona">
+    @if (!zoneId()) {
+      <p class="text-theme-sm text-gray-500">Seleccione una zona para ver el historial.</p>
+    } @else if (logsQuery.isPending()) {
+      <p class="text-theme-sm text-gray-500">Cargando…</p>
+    } @else if ((logsQuery.data() ?? []).length === 0) {
+      <p class="text-theme-sm text-gray-500">Sin registros para esta zona.</p>
+    } @else {
+      <div class="max-h-80 overflow-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b text-xs uppercase text-gray-500">
+            <tr>
+              <th class="py-2">Fecha</th>
+              <th class="py-2">°C</th>
+              <th class="py-2">Usuario</th>
+              <th class="py-2">Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of logsQuery.data() ?? []; track log.id) {
+              <tr class="border-b border-gray-100 dark:border-gray-800">
+                <td class="py-2">{{ log.fecha | date: 'short' }}</td>
+                <td class="py-2 font-medium">{{ log.temperaturaCelsius }}</td>
+                <td class="py-2">{{ log.user?.nombre ?? '—' }}</td>
+                <td class="py-2 text-gray-500">{{ log.observacion ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-component-card>
+</div>

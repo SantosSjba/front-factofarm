@@ -36,6 +36,8 @@ export class ReporteKardexComponent {
   protected readonly selectedProductId = signal<string | null>(null);
   protected readonly selectedProductLabel = signal('');
   protected readonly warehouseId = signal('');
+  protected readonly dateFrom = signal('');
+  protected readonly dateTo = signal('');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 50;
   protected readonly productOptions = signal<ProductListItemDto[]>([]);
@@ -52,6 +54,8 @@ export class ReporteKardexComponent {
       {
         productId: this.selectedProductId(),
         warehouseId: this.warehouseId(),
+        from: this.dateFrom() || undefined,
+        to: this.dateTo() || undefined,
         page: this.currentPage(),
       },
     ] as const,
@@ -61,6 +65,8 @@ export class ReporteKardexComponent {
         this.api.getInventoryKardex({
           productId: this.selectedProductId()!,
           warehouseId: this.warehouseId() || undefined,
+          from: this.dateFrom() || undefined,
+          to: this.dateTo() || undefined,
           page: this.currentPage(),
           pageSize: this.itemsPerPage,
         }),
