@@ -3,7 +3,16 @@
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Historial de ventas</h1>
 </app-page-toolbar>
 
-<app-component-card title="Ventas registradas" className="mt-4">
+<app-component-card title="Filtros" className="mt-4 mb-4">
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <app-form-select [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set($event); onFilterChange()" />
+    <app-form-select [options]="docOptions" [value]="documentType()" (valueChange)="documentType.set($event); onFilterChange()" />
+    <input type="date" class="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" [value]="dateFrom()" (input)="dateFrom.set($any($event.target).value); onFilterChange()" />
+    <input type="date" class="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" [value]="dateTo()" (input)="dateTo.set($any($event.target).value); onFilterChange()" />
+  </div>
+</app-component-card>
+
+<app-component-card title="Ventas registradas">
   <div class="overflow-x-auto">
     <table class="w-full text-left text-sm">
       <thead class="border-b text-xs uppercase text-gray-500">
@@ -24,9 +33,7 @@
             <td class="px-3 py-2">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
             <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
             <td class="px-3 py-2">{{ row.seller.nombre }}</td>
-            <td class="px-3 py-2">
-              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{{ row.estado }}</span>
-            </td>
+            <td class="px-3 py-2"><span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{{ row.estado }}</span></td>
             <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             <td class="px-3 py-2 text-right">
               <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
@@ -37,13 +44,7 @@
     </table>
   </div>
   @if (listQuery.data(); as data) {
-    <app-pagination
-      class="mt-4"
-      [totalItems]="data.total"
-      [currentPage]="page()"
-      [pageSize]="pageSize()"
-      (currentPageChange)="page.set($event)"
-    />
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="pageSize()" (currentPageChange)="page.set($event)" />
   }
 </app-component-card>
 
@@ -52,6 +53,9 @@
     <div class="space-y-4 p-6">
       <h3 class="text-lg font-semibold">{{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
       <p class="text-sm text-gray-500">{{ sale.createdAt | date: 'medium' }} · {{ sale.estado }}</p>
+      @if (sale.customer) {
+        <p class="text-sm">Cliente: {{ sale.customer.nombre }}</p>
+      }
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b text-xs uppercase text-gray-500">
@@ -63,14 +67,27 @@
         <tbody>
           @for (item of sale.items; track item.id) {
             <tr class="border-b border-gray-100 dark:border-gray-800">
-              <td class="py-2">{{ item.producto }}</td>
+              <td class="py-2">
+                {{ item.producto }}
+                @if (item.lotes.length > 0) {
+                  <div class="text-xs text-gray-500">
+                    @for (lot of item.lotes; track lot.codigoLote) {
+                      <span>{{ lot.codigoLote }}×{{ lot.cantidad }} </span>
+                    }
+                  </div>
+                }
+              </td>
               <td class="py-2 text-right">{{ item.cantidad }}</td>
               <td class="py-2 text-right">{{ item.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             </tr>
           }
         </tbody>
       </table>
-      <div class="text-right font-bold">{{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</div>
+      <div class="space-y-1 text-sm">
+        <div class="flex justify-between"><span>Subtotal</span><span>{{ sale.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+        <div class="flex justify-between"><span>IGV</span><span>{{ sale.igvTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+        <div class="flex justify-between font-bold"><span>Total</span><span>{{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+      </div>
     </div>
   }
 </app-modal>

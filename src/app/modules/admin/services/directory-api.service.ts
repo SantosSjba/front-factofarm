@@ -156,6 +156,7 @@ import type {
   SaleLotAllocationPreviewDto,
   DispatchSaleStockRequest,
   PosCatalogItemDto,
+  SaleInteractionsCheckDto,
   SaleListItemDto,
   SaleDetailDto,
   CreateSaleRequest,
@@ -1331,6 +1332,12 @@ export class DirectoryApiService {
     const params: Record<string, string> = { warehouseId };
     if (search?.trim()) params['search'] = search.trim();
     return this.http.get<PosCatalogItemDto[]>(`${this.base}/sales/pos-catalog`, { params });
+  }
+
+  checkSaleInteractions(productIds: string[]) {
+    return this.http.post<SaleInteractionsCheckDto>(`${this.base}/sales/check-interactions`, {
+      productIds,
+    });
   }
 
   createSale(body: CreateSaleRequest, idempotencyKey?: string) {

@@ -1,42 +1,139 @@
-﻿<div class="flex min-h-[calc(100vh-8rem)] flex-col rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/40">
-  <header class="flex flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
-    <div class="min-w-[200px] flex-1">
+﻿<div class="flex min-h-[calc(100vh-6rem)] flex-col rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/40 md:min-h-[calc(100vh-8rem)]">
+  <header class="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:gap-3 sm:px-4 sm:py-3">
+    <div class="w-full min-w-[140px] flex-1 sm:w-auto">
       <app-form-select
         [options]="warehouseOptions()"
         [value]="warehouseId()"
         (valueChange)="warehouseId.set($event)"
       />
     </div>
-    <div class="min-w-[140px]">
+    <div class="w-[calc(50%-4px)] min-w-[120px] sm:w-auto sm:min-w-[140px]">
       <app-form-select
         [options]="docOptions"
         [value]="documentType()"
         (valueChange)="documentType.set($any($event))"
       />
     </div>
-    <div class="text-sm text-gray-600 dark:text-gray-400">
+    <div class="w-[calc(50%-4px)] min-w-[100px] sm:w-auto">
+      <app-input-field
+        placeholder="Serie (opc.)"
+        [value]="serie()"
+        (valueChange)="serie.set('' + $event)"
+      />
+    </div>
+    <div class="text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
       @if (cashSession(); as session) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-          Caja: {{ session.cashRegister.nombre }}
+        <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+          {{ session.cashRegister.nombre }}
         </span>
       } @else {
-        <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-          Sin sesión de caja
+        <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+          Sin caja
         </span>
       }
     </div>
-    <div class="ml-auto hidden text-xs text-gray-500 sm:block">
-      <kbd class="rounded border px-1">F1</kbd> buscar · <kbd class="rounded border px-1">F2</kbd> cobrar
+    <div class="hidden text-xs text-gray-500 lg:block">
+      <kbd class="rounded border px-1">F1</kbd> buscar · <kbd class="rounded border px-1">F2</kbd> cobrar · <kbd class="rounded border px-1">F4</kbd> vaciar
     </div>
   </header>
 
-  <div class="grid flex-1 gap-0 lg:grid-cols-5">
-    <section class="border-b border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 lg:col-span-3 lg:border-b-0 lg:border-r">
+  <div class="border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:px-4">
+    @if (customerId()) {
+      <div class="flex items-center gap-2 text-sm">
+        <span class="text-gray-500">Cliente:</span>
+        <span class="font-medium">{{ customerLabel() }}</span>
+        <button type="button" class="text-brand-600 text-xs" (click)="clearCustomer()">Quitar</button>
+      </div>
+    } @else {
+      <div class="flex gap-2">
+        <app-input-field
+          class="flex-1"
+          placeholder="Buscar cliente (opcional)"
+          [value]="customerSearch()"
+          (valueChange)="customerSearch.set('' + $event)"
+        />
+        <app-button size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
+      </div>
+      @if (customerOptions().length > 0) {
+        <ul class="mt-1 max-h-24 overflow-auto rounded border text-sm dark:border-gray-700">
+          @for (c of customerOptions(); track c.id) {
+            <li>
+              <button type="button" class="w-full px-2 py-1 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCustomer(c)">
+                {{ c.nombre }} · {{ c.numeroDocumento }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+
+  @if (interactionsLoading()) {
+    <div class="border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 sm:px-4">
+      Verificando interacciones medicamentosas…
+    </div>
+  } @else if (interactionAlerts().length > 0) {
+    <div
+      class="border-b px-3 py-2 sm:px-4"
+      [class.border-red-300]="hasGraveInteractions()"
+      [class.bg-red-50]="hasGraveInteractions()"
+      [class.dark:border-red-900/50]="hasGraveInteractions()"
+      [class.dark:bg-red-950/30]="hasGraveInteractions()"
+      [class.border-amber-300]="!hasGraveInteractions()"
+      [class.bg-amber-50]="!hasGraveInteractions()"
+      [class.dark:border-amber-900/50]="!hasGraveInteractions()"
+      [class.dark:bg-amber-950/30]="!hasGraveInteractions()"
+    >
+      <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <p class="text-sm font-semibold" [class.text-red-800]="hasGraveInteractions()" [class.dark:text-red-200]="hasGraveInteractions()" [class.text-amber-900]="!hasGraveInteractions()" [class.dark:text-amber-200]="!hasGraveInteractions()">
+          ⚠ Interacciones medicamentosas ({{ interactionAlerts().length }})
+        </p>
+        @if (!interactionsAcknowledged()) {
+          <app-button size="sm" variant="outline" (btnClick)="acknowledgeInteractions()">
+            Confirmar revisión
+          </app-button>
+        } @else {
+          <span class="text-xs text-emerald-700 dark:text-emerald-300">Revisión confirmada</span>
+        }
+      </div>
+      <ul class="space-y-2 text-xs">
+        @for (alert of interactionAlerts(); track alert.principioA + alert.principioB) {
+          <li class="rounded border border-current/20 bg-white/60 p-2 dark:bg-black/20">
+            <div class="font-medium">
+              <span
+                class="mr-1 inline-flex rounded px-1 py-0.5 text-[10px] uppercase"
+                [class.bg-red-200]="alert.severidad === 'GRAVE'"
+                [class.text-red-900]="alert.severidad === 'GRAVE'"
+                [class.bg-amber-200]="alert.severidad === 'MODERADA'"
+                [class.text-amber-900]="alert.severidad === 'MODERADA'"
+                [class.bg-gray-200]="alert.severidad === 'LEVE'"
+                [class.text-gray-800]="alert.severidad === 'LEVE'"
+              >{{ alert.severidad }}</span>
+              {{ alert.principioA }} + {{ alert.principioB }}
+            </div>
+            <p class="mt-0.5 opacity-90">{{ alert.descripcion }}</p>
+            @if (alert.recomendacion) {
+              <p class="mt-0.5 italic opacity-80">{{ alert.recomendacion }}</p>
+            }
+            <p class="mt-1 opacity-70">
+              Productos:
+              @for (p of alert.productos; track p.id; let last = $last) {
+                {{ p.nombre }}@if (!last) {, }
+              }
+            </p>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="grid flex-1 gap-0 md:grid-cols-5">
+    <section class="border-b border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 md:col-span-3 md:border-b-0 md:border-r md:p-4">
       <div class="flex gap-2">
         <input
           #searchInput
           type="text"
-          class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
           placeholder="Código, nombre o barras…"
           [value]="search()"
           (input)="search.set($any($event.target).value)"
@@ -45,116 +142,98 @@
         <app-button variant="primary" (btnClick)="runSearch()">Buscar</app-button>
       </div>
 
-      <div class="mt-4 max-h-[50vh] overflow-auto rounded-xl border border-gray-100 dark:border-gray-800">
+      <div class="mt-3 max-h-[40vh] overflow-auto rounded-xl border border-gray-100 md:max-h-[50vh] dark:border-gray-800">
         <table class="w-full text-left text-sm">
           <thead class="sticky top-0 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-800">
             <tr>
-              <th class="px-3 py-2">Producto</th>
-              <th class="px-3 py-2">Código</th>
-              <th class="px-3 py-2 text-right">Stock</th>
-              <th class="px-3 py-2 text-right">Precio</th>
-              <th class="px-3 py-2"></th>
+              <th class="px-2 py-2 sm:px-3">Producto</th>
+              <th class="hidden px-2 py-2 sm:table-cell sm:px-3">Código</th>
+              <th class="px-2 py-2 text-right sm:px-3">Stock</th>
+              <th class="px-2 py-2 text-right sm:px-3">Precio</th>
+              <th class="px-2 py-2 sm:px-3"></th>
             </tr>
           </thead>
           <tbody>
             @for (item of catalog(); track item.id) {
-              <tr class="border-t border-gray-100 hover:bg-brand-50/50 dark:border-gray-800 dark:hover:bg-brand-900/10">
-                <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">
+              <tr class="border-t border-gray-100 hover:bg-brand-50/50 dark:border-gray-800">
+                <td class="px-2 py-2 font-medium sm:px-3">
                   {{ item.nombre }}
-                  @if (item.necesitaRecetaMedica) {
-                    <span class="ml-1 text-xs text-rose-600">Rx</span>
-                  }
+                  @if (item.necesitaRecetaMedica) { <span class="text-xs text-rose-600">Rx</span> }
                 </td>
-                <td class="px-3 py-2 text-gray-500">{{ item.codigoInterno ?? '—' }}</td>
-                <td class="px-3 py-2 text-right">{{ item.stock }}</td>
-                <td class="px-3 py-2 text-right">{{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-                <td class="px-3 py-2 text-right">
-                  <button
-                    type="button"
-                    class="rounded-lg bg-brand-500 px-2 py-1 text-xs font-medium text-white hover:bg-brand-600"
-                    (click)="addToCart(item)"
-                  >
-                    Agregar
-                  </button>
+                <td class="hidden px-2 py-2 text-gray-500 sm:table-cell sm:px-3">{{ item.codigoInterno ?? '—' }}</td>
+                <td class="px-2 py-2 text-right sm:px-3">{{ item.stock }}</td>
+                <td class="px-2 py-2 text-right sm:px-3">{{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="px-2 py-2 text-right sm:px-3">
+                  <button type="button" class="rounded-lg bg-brand-500 px-2 py-1 text-xs text-white" (click)="addToCart(item)">+</button>
                 </td>
               </tr>
             } @empty {
-              <tr>
-                <td colspan="5" class="px-3 py-8 text-center text-gray-500">Busque productos para agregar al carrito</td>
-              </tr>
+              <tr><td colspan="5" class="px-3 py-8 text-center text-gray-500">Busque productos</td></tr>
             }
           </tbody>
         </table>
       </div>
     </section>
 
-    <section class="flex flex-col bg-white p-4 dark:bg-gray-900 lg:col-span-2">
-      <div class="mb-3 flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Carrito</h2>
+    <section class="flex flex-col bg-white p-3 dark:bg-gray-900 md:col-span-2 md:p-4">
+      <div class="mb-2 flex items-center justify-between">
+        <h2 class="font-semibold text-gray-800 dark:text-white/90">Carrito</h2>
         @if (cart().length > 0) {
-          <button type="button" class="text-sm text-rose-600 hover:underline" (click)="clearCart()">Vaciar</button>
+          <button type="button" class="text-xs text-rose-600" (click)="clearCart()">Vaciar</button>
         }
       </div>
 
       <div class="flex-1 space-y-2 overflow-auto">
         @for (line of cart(); track line.productId) {
-          <div class="rounded-xl border border-gray-100 p-3 dark:border-gray-800">
+          <div class="rounded-xl border border-gray-100 p-2 dark:border-gray-800 sm:p-3">
             <div class="flex justify-between gap-2">
-              <div>
-                <p class="font-medium text-gray-800 dark:text-white/90">{{ line.nombre }}</p>
-                <p class="text-xs text-gray-500">{{ line.codigoInterno ?? '—' }}</p>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-medium text-sm">{{ line.nombre }}</p>
+                @if (line.manejaLotes) {
+                  <button type="button" class="text-xs text-brand-600" (click)="openLotModal(line.productId)">
+                    Lotes ({{ line.lotMode }})
+                  </button>
+                }
               </div>
-              <p class="font-semibold text-gray-800 dark:text-white">
-                {{ line.precio * line.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}
-              </p>
+              <p class="shrink-0 text-sm font-semibold">{{ line.precio * line.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
             </div>
-            <div class="mt-2 flex items-center justify-between">
-              <div class="flex items-center gap-2">
+            <div class="mt-1 flex items-center justify-between">
+              <div class="flex items-center gap-1">
                 <button type="button" class="h-7 w-7 rounded border text-sm" (click)="updateQty(line.productId, -1)">−</button>
-                <span class="min-w-[2rem] text-center text-sm">{{ line.quantity }}</span>
+                <span class="min-w-[1.5rem] text-center text-sm">{{ line.quantity }}</span>
                 <button type="button" class="h-7 w-7 rounded border text-sm" (click)="updateQty(line.productId, 1)">+</button>
               </div>
               <button type="button" class="text-xs text-rose-600" (click)="removeLine(line.productId)">Quitar</button>
             </div>
           </div>
         } @empty {
-          <p class="py-8 text-center text-sm text-gray-500">Carrito vacío</p>
+          <p class="py-6 text-center text-sm text-gray-500">Carrito vacío</p>
         }
       </div>
 
       @if (requiresRx()) {
-        <div class="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-900 dark:bg-rose-900/20">
-          <label class="flex items-center gap-2 text-sm text-rose-800 dark:text-rose-300">
+        <div class="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm dark:border-rose-900 dark:bg-rose-900/20">
+          <label class="flex items-center gap-2">
             <input type="checkbox" [checked]="prescriptionValidated()" (change)="prescriptionValidated.set($any($event.target).checked)" />
-            Receta médica validada
+            Receta validada
           </label>
-          <input
-            type="text"
-            class="mt-2 w-full rounded border border-rose-200 bg-white px-2 py-1 text-sm dark:border-rose-800 dark:bg-gray-900"
-            placeholder="Nota de receta (opcional)"
-            [value]="prescriptionNote()"
-            (input)="prescriptionNote.set($any($event.target).value)"
-          />
         </div>
       }
 
-      <div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
-        <div class="flex justify-between text-lg font-bold text-gray-800 dark:text-white">
-          <span>Total estimado</span>
-          <span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+      <div class="mt-3 space-y-1 border-t border-gray-200 pt-3 text-sm dark:border-gray-800">
+        <div class="flex justify-between text-gray-600"><span>Subtotal</span><span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+        <div class="flex justify-between text-gray-600"><span>IGV (18%)</span><span>{{ cartIgv() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+        <div class="flex justify-between text-base font-bold text-gray-800 dark:text-white">
+          <span>Total</span><span>{{ cartTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
         </div>
-        <app-button
-          class="mt-3 block w-full"
-          variant="primary"
-          [disabled]="cart().length === 0"
-          (btnClick)="openPayModal()"
-        >
+        <app-button class="mt-2 block w-full" variant="primary" [disabled]="cart().length === 0" (btnClick)="openPayModal()">
           Cobrar (F2)
         </app-button>
         @if (lastSale(); as sale) {
-          <p class="mt-2 text-center text-xs text-emerald-600">
-            Última venta: {{ sale.serie }}-{{ sale.numero }} · {{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
-          </p>
+          <div class="mt-2 text-center text-xs text-emerald-600">
+            {{ sale.serie }}-{{ sale.numero }} · {{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
+            <button type="button" class="ml-1 underline" (click)="reprintLast()">Reimprimir</button>
+          </div>
         }
       </div>
     </section>
@@ -163,35 +242,45 @@
 
 <app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-md">
   <div class="space-y-4 p-6">
-    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Cobrar venta</h3>
-    <p class="text-2xl font-bold text-gray-800 dark:text-white">
-      {{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}
-    </p>
-    <div>
-      <app-label>Forma de pago</app-label>
-      <app-form-select
-        [options]="paymentOptions"
-        [value]="paymentMethod()"
-        (valueChange)="paymentMethod.set($any($event))"
-      />
+    <h3 class="text-lg font-semibold">Cobrar venta</h3>
+    <div class="space-y-1 text-sm">
+      <div class="flex justify-between"><span>Subtotal</span><span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+      <div class="flex justify-between"><span>IGV</span><span>{{ cartIgv() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+      <div class="flex justify-between text-lg font-bold"><span>Total</span><span>{{ cartTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
     </div>
-    <div>
-      <app-label>Monto recibido</app-label>
-      <app-input-field
-        type="number"
-        [value]="paymentAmount()"
-        (valueChange)="paymentAmount.set(+$event)"
-      />
-    </div>
-    <div>
-      <app-label>Código promoción (opcional)</app-label>
-      <app-input-field [value]="promotionCode()" (valueChange)="promotionCode.set('' + $event)" />
-    </div>
-    <div class="flex justify-end gap-2 pt-2">
+    <app-form-select [options]="paymentOptions" [value]="paymentMethod()" (valueChange)="paymentMethod.set($any($event))" />
+    <app-input-field type="number" [value]="paymentAmount()" (valueChange)="paymentAmount.set(+$event)" />
+    <app-input-field [value]="promotionCode()" (valueChange)="promotionCode.set('' + $event)" placeholder="Código promoción" />
+    <div class="flex justify-end gap-2">
       <app-button variant="outline" (btnClick)="payModalOpen.set(false)">Cancelar</app-button>
-      <app-button variant="primary" [disabled]="saleMutation.isPending()" (btnClick)="confirmSale()">
-        Confirmar venta
-      </app-button>
+      <app-button variant="primary" [disabled]="saleMutation.isPending()" (btnClick)="confirmSale()">Confirmar e imprimir</app-button>
     </div>
   </div>
+</app-modal>
+
+<app-modal [isOpen]="!!lotModalProductId()" (close)="closeLotModal()" className="w-full max-w-lg">
+  @if (lotModalLine(); as line) {
+    <div class="space-y-3 p-6">
+      <h3 class="font-semibold">Lotes — {{ line.nombre }}</h3>
+      <div class="flex gap-2">
+        <app-button size="sm" [variant]="line.lotMode === 'AUTO' ? 'primary' : 'outline'" (btnClick)="setLotMode('AUTO')">FEFO/FIFO</app-button>
+        <app-button size="sm" [variant]="line.lotMode === 'MANUAL' ? 'primary' : 'outline'" (btnClick)="setLotMode('MANUAL')">Manual</app-button>
+      </div>
+      @if (line.lotMode === 'MANUAL') {
+        <div class="flex gap-2">
+          <app-input-field placeholder="Código lote" [value]="manualLotCode()" (valueChange)="manualLotCode.set('' + $event)" />
+          <app-input-field type="number" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event)" />
+          <app-button size="sm" (btnClick)="addManualLot()">+</app-button>
+        </div>
+      }
+      @if (lotPreviewLoading()) {
+        <p class="text-sm text-gray-500">Calculando…</p>
+      } @else {
+        @for (row of lotPreviewRows(); track row.codigoLote) {
+          <div class="text-sm">{{ row.codigoLote }} × {{ row.cantidad }}</div>
+        }
+      }
+      <app-button variant="primary" (btnClick)="closeLotModal()">Listo</app-button>
+    </div>
+  }
 </app-modal>

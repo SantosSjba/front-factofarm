@@ -1563,6 +1563,23 @@ export interface PosCatalogItemDto {
   manejaLotes: boolean;
 }
 
+export type DrugInteractionSeverity = 'LEVE' | 'MODERADA' | 'GRAVE';
+
+export interface SaleInteractionAlertDto {
+  severidad: DrugInteractionSeverity;
+  principioA: string;
+  principioB: string;
+  descripcion: string;
+  recomendacion: string | null;
+  productos: { id: string; nombre: string; principioActivo: string }[];
+}
+
+export interface SaleInteractionsCheckDto {
+  hasAlerts: boolean;
+  alerts: SaleInteractionAlertDto[];
+  missingPrinciples: { id: string; nombre: string }[];
+}
+
 export interface SaleListItemDto {
   id: string;
   documentType: SaleDocumentType;
@@ -1627,6 +1644,7 @@ export interface CreateSaleRequest {
   cashSessionId?: string;
   customerId?: string;
   documentType: SaleDocumentType;
+  serie?: string;
   prescriptionValidated?: boolean;
   prescriptionNote?: string;
   promotionCode?: string;

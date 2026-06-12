@@ -27,6 +27,7 @@ import type {
   InventoryMovementListItemDto,
   InventoryPendingAdjustmentDto,
 } from '../../models/directory.models';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -46,6 +47,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     InputFieldComponent,
     LabelComponent,
     FormSelectComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './inventario-movimientos.component.html',
 })
