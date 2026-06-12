@@ -13,7 +13,14 @@
   </div>
 </app-component-card>
 
-<app-component-card title="Bandeja CPE" className="mt-4">
+@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+
+<app-component-card title="Bandeja CPE" className="mt-4"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay comprobantes en la bandeja"
+  (retry)="listQuery.refetch()">
   <table class="w-full text-left text-sm">
     <thead class="border-b text-xs uppercase text-gray-500">
       <tr>
@@ -28,7 +35,7 @@
     <tbody>
       @for (row of listQuery.data()?.items ?? []; track row.id) {
         <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2 font-medium">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
+          <td class="px-3 py-2 font-medium">{{ row.documentType }} {{ row.serie }}-{{ row.numero }
           <td class="px-3 py-2">{{ row.customerNombre ?? '—' }}</td>
           <td class="px-3 py-2">
             <span class="rounded-full px-2 py-0.5 text-xs" [class]="statusClass(row.sunatStatus)">{{ row.sunatStatus }}</span>
@@ -41,6 +48,10 @@
               <button type="button" class="ml-2 text-amber-600 hover:underline" (click)="retryMutation.mutate(row.id)">Reenviar</button>
             }
           </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
         </tr>
       }
     </tbody>

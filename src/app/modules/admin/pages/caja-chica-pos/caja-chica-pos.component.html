@@ -3,6 +3,12 @@
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Caja chica POS</h1>
 </app-page-toolbar>
 
+<app-page-state
+  [loading]="registersQuery.isPending() || sessionQuery.isPending()"
+  [error]="posInitError()"
+  [showRetry]="true"
+  (retry)="refetchPosInit()"
+>
 @if (!session()) {
   <app-component-card title="Apertura de caja" className="mt-4">
     <div class="grid gap-4 sm:grid-cols-2 lg:max-w-xl">
@@ -97,3 +103,4 @@
     </app-component-card>
   }
 }
+</app-page-state>

@@ -1,4 +1,5 @@
-﻿import { CommonModule } from '@angular/common';
+﻿import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -21,6 +22,7 @@ import type { CreateMedicoRequest, MedicoItemDto } from '../../models/directory.
   selector: 'app-medicos',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

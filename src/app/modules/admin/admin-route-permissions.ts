@@ -2,6 +2,7 @@
 export const ADMIN_ROUTE_PERMISSIONS = {
   dashboard: ['nav.dashboard_admin'],
   usuarios: ['users.read', 'nav.usuarios'],
+  auditoria: ['audit.read', 'nav.auditoria'],
   establecimientos: ['nav.establecimientos'],
   clientes: ['customers.read', 'nav.clientes_list'],
   tipoClientes: ['customer-types.read', 'nav.tipo_clientes'],

@@ -79,7 +79,14 @@
 @if (!selectedProductId()) {
   <p class="text-theme-sm text-gray-500">Seleccione un producto para ver el kardex valorizado.</p>
 } @else {
-  <app-component-card title="Movimientos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  @let kardexState = kardexQuery | queryPageState: totalRows();
+
+  <app-component-card title="Movimientos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+    [loading]="kardexState.loading"
+    [error]="kardexState.error"
+    [empty]="kardexState.empty"
+    emptyTitle="Sin movimientos en el periodo"
+    (retry)="kardexQuery.refetch()">
     <div class="overflow-x-auto">
       <table class="min-w-full text-left">
         <thead class="border-b border-gray-100">
@@ -93,21 +100,21 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          @if (kardexQuery.isPending()) {
-            <tr><td colspan="6" class="px-4 py-6 text-center text-theme-sm">Cargando…</td></tr>
-          } @else if (rows().length === 0) {
-            <tr><td colspan="6" class="px-4 py-6 text-center text-theme-sm">Sin movimientos.</td></tr>
-          } @else {
-            @for (row of rows(); track row.id) {
-              <tr>
-                <td class="px-4 py-3 text-theme-sm">{{ row.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ row.tipo }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ row.motivo }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ row.cantidad }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ row.saldo }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ row.valorLinea }}</td>
-              </tr>
-            }
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td class="px-4 py-3 text-theme-sm">{{ row.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.tipo }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.motivo }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.cantidad }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.saldo }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.valorLinea }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-4 py-6 text-center text-theme-sm text-gray-500">
+                Sin coincidencias para los filtros aplicados.
+              </td>
+            </tr>
           }
         </tbody>
       </table>

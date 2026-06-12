@@ -17,16 +17,6 @@
   </div>
 </app-page-toolbar>
 
-@if (zonesQuery.isError()) {
-  <div
-    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-    role="alert"
-  >
-    No se pudo cargar el listado.
-    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
-  </div>
-}
-
 <app-list-filters
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
@@ -39,7 +29,14 @@
   (clear)="clearFilters()"
 />
 
-<app-component-card title="Listado de Zonas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+@let listState = zonesQuery | queryPageState: totalRows();
+
+<app-component-card title="Listado de Zonas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay zonas registradas"
+  (retry)="refetchRows()">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-left">
@@ -81,14 +78,8 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="3" class="px-5 py-8 text-center text-theme-sm text-gray-500">
-                @if (zonesQuery.isPending()) {
-                  Cargando…
-                } @else if (zonesQuery.isError()) {
-                  Use “Reintentar” arriba para volver a cargar.
-                } @else {
-                  No hay zonas registradas.
-                }
+              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
+                Sin coincidencias para los filtros aplicados.
               </td>
             </tr>
           }

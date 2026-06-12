@@ -146,6 +146,36 @@ export interface DashboardStatsDto {
   inventoryAlerts: DashboardInventoryAlertsDto;
 }
 
+export interface ChainSummaryEstablishmentDto {
+  establishmentId: string;
+  nombre: string;
+  codigo: string | null;
+  ventas30d: number;
+  totalVentas30d: string;
+  unidadesStock: string;
+}
+
+export interface DashboardChainSummaryDto {
+  periodDays: number;
+  establishments: ChainSummaryEstablishmentDto[];
+}
+
+export interface AuditLogItemDto {
+  id: string;
+  userId: string | null;
+  action: string;
+  entity: string;
+  entityId: string | null;
+  diff: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+export type AuditLogListResponseDto =
+  | PaginatedResponseDto<AuditLogItemDto>
+  | { items: AuditLogItemDto[]; nextCursor: string | null; pageSize: number };
+
 export interface PermissionMenuNodeDto {
   id: string;
   code: string;

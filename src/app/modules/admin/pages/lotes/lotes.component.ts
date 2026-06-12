@@ -1,5 +1,6 @@
 ﻿import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -17,6 +18,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   selector: 'app-lotes',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

@@ -1,3 +1,4 @@
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
@@ -28,6 +29,7 @@ type ReceiptLine = {
   selector: 'app-recepcion-mercaderia',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     CurrencyPipe,
     BreadcrumbInlineComponent,
@@ -99,6 +101,10 @@ export class RecepcionMercaderiaComponent {
 
   protected parseNum(value: unknown): number {
     return Number(value) || 0;
+  }
+
+  protected detailErrorMessage(): string {
+    return httpErrorMessage(this.detailQuery.error(), 'No se pudo cargar el detalle de la orden.');
   }
 
   protected readonly receiveMutation = injectMutation(() => ({

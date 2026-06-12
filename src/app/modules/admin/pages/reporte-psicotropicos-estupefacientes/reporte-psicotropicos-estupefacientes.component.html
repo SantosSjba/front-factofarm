@@ -9,88 +9,91 @@
 </div>
 
 @if (activeTab() === 'ledger') {
-  <app-component-card title="Libro de control" subtitle="Entradas y salidas de sustancias controladas">
+  @let ledgerState = ledgerQuery | queryPageState: ledgerRows().length;
+
+  <app-component-card title="Libro de control" desc="Entradas y salidas de sustancias controladas"
+    [loading]="ledgerState.loading"
+    [error]="ledgerState.error"
+    [empty]="ledgerState.empty"
+    emptyTitle="Sin movimientos en el periodo seleccionado"
+    emptyHint="Ajuste el rango de fechas e intente de nuevo."
+    (retry)="ledgerQuery.refetch()">
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
       <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
       <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportLedger()">Exportar Excel DIGEMID</app-button>
     </div>
 
-    @if (ledgerQuery.isLoading()) {
-      <p class="text-gray-500">Cargando movimientos…</p>
-    } @else if (ledgerRows().length === 0) {
-      <p class="text-gray-500">Sin movimientos en el periodo seleccionado.</p>
-    } @else {
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b text-left text-gray-500">
-              <th class="py-2 pr-4">Fecha</th>
-              <th class="py-2 pr-4">Producto</th>
-              <th class="py-2 pr-4">Categoría</th>
-              <th class="py-2 pr-4">Mov.</th>
-              <th class="py-2 pr-4">Cantidad</th>
-              <th class="py-2 pr-4">Saldo</th>
-              <th class="py-2 pr-4">Referencia</th>
-              <th class="py-2">Usuario</th>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="border-b text-left text-gray-500">
+            <th class="py-2 pr-4">Fecha</th>
+            <th class="py-2 pr-4">Producto</th>
+            <th class="py-2 pr-4">Categoría</th>
+            <th class="py-2 pr-4">Mov.</th>
+            <th class="py-2 pr-4">Cantidad</th>
+            <th class="py-2 pr-4">Saldo</th>
+            <th class="py-2 pr-4">Referencia</th>
+            <th class="py-2">Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of ledgerRows(); track row.id) {
+            <tr class="border-b border-gray-100">
+              <td class="py-2 pr-4">{{ row.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="py-2 pr-4">{{ row.product.nombre }}</td>
+              <td class="py-2 pr-4">{{ row.product.controlledSubstanceCategory?.schedule ?? '—' }}</td>
+              <td class="py-2 pr-4">{{ row.movementType }}</td>
+              <td class="py-2 pr-4">{{ row.cantidad }}</td>
+              <td class="py-2 pr-4">{{ row.saldo }}</td>
+              <td class="py-2 pr-4">{{ row.referencia ?? '—' }}</td>
+              <td class="py-2">{{ row.user?.nombre ?? '—' }}</td>
             </tr>
-          </thead>
-          <tbody>
-            @for (row of ledgerRows(); track row.id) {
-              <tr class="border-b border-gray-100">
-                <td class="py-2 pr-4">{{ row.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
-                <td class="py-2 pr-4">{{ row.product.nombre }}</td>
-                <td class="py-2 pr-4">{{ row.product.controlledSubstanceCategory?.schedule ?? '—' }}</td>
-                <td class="py-2 pr-4">{{ row.movementType }}</td>
-                <td class="py-2 pr-4">{{ row.cantidad }}</td>
-                <td class="py-2 pr-4">{{ row.saldo }}</td>
-                <td class="py-2 pr-4">{{ row.referencia ?? '—' }}</td>
-                <td class="py-2">{{ row.user?.nombre ?? '—' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
+          }
+        </tbody>
+      </table>
+    </div>
   </app-component-card>
 }
 
 @if (activeTab() === 'monthly') {
-  <app-component-card title="Resumen mensual" subtitle="Consolidado por producto controlado">
+  @let monthlyState = monthlyQuery | queryPageState: monthlySummary().length;
+
+  <app-component-card title="Resumen mensual" desc="Consolidado por producto controlado"
+    [loading]="monthlyState.loading"
+    [error]="monthlyState.error"
+    [empty]="monthlyState.empty"
+    emptyTitle="Sin movimientos en el mes indicado"
+    (retry)="monthlyQuery.refetch()">
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-input-field label="Año" type="number" [value]="reportYear()" (valueChange)="onReportYearChange($event)" />
       <app-input-field label="Mes" type="number" [value]="reportMonth()" (valueChange)="onReportMonthChange($event)" />
     </div>
 
-    @if (monthlyQuery.isLoading()) {
-      <p class="text-gray-500">Calculando resumen…</p>
-    } @else if (monthlySummary().length === 0) {
-      <p class="text-gray-500">Sin movimientos en el mes indicado.</p>
-    } @else {
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b text-left text-gray-500">
-              <th class="py-2 pr-4">Producto</th>
-              <th class="py-2 pr-4">Schedule</th>
-              <th class="py-2 pr-4">Entradas</th>
-              <th class="py-2 pr-4">Salidas</th>
-              <th class="py-2">Saldo final</th>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="border-b text-left text-gray-500">
+            <th class="py-2 pr-4">Producto</th>
+            <th class="py-2 pr-4">Schedule</th>
+            <th class="py-2 pr-4">Entradas</th>
+            <th class="py-2 pr-4">Salidas</th>
+            <th class="py-2">Saldo final</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of monthlySummary(); track row.productId) {
+            <tr class="border-b border-gray-100">
+              <td class="py-2 pr-4">{{ row.producto }}</td>
+              <td class="py-2 pr-4">{{ row.schedule ?? '—' }}</td>
+              <td class="py-2 pr-4">{{ row.entradas }}</td>
+              <td class="py-2 pr-4">{{ row.salidas }}</td>
+              <td class="py-2">{{ row.saldoFinal }}</td>
             </tr>
-          </thead>
-          <tbody>
-            @for (row of monthlySummary(); track row.productId) {
-              <tr class="border-b border-gray-100">
-                <td class="py-2 pr-4">{{ row.producto }}</td>
-                <td class="py-2 pr-4">{{ row.schedule ?? '—' }}</td>
-                <td class="py-2 pr-4">{{ row.entradas }}</td>
-                <td class="py-2 pr-4">{{ row.salidas }}</td>
-                <td class="py-2">{{ row.saldoFinal }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
+          }
+        </tbody>
+      </table>
+    </div>
   </app-component-card>
 }

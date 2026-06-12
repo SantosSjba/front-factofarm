@@ -21,16 +21,6 @@
   </div>
 </app-page-toolbar>
 
-@if (usersQuery.isError()) {
-  <div
-    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-    role="alert"
-  >
-    No se pudo cargar el listado.
-    <button type="button" class="ml-3 underline" (click)="refetchUsers()">Reintentar</button>
-  </div>
-}
-
 <app-list-filters
   [searchValue]="searchTerm()"
   searchPlaceholder="Buscar por nombre o correo"
@@ -43,7 +33,14 @@
   (clear)="clearFilters()"
 />
 
-<app-component-card title="Listado de usuarios" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+@let listState = usersQuery | queryPageState: totalUsers();
+
+<app-component-card title="Listado de usuarios" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay usuarios registrados"
+  (retry)="refetchUsers()">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-left">
@@ -71,17 +68,14 @@
               <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ u.email }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ u.nombre }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ roleLabel(u.role) }}
-              </td>
+                {{ roleLabel(u.role) }}</td>
               <td
                 class="max-w-[220px] truncate px-5 py-4 font-mono text-theme-xs text-gray-500"
                 [title]="apiTokenCell()"
               >
-                {{ apiTokenCell() }}
-              </td>
+                {{ apiTokenCell() }}</td>
               <td class="px-5 py-4 text-end text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ u.establecimientoNombre }}
-              </td>
+                {{ u.establecimientoNombre }}</td>
               <td class="px-5 py-4 text-end">
                 <div class="flex flex-wrap justify-end gap-2">
                   @if (u.role === 'ADMINISTRADOR') {
@@ -121,14 +115,8 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="px-5 py-8 text-center text-theme-sm text-gray-500">
-                @if (usersQuery.isPending()) {
-                  Cargando…
-                } @else if (usersQuery.isError()) {
-                  Use “Reintentar” arriba para volver a cargar.
-                } @else {
-                  No hay usuarios registrados.
-                }
+              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
+                Sin coincidencias para los filtros aplicados.
               </td>
             </tr>
           }

@@ -1,4 +1,5 @@
 ﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -19,6 +20,7 @@ import type { AccountPayableListItemDto } from '../../models/directory.models';
   selector: 'app-cuentas-pagar',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     CurrencyPipe,
     DatePipe,

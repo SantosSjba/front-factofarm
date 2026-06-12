@@ -5,6 +5,7 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
+import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 
 @Component({
@@ -26,11 +27,13 @@ export class ForgotPasswordComponent {
   protected readonly email = signal('');
   protected readonly isLoading = signal(false);
   protected readonly sent = signal(false);
+  protected readonly submitError = signal<string | null>(null);
 
   protected submit() {
     const value = this.email().trim();
     if (!value || this.isLoading()) return;
 
+    this.submitError.set(null);
     this.isLoading.set(true);
     this.auth.forgotPassword(value).subscribe({
       next: () => {
@@ -38,9 +41,11 @@ export class ForgotPasswordComponent {
         this.sent.set(true);
         this.notify.success('Si el correo existe, recibirás instrucciones para restablecer tu contraseña.');
       },
-      error: () => {
+      error: (err) => {
         this.isLoading.set(false);
-        this.notify.error('No se pudo procesar la solicitud. Intente más tarde.');
+        const message = httpErrorMessage(err, 'No se pudo procesar la solicitud. Intente más tarde.');
+        this.submitError.set(message);
+        this.notify.error(message);
       },
     });
   }

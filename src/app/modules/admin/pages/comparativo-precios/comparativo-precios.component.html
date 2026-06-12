@@ -3,7 +3,15 @@
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Comparativo de precios</h1>
 </app-page-toolbar>
 
-<app-component-card title="Precios por proveedor" className="mt-4">
+@let reportState = reportQuery | queryPageState: (reportQuery.data()?.items?.length ?? 0);
+
+<app-component-card title="Precios por proveedor" className="mt-4"
+  [loading]="reportState.loading"
+  [error]="reportState.error"
+  [empty]="reportState.empty"
+  emptyTitle="Sin productos con precios de compra"
+  emptyHint="Vincule productos con precios de compra en Proveedores."
+  (retry)="reportQuery.refetch()">
   <div class="space-y-6">
     @for (row of reportQuery.data()?.items ?? []; track row.productId) {
       <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
@@ -41,7 +49,4 @@
       </div>
     }
   </div>
-  @if ((reportQuery.data()?.items?.length ?? 0) === 0 && !reportQuery.isPending()) {
-    <p class="py-6 text-center text-gray-500">Vincule productos con precios de compra en Proveedores.</p>
-  }
 </app-component-card>

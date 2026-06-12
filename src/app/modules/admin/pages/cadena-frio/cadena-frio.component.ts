@@ -1,3 +1,4 @@
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
@@ -18,6 +19,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   selector: 'app-cadena-frio',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     DatePipe,
     BreadcrumbInlineComponent,

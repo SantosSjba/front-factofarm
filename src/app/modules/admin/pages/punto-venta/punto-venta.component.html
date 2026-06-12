@@ -1,4 +1,10 @@
 ﻿<div class="flex min-h-[calc(100vh-6rem)] flex-col rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/40 md:min-h-[calc(100vh-8rem)]">
+  <app-page-state
+    [loading]="warehousesQuery.isPending() || cashSessionQuery.isPending()"
+    [error]="posBootstrapError()"
+    [showRetry]="true"
+    (retry)="refetchPosBootstrap()"
+  >
   <header class="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:gap-3 sm:px-4 sm:py-3">
     <div class="w-full min-w-[140px] flex-1 sm:w-auto">
       <app-form-select
@@ -17,6 +23,7 @@
     <div class="w-[calc(50%-4px)] min-w-[100px] sm:w-auto">
       <app-input-field
         placeholder="Serie (opc.)"
+        ariaLabel="Serie del comprobante (opcional)"
         [value]="serie()"
         (valueChange)="serie.set('' + $event)"
       />
@@ -49,6 +56,7 @@
         <app-input-field
           class="flex-1"
           placeholder="Buscar cliente (opcional)"
+          ariaLabel="Buscar cliente por nombre o documento"
           [value]="customerSearch()"
           (valueChange)="customerSearch.set('' + $event)"
         />
@@ -132,9 +140,11 @@
       <div class="flex gap-2">
         <input
           #searchInput
-          type="text"
+          type="search"
           class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
           placeholder="Código, nombre o barras…"
+          aria-label="Buscar producto por código, nombre o barras"
+          autocomplete="off"
           [value]="search()"
           (input)="search.set($any($event.target).value)"
           (keydown.enter)="runSearch()"
@@ -278,6 +288,7 @@
       </div>
     </section>
   </div>
+  </app-page-state>
 </div>
 
 <app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-md">

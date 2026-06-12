@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+﻿import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -18,6 +19,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   selector: 'app-anulaciones',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     CurrencyPipe,
     DatePipe,

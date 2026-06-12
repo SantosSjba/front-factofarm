@@ -5,6 +5,7 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
+import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 
 @Component({
@@ -28,6 +29,7 @@ export class ResetPasswordComponent implements OnInit {
   protected readonly password2 = signal('');
   protected readonly isLoading = signal(false);
   protected readonly token = signal('');
+  protected readonly submitError = signal<string | null>(null);
 
   ngOnInit() {
     const t = this.route.snapshot.queryParamMap.get('token')?.trim() ?? '';
@@ -53,15 +55,18 @@ export class ResetPasswordComponent implements OnInit {
     }
 
     this.isLoading.set(true);
+    this.submitError.set(null);
     this.auth.resetPassword(t, p1).subscribe({
       next: () => {
         this.isLoading.set(false);
         this.notify.success('Contraseña actualizada. Ya puedes iniciar sesión.');
         void this.router.navigateByUrl('/auth/signin');
       },
-      error: () => {
+      error: (err) => {
         this.isLoading.set(false);
-        this.notify.error('Enlace inválido o expirado. Solicita uno nuevo.');
+        const message = httpErrorMessage(err, 'Enlace inválido o expirado. Solicita uno nuevo.');
+        this.submitError.set(message);
+        this.notify.error(message);
       },
     });
   }

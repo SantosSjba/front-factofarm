@@ -1,4 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -26,6 +27,7 @@ type OrderLine = { productId: string; nombre: string; quantity: number; unitPric
   selector: 'app-ordenes-compra',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     CurrencyPipe,
     DatePipe,

@@ -26,7 +26,14 @@
   </select>
 </div>
 
-<app-component-card title="Transferencias" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+@let listState = transfersQuery | queryPageState: totalRows();
+
+<app-component-card title="Transferencias" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="Sin transferencias registradas"
+  (retry)="transfersQuery.refetch()">
   <div class="overflow-x-auto">
     <table class="min-w-full text-left">
       <thead class="border-b border-gray-100">
@@ -39,34 +46,34 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
-        @if (transfersQuery.isPending()) {
-          <tr><td colspan="5" class="px-4 py-6 text-center text-theme-sm">Cargando…</td></tr>
-        } @else if (rows().length === 0) {
-          <tr><td colspan="5" class="px-4 py-6 text-center text-theme-sm">Sin transferencias registradas.</td></tr>
-        } @else {
-          @for (row of rows(); track row.id) {
-            <tr>
-              <td class="px-4 py-3 text-theme-sm">
-                {{ row.fromWarehouse.nombre }} → {{ row.toWarehouse.nombre }}
-                <div class="text-theme-xs text-gray-500">{{ row.createdAt | date: 'yyyy-MM-dd HH:mm' }}</div>
-              </td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.estado }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.guiaNumero || '—' }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.items.length }}</td>
-              <td class="px-4 py-3 text-end">
-                <div class="flex justify-end gap-2" *appHasPermission="'inventory.write'">
-                  @if (row.estado === 'BORRADOR') {
-                    <app-button size="sm" (btnClick)="dispatch(row)">Despachar</app-button>
-                    <app-button size="sm" variant="outline" (btnClick)="cancel(row)">Anular</app-button>
-                  }
-                  @if (row.estado === 'EN_TRANSITO') {
-                    <app-button size="sm" (btnClick)="receive(row)">Recibir</app-button>
-                    <app-button size="sm" variant="outline" (btnClick)="emitGuia(row)">Guía SUNAT</app-button>
-                  }
-                </div>
-              </td>
-            </tr>
-          }
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td class="px-4 py-3 text-theme-sm">
+              {{ row.fromWarehouse.nombre }} → {{ row.toWarehouse.nombre }}
+              <div class="text-theme-xs text-gray-500">{{ row.createdAt | date: 'yyyy-MM-dd HH:mm' }}</div>
+            </td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.estado }}</td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.guiaNumero || '—' }}</td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.items.length }}</td>
+            <td class="px-4 py-3 text-end">
+              <div class="flex justify-end gap-2" *appHasPermission="'inventory.write'">
+                @if (row.estado === 'BORRADOR') {
+                  <app-button size="sm" (btnClick)="dispatch(row)">Despachar</app-button>
+                  <app-button size="sm" variant="outline" (btnClick)="cancel(row)">Anular</app-button>
+                }
+                @if (row.estado === 'EN_TRANSITO') {
+                  <app-button size="sm" (btnClick)="receive(row)">Recibir</app-button>
+                  <app-button size="sm" variant="outline" (btnClick)="emitGuia(row)">Guía SUNAT</app-button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">
+              Sin coincidencias para los filtros aplicados.
+            </td>
+          </tr>
         }
       </tbody>
     </table>

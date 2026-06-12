@@ -130,6 +130,8 @@ import type {
   UserListItemDto,
   UserListResponseDto,
   DashboardStatsDto,
+  DashboardChainSummaryDto,
+  AuditLogListResponseDto,
   EstablishmentListResponseDto,
   InventoryLotListFiltersRequest,
   InventoryLotListResponseDto,
@@ -236,6 +238,14 @@ export class DirectoryApiService {
 
   getDashboardStats() {
     return this.http.get<DashboardStatsDto>(`${this.base}/dashboard/stats`);
+  }
+
+  getDashboardChainSummary() {
+    return this.http.get<DashboardChainSummaryDto>(`${this.base}/dashboard/chain-summary`);
+  }
+
+  listAuditLogs(params?: Record<string, string>) {
+    return this.http.get<AuditLogListResponseDto>(`${this.base}/audit-logs`, { params });
   }
 
   listEstablishmentsAll(filters?: Omit<EstablishmentListFiltersRequest, 'page' | 'pageSize'>) {

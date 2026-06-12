@@ -4,7 +4,14 @@
   <app-button variant="primary" (btnClick)="createOpen.set(true)">Nueva cotización</app-button>
 </app-page-toolbar>
 
-<app-component-card title="Listado" className="mt-4">
+@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+
+<app-component-card title="Listado" className="mt-4"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay cotizaciones registradas"
+  (retry)="listQuery.refetch()">
   <table class="w-full text-left text-sm">
     <thead class="border-b text-xs uppercase text-gray-500">
       <tr>
@@ -31,6 +38,10 @@
               </button>
             }
           </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
         </tr>
       }
     </tbody>

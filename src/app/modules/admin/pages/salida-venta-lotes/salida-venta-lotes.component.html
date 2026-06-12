@@ -111,11 +111,19 @@
   }
 </app-component-card>
 
-@if (preview()) {
-  <app-component-card title="Previsualización" className="mb-6 overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+@if (productId() && warehouseId() && quantity() > 0) {
+  @let previewState = previewQuery | queryPageState: allocationRows().length;
+
+  <app-component-card title="Previsualización" className="mb-6 overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+    [loading]="previewState.loading"
+    [error]="previewState.error"
+    [empty]="previewState.empty"
+    emptyTitle="Sin lotes asignables"
+    (retry)="previewQuery.refetch()">
+    @if (preview(); as data) {
     <p class="border-b border-gray-100 px-4 py-3 text-theme-sm text-gray-600 dark:border-gray-800">
-      Método: <strong>{{ preview()!.metodoAsignacion }}</strong>
-      · Bloqueo vencidos: <strong>{{ preview()!.blockExpiredProductSales ? 'Sí' : 'No' }}</strong>
+      Método: <strong>{{ data.metodoAsignacion }}</strong>
+      · Bloqueo vencidos: <strong>{{ data.blockExpiredProductSales ? 'Sí' : 'No' }}</strong>
     </p>
     <table class="min-w-full text-left">
       <thead class="border-b border-gray-100">
@@ -137,6 +145,7 @@
         }
       </tbody>
     </table>
+    }
   </app-component-card>
 }
 

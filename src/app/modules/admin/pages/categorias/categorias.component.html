@@ -19,17 +19,14 @@
   </div>
 </app-page-toolbar>
 
-@if (categoriesQuery.isError()) {
-  <div
-    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-    role="alert"
-  >
-    No se pudo cargar el listado.
-    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
-  </div>
-}
+@let treeState = treeQuery | queryPageState: treeRows().length;
 
-<app-component-card title="Árbol de categorías" className="mb-5 overflow-hidden">
+<app-component-card title="Árbol de categorías" className="mb-5 overflow-hidden"
+  [loading]="treeState.loading"
+  [error]="treeState.error"
+  [empty]="treeState.empty"
+  emptyTitle="No hay categorías registradas"
+  (retry)="refetchTree()">
   <div class="space-y-1 text-theme-sm text-gray-700 dark:text-gray-300">
     @for (node of treeRows(); track node.id) {
       <div [style.padding-left.px]="node.depth * 16" class="rounded px-2 py-1 hover:bg-gray-50 dark:hover:bg-white/5">
@@ -38,8 +35,6 @@
         }
         {{ node.label }}
       </div>
-    } @empty {
-      <p class="text-gray-500">@if (treeQuery.isPending()) { Cargando árbol… } @else { Sin categorías. }</p>
     }
   </div>
 </app-component-card>
@@ -56,7 +51,14 @@
   (clear)="clearFilters()"
 />
 
-<app-component-card title="Listado de Categorías" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+@let listState = categoriesQuery | queryPageState: totalRows();
+
+<app-component-card title="Listado de Categorías" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay categorías registradas"
+  (retry)="refetchRows()">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-left">
@@ -80,8 +82,7 @@
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ pageStart() + i + 1 }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ row.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}
-              </td>
+                {{ row.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
               <td class="px-5 py-4 text-end">
                 <div class="flex flex-wrap justify-end gap-2">
                   <ng-container *appHasPermission="'categories.write'">
@@ -106,14 +107,8 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="px-5 py-8 text-center text-theme-sm text-gray-500">
-                @if (categoriesQuery.isPending()) {
-                  Cargando…
-                } @else if (categoriesQuery.isError()) {
-                  Use “Reintentar” arriba para volver a cargar.
-                } @else {
-                  No hay categorías registradas.
-                }
+              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
+                Sin coincidencias para los filtros aplicados.
               </td>
             </tr>
           }

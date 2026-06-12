@@ -28,6 +28,10 @@ export const apiErrorInterceptor: HttpInterceptorFn = (req, next) => {
       if (err.status === 403) {
         notify.error('Acceso denegado', 'No tiene permisos para esta operación.');
         void router.navigate(['/dashboard']);
+      } else if (err.status >= 500) {
+        notify.error('Error del servidor', 'Intente nuevamente en unos momentos.');
+      } else if (err.status === 0) {
+        notify.error('Sin conexión', 'Verifique su conexión a internet o el estado del API.');
       }
 
       return throwError(() => err);

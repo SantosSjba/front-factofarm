@@ -1,6 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
+  ErrorHandler,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
@@ -10,6 +11,7 @@ import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-exper
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
+import { GlobalErrorHandler } from './core/handlers/global-error.handler';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,5 +30,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, apiErrorInterceptor])),
     provideTanStackQuery(queryClient),
     provideRouter(routes),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };

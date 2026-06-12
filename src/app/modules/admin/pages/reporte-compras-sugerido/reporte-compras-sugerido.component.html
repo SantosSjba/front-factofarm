@@ -14,7 +14,14 @@
   <p class="mt-2 text-xs text-gray-500">Basado en stock mínimo, rotación 90 días y clasificación ABC.</p>
 </app-component-card>
 
-<app-component-card title="Productos sugeridos" className="mt-4">
+@let reportState = reportQuery | queryPageState: (reportQuery.data()?.items?.length ?? 0);
+
+<app-component-card title="Productos sugeridos" className="mt-4"
+  [loading]="reportState.loading"
+  [error]="reportState.error"
+  [empty]="reportState.empty"
+  emptyTitle="No hay productos bajo stock mínimo"
+  (retry)="reportQuery.refetch()">
   <table class="w-full text-left text-sm">
     <thead class="border-b text-xs uppercase text-gray-500">
       <tr>
@@ -48,10 +55,11 @@
             } @else { — }
           </td>
         </tr>
+      } @empty {
+        <tr>
+          <td colspan="9" class="px-3 py-6 text-center text-gray-500">No hay productos bajo stock mínimo.</td>
+        </tr>
       }
     </tbody>
   </table>
-  @if ((reportQuery.data()?.items?.length ?? 0) === 0 && !reportQuery.isPending()) {
-    <p class="py-6 text-center text-gray-500">No hay productos bajo stock mínimo.</p>
-  }
 </app-component-card>

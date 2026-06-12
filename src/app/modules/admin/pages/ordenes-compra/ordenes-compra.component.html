@@ -10,7 +10,14 @@
   </div>
 </app-component-card>
 
-<app-component-card title="Listado" className="mt-4">
+@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+
+<app-component-card title="Listado" className="mt-4"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay órdenes de compra"
+  (retry)="listQuery.refetch()">
   <table class="w-full text-left text-sm">
     <thead class="border-b text-xs uppercase text-gray-500">
       <tr>
@@ -37,6 +44,10 @@
           <td class="px-3 py-2 text-right">
             <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
           </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
         </tr>
       }
     </tbody>

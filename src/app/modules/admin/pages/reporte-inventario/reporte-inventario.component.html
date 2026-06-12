@@ -21,6 +21,8 @@
 </div>
 
 @if (activeTab() === 'valorizacion') {
+  @let valuationState = valuationQuery | queryPageState: valuationTotal();
+
   <div class="mb-4 max-w-md">
     <app-label>Almacén</app-label>
     <app-form-select
@@ -31,7 +33,12 @@
     />
   </div>
 
-  <app-component-card title="Inventario valorizado (PEPS / promedio)" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <app-component-card title="Inventario valorizado (PEPS / promedio)" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+    [loading]="valuationState.loading"
+    [error]="valuationState.error"
+    [empty]="valuationState.empty"
+    emptyTitle="Sin stock valorizable"
+    (retry)="valuationQuery.refetch()">
     <div class="overflow-x-auto">
       <table class="min-w-full text-left">
         <thead class="border-b border-gray-100">
@@ -45,21 +52,21 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          @if (valuationQuery.isPending()) {
-            <tr><td colspan="6" class="px-4 py-6 text-center text-theme-sm">Cargando…</td></tr>
-          } @else if (valuationRows().length === 0) {
-            <tr><td colspan="6" class="px-4 py-6 text-center text-theme-sm">Sin stock valorizable.</td></tr>
-          } @else {
-            @for (row of valuationRows(); track row.productId + row.almacen) {
-              <tr>
-                <td class="px-4 py-3 text-theme-sm">{{ row.producto }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ row.metodoValoracion }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ formatQty(row.stock) }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.costoUnitario) }}</td>
-                <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.valorTotal) }}</td>
-              </tr>
-            }
+          @for (row of valuationRows(); track row.productId + row.almacen) {
+            <tr>
+              <td class="px-4 py-3 text-theme-sm">{{ row.producto }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.metodoValoracion }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ formatQty(row.stock) }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.costoUnitario) }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.valorTotal) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-4 py-6 text-center text-theme-sm text-gray-500">
+                Sin coincidencias para los filtros aplicados.
+              </td>
+            </tr>
           }
         </tbody>
       </table>
@@ -79,6 +86,8 @@
 }
 
 @if (activeTab() === 'conteo') {
+  @let countsState = countsQuery | queryPageState: countsTotal();
+
   <div class="mb-6 grid grid-cols-1 gap-4 rounded-xl border border-gray-100 p-4 md:grid-cols-3 dark:border-gray-800">
     <div>
       <app-label>Almacén a contar</app-label>
@@ -157,7 +166,12 @@
     </app-component-card>
   }
 
-  <app-component-card title="Historial de conteos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <app-component-card title="Historial de conteos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+    [loading]="countsState.loading"
+    [error]="countsState.error"
+    [empty]="countsState.empty"
+    emptyTitle="Sin conteos registrados"
+    (retry)="countsQuery.refetch()">
     <table class="min-w-full text-left">
       <thead class="border-b border-gray-100">
         <tr>
@@ -186,6 +200,10 @@
             <td class="px-4 py-3 text-theme-sm">{{ row.itemsCount }}</td>
             <td class="px-4 py-3 text-theme-sm">{{ row.usuario || '—' }}</td>
           </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">Sin conteos registrados.</td>
+          </tr>
         }
       </tbody>
     </table>
@@ -201,6 +219,8 @@
 }
 
 @if (activeTab() === 'zonas') {
+  @let zonesState = zonesQuery | queryPageState: zoneRows().length;
+
   <div class="mb-4 grid max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
     <div>
       <app-label>Almacén</app-label>
@@ -229,13 +249,15 @@
     </div>
   </div>
 
-  <app-component-card title="Mapa de zonas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+  <app-component-card title="Mapa de zonas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+    [loading]="zoneWarehouseId() ? zonesState.loading : false"
+    [error]="zoneWarehouseId() ? zonesState.error : null"
+    [empty]="zoneWarehouseId() ? zonesState.empty : false"
+    emptyTitle="Sin zonas registradas"
+    [showRetry]="!!zoneWarehouseId()"
+    (retry)="zonesQuery.refetch()">
     @if (!zoneWarehouseId()) {
       <p class="px-4 py-6 text-theme-sm text-gray-500">Seleccione un almacén para ver sus zonas.</p>
-    } @else if (zonesQuery.isPending()) {
-      <p class="px-4 py-6 text-theme-sm">Cargando…</p>
-    } @else if (zoneRows().length === 0) {
-      <p class="px-4 py-6 text-theme-sm text-gray-500">Sin zonas registradas.</p>
     } @else {
       <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
         @for (zone of zoneRows(); track zone.id) {
@@ -249,6 +271,8 @@
               {{ zone.activo ? 'Activa' : 'Inactiva' }}
             </p>
           </div>
+        } @empty {
+          <p class="col-span-full px-4 py-6 text-center text-theme-sm text-gray-500">Sin zonas registradas.</p>
         }
       </div>
     }

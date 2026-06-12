@@ -48,6 +48,10 @@ export class ImportarPreciosComponent {
 
   protected readonly canUpload = computed(() => !!this.selectedFile() && !this.uploadMutation.isPending());
 
+  protected uploadErrorMessage(): string {
+    return httpErrorMessage(this.uploadMutation.error(), 'No se pudo importar el archivo de precios');
+  }
+
   protected onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;

@@ -76,16 +76,6 @@
   </div>
 </app-page-toolbar>
 
-@if (listQuery.isError()) {
-  <div
-    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-    role="alert"
-  >
-    No se pudo cargar el listado.
-    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
-  </div>
-}
-
 <app-list-filters
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
@@ -131,7 +121,14 @@
   />
 </div>
 
-<app-component-card title="Listado de productos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+@let listState = listQuery | queryPageState: totalRows();
+
+<app-component-card title="Listado de productos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay productos registrados"
+  (retry)="refetchRows()">
   <div class="px-4 pt-4">
     <div class="flex justify-end">
       <app-table-dropdown>
@@ -221,8 +218,7 @@
           @for (row of products(); track row.id; let i = $index) {
             <tr [class.bg-red-50/40]="!row.habilitado" [class.dark:bg-red-500/10]="!row.habilitado">
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ (currentPage() - 1) * itemsPerPage + i + 1 }}
-              </td>
+                {{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
               <td class="px-5 py-4 font-mono text-theme-xs text-gray-700 dark:text-gray-300">{{ row.id }}</td>
               @if (isVisible('codigoInterno')) {
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoInterno || '—' }}</td>
@@ -400,12 +396,8 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="24" class="px-5 py-8 text-center text-theme-sm text-gray-500">
-                @if (listQuery.isPending()) {
-                  Cargando...
-                } @else {
-                  No hay productos registrados.
-                }
+              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
+                Sin coincidencias para los filtros aplicados.
               </td>
             </tr>
           }
@@ -542,88 +534,6 @@
     <app-button variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
   </div>
 </app-modal>
-
-<app-modal [isOpen]="stockOpen()" (close)="closeStockModal()" className="w-full max-w-5xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Stock de producto</h3>
-  </div>
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6 sm:py-5">
-    <div class="overflow-x-auto">
-      <table class="w-full min-w-[520px]">
-        <thead>
-          <tr class="border-b border-gray-100 dark:border-white/[0.05]">
-            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Ubicación</th>
-            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Stock</th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (stockSummaryQuery.isPending()) {
-            <tr>
-              <td colspan="2" class="px-3 py-5 text-center text-sm text-gray-500">Cargando stock...</td>
-            </tr>
-          } @else {
-            @for (item of stockRows(); track item.warehouseId) {
-              <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
-                <td class="px-3 py-2 text-sm text-gray-800 dark:text-white/90">{{ item.ubicacion }}</td>
-                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ item.stock }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="2" class="px-3 py-5 text-center text-sm text-gray-500">No hay stock registrado.</td>
-              </tr>
-            }
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <p class="mt-4 text-sm font-semibold text-gray-700 dark:text-gray-200">Lista de Precios Creados</p>
-    <div class="mt-2 overflow-x-auto">
-      <table class="w-full min-w-[760px]">
-        <thead>
-          <tr class="border-b border-gray-100 dark:border-white/[0.05]">
-            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Unidad</th>
-            <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Description</th>
-            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Factor</th>
-            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 1</th>
-            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 2</th>
-            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Precio 3</th>
-            <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">P.Defecto</th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (stockSummaryQuery.isPending()) {
-            <tr>
-              <td colspan="7" class="px-3 py-5 text-center text-sm text-gray-500">Cargando lista de precios...</td>
-            </tr>
-          } @else {
-            @for (p of stockPriceRows(); track p.id) {
-              <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
-                <td class="px-3 py-2 text-sm text-gray-800 dark:text-white/90">{{ p.unidad }}</td>
-                <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">{{ p.descripcion || '—' }}</td>
-                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.factor }}</td>
-                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio1 }}</td>
-                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio2 }}</td>
-                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">{{ p.precio3 }}</td>
-                <td class="px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300">
-                  {{ precioDefectoLabel(p.precioDefecto) }}
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="7" class="px-3 py-5 text-center text-sm text-gray-500">No hay precios creados.</td>
-              </tr>
-            }
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeStockModal()">Cerrar</app-button>
-  </div>
-</app-modal>
-
 <app-modal [isOpen]="importOpen()" (close)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">

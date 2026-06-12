@@ -1,0 +1,52 @@
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md">
+    Auditoría
+  </h1>
+</app-page-toolbar>
+
+<app-page-state
+  [loading]="logsQuery.isPending()"
+  [error]="logsErrorMessage()"
+  [empty]="!logsQuery.isPending() && !logsQuery.isError() && items().length === 0"
+  emptyTitle="Sin eventos registrados"
+  emptyHint="Las acciones críticas del sistema aparecerán aquí."
+  (retry)="logsQuery.refetch()"
+>
+  <app-component-card title="Registro de auditoría" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Fecha</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Acción</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Entidad</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Usuario</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of items(); track row.id) {
+            <tr class="border-b border-gray-50 dark:border-white/[0.03]">
+              <td class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-200">{{ formatDate(row.createdAt) }}</td>
+              <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white">{{ row.action }}</td>
+              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ row.entity }}</td>
+              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ row.userId ?? '—' }}</td>
+              <td class="px-5 py-3 text-theme-sm text-gray-500">{{ row.ipAddress ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (nextCursor()) {
+      <div class="border-t border-gray-100 p-4 text-center dark:border-white/[0.05]">
+        <button
+          type="button"
+          class="text-theme-sm font-medium text-brand-600 hover:underline"
+          (click)="loadMore()"
+        >
+          Cargar más
+        </button>
+      </div>
+    }
+  </app-component-card>
+</app-page-state>

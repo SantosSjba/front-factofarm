@@ -2,6 +2,7 @@
 export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string }> = {
   'nav.dashboard_admin': { path: '/dashboard' },
   'nav.usuarios': { path: '/usuarios' },
+  'nav.auditoria': { path: '/auditoria' },
   'nav.establecimientos': { path: '/establecimientos' },
   'nav.clientes_list': { path: '/clientes' },
   'nav.tipo_clientes': { path: '/tipo-clientes' },

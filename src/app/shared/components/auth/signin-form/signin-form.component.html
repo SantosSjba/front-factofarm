@@ -4,50 +4,58 @@
       <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
         FactoFarm · Iniciar sesión
       </h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+      <p id="signin-hint" class="text-sm text-gray-500 dark:text-gray-400">
         Sistema de farmacia: accede con tu correo y contraseña.
       </p>
     </div>
 
-    <form (ngSubmit)="onSignIn()" class="space-y-6">
+    <form (ngSubmit)="onSignIn()" class="space-y-6" aria-labelledby="signin-title">
       <div>
-        <app-label>Correo electrónico <span class="text-error-500">*</span></app-label>
+        <app-label for="signin-email">Correo electrónico <span class="text-error-500">*</span></app-label>
         <app-input-field
+          id="signin-email"
           type="email"
           placeholder="tu.correo@ejemplo.com"
+          autocomplete="email"
           [value]="email"
           (valueChange)="email = $event + ''"
           name="email"
           class="form-input"
-          required
+          [isRequired]="true"
+          [error]="!!loginError"
+          ariaDescribedBy="signin-hint signin-error"
         />
       </div>
 
       <div>
-        <app-label>Contraseña <span class="text-error-500">*</span></app-label>
+        <app-label for="signin-password">Contraseña <span class="text-error-500">*</span></app-label>
         <div class="relative">
           <app-input-field
+            id="signin-password"
             [type]="showPassword ? 'text' : 'password'"
             placeholder="Tu contraseña"
+            autocomplete="current-password"
             [value]="password"
             (valueChange)="password = $event + ''"
             name="password"
             class="form-input"
-            required
+            [isRequired]="true"
+            [error]="!!loginError"
+            ariaDescribedBy="signin-error"
           />
-          <span
+          <button
+            type="button"
+            class="absolute z-30 -translate-y-1/2 right-4 top-1/2"
+            [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="showPassword"
             (click)="togglePasswordVisibility()"
-            class="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-            role="button"
-            tabindex="0"
-            (keydown.enter)="togglePasswordVisibility()"
           >
             @if (showPassword) {
               <app-icon name="mdi:eye-outline" iconClass="size-5 text-gray-500 dark:text-gray-400" />
             } @else {
               <app-icon name="mdi:eye-off-outline" iconClass="size-5 text-gray-500 dark:text-gray-400" />
             }
-          </span>
+          </button>
         </div>
       </div>
 
@@ -62,6 +70,17 @@
           ¿Olvidaste tu contraseña?
         </a>
       </div>
+
+      @if (loginError) {
+        <div
+          id="signin-error"
+          class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200"
+          role="alert"
+          aria-live="polite"
+        >
+          {{ loginError }}
+        </div>
+      }
 
       <app-button
         className="w-full"

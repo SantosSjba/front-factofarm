@@ -1,8 +1,10 @@
-﻿import { Component } from '@angular/core';
+﻿import { PlaceholderPageComponent } from '../../../../shared/components/common/placeholder-page/placeholder-page.component';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-balance',
   standalone: true,
-  templateUrl: './balance.component.html',
+  imports: [PlaceholderPageComponent],
+  template: `<app-placeholder-page title="Balance" />`,
 })
 export class BalanceComponent {}

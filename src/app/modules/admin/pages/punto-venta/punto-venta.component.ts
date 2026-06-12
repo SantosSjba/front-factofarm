@@ -16,6 +16,7 @@ import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type {
@@ -76,6 +77,7 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
     FormSelectComponent,
     InputFieldComponent,
     ModalComponent,
+    PageStateComponent,
   ],
   templateUrl: './punto-venta.component.html',
 })
@@ -164,6 +166,21 @@ export class PuntoVentaComponent {
   protected readonly lotModalLine = computed(() =>
     this.cart().find((l) => l.productId === this.lotModalProductId()) ?? null,
   );
+
+  protected posBootstrapError(): string | null {
+    if (this.warehousesQuery.isError()) {
+      return httpErrorMessage(this.warehousesQuery.error(), 'No se pudieron cargar los almacenes.');
+    }
+    if (this.cashSessionQuery.isError()) {
+      return httpErrorMessage(this.cashSessionQuery.error(), 'No se pudo verificar la caja activa.');
+    }
+    return null;
+  }
+
+  protected refetchPosBootstrap() {
+    void this.warehousesQuery.refetch();
+    void this.cashSessionQuery.refetch();
+  }
 
   constructor() {
     effect(() => {

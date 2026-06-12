@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -34,6 +35,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   selector: 'app-inventario-movimientos',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

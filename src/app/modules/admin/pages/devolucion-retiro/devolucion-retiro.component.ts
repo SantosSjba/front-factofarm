@@ -90,6 +90,25 @@ export class DevolucionRetiroComponent {
     ];
   });
 
+  protected readonly catalogLoading = computed(
+    () => this.warehousesQuery.isPending() || this.outputReasonsQuery.isPending(),
+  );
+
+  protected readonly catalogError = computed(() => {
+    if (this.warehousesQuery.isError()) {
+      return httpErrorMessage(this.warehousesQuery.error(), 'No se pudieron cargar los almacenes.');
+    }
+    if (this.outputReasonsQuery.isError()) {
+      return httpErrorMessage(this.outputReasonsQuery.error(), 'No se pudieron cargar los motivos.');
+    }
+    return null;
+  });
+
+  protected refetchCatalogQueries() {
+    void this.warehousesQuery.refetch();
+    void this.outputReasonsQuery.refetch();
+  }
+
   protected async searchProducts() {
     const search = this.productSearch().trim();
     if (!search) return;

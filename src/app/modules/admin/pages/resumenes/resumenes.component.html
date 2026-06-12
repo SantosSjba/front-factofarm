@@ -10,9 +10,14 @@
   <div class="flex max-w-md flex-wrap items-end gap-3">
     <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set('' + $event)" />
     <app-button variant="primary" [disabled]="summaryMutation.isPending()" (btnClick)="summaryMutation.mutate()">
-      Enviar RC
+      {{ summaryMutation.isPending() ? 'Enviando…' : 'Enviar RC' }}
     </app-button>
   </div>
+  @if (summaryMutation.isError()) {
+    <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200" role="alert">
+      {{ summaryErrorMessage() }}
+    </div>
+  }
   @if (lastResult(); as result) {
     <p class="mt-4 text-sm text-emerald-700 dark:text-emerald-300">{{ result.message }} · ID: {{ result.id }}</p>
   }

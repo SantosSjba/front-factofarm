@@ -8,28 +8,36 @@
 
   @if (search().trim().length < 2) {
     <p class="mt-4 text-sm text-gray-500">Ingrese al menos 2 caracteres para buscar.</p>
-  } @else if (cieQuery.isLoading()) {
-    <p class="mt-4 text-sm text-gray-500">Buscando…</p>
-  } @else if ((cieQuery.data() ?? []).length === 0) {
-    <p class="mt-4 text-sm text-gray-500">Sin resultados.</p>
   } @else {
-    <div class="mt-4 overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead>
-          <tr class="border-b text-left text-gray-500">
-            <th class="py-2 pr-4 w-28">Código</th>
-            <th class="py-2">Descripción</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of cieQuery.data() ?? []; track row.id) {
-            <tr class="border-b border-gray-100">
-              <td class="py-2 pr-4 font-mono">{{ row.codigo }}</td>
-              <td class="py-2">{{ row.descripcion }}</td>
+    @let cieState = cieQuery | queryPageState: (cieQuery.data()?.length ?? 0);
+
+    <app-page-state
+      class="mt-4 block"
+      [loading]="cieState.loading"
+      [error]="cieState.error"
+      [empty]="cieState.empty"
+      emptyTitle="Sin resultados"
+      emptyHint="Pruebe con otro código o descripción."
+      (retry)="cieQuery.refetch()"
+    >
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b text-left text-gray-500">
+              <th class="py-2 pr-4 w-28">Código</th>
+              <th class="py-2">Descripción</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (row of cieQuery.data() ?? []; track row.id) {
+              <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4 font-mono">{{ row.codigo }}</td>
+                <td class="py-2">{{ row.descripcion }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </app-page-state>
   }
 </app-component-card>

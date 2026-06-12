@@ -42,6 +42,13 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Usuarios',
       },
       {
+        path: 'auditoria',
+        ...guarded(P.auditoria),
+        loadComponent: () =>
+          import('./pages/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
+        title: 'FactoFarm | Auditoría',
+      },
+      {
         path: 'establecimientos',
         ...guarded(P.establecimientos),
         loadComponent: () =>

@@ -1,3 +1,4 @@
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
@@ -12,6 +13,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   selector: 'app-comparativo-precios',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     CurrencyPipe,
     BreadcrumbInlineComponent,

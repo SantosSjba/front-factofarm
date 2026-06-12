@@ -16,6 +16,12 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [max]="max"
         [step]="step"
         [disabled]="disabled"
+        [attr.autocomplete]="autocomplete"
+        [attr.aria-label]="ariaLabel"
+        [attr.aria-required]="isRequired || ariaRequired ? true : null"
+        [attr.aria-invalid]="error ? true : null"
+        [attr.aria-describedby]="ariaDescribedBy"
+        [attr.required]="isRequired ? true : null"
         [ngClass]="inputClasses"
         (input)="onInput($event)"
       />
@@ -48,6 +54,11 @@ export class InputFieldComponent {
   @Input() error: boolean = false;
   @Input() hint?: string;
   @Input() className: string = '';
+  @Input() autocomplete?: string;
+  @Input() ariaLabel?: string;
+  @Input() ariaDescribedBy?: string;
+  @Input() ariaRequired = false;
+  @Input() isRequired = false;
 
   @Output() valueChange = new EventEmitter<string | number>();
 

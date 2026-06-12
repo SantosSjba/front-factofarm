@@ -7,96 +7,79 @@
   </p>
 </div>
 
-@if (statsQuery.isError()) {
-  <div
-    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-    role="alert"
-  >
-    No se pudieron cargar los indicadores.
-  </div>
-}
+<app-onboarding-banner />
 
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-    <div class="flex items-center gap-4">
-      <div
-        class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"
-      >
-        <app-icon name="lucide:users" width="24" height="24" />
-      </div>
-      <div>
-        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Usuarios activos</p>
-        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-          @if (statsQuery.isPending()) {
-            …
-          } @else {
+<app-page-state
+  [loading]="statsQuery.isPending()"
+  [error]="statsErrorMessage()"
+  (retry)="statsQuery.refetch()"
+>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <div class="flex items-center gap-4">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"
+        >
+          <app-icon name="lucide:users" width="24" height="24" />
+        </div>
+        <div>
+          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Usuarios activos</p>
+          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
             {{ formatCount(statsQuery.data()?.usersActive) }}
-          }
-        </p>
+          </p>
+        </div>
       </div>
-    </div>
-  </app-component-card>
+    </app-component-card>
 
-  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-    <div class="flex items-center gap-4">
-      <div
-        class="flex h-12 w-12 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400"
-      >
-        <app-icon name="lucide:building-2" width="24" height="24" />
-      </div>
-      <div>
-        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Establecimientos</p>
-        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-          @if (statsQuery.isPending()) {
-            …
-          } @else {
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <div class="flex items-center gap-4">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400"
+        >
+          <app-icon name="lucide:building-2" width="24" height="24" />
+        </div>
+        <div>
+          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Establecimientos</p>
+          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
             {{ formatCount(statsQuery.data()?.establishmentsActive) }}
-          }
-        </p>
+          </p>
+        </div>
       </div>
-    </div>
-  </app-component-card>
+    </app-component-card>
 
-  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-    <div class="flex items-center gap-4">
-      <div
-        class="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400"
-      >
-        <app-icon name="lucide:users-round" width="24" height="24" />
-      </div>
-      <div>
-        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Clientes activos</p>
-        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-          @if (statsQuery.isPending()) {
-            …
-          } @else {
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <div class="flex items-center gap-4">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400"
+        >
+          <app-icon name="lucide:users-round" width="24" height="24" />
+        </div>
+        <div>
+          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Clientes activos</p>
+          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
             {{ formatCount(statsQuery.data()?.customersActive) }}
-          }
-        </p>
+          </p>
+        </div>
       </div>
-    </div>
-  </app-component-card>
+    </app-component-card>
 
-  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-    <div class="flex items-center gap-4">
-      <div
-        class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/10 dark:text-blue-light-400"
-      >
-        <app-icon name="lucide:package" width="24" height="24" />
-      </div>
-      <div>
-        <p class="text-theme-sm text-gray-500 dark:text-gray-400">Productos habilitados</p>
-        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-          @if (statsQuery.isPending()) {
-            …
-          } @else {
+    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+      <div class="flex items-center gap-4">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/10 dark:text-blue-light-400"
+        >
+          <app-icon name="lucide:package" width="24" height="24" />
+        </div>
+        <div>
+          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Productos habilitados</p>
+          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
             {{ formatCount(statsQuery.data()?.productsActive) }}
-          }
-        </p>
+          </p>
+        </div>
       </div>
-    </div>
-  </app-component-card>
-</div>
+    </app-component-card>
+  </div>
+</app-page-state>
 
 @if (statsQuery.data()?.inventoryAlerts; as alerts) {
   <div class="mt-8 mb-4">
@@ -137,3 +120,41 @@
     </a>
   </div>
 }
+
+<div class="mt-10 mb-4">
+  <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Cadena multi-sucursal</h2>
+  <p class="mt-1 text-theme-sm text-gray-500">Consolidado últimos {{ chainQuery.data()?.periodDays ?? 30 }} días</p>
+</div>
+
+<app-page-state
+  [loading]="chainQuery.isPending()"
+  [error]="chainErrorMessage()"
+  [empty]="!chainQuery.isPending() && !chainQuery.isError() && (chainQuery.data()?.establishments?.length ?? 0) === 0"
+  emptyTitle="Sin sucursales activas"
+  (retry)="chainQuery.refetch()"
+>
+  <app-component-card className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Sucursal</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Ventas (30d)</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Total vendido</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Unidades stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of chainQuery.data()?.establishments ?? []; track row.establishmentId) {
+            <tr class="border-b border-gray-50 dark:border-white/[0.03]">
+              <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white">{{ row.nombre }}</td>
+              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ formatCount(row.ventas30d) }}</td>
+              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ formatMoney(row.totalVentas30d) }}</td>
+              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ formatCount(parseCount(row.unidadesStock)) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </app-component-card>
+</app-page-state>

@@ -1,8 +1,10 @@
-﻿import { Component } from '@angular/core';
+﻿import { PlaceholderPageComponent } from '../../../../shared/components/common/placeholder-page/placeholder-page.component';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-pagos',
   standalone: true,
-  templateUrl: './pagos.component.html',
+  imports: [PlaceholderPageComponent],
+  template: `<app-placeholder-page title="Pagos" />`,
 })
 export class PagosComponent {}

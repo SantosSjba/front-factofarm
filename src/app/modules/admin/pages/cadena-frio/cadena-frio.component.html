@@ -10,6 +10,8 @@
 </p>
 
 <div class="grid gap-4 lg:grid-cols-2">
+  @let logsState = logsQuery | queryPageState: (logsQuery.data()?.length ?? 0);
+
   <app-component-card title="Registrar temperatura">
     <div class="space-y-4">
       <div>
@@ -51,13 +53,15 @@
     </div>
   </app-component-card>
 
-  <app-component-card title="Historial de la zona">
+  <app-component-card title="Historial de la zona"
+    [loading]="zoneId() ? logsState.loading : false"
+    [error]="zoneId() ? logsState.error : null"
+    [empty]="zoneId() ? logsState.empty : false"
+    emptyTitle="Sin registros para esta zona"
+    [showRetry]="!!zoneId()"
+    (retry)="logsQuery.refetch()">
     @if (!zoneId()) {
       <p class="text-theme-sm text-gray-500">Seleccione una zona para ver el historial.</p>
-    } @else if (logsQuery.isPending()) {
-      <p class="text-theme-sm text-gray-500">Cargando…</p>
-    } @else if ((logsQuery.data() ?? []).length === 0) {
-      <p class="text-theme-sm text-gray-500">Sin registros para esta zona.</p>
     } @else {
       <div class="max-h-80 overflow-auto">
         <table class="w-full text-left text-sm">
@@ -76,6 +80,10 @@
                 <td class="py-2 font-medium">{{ log.temperaturaCelsius }}</td>
                 <td class="py-2">{{ log.user?.nombre ?? '—' }}</td>
                 <td class="py-2 text-gray-500">{{ log.observacion ?? '—' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="py-6 text-center text-theme-sm text-gray-500">Sin registros para esta zona.</td>
               </tr>
             }
           </tbody>

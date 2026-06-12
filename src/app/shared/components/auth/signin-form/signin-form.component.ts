@@ -32,6 +32,7 @@ export class SigninFormComponent {
   showPassword = false;
   isChecked = false;
   isLoading = false;
+  loginError: string | null = null;
 
   email = '';
   password = '';
@@ -48,16 +49,19 @@ export class SigninFormComponent {
       this.notify.warning('Ingresa correo y contraseña.');
       return;
     }
+    this.loginError = null;
     this.isLoading = true;
     this.auth.login(this.email.trim(), this.password).subscribe({
       next: () => {
         this.isLoading = false;
+        this.loginError = null;
         this.notify.success('Sesión iniciada');
         void this.router.navigateByUrl('/');
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;
-        this.notify.error(this.apiMessage(err));
+        this.loginError = this.apiMessage(err);
+        this.notify.error(this.loginError);
       },
     });
   }

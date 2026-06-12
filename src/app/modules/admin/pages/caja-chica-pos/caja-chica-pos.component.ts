@@ -11,6 +11,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { PaymentMethod } from '../../models/directory.models';
@@ -29,6 +30,7 @@ import type { PaymentMethod } from '../../models/directory.models';
     FormSelectComponent,
     InputFieldComponent,
     LabelComponent,
+    PageStateComponent,
   ],
   templateUrl: './caja-chica-pos.component.html',
 })
@@ -70,6 +72,21 @@ export class CajaChicaPosComponent {
 
   protected readonly session = computed(() => this.sessionQuery.data());
   protected readonly summary = computed(() => this.summaryQuery.data());
+
+  protected posInitError(): string | null {
+    if (this.registersQuery.isError()) {
+      return httpErrorMessage(this.registersQuery.error(), 'No se pudieron cargar las cajas.');
+    }
+    if (this.sessionQuery.isError()) {
+      return httpErrorMessage(this.sessionQuery.error(), 'No se pudo cargar la sesión activa.');
+    }
+    return null;
+  }
+
+  protected refetchPosInit() {
+    void this.registersQuery.refetch();
+    void this.sessionQuery.refetch();
+  }
 
   protected readonly openMutation = injectMutation(() => ({
     mutationFn: () =>

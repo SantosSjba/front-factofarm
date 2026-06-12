@@ -3,14 +3,28 @@
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Recepción de mercadería</h1>
 </app-page-toolbar>
 
-<app-component-card title="Orden de compra" className="mt-4">
+@let ordersState = pendingOrdersQuery | queryPageState: (pendingOrdersQuery.data()?.length ?? 0);
+
+<app-component-card title="Orden de compra" className="mt-4"
+  [loading]="ordersState.loading"
+  [error]="ordersState.error"
+  [empty]="ordersState.empty"
+  emptyTitle="No hay órdenes pendientes de recepción"
+  (retry)="pendingOrdersQuery.refetch()">
   <div class="max-w-xl space-y-4">
     <app-form-select
       [options]="orderOptions()"
       [value]="selectedOrderId()"
       (valueChange)="onOrderChange($event)"
     />
-    @if (detailQuery.data(); as po) {
+    @if (detailQuery.isPending() && selectedOrderId()) {
+      <p class="text-sm text-gray-500">Cargando detalle de la orden…</p>
+    } @else if (detailQuery.isError() && selectedOrderId()) {
+      <div class="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        {{ detailErrorMessage() }}
+        <button type="button" class="ml-2 font-medium underline" (click)="detailQuery.refetch()">Reintentar</button>
+      </div>
+    } @else if (detailQuery.data(); as po) {
       @if (receiptLines().length === 0) {
         <app-button variant="primary" (btnClick)="initLines(po)">Cargar ítems pendientes</app-button>
       }

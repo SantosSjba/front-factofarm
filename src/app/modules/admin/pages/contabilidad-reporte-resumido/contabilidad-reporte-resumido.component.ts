@@ -1,8 +1,10 @@
-﻿import { Component } from '@angular/core';
+﻿import { PlaceholderPageComponent } from '../../../../shared/components/common/placeholder-page/placeholder-page.component';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-contabilidad-reporte-resumido',
   standalone: true,
-  templateUrl: './contabilidad-reporte-resumido.component.html',
+  imports: [PlaceholderPageComponent],
+  template: `<app-placeholder-page title="Contabilidad Reporte Resumido" />`,
 })
 export class ContabilidadReporteResumidoComponent {}

@@ -5,9 +5,9 @@
       {{ title }}
     </h3>
     @if (desc) {
-    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-      {{ desc }}
-    </p>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        {{ desc }}
+      </p>
     }
   </div>
 
@@ -16,8 +16,20 @@
     class="border-t border-gray-100 dark:border-gray-800"
     [ngClass]="bodyClass !== '' ? bodyClass : 'p-4 sm:p-6'"
   >
-    <div class="space-y-6">
-      <ng-content></ng-content>
-    </div>
+    <app-page-state
+      [loading]="loading"
+      [error]="error"
+      [empty]="empty"
+      [loadingLabel]="loadingLabel"
+      [errorTitle]="errorTitle"
+      [emptyTitle]="emptyTitle"
+      [emptyHint]="emptyHint"
+      [showRetry]="showRetry"
+      (retry)="retry.emit()"
+    >
+      <div class="space-y-6">
+        <ng-content></ng-content>
+      </div>
+    </app-page-state>
   </div>
 </div>

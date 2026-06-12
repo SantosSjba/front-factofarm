@@ -3,7 +3,14 @@
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Cuentas por pagar</h1>
 </app-page-toolbar>
 
-<app-component-card title="Documentos pendientes" className="mt-4">
+@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+
+<app-component-card title="Documentos pendientes" className="mt-4"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay documentos pendientes"
+  (retry)="listQuery.refetch()">
   <table class="w-full text-left text-sm">
     <thead class="border-b text-xs uppercase text-gray-500">
       <tr>
@@ -40,6 +47,10 @@
               <button type="button" class="text-brand-600 hover:underline" (click)="openPay(row)">Pagar</button>
             }
           </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
         </tr>
       }
     </tbody>

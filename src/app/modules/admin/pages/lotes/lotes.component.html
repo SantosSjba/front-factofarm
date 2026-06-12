@@ -16,16 +16,6 @@
   </div>
 </app-page-toolbar>
 
-@if (lotsQuery.isError()) {
-  <div
-    class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-700"
-    role="alert"
-  >
-    No se pudo cargar el listado de lotes.
-    <button type="button" class="ml-3 underline" (click)="refetchRows()">Reintentar</button>
-  </div>
-}
-
 <app-list-filters
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
@@ -62,7 +52,14 @@
   </div>
 </div>
 
-<app-component-card title="Stock por lote" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
+@let listState = lotsQuery | queryPageState: totalRows();
+
+<app-component-card title="Stock por lote" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay lotes registrados"
+  (retry)="refetchRows()">
   <div class="overflow-x-auto">
     <table class="min-w-full text-left">
       <thead class="border-b border-gray-100 dark:border-white/[0.05]">
@@ -76,16 +73,7 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-        @if (lotsQuery.isPending()) {
-          <tr>
-            <td colspan="6" class="px-5 py-8 text-center text-theme-sm text-gray-500">Cargando…</td>
-          </tr>
-        } @else if (rows().length === 0) {
-          <tr>
-            <td colspan="6" class="px-5 py-8 text-center text-theme-sm text-gray-500">Sin lotes con stock.</td>
-          </tr>
-        } @else {
-          @for (row of rows(); track row.id) {
+        @for (row of rows(); track row.id) {
             <tr>
               <td class="px-5 py-4 text-theme-sm">
                 <div class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</div>
@@ -105,7 +93,12 @@
                 {{ row.fechaVencimiento ? (row.fechaVencimiento | date: 'yyyy-MM-dd') : '—' }}
               </td>
             </tr>
-          }
+        } @empty {
+          <tr>
+            <td colspan="6" class="px-5 py-4 text-center text-theme-sm text-gray-500">
+              Sin coincidencias para los filtros aplicados.
+            </td>
+          </tr>
         }
       </tbody>
     </table>

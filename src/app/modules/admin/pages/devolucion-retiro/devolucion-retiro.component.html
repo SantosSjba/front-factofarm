@@ -9,7 +9,10 @@
   Salidas por devolución a proveedor, retiro, mermas, destrucción u otros motivos no comerciales.
 </p>
 
-<app-component-card title="Datos de la salida">
+<app-component-card title="Datos de la salida"
+  [loading]="catalogLoading()"
+  [error]="catalogError()"
+  (retry)="refetchCatalogQueries()">
   <div class="grid gap-4 md:grid-cols-2">
     <div>
       <app-label>Almacén</app-label>

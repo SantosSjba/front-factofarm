@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -29,6 +30,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   selector: 'app-categorias',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
@@ -272,6 +274,13 @@ export class CategoriasComponent {
     const r = await this.categoriesQuery.refetch();
     if (r.isError) {
       this.notify.error(httpErrorMessage(r.error, 'No se pudo actualizar el listado.'));
+    }
+  }
+
+  protected async refetchTree() {
+    const r = await this.treeQuery.refetch();
+    if (r.isError) {
+      this.notify.error(httpErrorMessage(r.error, 'No se pudo actualizar el árbol.'));
     }
   }
 }

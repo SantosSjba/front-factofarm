@@ -1,4 +1,5 @@
-﻿import { CommonModule, DatePipe } from '@angular/common';
+﻿import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -18,6 +19,7 @@ type Tab = 'ledger' | 'monthly';
   selector: 'app-reporte-psicotropicos-estupefacientes',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     DatePipe,
     BreadcrumbInlineComponent,

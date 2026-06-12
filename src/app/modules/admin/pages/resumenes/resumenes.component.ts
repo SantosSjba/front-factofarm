@@ -41,4 +41,8 @@ export class ResumenesComponent {
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo enviar el resumen')),
   }));
+
+  protected summaryErrorMessage(): string {
+    return httpErrorMessage(this.summaryMutation.error(), 'No se pudo enviar el resumen');
+  }
 }

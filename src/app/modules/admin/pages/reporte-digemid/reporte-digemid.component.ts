@@ -1,4 +1,5 @@
-﻿import { CommonModule, DatePipe } from '@angular/common';
+﻿import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -26,6 +27,7 @@ type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos
   selector: 'app-reporte-digemid',
   standalone: true,
   imports: [
+    QueryPageStatePipe,
     CommonModule,
     DatePipe,
     BreadcrumbInlineComponent,
@@ -153,6 +155,11 @@ export class ReporteDigemidComponent {
   protected readonly profitRows = computed(() => (this.profitQuery.data() ?? []) as Array<Record<string, string | number>>);
   protected readonly salesRows = computed(() => (this.salesQuery.data() ?? []) as Array<Record<string, string | number>>);
   protected readonly medicoRows = computed(() => (this.medicoQuery.data() ?? []) as Array<Record<string, string | number | null>>);
+
+  protected readonly shrinkageItemCount = computed(() => {
+    const data = this.shrinkageData();
+    return (data?.shrinkage?.length ?? 0) + (data?.expiring?.length ?? 0);
+  });
 
   protected createMutation = injectMutation(() => ({
     mutationFn: () =>
