@@ -1561,6 +1561,22 @@ export interface PosCatalogItemDto {
   stock: string;
   necesitaRecetaMedica: boolean;
   manejaLotes: boolean;
+  esControlado: boolean;
+}
+
+export interface PosSubstituteItemDto {
+  id: string;
+  nombre: string;
+  codigoInterno: string | null;
+  generico: boolean;
+  precio: string;
+  stock: string;
+}
+
+export interface PharmaApproverDto {
+  id: string;
+  nombre: string;
+  role: string;
 }
 
 export type DrugInteractionSeverity = 'LEVE' | 'MODERADA' | 'GRAVE';
@@ -1639,6 +1655,12 @@ export interface CreateSalePaymentRequest {
   referencia?: string;
 }
 
+export interface CreateSaleSubstitutionRequest {
+  originalProductId: string;
+  substituteProductId: string;
+  motivo?: string;
+}
+
 export interface CreateSaleRequest {
   warehouseId: string;
   cashSessionId?: string;
@@ -1646,9 +1668,12 @@ export interface CreateSaleRequest {
   documentType: SaleDocumentType;
   serie?: string;
   prescriptionValidated?: boolean;
+  prescriptionId?: string;
+  controlledApprovedById?: string;
   prescriptionNote?: string;
   promotionCode?: string;
   comentario?: string;
+  substitutions?: CreateSaleSubstitutionRequest[];
   items: CreateSaleItemRequest[];
   payments: CreateSalePaymentRequest[];
 }
@@ -2032,4 +2057,147 @@ export interface SaleReturnResponseDto {
   saleReturnId: string;
   totalDevuelto: string;
   electronicDocumentId: string | null;
+}
+
+export interface MedicoItemDto {
+  id: string;
+  cmp: string;
+  nombres: string;
+  apellidos: string;
+  especialidad: string | null;
+  activo: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateMedicoRequest {
+  cmp: string;
+  nombres: string;
+  apellidos: string;
+  especialidad?: string;
+}
+
+export interface PrescriptionListItemDto {
+  id: string;
+  numero: string;
+  fechaEmision: string;
+  estado: string;
+  medicoNombre: string | null;
+  medicoCmp: string | null;
+  customer: { id: string; nombre: string; numeroDocumento: string };
+  items: Array<{
+    id: string;
+    productId: string;
+    cantidadPrescrita: string;
+    cantidadDispensada: string;
+    product: { nombre: string; codigoInterno: string | null };
+  }>;
+  createdAt: string;
+}
+
+export interface CreatePrescriptionRequest {
+  customerId: string;
+  medicoId?: string;
+  fechaEmision: string;
+  validUntil?: string;
+  diagnostico?: string;
+  notas?: string;
+  imagenArchivoId?: string;
+  items: Array<{ productId: string; cantidadPrescrita: string; dosis?: string; indicaciones?: string }>;
+}
+
+export type AdverseEventSeverity = 'LEVE' | 'MODERADO' | 'GRAVE';
+
+export interface AdverseEventItemDto {
+  id: string;
+  fecha: string;
+  descripcion: string;
+  severidad: AdverseEventSeverity;
+  notificadoDigemid: boolean;
+  digemidReportNumber: string | null;
+  medidasCorrectivas: string | null;
+  fechaNotificacion: string | null;
+  pacienteEdad: number | null;
+  pacienteSexo: string | null;
+  reaccionTipo: string | null;
+  cie10Codigo: string | null;
+  product: { nombre: string; codigoInterno: string | null };
+  customer: { nombre: string; numeroDocumento: string } | null;
+}
+
+export interface CreateAdverseEventRequest {
+  productId: string;
+  customerId?: string;
+  descripcion: string;
+  severidad?: AdverseEventSeverity;
+  pacienteEdad?: number;
+  pacienteSexo?: string;
+  reaccionTipo?: string;
+  cie10Codigo?: string;
+}
+
+export interface NotifyDigemidRequest {
+  digemidReportNumber: string;
+  medidasCorrectivas?: string;
+  fechaNotificacion?: string;
+  pacienteEdad?: number;
+  pacienteSexo?: string;
+  reaccionTipo?: string;
+  cie10Codigo?: string;
+}
+
+export interface Cie10CodeDto {
+  id: string;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface ControlledLedgerEntryDto {
+  id: string;
+  fecha: string;
+  movementType: 'ENTRADA' | 'SALIDA';
+  cantidad: string;
+  saldo: string;
+  referencia: string | null;
+  product: {
+    nombre: string;
+    codigoInterno: string | null;
+    controlledSubstanceCategory: { codigo: string; nombre: string; schedule: string } | null;
+  };
+  user: { nombre: string } | null;
+}
+
+export interface ControlledMonthlyReportDto {
+  period: { year: number; month: number; from: string; to: string };
+  entries: Array<{
+    id: string;
+    fecha: string;
+    movementType: string;
+    cantidad: string;
+    saldo: string;
+    referencia: string | null;
+    producto: string;
+    codigoInterno: string | null;
+    categoria: string | null;
+    schedule: string | null;
+    usuario: string | null;
+  }>;
+  summary: Array<{
+    productId: string;
+    producto: string;
+    codigoInterno: string | null;
+    categoria: string | null;
+    schedule: string | null;
+    entradas: string;
+    salidas: string;
+    saldoFinal: string;
+  }>;
+}
+
+export interface PrescriptionSummaryDto {
+  id: string;
+  numero: string;
+  fechaEmision: string;
+  estado: string;
+  medicoNombre: string | null;
 }

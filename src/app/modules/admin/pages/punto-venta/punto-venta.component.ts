@@ -27,6 +27,10 @@ import type {
   SaleDocumentType,
   SaleInteractionAlertDto,
   SaleLotAllocationMode,
+  PrescriptionSummaryDto,
+  PosSubstituteItemDto,
+  PharmaApproverDto,
+  CreateSaleSubstitutionRequest,
   SunatDocumentStatus,
 } from '../../models/directory.models';
 
@@ -39,9 +43,12 @@ type CartLine = {
   precio: number;
   quantity: number;
   necesitaRecetaMedica: boolean;
+  esControlado: boolean;
   manejaLotes: boolean;
   lotMode: SaleLotAllocationMode;
   manualLots: { lotCode: string; quantity: number }[];
+  substitutedFromProductId?: string;
+  substitutedFromNombre?: string;
 };
 
 const DOC_OPTIONS: { value: SaleDocumentType; label: string }[] = [
@@ -92,7 +99,9 @@ export class PuntoVentaComponent {
   protected readonly catalog = signal<PosCatalogItemDto[]>([]);
   protected readonly cart = signal<CartLine[]>([]);
   protected readonly prescriptionValidated = signal(false);
+  protected readonly prescriptionId = signal('');
   protected readonly prescriptionNote = signal('');
+  protected readonly patientPrescriptions = signal<PrescriptionSummaryDto[]>([]);
   protected readonly promotionCode = signal('');
   protected readonly comentario = signal('');
   protected readonly payModalOpen = signal(false);
@@ -108,6 +117,11 @@ export class PuntoVentaComponent {
   protected readonly interactionAlerts = signal<SaleInteractionAlertDto[]>([]);
   protected readonly interactionsAcknowledged = signal(false);
   protected readonly interactionsLoading = signal(false);
+  protected readonly controlledApprovedById = signal('');
+  protected readonly pharmaApprovers = signal<PharmaApproverDto[]>([]);
+  protected readonly substituteModalProductId = signal<string | null>(null);
+  protected readonly substituteOptions = signal<PosSubstituteItemDto[]>([]);
+  protected readonly substituteLoading = signal(false);
 
   private interactionTimer: ReturnType<typeof setTimeout> | null = null;
   private sunatPollTimer: ReturnType<typeof setInterval> | null = null;
@@ -138,6 +152,11 @@ export class PuntoVentaComponent {
   protected readonly cartSubtotal = computed(() => this.cartTotal() / (1 + IGV_RATE));
   protected readonly cartIgv = computed(() => this.cartTotal() - this.cartSubtotal());
   protected readonly requiresRx = computed(() => this.cart().some((l) => l.necesitaRecetaMedica));
+  protected readonly requiresControlled = computed(() => this.cart().some((l) => l.esControlado));
+  protected readonly approverOptions = computed(() => [
+    { value: '', label: 'Farmacéutico autorizador…' },
+    ...this.pharmaApprovers().map((u) => ({ value: u.id, label: u.nombre })),
+  ]);
   protected readonly hasGraveInteractions = computed(() =>
     this.interactionAlerts().some((a) => a.severidad === 'GRAVE'),
   );
@@ -211,6 +230,23 @@ export class PuntoVentaComponent {
     this.customerLabel.set(c.nombre);
     this.customerOptions.set([]);
     this.customerSearch.set('');
+    this.prescriptionId.set('');
+    this.prescriptionValidated.set(false);
+    void this.loadPatientPrescriptions(c.id);
+  }
+
+  protected async loadPatientPrescriptions(customerId: string) {
+    try {
+      const rows = await firstValueFrom(this.api.listPrescriptionsByCustomer(customerId));
+      this.patientPrescriptions.set(rows);
+    } catch {
+      this.patientPrescriptions.set([]);
+    }
+  }
+
+  protected onPrescriptionSelected(id: string) {
+    this.prescriptionId.set(id);
+    this.prescriptionValidated.set(!!id);
   }
 
   protected clearCustomer() {
@@ -241,6 +277,7 @@ export class PuntoVentaComponent {
           precio: price,
           quantity: 1,
           necesitaRecetaMedica: item.necesitaRecetaMedica,
+          esControlado: item.esControlado,
           manejaLotes: item.manejaLotes,
           lotMode: 'AUTO',
           manualLots: [],
@@ -269,7 +306,9 @@ export class PuntoVentaComponent {
   protected clearCart() {
     this.cart.set([]);
     this.prescriptionValidated.set(false);
+    this.prescriptionId.set('');
     this.prescriptionNote.set('');
+    this.controlledApprovedById.set('');
     this.promotionCode.set('');
     this.comentario.set('');
     this.interactionAlerts.set([]);
@@ -368,16 +407,97 @@ export class PuntoVentaComponent {
       return;
     }
     if (this.cart().length === 0) return;
-    if (this.requiresRx() && !this.prescriptionValidated()) {
-      this.notify.warning('Valide la receta médica antes de cobrar');
+    if (this.requiresRx() && !this.prescriptionValidated() && !this.prescriptionId()) {
+      this.notify.warning('Seleccione una receta o valide manualmente antes de cobrar');
       return;
     }
     if (this.interactionAlerts().length > 0 && !this.interactionsAcknowledged()) {
       this.notify.warning('Confirme las alertas de interacción medicamentosa antes de cobrar');
       return;
     }
+    if (this.requiresControlled()) {
+      void this.loadApprovers();
+    }
     this.paymentAmount.set(this.cartTotal());
     this.payModalOpen.set(true);
+  }
+
+  protected async loadApprovers() {
+    try {
+      const rows = await firstValueFrom(this.api.listPharmaApprovers(true));
+      this.pharmaApprovers.set(rows);
+    } catch {
+      this.pharmaApprovers.set([]);
+    }
+  }
+
+  protected async openSubstituteModal(productId: string) {
+    const wh = this.warehouseId();
+    if (!wh) {
+      this.notify.warning('Seleccione almacén');
+      return;
+    }
+    this.substituteModalProductId.set(productId);
+    this.substituteLoading.set(true);
+    try {
+      const rows = await firstValueFrom(this.api.getPosSubstitutes(productId, wh));
+      this.substituteOptions.set(rows);
+      if (rows.length === 0) this.notify.info('No hay genéricos/bioequivalentes con stock');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudieron cargar sustitutos'));
+      this.substituteOptions.set([]);
+    } finally {
+      this.substituteLoading.set(false);
+    }
+  }
+
+  protected closeSubstituteModal() {
+    this.substituteModalProductId.set(null);
+    this.substituteOptions.set([]);
+  }
+
+  protected applySubstitute(sub: PosSubstituteItemDto) {
+    const originalId = this.substituteModalProductId();
+    if (!originalId) return;
+    const original = this.cart().find(
+      (l) => l.productId === originalId || l.substitutedFromProductId === originalId,
+    );
+    if (!original) return;
+
+    const price = Number.parseFloat(sub.precio);
+    const stock = Number.parseFloat(sub.stock);
+    if (original.quantity > stock) {
+      this.notify.warning(`Stock insuficiente del sustituto (${sub.stock})`);
+      return;
+    }
+
+    this.cart.update((lines) =>
+      lines.map((l) =>
+        l.productId === original!.productId
+          ? {
+              ...l,
+              productId: sub.id,
+              nombre: sub.nombre,
+              codigoInterno: sub.codigoInterno,
+              precio: price,
+              substitutedFromProductId: original!.substitutedFromProductId ?? originalId,
+              substitutedFromNombre: original!.substitutedFromNombre ?? original!.nombre,
+            }
+          : l,
+      ),
+    );
+    this.notify.success(`Sustituido por ${sub.nombre}`);
+    this.closeSubstituteModal();
+  }
+
+  protected buildSubstitutions(): CreateSaleSubstitutionRequest[] {
+    return this.cart()
+      .filter((l) => l.substitutedFromProductId)
+      .map((l) => ({
+        originalProductId: l.substitutedFromProductId!,
+        substituteProductId: l.productId,
+        motivo: 'Sustitución genérica/bioequivalente en POS',
+      }));
   }
 
   protected readonly saleMutation = injectMutation(() => ({
@@ -387,6 +507,10 @@ export class PuntoVentaComponent {
       if (Math.abs(amount - total) > 0.02) {
         throw new Error('El monto de pago debe coincidir con el total');
       }
+      if (this.requiresControlled() && !this.controlledApprovedById()) {
+        throw new Error('Seleccione el farmacéutico que autoriza la dispensación de controlados');
+      }
+      const substitutions = this.buildSubstitutions();
       return firstValueFrom(
         this.api.createSale(
           {
@@ -395,10 +519,13 @@ export class PuntoVentaComponent {
             customerId: this.customerId() || undefined,
             documentType: this.documentType(),
             serie: this.serie().trim() || undefined,
-            prescriptionValidated: this.prescriptionValidated(),
+            prescriptionValidated: this.prescriptionValidated() || !!this.prescriptionId(),
+            prescriptionId: this.prescriptionId() || undefined,
+            controlledApprovedById: this.controlledApprovedById() || undefined,
             prescriptionNote: this.prescriptionNote().trim() || undefined,
             promotionCode: this.promotionCode().trim() || undefined,
             comentario: this.comentario().trim() || undefined,
+            substitutions: substitutions.length ? substitutions : undefined,
             items: this.cart().map((l) => ({
               productId: l.productId,
               quantity: l.quantity,

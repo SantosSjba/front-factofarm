@@ -1,4 +1,54 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Médicos</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Médicos prescriptores</h1>
+  <app-button *appHasPermission="'medicos.write'" size="sm" (btnClick)="openCreate()">Nuevo médico</app-button>
+</app-page-toolbar>
+
+<app-component-card title="Filtros" className="mt-4">
+  <app-list-filters
+    [searchValue]="search()"
+    searchPlaceholder="Buscar por CMP o nombre"
+    [showSelect]="false"
+    (searchValueChange)="search.set($event); page.set(1)"
+  />
+</app-component-card>
+
+<app-component-card title="Médicos" className="mt-4">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b text-xs uppercase text-gray-500">
+      <tr>
+        <th class="px-3 py-2">CMP</th>
+        <th class="px-3 py-2">Nombre</th>
+        <th class="px-3 py-2">Especialidad</th>
+        <th class="px-3 py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.id) {
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="px-3 py-2 font-medium">{{ row.cmp }}</td>
+          <td class="px-3 py-2">{{ row.nombres }} {{ row.apellidos }}</td>
+          <td class="px-3 py-2">{{ row.especialidad ?? '—' }}</td>
+          <td class="px-3 py-2 text-right">
+            <button type="button" class="text-brand-600 hover:underline" (click)="openEdit(row)">Editar</button>
+            <button type="button" class="ml-2 text-red-600 hover:underline" (click)="deleteMutation.mutate(row.id)">Eliminar</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (listQuery.data(); as data) {
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+  }
+</app-component-card>
+
+<app-modal [isOpen]="modalOpen()" (close)="modalOpen.set(false)" className="w-full max-w-lg">
+  <div class="space-y-3 p-6">
+    <h3 class="text-lg font-semibold">{{ editing() ? 'Editar médico' : 'Nuevo médico' }}</h3>
+    <app-input-field [value]="cmp()" (valueChange)="cmp.set('' + $event)" placeholder="CMP" [disabled]="!!editing()" />
+    <app-input-field [value]="nombres()" (valueChange)="nombres.set('' + $event)" placeholder="Nombres" />
+    <app-input-field [value]="apellidos()" (valueChange)="apellidos.set('' + $event)" placeholder="Apellidos" />
+    <app-input-field [value]="especialidad()" (valueChange)="especialidad.set('' + $event)" placeholder="Especialidad" />
+    <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()">Guardar</app-button>
+  </div>
+</app-modal>

@@ -156,6 +156,14 @@ import type {
   SaleLotAllocationPreviewDto,
   DispatchSaleStockRequest,
   PosCatalogItemDto,
+  PosSubstituteItemDto,
+  PharmaApproverDto,
+  ControlledLedgerEntryDto,
+  ControlledMonthlyReportDto,
+  Cie10CodeDto,
+  AdverseEventItemDto,
+  CreateAdverseEventRequest,
+  NotifyDigemidRequest,
   SaleInteractionsCheckDto,
   SaleListItemDto,
   SaleDetailDto,
@@ -182,6 +190,11 @@ import type {
   UpsertBillingConfigRequest,
   ValidateRucResponseDto,
   EmitSpecialDocumentRequest,
+  MedicoItemDto,
+  CreateMedicoRequest,
+  PrescriptionListItemDto,
+  PrescriptionSummaryDto,
+  CreatePrescriptionRequest,
   ElectronicDocumentListItemDto,
   ElectronicDocumentDetailDto,
   SunatDocumentStatus,
@@ -1579,6 +1592,142 @@ export class DirectoryApiService {
 
   emitSpecialElectronicDocument(body: EmitSpecialDocumentRequest) {
     return this.http.post<ElectronicDocumentDetailDto>(`${this.base}/billing/documents/special`, body);
+  }
+
+  listMedicos(filters?: { search?: string; page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<MedicoItemDto>>(`${this.base}/medicos`, { params });
+  }
+
+  createMedico(body: CreateMedicoRequest) {
+    return this.http.post<MedicoItemDto>(`${this.base}/medicos`, body);
+  }
+
+  updateMedico(id: string, body: Partial<CreateMedicoRequest> & { activo?: boolean }) {
+    return this.http.patch<MedicoItemDto>(`${this.base}/medicos/${id}`, body);
+  }
+
+  deleteMedico(id: string) {
+    return this.http.delete<void>(`${this.base}/medicos/${id}`);
+  }
+
+  listPrescriptions(filters?: { search?: string; page?: number; pageSize?: number; customerId?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.customerId) params['customerId'] = filters.customerId;
+    return this.http.get<PaginatedResponseDto<PrescriptionListItemDto>>(`${this.base}/prescriptions`, { params });
+  }
+
+  listPrescriptionsByCustomer(customerId: string) {
+    return this.http.get<PrescriptionSummaryDto[]>(`${this.base}/prescriptions/customer/${customerId}`);
+  }
+
+  createPrescription(body: CreatePrescriptionRequest) {
+    return this.http.post<unknown>(`${this.base}/prescriptions`, body);
+  }
+
+  attachPrescriptionImage(id: string, imagenArchivoId: string) {
+    return this.http.patch<unknown>(`${this.base}/prescriptions/${id}/image`, { imagenArchivoId });
+  }
+
+  listPharmaApprovers(excludeSelf = true) {
+    const params: Record<string, string> = excludeSelf ? { excludeSelf: 'true' } : {};
+    return this.http.get<PharmaApproverDto[]>(`${this.base}/pharmaceutical/approvers`, { params });
+  }
+
+  getPosSubstitutes(productId: string, warehouseId: string) {
+    return this.http.get<PosSubstituteItemDto[]>(`${this.base}/sales/pos-substitutes`, {
+      params: { productId, warehouseId },
+    });
+  }
+
+  getControlledLedger(filters?: { productId?: string; from?: string; to?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.productId) params['productId'] = filters.productId;
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    return this.http.get<ControlledLedgerEntryDto[]>(`${this.base}/pharmaceutical/controlled-ledger`, { params });
+  }
+
+  getControlledMonthlyReport(year?: number, month?: number) {
+    const params: Record<string, string> = {};
+    if (year) params['year'] = String(year);
+    if (month) params['month'] = String(month);
+    return this.http.get<ControlledMonthlyReportDto>(`${this.base}/pharmaceutical/reports/controlled-monthly`, {
+      params,
+    });
+  }
+
+  exportControlledLedger(from?: string, to?: string) {
+    const params: Record<string, string> = {};
+    if (from) params['from'] = from;
+    if (to) params['to'] = to;
+    return this.http.post(`${this.base}/pharmaceutical/reports/controlled-ledger/export`, null, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
+  searchCie10(search: string) {
+    return this.http.get<Cie10CodeDto[]>(`${this.base}/pharmaceutical/cie10`, {
+      params: { search },
+    });
+  }
+
+  listAdverseEvents() {
+    return this.http.get<AdverseEventItemDto[]>(`${this.base}/pharmaceutical/adverse-events`);
+  }
+
+  createAdverseEvent(body: CreateAdverseEventRequest) {
+    return this.http.post<AdverseEventItemDto>(`${this.base}/pharmaceutical/adverse-events`, body);
+  }
+
+  notifyDigemidAdverseEvent(id: string, body: NotifyDigemidRequest) {
+    return this.http.patch<AdverseEventItemDto>(`${this.base}/pharmaceutical/adverse-events/${id}/notify-digemid`, body);
+  }
+
+  exportAdverseEventsDigemid() {
+    return this.http.post(`${this.base}/pharmaceutical/reports/adverse-events/export`, null, {
+      responseType: 'blob',
+    });
+  }
+
+  getPharmaShrinkageExpiry(filters?: { from?: string; to?: string; warehouseId?: string; expiryDaysAhead?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
+    if (filters?.expiryDaysAhead) params['expiryDaysAhead'] = String(filters.expiryDaysAhead);
+    return this.http.get<unknown>(`${this.base}/pharmaceutical/reports/shrinkage-expiry`, { params });
+  }
+
+  getPharmaProfitability(filters?: { from?: string; to?: string; groupBy?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    if (filters?.groupBy) params['groupBy'] = filters.groupBy;
+    return this.http.get<unknown[]>(`${this.base}/pharmaceutical/reports/profitability`, { params });
+  }
+
+  getPharmaSalesAnalytics(filters?: { from?: string; to?: string; groupBy?: string; warehouseId?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    if (filters?.groupBy) params['groupBy'] = filters.groupBy;
+    if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
+    return this.http.get<unknown[]>(`${this.base}/pharmaceutical/reports/sales-analytics`, { params });
+  }
+
+  getPharmaDispensationByMedico(filters?: { from?: string; to?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    return this.http.get<unknown[]>(`${this.base}/pharmaceutical/reports/dispensation-by-medico`, { params });
   }
 
   fileDownloadUrl(fileId: string) {

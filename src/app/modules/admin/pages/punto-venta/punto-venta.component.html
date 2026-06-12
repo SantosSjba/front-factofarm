@@ -189,6 +189,12 @@
             <div class="flex justify-between gap-2">
               <div class="min-w-0 flex-1">
                 <p class="truncate font-medium text-sm">{{ line.nombre }}</p>
+                @if (line.substitutedFromNombre) {
+                  <p class="text-xs text-amber-700">Sustituye: {{ line.substitutedFromNombre }}</p>
+                }
+                @if (line.esControlado) {
+                  <span class="text-xs font-medium text-rose-700">Controlado</span>
+                }
                 @if (line.manejaLotes) {
                   <button type="button" class="text-xs text-brand-600" (click)="openLotModal(line.productId)">
                     Lotes ({{ line.lotMode }})
@@ -205,6 +211,9 @@
               </div>
               <button type="button" class="text-xs text-rose-600" (click)="removeLine(line.productId)">Quitar</button>
             </div>
+            <button type="button" class="mt-1 text-xs text-brand-600" (click)="openSubstituteModal(line.substitutedFromProductId ?? line.productId)">
+              Ver genéricos
+            </button>
           </div>
         } @empty {
           <p class="py-6 text-center text-sm text-gray-500">Carrito vacío</p>
@@ -213,10 +222,30 @@
 
       @if (requiresRx()) {
         <div class="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm dark:border-rose-900 dark:bg-rose-900/20">
+          @if (patientPrescriptions().length > 0) {
+            <label class="mb-2 block text-xs font-medium text-rose-800">Receta del paciente</label>
+            <select
+              class="mb-2 w-full rounded border border-rose-200 px-2 py-1 text-sm"
+              [value]="prescriptionId()"
+              (change)="onPrescriptionSelected($any($event.target).value)"
+            >
+              <option value="">Seleccionar receta activa…</option>
+              @for (rx of patientPrescriptions(); track rx.id) {
+                <option [value]="rx.id">{{ rx.numero }} · {{ rx.estado }} · {{ rx.medicoNombre ?? 'Sin médico' }}</option>
+              }
+            </select>
+          }
           <label class="flex items-center gap-2">
             <input type="checkbox" [checked]="prescriptionValidated()" (change)="prescriptionValidated.set($any($event.target).checked)" />
-            Receta validada
+            Receta validada manualmente
           </label>
+        </div>
+      }
+
+      @if (requiresControlled()) {
+        <div class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-sm dark:border-amber-900 dark:bg-amber-900/20">
+          <p class="mb-2 text-xs font-medium text-amber-900">Doble validación — medicamento controlado</p>
+          <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
         </div>
       }
 
@@ -262,6 +291,12 @@
     <app-form-select [options]="paymentOptions" [value]="paymentMethod()" (valueChange)="paymentMethod.set($any($event))" />
     <app-input-field type="number" [value]="paymentAmount()" (valueChange)="paymentAmount.set(+$event)" />
     <app-input-field [value]="promotionCode()" (valueChange)="promotionCode.set('' + $event)" placeholder="Código promoción" />
+    @if (requiresControlled()) {
+      <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+        <p class="mb-2 font-medium text-amber-900">Autorización farmacéutico titular (controlados)</p>
+        <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
+      </div>
+    }
     <div class="flex justify-end gap-2">
       <app-button variant="outline" (btnClick)="payModalOpen.set(false)">Cancelar</app-button>
       <app-button variant="primary" [disabled]="saleMutation.isPending()" (btnClick)="confirmSale()">Confirmar e imprimir</app-button>
@@ -294,4 +329,22 @@
       <app-button variant="primary" (btnClick)="closeLotModal()">Listo</app-button>
     </div>
   }
+</app-modal>
+
+<app-modal [isOpen]="!!substituteModalProductId()" (close)="closeSubstituteModal()" className="w-full max-w-lg">
+  <div class="space-y-3 p-6">
+    <h3 class="font-semibold">Sustitutos genéricos / bioequivalentes</h3>
+    @if (substituteLoading()) {
+      <p class="text-sm text-gray-500">Buscando alternativas con stock…</p>
+    } @else if (substituteOptions().length === 0) {
+      <p class="text-sm text-gray-500">No hay sustitutos disponibles.</p>
+    } @else {
+      @for (sub of substituteOptions(); track sub.id) {
+        <button type="button" class="flex w-full items-center justify-between rounded border px-3 py-2 text-left text-sm hover:bg-gray-50" (click)="applySubstitute(sub)">
+          <span>{{ sub.nombre }} @if (sub.generico) { <span class="text-xs text-emerald-700">(Genérico)</span> }</span>
+          <span class="font-medium">{{ sub.precio | currency: 'PEN' : 'symbol' : '1.2-2' }} · Stock {{ sub.stock }}</span>
+        </button>
+      }
+    }
+  </div>
 </app-modal>

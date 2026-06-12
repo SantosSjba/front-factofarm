@@ -61,6 +61,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.balance': { path: '/balance' },
   'nav.ingresos_egresos_medio_pago': { path: '/ingresos-egresos-medio-pago' },
   'nav.reporte_digemid': { path: '/reporte-digemid' },
+  'nav.recetas': { path: '/recetas' },
   'nav.medicos': { path: '/medicos' },
   'nav.cie_10': { path: '/cie-10' },
   'nav.reporte_psicotropicos': { path: '/reporte-psicotropicos-estupefacientes' },

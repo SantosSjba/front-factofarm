@@ -1,0 +1,77 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Recetas médicas</h1>
+  <app-button size="sm" (btnClick)="openCreate()">Nueva receta</app-button>
+</app-page-toolbar>
+
+<app-component-card title="Recetas registradas" className="mt-4">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b text-xs uppercase text-gray-500">
+      <tr>
+        <th class="px-3 py-2">Número</th>
+        <th class="px-3 py-2">Paciente</th>
+        <th class="px-3 py-2">Médico</th>
+        <th class="px-3 py-2">Estado</th>
+        <th class="px-3 py-2">Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of listQuery.data()?.items ?? []; track row.id) {
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="px-3 py-2 font-medium">{{ row.numero }}</td>
+          <td class="px-3 py-2">{{ row.customer.nombre }}</td>
+          <td class="px-3 py-2">{{ row.medicoNombre ?? row.medicoCmp ?? '—' }}</td>
+          <td class="px-3 py-2">{{ row.estado }}</td>
+          <td class="px-3 py-2">{{ row.fechaEmision | date: 'shortDate' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (listQuery.data(); as data) {
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+  }
+</app-component-card>
+
+<app-modal [isOpen]="createOpen()" (close)="createOpen.set(false)" className="w-full max-w-2xl">
+  <div class="space-y-4 p-6">
+    <h3 class="text-lg font-semibold">Registrar receta</h3>
+    <div class="flex gap-2">
+      <app-input-field className="flex-1" [value]="customerSearch()" (valueChange)="customerSearch.set('' + $event)" placeholder="Buscar paciente (cliente)" />
+      <app-button size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
+    </div>
+    @for (c of customerOptions(); track c.id) {
+      <button type="button" class="block w-full rounded border px-3 py-2 text-left text-sm hover:bg-gray-50" (click)="selectCustomer(c)">
+        {{ c.nombre }} · {{ c.numeroDocumento }}
+      </button>
+    }
+    <app-form-select [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
+    <app-input-field [value]="diagnostico()" (valueChange)="diagnostico.set('' + $event)" placeholder="Diagnóstico" />
+    <div class="rounded border border-dashed p-3">
+      <p class="mb-2 text-sm font-medium text-gray-700">Receta escaneada / digital (opcional)</p>
+      <input type="file" accept="image/*" capture="environment" class="text-sm" (change)="onImageSelected($event)" />
+      @if (uploadingImage()) {
+        <p class="mt-2 text-xs text-gray-500">Subiendo imagen…</p>
+      }
+      @if (imagenPreviewUrl()) {
+        <img [src]="imagenPreviewUrl()" alt="Vista previa receta" class="mt-2 max-h-40 rounded border object-contain" />
+      }
+    </div>
+    <div class="rounded border p-3">
+      <div class="mb-2 flex gap-2">
+        <app-input-field className="flex-1" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" placeholder="Buscar medicamento" />
+        <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
+      </div>
+      @for (p of productOptions(); track p.id) {
+        <button type="button" class="block w-full px-2 py-1 text-left text-sm hover:bg-gray-50" (click)="addItem(p)">{{ p.nombre }}</button>
+      }
+      <ul class="mt-2 text-sm">
+        @for (item of draftItems(); track item.productId) {
+          <li>{{ item.label }} × {{ item.cantidad }}</li>
+        }
+      </ul>
+    </div>
+    <app-button variant="primary" (btnClick)="createMutation.mutate()" [disabled]="!customerId() || draftItems().length === 0 || createMutation.isPending()">
+      Guardar receta
+    </app-button>
+  </div>
+</app-modal>

@@ -550,6 +550,13 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Reporte Digemid',
       },
       {
+        path: 'recetas',
+        ...guarded(P.recetas),
+        loadComponent: () =>
+          import('./pages/recetas/recetas.component').then((m) => m.RecetasComponent),
+        title: 'FactoFarm | Recetas',
+      },
+      {
         path: 'medicos',
         ...guarded(P.medicos),
         loadComponent: () =>

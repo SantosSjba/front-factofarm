@@ -244,6 +244,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     name: 'Farmacos',
     subItems: [
       { name: 'Reporte Digemid', path: '/reporte-digemid', permissionCode: 'nav.reporte_digemid' },
+      { name: 'Recetas', path: '/recetas', permissionCode: 'nav.recetas' },
       { name: 'Medicos', path: '/medicos', permissionCode: 'nav.medicos' },
       { name: 'CIE 10', path: '/cie-10', permissionCode: 'nav.cie_10' },
       {

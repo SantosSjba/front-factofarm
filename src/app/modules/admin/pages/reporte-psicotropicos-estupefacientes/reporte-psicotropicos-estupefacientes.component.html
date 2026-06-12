@@ -1,4 +1,96 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Reporte de psicotrópicos y estupefacientes</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
+﻿<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Reporte psicotrópicos y estupefacientes</h1>
+</app-page-toolbar>
+
+<div class="mb-4 flex flex-wrap gap-2">
+  <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium" [class.bg-brand-500]="activeTab() === 'ledger'" [class.text-white]="activeTab() === 'ledger'" [class.bg-gray-100]="activeTab() !== 'ledger'" (click)="setTab('ledger')">Libro diario</button>
+  <button type="button" class="rounded-lg px-4 py-2 text-sm font-medium" [class.bg-brand-500]="activeTab() === 'monthly'" [class.text-white]="activeTab() === 'monthly'" [class.bg-gray-100]="activeTab() !== 'monthly'" (click)="setTab('monthly')">Resumen mensual</button>
 </div>
+
+@if (activeTab() === 'ledger') {
+  <app-component-card title="Libro de control" subtitle="Entradas y salidas de sustancias controladas">
+    <div class="mb-4 flex flex-wrap items-end gap-3">
+      <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
+      <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
+      <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportLedger()">Exportar Excel DIGEMID</app-button>
+    </div>
+
+    @if (ledgerQuery.isLoading()) {
+      <p class="text-gray-500">Cargando movimientos…</p>
+    } @else if (ledgerRows().length === 0) {
+      <p class="text-gray-500">Sin movimientos en el periodo seleccionado.</p>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b text-left text-gray-500">
+              <th class="py-2 pr-4">Fecha</th>
+              <th class="py-2 pr-4">Producto</th>
+              <th class="py-2 pr-4">Categoría</th>
+              <th class="py-2 pr-4">Mov.</th>
+              <th class="py-2 pr-4">Cantidad</th>
+              <th class="py-2 pr-4">Saldo</th>
+              <th class="py-2 pr-4">Referencia</th>
+              <th class="py-2">Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of ledgerRows(); track row.id) {
+              <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4">{{ row.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td class="py-2 pr-4">{{ row.product.nombre }}</td>
+                <td class="py-2 pr-4">{{ row.product.controlledSubstanceCategory?.schedule ?? '—' }}</td>
+                <td class="py-2 pr-4">{{ row.movementType }}</td>
+                <td class="py-2 pr-4">{{ row.cantidad }}</td>
+                <td class="py-2 pr-4">{{ row.saldo }}</td>
+                <td class="py-2 pr-4">{{ row.referencia ?? '—' }}</td>
+                <td class="py-2">{{ row.user?.nombre ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-component-card>
+}
+
+@if (activeTab() === 'monthly') {
+  <app-component-card title="Resumen mensual" subtitle="Consolidado por producto controlado">
+    <div class="mb-4 flex flex-wrap items-end gap-3">
+      <app-input-field label="Año" type="number" [value]="reportYear()" (valueChange)="onReportYearChange($event)" />
+      <app-input-field label="Mes" type="number" [value]="reportMonth()" (valueChange)="onReportMonthChange($event)" />
+    </div>
+
+    @if (monthlyQuery.isLoading()) {
+      <p class="text-gray-500">Calculando resumen…</p>
+    } @else if (monthlySummary().length === 0) {
+      <p class="text-gray-500">Sin movimientos en el mes indicado.</p>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b text-left text-gray-500">
+              <th class="py-2 pr-4">Producto</th>
+              <th class="py-2 pr-4">Schedule</th>
+              <th class="py-2 pr-4">Entradas</th>
+              <th class="py-2 pr-4">Salidas</th>
+              <th class="py-2">Saldo final</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of monthlySummary(); track row.productId) {
+              <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4">{{ row.producto }}</td>
+                <td class="py-2 pr-4">{{ row.schedule ?? '—' }}</td>
+                <td class="py-2 pr-4">{{ row.entradas }}</td>
+                <td class="py-2 pr-4">{{ row.salidas }}</td>
+                <td class="py-2">{{ row.saldoFinal }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-component-card>
+}
