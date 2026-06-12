@@ -178,6 +178,16 @@ import type {
   AccountPayableListItemDto,
   ReplenishmentSuggestionDto,
   PriceComparisonItemDto,
+  BillingConfigDto,
+  UpsertBillingConfigRequest,
+  ValidateRucResponseDto,
+  EmitSpecialDocumentRequest,
+  ElectronicDocumentListItemDto,
+  ElectronicDocumentDetailDto,
+  SunatDocumentStatus,
+  SaleBillingStatusDto,
+  CreateSaleReturnRequest,
+  SaleReturnResponseDto,
 } from '../models/directory.models';
 
 @Injectable({ providedIn: 'root' })
@@ -1357,6 +1367,10 @@ export class DirectoryApiService {
     return this.http.post<SaleDetailDto>(`${this.base}/sales/${id}/void`, { reason });
   }
 
+  createSaleReturn(saleId: string, body: CreateSaleReturnRequest) {
+    return this.http.post<SaleReturnResponseDto>(`${this.base}/sales/${saleId}/returns`, body);
+  }
+
   // —— Caja ——
   listCashRegisters() {
     return this.http.get<CashRegisterDto[]>(`${this.base}/cash-registers`);
@@ -1499,5 +1513,75 @@ export class DirectoryApiService {
       `${this.base}/purchases/reports/price-comparison`,
       { params },
     );
+  }
+
+  // —— Facturación electrónica (Fase 5) ——
+  getBillingConfig() {
+    return this.http.get<BillingConfigDto>(`${this.base}/billing/config`);
+  }
+
+  upsertBillingConfig(body: UpsertBillingConfigRequest) {
+    return this.http.patch<BillingConfigDto>(`${this.base}/billing/config`, body);
+  }
+
+  listElectronicDocuments(filters?: { page?: number; pageSize?: number; sunatStatus?: SunatDocumentStatus }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.sunatStatus) params['sunatStatus'] = filters.sunatStatus;
+    return this.http.get<PaginatedResponseDto<ElectronicDocumentListItemDto>>(
+      `${this.base}/billing/documents`,
+      { params },
+    );
+  }
+
+  getElectronicDocument(id: string) {
+    return this.http.get<ElectronicDocumentDetailDto>(`${this.base}/billing/documents/${id}`);
+  }
+
+  emitElectronicDocumentFromSale(saleId: string) {
+    return this.http.post<ElectronicDocumentDetailDto>(`${this.base}/billing/sales/${saleId}/emit`, {});
+  }
+
+  getSaleBillingStatus(saleId: string) {
+    return this.http.get<SaleBillingStatusDto | null>(`${this.base}/billing/sales/${saleId}/status`);
+  }
+
+  retryElectronicDocument(id: string) {
+    return this.http.post<{ ok: boolean }>(`${this.base}/billing/documents/${id}/retry`, {});
+  }
+
+  voidElectronicDocument(id: string, reason: string) {
+    return this.http.post<ElectronicDocumentDetailDto>(`${this.base}/billing/documents/${id}/void`, { reason });
+  }
+
+  sendDailyBillingSummary(fecha: string) {
+    return this.http.post<{ ok: boolean; id: string }>(`${this.base}/billing/daily-summary`, { fecha });
+  }
+
+  validateBillingRuc(ruc: string) {
+    return this.http.get<ValidateRucResponseDto>(`${this.base}/billing/validate-ruc/${encodeURIComponent(ruc)}`);
+  }
+
+  refreshElectronicDocumentStatus(id: string) {
+    return this.http.post<{ ok: boolean; sunatStatus: SunatDocumentStatus }>(
+      `${this.base}/billing/documents/${id}/refresh-status`,
+      {},
+    );
+  }
+
+  emitGuiaFromTransfer(transferId: string) {
+    return this.http.post<ElectronicDocumentDetailDto>(
+      `${this.base}/billing/transfers/${transferId}/emit-guia`,
+      {},
+    );
+  }
+
+  emitSpecialElectronicDocument(body: EmitSpecialDocumentRequest) {
+    return this.http.post<ElectronicDocumentDetailDto>(`${this.base}/billing/documents/special`, body);
+  }
+
+  fileDownloadUrl(fileId: string) {
+    return `${this.base}/files/${fileId}`;
   }
 }

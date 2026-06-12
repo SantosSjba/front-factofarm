@@ -667,6 +667,35 @@ export class ClientesComponent {
     this.updateFormField('tipoDocumento', value as CreateCustomerRequest['tipoDocumento']);
   }
 
+  protected readonly rucConsultMutation = injectMutation(() => ({
+    mutationFn: (ruc: string) => firstValueFrom(this.api.validateBillingRuc(ruc)),
+    onSuccess: (data) => {
+      this.updateFormField('nombre', data.razonSocial);
+      if (data.direccion) {
+        this.updateMainAddressField('direccion', data.direccion);
+      }
+      this.notify.success(`${data.estado} · ${data.condicion}`);
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo consultar el RUC')),
+  }));
+
+  protected consultSunatRuc() {
+    if (this.form().tipoDocumento !== 'RUC') {
+      this.notify.warning('La consulta SUNAT aplica solo a RUC');
+      return;
+    }
+    const ruc = this.form().numeroDocumento.trim();
+    if (!/^\d{11}$/.test(ruc)) {
+      this.notify.warning('Ingrese un RUC válido de 11 dígitos');
+      return;
+    }
+    this.rucConsultMutation.mutate(ruc);
+  }
+
+  protected canConsultRuc(): boolean {
+    return this.form().tipoDocumento === 'RUC' && /^\d{11}$/.test(this.form().numeroDocumento.trim());
+  }
+
   protected openDeleteModal(row: CustomerItemDto) {
     this.selected.set(row);
     this.deleteOpen.set(true);

@@ -230,9 +230,20 @@
           Cobrar (F2)
         </app-button>
         @if (lastSale(); as sale) {
-          <div class="mt-2 text-center text-xs text-emerald-600">
-            {{ sale.serie }}-{{ sale.numero }} · {{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
-            <button type="button" class="ml-1 underline" (click)="reprintLast()">Reimprimir</button>
+          <div class="mt-2 space-y-1 text-center text-xs text-emerald-600">
+            <div>
+              {{ sale.serie }}-{{ sale.numero }} · {{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              <button type="button" class="ml-1 underline" (click)="reprintLast()">Reimprimir</button>
+            </div>
+            @if (lastSunatStatus(); as sunat) {
+              <div>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-medium" [class]="sunatStatusClass(sunat.sunatStatus)">
+                  SUNAT: {{ sunat.sunatStatus }}
+                </span>
+              </div>
+            } @else if (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') {
+              <div class="text-amber-600">Enviando comprobante electrónico…</div>
+            }
           </div>
         }
       </div>

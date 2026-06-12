@@ -61,6 +61,7 @@
                   }
                   @if (row.estado === 'EN_TRANSITO') {
                     <app-button size="sm" (btnClick)="receive(row)">Recibir</app-button>
+                    <app-button size="sm" variant="outline" (btnClick)="emitGuia(row)">Guía SUNAT</app-button>
                   }
                 </div>
               </td>

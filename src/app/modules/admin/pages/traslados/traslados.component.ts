@@ -108,6 +108,16 @@ export class TrasladosComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo despachar')),
   }));
 
+  protected readonly emitGuiaMutation = injectMutation(() => ({
+    mutationFn: (id: string) => firstValueFrom(this.api.emitGuiaFromTransfer(id)),
+    onSuccess: () => {
+      this.notify.success('Guía de remisión programada');
+      void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'transfers'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la guía')),
+  }));
+
   protected readonly receiveMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.receiveInventoryTransfer(id)),
     onSuccess: (res) => {
@@ -156,6 +166,10 @@ export class TrasladosComponent {
 
   protected receive(row: InventoryTransferDto) {
     this.receiveMutation.mutate(row.id);
+  }
+
+  protected emitGuia(row: InventoryTransferDto) {
+    this.emitGuiaMutation.mutate(row.id);
   }
 
   protected cancel(row: InventoryTransferDto) {

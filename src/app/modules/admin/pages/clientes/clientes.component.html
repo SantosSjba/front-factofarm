@@ -283,8 +283,12 @@
           <app-label>Número *</app-label>
           <div class="mt-2 flex gap-2">
             <app-input-field className="flex-1" [value]="form().numeroDocumento" (valueChange)="updateFormField('numeroDocumento', $event + '')" />
-            <app-button variant="outline" [disabled]="true" title="Consulta RUC/DNI disponible en Fase 8">
-              Consultar SUNAT
+            <app-button
+              variant="outline"
+              [disabled]="!canConsultRuc() || rucConsultMutation.isPending()"
+              (btnClick)="consultSunatRuc()"
+            >
+              {{ rucConsultMutation.isPending() ? 'Consultando…' : 'Consultar SUNAT' }}
             </app-button>
           </div>
         </div>

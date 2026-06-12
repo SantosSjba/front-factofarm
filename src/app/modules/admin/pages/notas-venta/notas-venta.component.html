@@ -37,6 +37,11 @@
             <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             <td class="px-3 py-2 text-right">
               <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
+              @if (row.documentType === 'BOLETA' || row.documentType === 'FACTURA') {
+                @if (row.estado === 'COMPLETADA' || row.estado === 'PARCIALMENTE_DEVUELTA') {
+                  <button type="button" class="ml-2 text-amber-600 hover:underline" (click)="openReturn(row.id)">Devolver</button>
+                }
+              }
             </td>
           </tr>
         }
@@ -53,6 +58,17 @@
     <div class="space-y-4 p-6">
       <h3 class="text-lg font-semibold">{{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
       <p class="text-sm text-gray-500">{{ sale.createdAt | date: 'medium' }} · {{ sale.estado }}</p>
+      @if (billingStatusQuery.data(); as sunat) {
+        <p class="text-sm">
+          Estado SUNAT:
+          <span class="rounded-full px-2 py-0.5 text-xs" [class]="sunatStatusClass(sunat.sunatStatus)">{{ sunat.sunatStatus }}</span>
+          @if (sunat.sunatDescripcion) {
+            <span class="ml-1 text-gray-500">· {{ sunat.sunatDescripcion }}</span>
+          }
+        </p>
+      } @else if (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') {
+        <p class="text-sm text-gray-500">Sin comprobante electrónico asociado</p>
+      }
       @if (sale.customer) {
         <p class="text-sm">Cliente: {{ sale.customer.nombre }}</p>
       }
@@ -87,6 +103,68 @@
         <div class="flex justify-between"><span>Subtotal</span><span>{{ sale.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
         <div class="flex justify-between"><span>IGV</span><span>{{ sale.igvTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
         <div class="flex justify-between font-bold"><span>Total</span><span>{{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+      </div>
+      @if (canReturn(sale)) {
+        <div class="flex justify-end border-t pt-4">
+          <app-button variant="outline" (btnClick)="openReturn(sale.id); closeDetail()">Devolver productos</app-button>
+        </div>
+      }
+    </div>
+  }
+</app-modal>
+
+<app-modal [isOpen]="!!returnSaleId()" (close)="closeReturn()" className="w-full max-w-2xl">
+  @if (returnSaleQuery.data(); as sale) {
+    <div class="space-y-4 p-6">
+      <h3 class="text-lg font-semibold">Devolución · {{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
+      <p class="text-sm text-gray-500">Se generará nota de crédito electrónica si el comprobante original fue aceptado por SUNAT.</p>
+      <div>
+        <app-label>Motivo</app-label>
+        <app-input-field [value]="returnMotivo()" (valueChange)="returnMotivo.set('' + $event)" placeholder="Motivo de devolución" />
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b text-xs uppercase text-gray-500">
+            <th class="py-2 text-left">Producto</th>
+            <th class="py-2 text-right">Cant. devolver</th>
+            <th class="py-2 text-left">Lote</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of returnLines(); track line.saleItemId) {
+            <tr class="border-b border-gray-100 dark:border-gray-800">
+              <td class="py-2">{{ line.producto }} <span class="text-xs text-gray-500">(máx. {{ line.maxQty }})</span></td>
+              <td class="py-2 text-right">
+                <input
+                  type="number"
+                  class="w-20 rounded border px-2 py-1 text-right text-sm dark:border-gray-700 dark:bg-gray-900"
+                  [value]="line.quantity"
+                  [max]="line.maxQty"
+                  min="0"
+                  (input)="updateReturnQty(line.saleItemId, $any($event.target).value)"
+                />
+              </td>
+              <td class="py-2">
+                <input
+                  type="text"
+                  class="w-full rounded border px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+                  [value]="line.lotCode"
+                  placeholder="Opcional"
+                  (input)="updateReturnLot(line.saleItemId, $any($event.target).value)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="flex items-center justify-between border-t pt-4">
+        <span class="font-semibold">Total a devolver: {{ returnTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+        <div class="flex gap-2">
+          <app-button variant="outline" (btnClick)="closeReturn()">Cancelar</app-button>
+          <app-button variant="primary" [disabled]="returnMutation.isPending()" (btnClick)="submitReturn()">
+            Confirmar devolución
+          </app-button>
+        </div>
       </div>
     </div>
   }

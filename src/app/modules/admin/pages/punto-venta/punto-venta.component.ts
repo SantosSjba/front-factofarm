@@ -22,10 +22,12 @@ import type {
   CustomerItemDto,
   PaymentMethod,
   PosCatalogItemDto,
+  SaleBillingStatusDto,
   SaleDetailDto,
   SaleDocumentType,
   SaleInteractionAlertDto,
   SaleLotAllocationMode,
+  SunatDocumentStatus,
 } from '../../models/directory.models';
 
 const IGV_RATE = 0.18;
@@ -102,11 +104,13 @@ export class PuntoVentaComponent {
   protected readonly paymentMethod = signal<PaymentMethod>('EFECTIVO');
   protected readonly paymentAmount = signal(0);
   protected readonly lastSale = signal<SaleDetailDto | null>(null);
+  protected readonly lastSunatStatus = signal<SaleBillingStatusDto | null>(null);
   protected readonly interactionAlerts = signal<SaleInteractionAlertDto[]>([]);
   protected readonly interactionsAcknowledged = signal(false);
   protected readonly interactionsLoading = signal(false);
 
   private interactionTimer: ReturnType<typeof setTimeout> | null = null;
+  private sunatPollTimer: ReturnType<typeof setInterval> | null = null;
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
@@ -411,6 +415,10 @@ export class PuntoVentaComponent {
     onSuccess: (sale) => {
       this.notify.success(`Venta ${sale.serie ?? ''}-${sale.numero ?? ''} registrada`);
       this.lastSale.set(sale);
+      this.lastSunatStatus.set(null);
+      if (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') {
+        this.pollSunatStatus(sale.id);
+      }
       this.payModalOpen.set(false);
       this.clearCart();
       this.printTicket(sale);
@@ -428,6 +436,40 @@ export class PuntoVentaComponent {
   protected reprintLast() {
     const sale = this.lastSale();
     if (sale) this.printTicket(sale);
+  }
+
+  protected sunatStatusClass(status: SunatDocumentStatus): string {
+    if (status === 'ACEPTADO') return 'bg-emerald-100 text-emerald-800';
+    if (status === 'RECHAZADO') return 'bg-red-100 text-red-800';
+    if (status === 'PENDIENTE' || status === 'ENVIANDO') return 'bg-amber-100 text-amber-800';
+    if (status === 'CONTINGENCIA') return 'bg-purple-100 text-purple-800';
+    return 'bg-gray-100 text-gray-800';
+  }
+
+  private pollSunatStatus(saleId: string) {
+    if (this.sunatPollTimer) clearInterval(this.sunatPollTimer);
+    let attempts = 0;
+    const poll = async () => {
+      try {
+        const status = await firstValueFrom(this.api.getSaleBillingStatus(saleId));
+        if (status) {
+          this.lastSunatStatus.set(status);
+          if (['ACEPTADO', 'OBSERVADO', 'RECHAZADO', 'ANULADO'].includes(status.sunatStatus)) {
+            if (this.sunatPollTimer) clearInterval(this.sunatPollTimer);
+            this.sunatPollTimer = null;
+          }
+        }
+      } catch {
+        /* polling opcional */
+      }
+      attempts += 1;
+      if (attempts >= 15 && this.sunatPollTimer) {
+        clearInterval(this.sunatPollTimer);
+        this.sunatPollTimer = null;
+      }
+    };
+    void poll();
+    this.sunatPollTimer = setInterval(() => void poll(), 2000);
   }
 
   protected printTicket(sale: SaleDetailDto) {

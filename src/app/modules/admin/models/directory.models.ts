@@ -1892,3 +1892,144 @@ export interface PriceComparisonItemDto {
   }[];
   mejorPrecio: string | null;
 }
+
+// —— Facturación electrónica (Fase 5) ——
+
+export type SunatDocumentStatus =
+  | 'PENDIENTE'
+  | 'ENVIANDO'
+  | 'ACEPTADO'
+  | 'OBSERVADO'
+  | 'RECHAZADO'
+  | 'ANULADO'
+  | 'CONTINGENCIA';
+
+export type BillingProviderType = 'MOCK' | 'NUBEFACT' | 'FACTILIZA' | 'BIZLINKS';
+
+export interface BillingConfigDto {
+  provider: BillingProviderType;
+  rucEmisor: string | null;
+  razonSocialEmisor: string | null;
+  apiUrl: string | null;
+  consultaApiUrl: string | null;
+  modoSandbox: boolean;
+  autoEmitOnSale: boolean;
+  emitNotaVenta: boolean;
+  applyDetraccion: boolean;
+  autoEmitGuiaOnTransfer: boolean;
+  hasApiToken: boolean;
+  hasCertificate: boolean;
+}
+
+export interface UpsertBillingConfigRequest {
+  provider?: BillingProviderType;
+  rucEmisor?: string;
+  razonSocialEmisor?: string;
+  apiUrl?: string;
+  consultaApiUrl?: string;
+  apiToken?: string;
+  certificateBase64?: string;
+  certificatePassword?: string;
+  modoSandbox?: boolean;
+  autoEmitOnSale?: boolean;
+  emitNotaVenta?: boolean;
+  applyDetraccion?: boolean;
+  autoEmitGuiaOnTransfer?: boolean;
+}
+
+export interface ValidateRucResponseDto {
+  ruc: string;
+  razonSocial: string;
+  estado: string;
+  condicion: string;
+  direccion: string | null;
+}
+
+export interface EmitSpecialDocumentRequest {
+  documentType: 'RETENCION' | 'PERCEPCION' | 'LIQUIDACION_COMPRA' | 'GUIA_REMISION_TRANSPORTISTA';
+  customerNombre: string;
+  customerDocType: string;
+  customerDocNumber: string;
+  subtotal: string;
+  igvTotal: string;
+  total: string;
+  lines: Array<{
+    descripcion: string;
+    cantidad: string;
+    precioUnitario: string;
+    subtotalLinea: string;
+    igvLinea: string;
+    totalLinea: string;
+    codigoProducto?: string;
+    unidadMedida?: string;
+  }>;
+}
+
+export interface ElectronicDocumentListItemDto {
+  id: string;
+  documentType: string;
+  serie: string;
+  numero: string;
+  sunatStatus: SunatDocumentStatus;
+  total: string;
+  customerNombre: string | null;
+  emittedAt: string | null;
+  createdAt: string;
+  saleId: string | null;
+}
+
+export interface ElectronicDocumentDetailDto extends ElectronicDocumentListItemDto {
+  subtotal: string;
+  igvTotal: string;
+  moneda: string;
+  esContingencia: boolean;
+  externalId: string | null;
+  sunatCodigo: string | null;
+  sunatDescripcion: string | null;
+  customerDocNumber: string | null;
+  xmlArchivoId: string | null;
+  pdfArchivoId: string | null;
+  cdrArchivoId: string | null;
+  lines: Array<{
+    lineNumber: number;
+    descripcion: string;
+    cantidad: string;
+    precioUnitario: string;
+    subtotalLinea: string;
+    igvLinea: string;
+    totalLinea: string;
+    taxAffectationCodigo: string | null;
+  }>;
+  taxLines: Array<{ taxCodigo: string; taxNombre: string; baseImponible: string; monto: string }>;
+  responses: Array<{ tipo: string; codigo: string | null; descripcion: string | null; createdAt: string }>;
+  saleReturnId?: string | null;
+  relatedDocumentId?: string | null;
+  relatedDocument?: {
+    id: string;
+    documentType: string;
+    serie: string;
+    numero: string;
+  } | null;
+}
+
+export interface SaleBillingStatusDto {
+  electronicDocumentId: string;
+  sunatStatus: SunatDocumentStatus;
+  sunatCodigo: string | null;
+  sunatDescripcion: string | null;
+  serie: string;
+  numero: string;
+}
+
+export interface CreateSaleReturnRequest {
+  motivo: string;
+  items: { saleItemId: string; quantity: number; lotCode?: string }[];
+}
+
+export interface SaleReturnResponseDto {
+  ok: boolean;
+  message: string;
+  saleReturnId: string;
+  totalDevuelto: string;
+  electronicDocumentId: string | null;
+}

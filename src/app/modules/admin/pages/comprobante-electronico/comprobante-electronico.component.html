@@ -1,4 +1,164 @@
-﻿<div class='min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-6 py-10 dark:border-gray-800 dark:bg-white/[0.03]'>
-  <h1 class='text-2xl font-semibold text-gray-800 dark:text-white/90'>Comprobante electrónico</h1>
-  <p class='mt-3 text-gray-600 dark:text-gray-400'>Opción en desarrollo.</p>
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Comprobantes electrónicos</h1>
+  <div class="flex gap-2">
+    <app-button variant="outline" (btnClick)="specialOpen.set(true)">Comprobante especial</app-button>
+    <app-button variant="outline" (btnClick)="openConfig()">Configuración OSE</app-button>
+  </div>
+</app-page-toolbar>
+
+<app-component-card title="Filtros" className="mt-4">
+  <div class="max-w-xs">
+    <app-form-select [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set('' + $event); page.set(1)" />
+  </div>
+</app-component-card>
+
+<app-component-card title="Bandeja CPE" className="mt-4">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b text-xs uppercase text-gray-500">
+      <tr>
+        <th class="px-3 py-2">Comprobante</th>
+        <th class="px-3 py-2">Cliente</th>
+        <th class="px-3 py-2">Estado SUNAT</th>
+        <th class="px-3 py-2">Fecha</th>
+        <th class="px-3 py-2 text-right">Total</th>
+        <th class="px-3 py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of listQuery.data()?.items ?? []; track row.id) {
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="px-3 py-2 font-medium">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
+          <td class="px-3 py-2">{{ row.customerNombre ?? '—' }}</td>
+          <td class="px-3 py-2">
+            <span class="rounded-full px-2 py-0.5 text-xs" [class]="statusClass(row.sunatStatus)">{{ row.sunatStatus }}</span>
+          </td>
+          <td class="px-3 py-2">{{ (row.emittedAt ?? row.createdAt) | date: 'short' }}</td>
+          <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+          <td class="px-3 py-2 text-right">
+            <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
+            @if (row.sunatStatus === 'RECHAZADO') {
+              <button type="button" class="ml-2 text-amber-600 hover:underline" (click)="retryMutation.mutate(row.id)">Reenviar</button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (listQuery.data(); as data) {
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+  }
+</app-component-card>
+
+<app-modal [isOpen]="configOpen()" (close)="configOpen.set(false)" className="w-full max-w-lg">
+  <div class="space-y-4 p-6">
+    <h3 class="text-lg font-semibold">Configuración OSE / SUNAT</h3>
+    <p class="text-xs text-gray-500">
+      Factiliza: URL QA <code>https://apife-qa.factiliza.com/api/v1</code> · Token Bearer.
+      Ver <a href="https://docs.factiliza.com/api-facturacion/endpoint/invoice/send" target="_blank" rel="noopener" class="text-brand-600 underline">documentación</a>.
+    </p>
+    <app-form-select [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
+    <app-input-field [value]="rucEmisor()" (valueChange)="rucEmisor.set('' + $event)" placeholder="RUC emisor" />
+    <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" placeholder="Razón social emisor" />
+    <app-input-field [value]="apiUrl()" (valueChange)="apiUrl.set('' + $event)" placeholder="URL API (Factiliza: https://apife-qa.factiliza.com/api/v1)" />
+    <app-input-field [value]="consultaApiUrl()" (valueChange)="consultaApiUrl.set('' + $event)" placeholder="URL consulta RUC/CPE (https://api.factiliza.com/v1)" />
+    <app-input-field [value]="apiToken()" (valueChange)="apiToken.set('' + $event)" placeholder="Token API (se guarda encriptado)" />
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" [checked]="modoSandbox()" (change)="modoSandbox.set($any($event.target).checked)" />
+      Modo sandbox
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" [checked]="autoEmit()" (change)="autoEmit.set($any($event.target).checked)" />
+      Emitir automáticamente al registrar venta (boleta/factura)
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" [checked]="emitNotaVenta()" (change)="emitNotaVenta.set($any($event.target).checked)" />
+      Emitir nota de venta electrónica (donde aplique)
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" [checked]="applyDetraccion()" (change)="applyDetraccion.set($any($event.target).checked)" />
+      Aplicar detracción en facturas ≥ S/ 700
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" [checked]="autoEmitGuia()" (change)="autoEmitGuia.set($any($event.target).checked)" />
+      Emitir guía de remisión al despachar traslado
+    </label>
+    <app-button variant="primary" (btnClick)="saveConfigMutation.mutate()">Guardar</app-button>
+  </div>
+</app-modal>
+
+<app-modal [isOpen]="!!detailId()" (close)="closeDetail()" className="w-full max-w-2xl">
+  @if (detailQuery.data(); as doc) {
+    <div class="space-y-4 p-6">
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 class="text-lg font-semibold">{{ doc.documentType }} {{ doc.serie }}-{{ doc.numero }}</h3>
+          <p class="text-sm text-gray-500">{{ doc.sunatDescripcion ?? 'Sin respuesta SUNAT' }}</p>
+          @if (doc.relatedDocument) {
+            <p class="text-xs text-gray-500">
+              Modifica: {{ doc.relatedDocument.documentType }} {{ doc.relatedDocument.serie }}-{{ doc.relatedDocument.numero }}
+            </p>
+          }
+        </div>
+        <span class="rounded-full px-2 py-0.5 text-xs" [class]="statusClass(doc.sunatStatus)">{{ doc.sunatStatus }}</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @if (doc.pdfArchivoId) {
+          <app-button size="sm" variant="outline" (btnClick)="download(doc, 'pdf')">PDF</app-button>
+        }
+        @if (doc.xmlArchivoId) {
+          <app-button size="sm" variant="outline" (btnClick)="download(doc, 'xml')">XML</app-button>
+        }
+        @if (doc.cdrArchivoId) {
+          <app-button size="sm" variant="outline" (btnClick)="download(doc, 'cdr')">CDR</app-button>
+        }
+        <app-button size="sm" variant="outline" (btnClick)="refreshStatusMutation.mutate(doc.id)">Consultar SUNAT</app-button>
+        @if (canVoid(doc)) {
+          <app-button size="sm" variant="outline" (btnClick)="voidMutation.mutate()" [disabled]="!voidReason().trim() || voidMutation.isPending()">
+            Comunicación de baja
+          </app-button>
+        }
+      </div>
+      @if (canVoid(doc)) {
+        <app-input-field [value]="voidReason()" (valueChange)="voidReason.set('' + $event)" placeholder="Motivo de baja SUNAT" />
+      }
+      <table class="w-full text-sm">
+        <thead class="border-b text-xs uppercase text-gray-500">
+          <tr>
+            <th class="py-1 text-left">Producto</th>
+            <th class="py-1 text-right">Cant.</th>
+            <th class="py-1 text-right">IGV</th>
+            <th class="py-1 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of doc.lines; track line.lineNumber) {
+            <tr class="border-b border-gray-100 dark:border-gray-800">
+              <td class="py-1">{{ line.descripcion }}</td>
+              <td class="py-1 text-right">{{ line.cantidad }}</td>
+              <td class="py-1 text-right">{{ line.igvLinea }}</td>
+              <td class="py-1 text-right">{{ line.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</app-modal>
+
+<app-modal [isOpen]="specialOpen()" (close)="specialOpen.set(false)" className="w-full max-w-lg">
+  <div class="space-y-4 p-6">
+    <h3 class="text-lg font-semibold">Emitir comprobante especial</h3>
+    <app-form-select [options]="specialTypeOptions" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
+    <app-input-field [value]="specialCustomer()" (valueChange)="specialCustomer.set('' + $event)" placeholder="Razón social / nombre" />
+    <div class="grid grid-cols-2 gap-2">
+      <app-input-field [value]="specialDocType()" (valueChange)="specialDocType.set('' + $event)" placeholder="Tipo doc (6=RUC)" />
+      <app-input-field [value]="specialDocNumber()" (valueChange)="specialDocNumber.set('' + $event)" placeholder="Número documento" />
+    </div>
+    <app-input-field [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" placeholder="Concepto / descripción" />
+    <app-input-field [value]="specialAmount()" (valueChange)="specialAmount.set('' + $event)" placeholder="Monto total (inc. IGV)" />
+    <app-button variant="primary" (btnClick)="emitSpecialMutation.mutate()" [disabled]="emitSpecialMutation.isPending()">
+      Emitir
+    </app-button>
+  </div>
+</app-modal>
