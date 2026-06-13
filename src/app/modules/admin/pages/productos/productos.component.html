@@ -521,13 +521,72 @@
         [pageSize]="historyPricePageSize"
         (currentPageChange)="onHistoryPricePageChange($event)"
       />
-    } @else {
-      <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center dark:border-gray-700 dark:bg-gray-900">
-        <p class="text-base font-semibold text-gray-700 dark:text-gray-200">En desarrollo</p>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Esta sección estará disponible cuando se implemente el módulo de ventas y compras.
-        </p>
+    } @else if (historyTab() === 'sales') {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[800px]">
+          <thead>
+            <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cant.</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (historySalesQuery.isPending()) {
+              <tr><td colspan="5" class="px-4 py-6 text-center text-sm text-gray-500">Cargando ventas...</td></tr>
+            } @else {
+              @for (item of historySalesRows(); track item.id) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                  <td class="px-4 py-3 text-sm">{{ item.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                  <td class="px-4 py-3 text-sm">{{ item.documento }}</td>
+                  <td class="px-4 py-3 text-sm">{{ item.cliente ?? '—' }}</td>
+                  <td class="px-4 py-3 text-right text-sm">{{ item.cantidad }}</td>
+                  <td class="px-4 py-3 text-right text-sm">{{ item.totalLinea }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="px-4 py-6 text-center text-sm text-gray-500">Sin ventas registradas.</td></tr>
+              }
+            }
+          </tbody>
+        </table>
       </div>
+      <app-pagination class="mt-4 block" [totalItems]="historySalesTotal()" [currentPage]="historySalesPage()" [pageSize]="historySalesPageSize" (currentPageChange)="onHistorySalesPageChange($event)" />
+    } @else if (historyTab() === 'purchases') {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[900px]">
+          <thead>
+            <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">OC</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proveedor</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cant.</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (historyPurchasesQuery.isPending()) {
+              <tr><td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500">Cargando compras...</td></tr>
+            } @else {
+              @for (item of historyPurchasesRows(); track item.id) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                  <td class="px-4 py-3 text-sm">{{ item.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                  <td class="px-4 py-3 text-sm">{{ item.numero ?? '—' }}</td>
+                  <td class="px-4 py-3 text-sm">{{ item.proveedor }}</td>
+                  <td class="px-4 py-3 text-sm">{{ item.estado }}</td>
+                  <td class="px-4 py-3 text-right text-sm">{{ item.cantidadRecibida }} / {{ item.cantidadPedida }}</td>
+                  <td class="px-4 py-3 text-right text-sm">{{ item.totalLinea }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500">Sin compras registradas.</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination class="mt-4 block" [totalItems]="historyPurchasesTotal()" [currentPage]="historyPurchasesPage()" [pageSize]="historySalesPageSize" (currentPageChange)="onHistoryPurchasesPageChange($event)" />
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">

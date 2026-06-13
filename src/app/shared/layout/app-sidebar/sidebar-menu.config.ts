@@ -82,7 +82,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    icon: 'lucide:truck-delivery',
+    icon: 'lucide:clipboard-list',
     name: 'Compras',
     subItems: [
       { name: 'Proveedores', path: '/proveedores', permissionCode: 'nav.proveedores' },

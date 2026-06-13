@@ -985,6 +985,33 @@ export interface ProductPriceHistoryItemDto {
 
 export type ProductPriceHistoryListResponseDto = PaginatedResponseDto<ProductPriceHistoryItemDto>;
 
+export interface ProductHistorySaleItemDto {
+  id: string;
+  saleId: string;
+  fecha: string;
+  documento: string;
+  cliente: string | null;
+  cantidad: string;
+  precioUnitario: string;
+  totalLinea: string;
+}
+
+export interface ProductHistoryPurchaseItemDto {
+  id: string;
+  purchaseOrderId: string;
+  fecha: string;
+  numero: string | null;
+  estado: string;
+  proveedor: string;
+  cantidadPedida: string;
+  cantidadRecibida: string;
+  precioUnitario: string;
+  totalLinea: string;
+}
+
+export type ProductHistorySalesListResponseDto = PaginatedResponseDto<ProductHistorySaleItemDto>;
+export type ProductHistoryPurchasesListResponseDto = PaginatedResponseDto<ProductHistoryPurchaseItemDto>;
+
 export interface ProductStockByLocationDto {
   warehouseId: string;
   ubicacion: string;
@@ -2478,6 +2505,61 @@ export interface PleExportDto {
   rowCount: number;
 }
 
+export interface AccountantSummaryDto {
+  period: string;
+  ventas: { count: number; subtotal: string; igv: string; total: string };
+  compras: { count: number; total: string };
+  comprobantesElectronicos: Array<{ tipo: string; count: number; total: string }>;
+}
+
+export interface ShippingCarrierDto {
+  id: string;
+  ruc: string;
+  razonSocial: string;
+  nombreComercial: string | null;
+  telefono: string | null;
+  correo: string | null;
+  activo: boolean;
+}
+
+export interface ShippingDriverDto {
+  id: string;
+  carrierId: string | null;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombres: string;
+  apellidos: string;
+  licencia: string | null;
+  telefono: string | null;
+  activo: boolean;
+  carrier: { id: string; razonSocial: string } | null;
+}
+
+export interface ShippingVehicleDto {
+  id: string;
+  carrierId: string | null;
+  placa: string;
+  marca: string | null;
+  modelo: string | null;
+  capacidadKg: string | null;
+  activo: boolean;
+  carrier: { id: string; razonSocial: string } | null;
+}
+
+export interface DepartureAddressDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  direccion: string;
+  departmentId: string | null;
+  provinceId: string | null;
+  districtId: string | null;
+  activo: boolean;
+  department: { id: string; name: string } | null;
+  province: { id: string; name: string } | null;
+  district: { id: string; name: string } | null;
+}
+
 export type TaxWithholdingKind = 'RETENCION' | 'PERCEPCION' | 'DETRACCION';
 
 export interface SunatWithholdingRateDto {
@@ -2805,6 +2887,54 @@ export interface BankMovementListItemDto {
   conciliado: boolean;
   conciliadoAt: string | null;
   movimientoAt: string;
+}
+
+export interface PaymentsByMethodReportDto {
+  from: string;
+  to: string;
+  totalIngresos: string;
+  totalEgresos: string;
+  neto: string;
+  methods: Array<{
+    metodo: string;
+    ingresos: string;
+    egresos: string;
+    neto: string;
+    transacciones: number;
+  }>;
+}
+
+export interface RecentPaymentListItemDto {
+  id: string;
+  fecha: string;
+  tipo: string;
+  monto: string;
+  metodo: string;
+  referencia: string | null;
+  descripcion: string;
+}
+
+export interface GeneralLedgerListItemDto {
+  id: string;
+  fecha: string;
+  cuenta: string;
+  descripcion: string;
+  debe: string;
+  haber: string;
+  origen: string;
+}
+
+export interface GeneralLedgerReportDto extends PaginatedResponseDto<GeneralLedgerListItemDto> {
+  from: string;
+  to: string;
+  totalDebe: string;
+  totalHaber: string;
+}
+
+export interface AccountingExportResultDto {
+  filename: string;
+  content: string;
+  mimeType: string;
 }
 
 export interface HospitalAreaListItemDto {

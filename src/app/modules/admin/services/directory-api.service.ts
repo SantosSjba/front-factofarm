@@ -203,6 +203,17 @@ import type {
   MarginReportDto,
   BankAccountDto,
   BankMovementListItemDto,
+  PaymentsByMethodReportDto,
+  RecentPaymentListItemDto,
+  GeneralLedgerReportDto,
+  AccountingExportResultDto,
+  ProductHistorySalesListResponseDto,
+  ProductHistoryPurchasesListResponseDto,
+  AccountantSummaryDto,
+  ShippingCarrierDto,
+  ShippingDriverDto,
+  ShippingVehicleDto,
+  DepartureAddressDto,
   HospitalAreaListItemDto,
   HospitalAreaType,
   HospitalConsumptionListItemDto,
@@ -1035,6 +1046,20 @@ export class DirectoryApiService {
   listProductPriceHistory(id: string, page = 1, pageSize = 20) {
     return this.http.get<ProductPriceHistoryListResponseDto>(
       `${this.base}/products/${id}/history/prices`,
+      { params: { page: String(page), pageSize: String(pageSize) } },
+    );
+  }
+
+  listProductSalesHistory(id: string, page = 1, pageSize = 15) {
+    return this.http.get<ProductHistorySalesListResponseDto>(
+      `${this.base}/products/${id}/history/sales`,
+      { params: { page: String(page), pageSize: String(pageSize) } },
+    );
+  }
+
+  listProductPurchasesHistory(id: string, page = 1, pageSize = 15) {
+    return this.http.get<ProductHistoryPurchasesListResponseDto>(
+      `${this.base}/products/${id}/history/purchases`,
       { params: { page: String(page), pageSize: String(pageSize) } },
     );
   }
@@ -2043,6 +2068,133 @@ export class DirectoryApiService {
     });
   }
 
+  getAccountantSummary(period: string) {
+    return this.http.get<AccountantSummaryDto>(`${this.base}/compliance/accountant-summary`, {
+      params: { period },
+    });
+  }
+
+  listShippingCarriers(filters?: { search?: string; page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.search) params['search'] = filters.search;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<ShippingCarrierDto> | ShippingCarrierDto[]>(
+      `${this.base}/shipping-guides/carriers`,
+      { params },
+    );
+  }
+
+  createShippingCarrier(body: {
+    ruc: string;
+    razonSocial: string;
+    nombreComercial?: string;
+    telefono?: string;
+    correo?: string;
+  }) {
+    return this.http.post<ShippingCarrierDto>(`${this.base}/shipping-guides/carriers`, body);
+  }
+
+  updateShippingCarrier(id: string, body: Partial<{ razonSocial: string; nombreComercial: string; telefono: string; correo: string; activo: boolean }>) {
+    return this.http.patch<ShippingCarrierDto>(`${this.base}/shipping-guides/carriers/${id}`, body);
+  }
+
+  deleteShippingCarrier(id: string) {
+    return this.http.delete<void>(`${this.base}/shipping-guides/carriers/${id}`);
+  }
+
+  listShippingDrivers(filters?: { search?: string; carrierId?: string; page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.search) params['search'] = filters.search;
+    if (filters?.carrierId) params['carrierId'] = filters.carrierId;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<ShippingDriverDto> | ShippingDriverDto[]>(
+      `${this.base}/shipping-guides/drivers`,
+      { params },
+    );
+  }
+
+  createShippingDriver(body: {
+    carrierId?: string;
+    tipoDocumento?: string;
+    numeroDocumento: string;
+    nombres: string;
+    apellidos: string;
+    licencia?: string;
+    telefono?: string;
+  }) {
+    return this.http.post<ShippingDriverDto>(`${this.base}/shipping-guides/drivers`, body);
+  }
+
+  updateShippingDriver(id: string, body: Partial<{ carrierId: string | null; nombres: string; apellidos: string; licencia: string; telefono: string; activo: boolean }>) {
+    return this.http.patch<ShippingDriverDto>(`${this.base}/shipping-guides/drivers/${id}`, body);
+  }
+
+  deleteShippingDriver(id: string) {
+    return this.http.delete<void>(`${this.base}/shipping-guides/drivers/${id}`);
+  }
+
+  listShippingVehicles(filters?: { search?: string; carrierId?: string; page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.search) params['search'] = filters.search;
+    if (filters?.carrierId) params['carrierId'] = filters.carrierId;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<ShippingVehicleDto> | ShippingVehicleDto[]>(
+      `${this.base}/shipping-guides/vehicles`,
+      { params },
+    );
+  }
+
+  createShippingVehicle(body: {
+    carrierId?: string;
+    placa: string;
+    marca?: string;
+    modelo?: string;
+    capacidadKg?: number;
+  }) {
+    return this.http.post<ShippingVehicleDto>(`${this.base}/shipping-guides/vehicles`, body);
+  }
+
+  updateShippingVehicle(id: string, body: Partial<{ carrierId: string | null; marca: string; modelo: string; capacidadKg: number; activo: boolean }>) {
+    return this.http.patch<ShippingVehicleDto>(`${this.base}/shipping-guides/vehicles/${id}`, body);
+  }
+
+  deleteShippingVehicle(id: string) {
+    return this.http.delete<void>(`${this.base}/shipping-guides/vehicles/${id}`);
+  }
+
+  listDepartureAddresses(filters?: { search?: string; page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.search) params['search'] = filters.search;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<DepartureAddressDto> | DepartureAddressDto[]>(
+      `${this.base}/shipping-guides/departure-addresses`,
+      { params },
+    );
+  }
+
+  createDepartureAddress(body: {
+    codigo: string;
+    nombre: string;
+    direccion: string;
+    departmentId?: string;
+    provinceId?: string;
+    districtId?: string;
+  }) {
+    return this.http.post<DepartureAddressDto>(`${this.base}/shipping-guides/departure-addresses`, body);
+  }
+
+  updateDepartureAddress(id: string, body: Partial<{ nombre: string; direccion: string; activo: boolean }>) {
+    return this.http.patch<DepartureAddressDto>(`${this.base}/shipping-guides/departure-addresses/${id}`, body);
+  }
+
+  deleteDepartureAddress(id: string) {
+    return this.http.delete<void>(`${this.base}/shipping-guides/departure-addresses/${id}`);
+  }
+
   listSunatWithholdingRates(kind?: TaxWithholdingKind) {
     const params = kind ? { kind } : undefined;
     return this.http.get<SunatWithholdingRateDto[]>(`${this.base}/compliance/sunat-rates`, { params });
@@ -2196,6 +2348,36 @@ export class DirectoryApiService {
 
   upsertPurchaseBudget(body: { anio: number; mes: number; montoPresupuestado: number; notas?: string }) {
     return this.http.post<{ id: string }>(`${this.base}/finance/purchase-budgets`, body);
+  }
+
+  getAccountingExport(from: string, to: string, format: 'contasis' | 'siscont' | 'excel') {
+    return this.http.get<AccountingExportResultDto>(`${this.base}/finance/accounting-export`, {
+      params: { from, to, format },
+    });
+  }
+
+  getPaymentsByMethod(from: string, to: string) {
+    return this.http.get<PaymentsByMethodReportDto>(`${this.base}/finance/payments-by-method`, {
+      params: { from, to },
+    });
+  }
+
+  listRecentPayments(filters?: { page?: number; pageSize?: number; from?: string; to?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    return this.http.get<PaginatedResponseDto<RecentPaymentListItemDto>>(
+      `${this.base}/finance/recent-payments`,
+      { params },
+    );
+  }
+
+  getGeneralLedger(from: string, to: string, page = 1, pageSize = 30) {
+    return this.http.get<GeneralLedgerReportDto>(`${this.base}/finance/general-ledger`, {
+      params: { from, to, page: String(page), pageSize: String(pageSize) },
+    });
   }
 
   listHospitalAreas(filters?: { page?: number; pageSize?: number }) {

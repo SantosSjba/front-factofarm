@@ -264,6 +264,9 @@ export class ProductosComponent {
 
   protected readonly historyPricePage = signal(1);
   protected readonly historyPricePageSize = 15;
+  protected readonly historySalesPage = signal(1);
+  protected readonly historyPurchasesPage = signal(1);
+  protected readonly historySalesPageSize = 15;
 
   protected readonly historyPricesQuery = injectQuery(() => {
     const productId = this.historyProduct()?.id ?? '';
@@ -275,6 +278,34 @@ export class ProductosComponent {
       queryFn: () =>
         productId
           ? firstValueFrom(this.api.listProductPriceHistory(productId, page, this.historyPricePageSize))
+          : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 15, totalPages: 1 }),
+    };
+  });
+
+  protected readonly historySalesQuery = injectQuery(() => {
+    const productId = this.historyProduct()?.id ?? '';
+    const page = this.historySalesPage();
+    const enabled = this.historyOpen() && this.historyTab() === 'sales' && !!productId;
+    return {
+      queryKey: [...productQueryKeys.all, 'history', 'sales', productId, page],
+      enabled,
+      queryFn: () =>
+        productId
+          ? firstValueFrom(this.api.listProductSalesHistory(productId, page, this.historySalesPageSize))
+          : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 15, totalPages: 1 }),
+    };
+  });
+
+  protected readonly historyPurchasesQuery = injectQuery(() => {
+    const productId = this.historyProduct()?.id ?? '';
+    const page = this.historyPurchasesPage();
+    const enabled = this.historyOpen() && this.historyTab() === 'purchases' && !!productId;
+    return {
+      queryKey: [...productQueryKeys.all, 'history', 'purchases', productId, page],
+      enabled,
+      queryFn: () =>
+        productId
+          ? firstValueFrom(this.api.listProductPurchasesHistory(productId, page, this.historySalesPageSize))
           : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 15, totalPages: 1 }),
     };
   });
@@ -294,6 +325,10 @@ export class ProductosComponent {
   protected readonly historyRows = computed(() => this.historyStockQuery.data() ?? []);
   protected readonly historyPriceRows = computed(() => this.historyPricesQuery.data()?.items ?? []);
   protected readonly historyPriceTotal = computed(() => this.historyPricesQuery.data()?.total ?? 0);
+  protected readonly historySalesRows = computed(() => this.historySalesQuery.data()?.items ?? []);
+  protected readonly historySalesTotal = computed(() => this.historySalesQuery.data()?.total ?? 0);
+  protected readonly historyPurchasesRows = computed(() => this.historyPurchasesQuery.data()?.items ?? []);
+  protected readonly historyPurchasesTotal = computed(() => this.historyPurchasesQuery.data()?.total ?? 0);
   protected readonly stockRows = computed(() => this.stockSummaryQuery.data()?.stockByLocation ?? []);
   protected readonly stockPriceRows = computed(() => this.stockSummaryQuery.data()?.priceList ?? []);
 
@@ -922,6 +957,8 @@ export class ProductosComponent {
     this.historyProduct.set(row);
     this.historyTab.set('stock');
     this.historyPricePage.set(1);
+    this.historySalesPage.set(1);
+    this.historyPurchasesPage.set(1);
     this.historyOpen.set(true);
   }
 
@@ -930,10 +967,20 @@ export class ProductosComponent {
     this.historyTab.set('stock');
     this.historyProduct.set(null);
     this.historyPricePage.set(1);
+    this.historySalesPage.set(1);
+    this.historyPurchasesPage.set(1);
   }
 
   protected onHistoryPricePageChange(page: number) {
     this.historyPricePage.set(page);
+  }
+
+  protected onHistorySalesPageChange(page: number) {
+    this.historySalesPage.set(page);
+  }
+
+  protected onHistoryPurchasesPageChange(page: number) {
+    this.historyPurchasesPage.set(page);
   }
 
   protected openStockModal(row: ProductListItemDto) {
