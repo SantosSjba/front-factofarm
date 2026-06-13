@@ -27,8 +27,8 @@ export const adminRoutes: Routes = [
         path: 'dashboard',
         ...guarded(P.dashboard),
         loadComponent: () =>
-          import('./pages/dashboard/dash-admin/dash-admin.component').then(
-            (m) => m.DashAdminComponent,
+          import('./pages/dashboard/dashboard-shell.component').then(
+            (m) => m.DashboardShellComponent,
           ),
         title: 'FactoFarm | Dashboard',
       },
@@ -664,6 +664,15 @@ export const adminRoutes: Routes = [
             (m) => m.HospitalDispensacionComponent,
           ),
         title: 'FactoFarm | Dispensación hospitalaria',
+      },
+      {
+        path: 'gestion-personal',
+        ...guarded(P.gestionPersonal),
+        loadComponent: () =>
+          import('./pages/gestion-personal/gestion-personal.component').then(
+            (m) => m.GestionPersonalComponent,
+          ),
+        title: 'FactoFarm | Gestión personal',
       },
     ],
   },

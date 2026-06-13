@@ -29,6 +29,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     name: 'Usuarios/Establecimientos',
     subItems: [
       { name: 'Usuarios', path: '/usuarios', permissionCode: 'nav.usuarios' },
+      {
+        name: 'Gestión personal',
+        path: '/gestion-personal',
+        permissionCode: 'nav.gestion_personal',
+      },
       { name: 'Auditoría', path: '/auditoria', permissionCode: 'nav.auditoria' },
       { name: 'Establecimientos', path: '/establecimientos', permissionCode: 'nav.establecimientos' },
     ],

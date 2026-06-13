@@ -1,6 +1,17 @@
 /** Respuestas alineadas con la API Nest (`UserSnapshot`, establecimientos, árbol de permisos). */
 
-export type UserRoleDto = 'ADMINISTRADOR' | 'VENDEDOR';
+export type UserRoleDto =
+  | 'SUPER_ADMIN'
+  | 'ADMIN_CADENA'
+  | 'GERENTE_SUCURSAL'
+  | 'FARMACEUTICO_TITULAR'
+  | 'FARMACEUTICO'
+  | 'TECNICO_FARMACEUTICO'
+  | 'CAJERO'
+  | 'ALMACENERO'
+  | 'CONTADOR'
+  | 'ADMINISTRADOR'
+  | 'VENDEDOR';
 
 export type IdentityDocumentTypeDto = 'DNI' | 'CE' | 'PASAPORTE' | 'OTRO';
 
@@ -167,6 +178,95 @@ export interface ChainSummaryEstablishmentDto {
 export interface DashboardChainSummaryDto {
   periodDays: number;
   establishments: ChainSummaryEstablishmentDto[];
+}
+
+export interface ManagerDashboardDto {
+  ventasHoy: string;
+  ventasHoyCount: number;
+  ventasSemana: string;
+  ventasSemanaCount: number;
+  anulacionesPendientes: number;
+  cajasAbiertas: number;
+  personalPresente: number;
+}
+
+export interface PharmacistDashboardDto {
+  recetasPendientes: number;
+  anulacionesPendientes: number;
+  productosControladosActivos: number;
+}
+
+export interface CashierDashboardDto {
+  ventasHoy: string;
+  ventasHoyCount: number;
+  cajaAbierta: boolean;
+  sesionCaja: { id: string; openedAt: string; montoApertura: string } | null;
+}
+
+export interface RoleTemplateDto {
+  role: UserRoleDto;
+  label: string;
+  navPermissionCodes: string[];
+}
+
+export interface StaffWorkScheduleRowDto {
+  id: string;
+  userId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  activo: boolean;
+}
+
+export interface StaffAttendanceItemDto {
+  id: string;
+  userId: string;
+  user: { id: string; nombre: string };
+  checkInAt: string;
+  checkOutAt: string | null;
+  notas: string | null;
+}
+
+export type StaffLeaveTypeDto = 'VACACIONES' | 'LICENCIA_MEDICA' | 'PERMISO' | 'OTRO';
+export type StaffLeaveStatusDto = 'SOLICITADO' | 'APROBADO' | 'RECHAZADO' | 'CANCELADO';
+
+export interface StaffLeaveItemDto {
+  id: string;
+  tipo: StaffLeaveTypeDto;
+  estado: StaffLeaveStatusDto;
+  fromDate: string;
+  toDate: string;
+  notas: string | null;
+  user: { id: string; nombre: string };
+}
+
+export interface StaffProductivityEmployeeDto {
+  userId: string;
+  nombre: string;
+  role: UserRoleDto;
+  ventasCount: number;
+  ventasTotal: string;
+  commissionPercent: string;
+  comisionEstimada: string;
+}
+
+export interface StaffProductivityReportDto {
+  from: string;
+  to: string;
+  employees: StaffProductivityEmployeeDto[];
+}
+
+export interface SaleVoidRequestDto {
+  id: string;
+  saleId: string;
+  reason: string;
+  status: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+  rejectedReason: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  sale: { id: string; serie: string | null; numero: string | null; total: string; sellerId: string | null };
+  requestedBy: { id: string; nombre: string };
+  approvedBy: { id: string; nombre: string } | null;
 }
 
 export interface AuditLogItemDto {

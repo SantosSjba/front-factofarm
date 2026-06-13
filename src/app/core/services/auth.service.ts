@@ -31,7 +31,13 @@ export class AuthService {
   hasPermission(code: string): boolean {
     const user = this.userSignal();
     if (!user) return false;
-    if (user.role === 'ADMINISTRADOR') return true;
+    if (
+      user.role === 'ADMINISTRADOR' ||
+      user.role === 'SUPER_ADMIN' ||
+      user.role === 'ADMIN_CADENA'
+    ) {
+      return true;
+    }
     return user.permissionCodes.includes(code);
   }
 

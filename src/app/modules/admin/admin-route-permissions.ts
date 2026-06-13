@@ -78,4 +78,5 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   reportePsicotropicos: ['pharmaceutical.read', 'nav.reporte_psicotropicos'],
   recepcionProductosFarmaceuticos: ['nav.recepcion_productos_farmaceuticos'],
   hospitalDispensacion: ['hospital.read', 'nav.hospital_dispensacion'],
+  gestionPersonal: ['staff.read', 'nav.gestion_personal'],
 } as const;

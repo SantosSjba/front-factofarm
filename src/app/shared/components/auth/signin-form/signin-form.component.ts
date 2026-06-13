@@ -56,7 +56,7 @@ export class SigninFormComponent {
         this.isLoading = false;
         this.loginError = null;
         this.notify.success('Sesión iniciada');
-        void this.router.navigateByUrl('/');
+        void this.router.navigateByUrl(this.postLoginPath());
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;
@@ -64,6 +64,15 @@ export class SigninFormComponent {
         this.notify.error(this.loginError);
       },
     });
+  }
+
+  private postLoginPath(): string {
+    const user = this.auth.user();
+    if (!user) return '/';
+    if (user.role === 'CAJERO' || user.role === 'VENDEDOR') {
+      return '/punto-venta';
+    }
+    return '/';
   }
 
   private apiMessage(err: HttpErrorResponse): string {

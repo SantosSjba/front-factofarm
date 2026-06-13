@@ -132,6 +132,17 @@ import type {
   UserListResponseDto,
   DashboardStatsDto,
   DashboardChainSummaryDto,
+  ManagerDashboardDto,
+  PharmacistDashboardDto,
+  CashierDashboardDto,
+  RoleTemplateDto,
+  StaffWorkScheduleRowDto,
+  StaffAttendanceItemDto,
+  StaffLeaveItemDto,
+  StaffLeaveTypeDto,
+  StaffLeaveStatusDto,
+  StaffProductivityReportDto,
+  SaleVoidRequestDto,
   AuditLogListResponseDto,
   EstablishmentListResponseDto,
   InventoryLotListFiltersRequest,
@@ -283,6 +294,108 @@ export class DirectoryApiService {
 
   getDashboardChainSummary() {
     return this.http.get<DashboardChainSummaryDto>(`${this.base}/dashboard/chain-summary`);
+  }
+
+  getManagerDashboard() {
+    return this.http.get<ManagerDashboardDto>(`${this.base}/dashboard/manager`);
+  }
+
+  getPharmacistDashboard() {
+    return this.http.get<PharmacistDashboardDto>(`${this.base}/dashboard/pharmacist`);
+  }
+
+  getCashierDashboard() {
+    return this.http.get<CashierDashboardDto>(`${this.base}/dashboard/cashier`);
+  }
+
+  getRoleTemplates() {
+    return this.http.get<RoleTemplateDto[]>(`${this.base}/permissions/role-templates`);
+  }
+
+  listStaffAttendance(filters?: { page?: number; pageSize?: number; userId?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.userId) params['userId'] = filters.userId;
+    return this.http.get<PaginatedResponseDto<StaffAttendanceItemDto>>(`${this.base}/staff/attendance`, {
+      params,
+    });
+  }
+
+  staffCheckIn(userId: string, notas?: string) {
+    return this.http.post<{ id: string; checkInAt: string }>(
+      `${this.base}/staff/users/${userId}/attendance/check-in`,
+      { notas },
+    );
+  }
+
+  staffCheckOut(userId: string) {
+    return this.http.post<{ id: string; checkOutAt: string }>(
+      `${this.base}/staff/users/${userId}/attendance/check-out`,
+      {},
+    );
+  }
+
+  getStaffWorkSchedule(userId: string) {
+    return this.http.get<StaffWorkScheduleRowDto[]>(`${this.base}/staff/users/${userId}/work-schedule`);
+  }
+
+  upsertStaffWorkSchedule(userId: string, rows: Array<{ dayOfWeek: number; startTime: string; endTime: string; activo?: boolean }>) {
+    return this.http.post<StaffWorkScheduleRowDto[]>(
+      `${this.base}/staff/users/${userId}/work-schedule`,
+      { rows },
+    );
+  }
+
+  upsertStaffCommissionRule(userId: string, commissionPercent: number) {
+    return this.http.post<{ id: string; commissionPercent: string }>(
+      `${this.base}/staff/users/${userId}/commission-rule`,
+      { commissionPercent },
+    );
+  }
+
+  getStaffProductivityReport(from: string, to: string) {
+    return this.http.get<StaffProductivityReportDto>(`${this.base}/staff/productivity-report`, {
+      params: { from, to },
+    });
+  }
+
+  listStaffLeaves(userId?: string) {
+    const params = userId ? { userId } : undefined;
+    return this.http.get<StaffLeaveItemDto[]>(`${this.base}/staff/leaves`, { params });
+  }
+
+  createStaffLeave(userId: string, body: { tipo: StaffLeaveTypeDto; fromDate: string; toDate: string; notas?: string }) {
+    return this.http.post<{ id: string; estado: StaffLeaveStatusDto }>(
+      `${this.base}/staff/users/${userId}/leaves`,
+      body,
+    );
+  }
+
+  updateStaffLeaveStatus(leaveId: string, estado: StaffLeaveStatusDto) {
+    return this.http.patch<{ id: string; estado: StaffLeaveStatusDto }>(
+      `${this.base}/staff/leaves/${leaveId}/status`,
+      { estado },
+    );
+  }
+
+  listVoidRequests(status?: string) {
+    const params = status ? { status } : undefined;
+    return this.http.get<SaleVoidRequestDto[]>(`${this.base}/sales/void-requests`, { params });
+  }
+
+  requestVoidSale(id: string, reason: string) {
+    return this.http.post<unknown>(`${this.base}/sales/${id}/void-request`, { reason });
+  }
+
+  approveVoidRequest(requestId: string) {
+    return this.http.post<unknown>(`${this.base}/sales/void-requests/${requestId}/approve`, {});
+  }
+
+  rejectVoidRequest(requestId: string, rejectedReason: string) {
+    return this.http.post<unknown>(`${this.base}/sales/void-requests/${requestId}/reject`, {
+      rejectedReason,
+    });
   }
 
   listAuditLogs(params?: Record<string, string>) {

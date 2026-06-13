@@ -12,7 +12,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import type { UserListItemDto } from '../../models/directory.models';
+import type { UserListItemDto, UserRoleDto } from '../../models/directory.models';
 import { UsuarioFormModalComponent } from './usuario-form-modal/usuario-form-modal.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { NotifyService } from '../../../../core/services/notify.service';
@@ -54,7 +54,7 @@ export class UsuariosComponent {
       firstValueFrom(
         this.api.listUsers({
           search: this.searchTerm(),
-          role: this.roleFilter() as 'all' | 'ADMINISTRADOR' | 'VENDEDOR',
+          role: this.roleFilter() as UserRoleDto | 'all',
           page: this.currentPage(),
           pageSize: this.itemsPerPage,
         }),
@@ -77,6 +77,15 @@ export class UsuariosComponent {
   protected readonly itemsPerPage = 10;
   protected readonly roleFilterOptions = [
     { value: 'all', label: 'Todos los roles' },
+    { value: 'SUPER_ADMIN', label: 'Super administrador' },
+    { value: 'ADMIN_CADENA', label: 'Admin cadena' },
+    { value: 'GERENTE_SUCURSAL', label: 'Gerente de sucursal' },
+    { value: 'FARMACEUTICO_TITULAR', label: 'Farmacéutico titular' },
+    { value: 'FARMACEUTICO', label: 'Farmacéutico' },
+    { value: 'TECNICO_FARMACEUTICO', label: 'Técnico farmacéutico' },
+    { value: 'CAJERO', label: 'Cajero' },
+    { value: 'ALMACENERO', label: 'Almacenero' },
+    { value: 'CONTADOR', label: 'Contador' },
     { value: 'ADMINISTRADOR', label: 'Administrador' },
     { value: 'VENDEDOR', label: 'Vendedor' },
   ];

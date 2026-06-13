@@ -34,6 +34,7 @@ import type {
   PermissionMenuNodeDto,
   UpdateUserRequest,
   UserListItemDto,
+  UserRoleDto,
 } from '../../../models/directory.models';
 
 type TabId = 'datos' | 'permisos' | 'personales' | 'documentos';
@@ -46,8 +47,17 @@ const USUARIO_TABS: TabStripItem[] = [
 ];
 
 const ROLE_OPTIONS = [
+  { value: 'SUPER_ADMIN', label: 'Super administrador' },
+  { value: 'ADMIN_CADENA', label: 'Admin cadena' },
+  { value: 'GERENTE_SUCURSAL', label: 'Gerente de sucursal' },
+  { value: 'FARMACEUTICO_TITULAR', label: 'Farmacéutico titular' },
+  { value: 'FARMACEUTICO', label: 'Farmacéutico' },
+  { value: 'TECNICO_FARMACEUTICO', label: 'Técnico farmacéutico' },
+  { value: 'CAJERO', label: 'Cajero' },
+  { value: 'ALMACENERO', label: 'Almacenero' },
+  { value: 'CONTADOR', label: 'Contador' },
   { value: 'ADMINISTRADOR', label: 'Administrador' },
-  { value: 'VENDEDOR', label: 'Vendedor' },
+  { value: 'VENDEDOR', label: 'Vendedor (cajero)' },
 ];
 
 const TIPO_DOC_OPTIONS = [
@@ -173,6 +183,7 @@ export class UsuarioFormModalComponent {
   protected readonly establishments = signal<EstablishmentOptionDto[]>([]);
   /** Árboles `nav.*` alineados al menú lateral completo (14 secciones). */
   protected readonly menuTrees = signal<PermissionMenuNodeDto[]>([]);
+  protected readonly roleTemplates = signal<Array<{ role: UserRoleDto; label: string; navPermissionCodes: string[] }>>([]);
 
   protected readonly selectedNavCodes = signal<Set<string>>(new Set());
   protected readonly navCodesList = computed(() => [...this.selectedNavCodes()]);
@@ -189,7 +200,7 @@ export class UsuarioFormModalComponent {
   protected readonly password = signal('');
   protected readonly password2 = signal('');
   protected readonly establecimientoId = signal('');
-  protected readonly role = signal<'ADMINISTRADOR' | 'VENDEDOR'>('VENDEDOR');
+  protected readonly role = signal<UserRoleDto>('CAJERO');
 
   protected readonly tipoDoc = signal('');
   protected readonly numeroDoc = signal('');
@@ -289,6 +300,10 @@ export class UsuarioFormModalComponent {
         this.notify.error('No se pudo cargar el catálogo de permisos.');
       },
     });
+    this.api.getRoleTemplates().subscribe({
+      next: (templates) => this.roleTemplates.set(templates ?? []),
+      error: () => this.roleTemplates.set([]),
+    });
   }
 
   private applyUserToForm() {
@@ -302,7 +317,7 @@ export class UsuarioFormModalComponent {
     this.password.set('');
     this.password2.set('');
     this.establecimientoId.set(user.establecimientoId ?? '');
-    this.role.set(user.role === 'ADMINISTRADOR' ? 'ADMINISTRADOR' : 'VENDEDOR');
+    this.role.set(user.role);
 
     const profile = user.profile;
     this.tipoDoc.set(profile?.tipoDocumento ?? '');
@@ -328,8 +343,12 @@ export class UsuarioFormModalComponent {
   }
 
   protected setRoleFromSelect(v: string) {
-    if (v === 'ADMINISTRADOR' || v === 'VENDEDOR') {
-      this.role.set(v);
+    const match = ROLE_OPTIONS.find((o) => o.value === v);
+    if (!match) return;
+    this.role.set(match.value as UserRoleDto);
+    const template = this.roleTemplates().find((t) => t.role === match.value);
+    if (template) {
+      this.selectedNavCodes.set(new Set(template.navPermissionCodes));
     }
   }
 
@@ -402,7 +421,7 @@ export class UsuarioFormModalComponent {
     this.password.set('');
     this.password2.set('');
     this.establecimientoId.set('');
-    this.role.set('VENDEDOR');
+    this.role.set('CAJERO');
     this.tipoDoc.set('');
     this.numeroDoc.set('');
     this.nombres.set('');
