@@ -1,0 +1,74 @@
+<app-modal
+  [isOpen]="isOpen()"
+  (close)="onClose()"
+  className="w-full max-w-xl shadow-theme-lg"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Aprovisionar acceso
+    </h3>
+    @if (tenantNombre()) {
+      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ tenantNombre() }}</p>
+    }
+  </div>
+
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    <app-form-stack>
+      <app-form-field label="Establecimiento inicial">
+        <app-input-field
+          [value]="establishmentNombre()"
+          (valueChange)="establishmentNombre.set('' + $event)"
+        />
+      </app-form-field>
+
+      <app-form-row>
+        <app-form-field label="Código sede">
+          <app-input-field
+            [value]="establishmentCodigo()"
+            placeholder="0001"
+            (valueChange)="establishmentCodigo.set('' + $event)"
+          />
+        </app-form-field>
+        <app-form-field label="Administrador — nombre">
+          <app-input-field
+            [value]="adminNombre()"
+            (valueChange)="adminNombre.set('' + $event)"
+          />
+        </app-form-field>
+      </app-form-row>
+
+      <app-form-field label="Administrador — correo">
+        <app-input-field
+          type="email"
+          [value]="adminEmail()"
+          placeholder="admin@farmacia.com"
+          (valueChange)="adminEmail.set('' + $event)"
+        />
+      </app-form-field>
+
+      <app-form-field label="Contraseña inicial">
+        <app-input-field
+          type="password"
+          [value]="adminPassword()"
+          placeholder="Mínimo 8 caracteres"
+          (valueChange)="adminPassword.set('' + $event)"
+        />
+      </app-form-field>
+    </app-form-stack>
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+  >
+    <app-button variant="outline" [disabled]="provisionMutation.isPending()" (btnClick)="onClose()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="provisionMutation.isPending()" (btnClick)="submit()">
+      {{ submitLabel() }}
+    </app-button>
+  </div>
+</app-modal>

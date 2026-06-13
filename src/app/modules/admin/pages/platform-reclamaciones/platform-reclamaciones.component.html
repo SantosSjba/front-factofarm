@@ -1,0 +1,85 @@
+<div class="mb-5">
+  <app-breadcrumb-inline
+    [segments]="[{ label: 'Plataforma' }, { label: 'Libro de reclamaciones' }]"
+  />
+</div>
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md">
+    Libro de reclamaciones
+  </h1>
+</app-page-toolbar>
+
+<app-list-filters
+  [searchValue]="searchTerm()"
+  searchPlaceholder="Buscar por número, nombre o documento"
+  [selectValue]="statusFilter()"
+  [selectOptions]="statusOptions"
+  selectPlaceholder="Estado"
+  clearLabel="Limpiar filtros"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onStatusChange($event)"
+  (clear)="clearFilters()"
+/>
+
+@let listState = complaintsQuery | queryPageState: totalItems();
+
+<app-component-card
+  title="Registros Ley 29571"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="Sin reclamos registrados"
+  (retry)="refetch()"
+>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-left">
+      <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+        <tr>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Registro</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Fecha</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Consumidor</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Tipo</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Estado</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of complaintsQuery.data()?.items ?? []; track row.id) {
+          <tr class="border-b border-gray-50 dark:border-white/[0.03]">
+            <td class="px-5 py-4 font-medium text-gray-800 dark:text-white">{{ row.numeroRegistro }}</td>
+            <td class="px-5 py-4 text-sm">{{ row.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="px-5 py-4 text-sm">
+              <div>{{ row.nombresApellidos }}</div>
+              <div class="text-theme-xs text-gray-500">{{ row.documentoIdentidad }}</div>
+            </td>
+            <td class="px-5 py-4 text-sm">{{ tipoLabel(row.tipo) }}</td>
+            <td class="px-5 py-4 text-sm">{{ statusLabel(row.status) }}</td>
+            <td class="px-5 py-4">
+              <app-button size="sm" variant="outline" (btnClick)="openDetail(row)">
+                Gestionar
+              </app-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="border-t border-gray-100 p-4 dark:border-white/[0.05]">
+    <app-pagination
+      [currentPage]="currentPage()"
+      [totalItems]="totalItems()"
+      [pageSize]="itemsPerPage"
+      (currentPageChange)="currentPage.set($event)"
+    />
+  </div>
+</app-component-card>
+
+<app-complaint-detail-modal
+  [isOpen]="detailOpen()"
+  [complaint]="selectedComplaint()"
+  (closed)="closeDetail()"
+/>

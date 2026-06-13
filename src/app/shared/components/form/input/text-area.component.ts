@@ -4,6 +4,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-text-area',
+  standalone: true,
   imports: [CommonModule],
   template: `
     <div class="relative">

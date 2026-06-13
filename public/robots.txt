@@ -1,0 +1,16 @@
+# FactoFarm — robots.txt
+# Actualizar Sitemap con el dominio de producción (NG_APP_SITE_URL)
+
+User-agent: *
+Allow: /$
+Allow: /legal/
+
+# Panel privado: no indexar rutas de aplicación
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /punto-venta
+Disallow: /usuarios
+Disallow: /signin
+Disallow: /signup
+
+Sitemap: https://factofarm.com/sitemap.xml

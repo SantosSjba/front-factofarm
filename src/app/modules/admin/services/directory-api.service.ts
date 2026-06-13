@@ -217,6 +217,11 @@ import type {
   HospitalAreaListItemDto,
   HospitalAreaType,
   HospitalConsumptionListItemDto,
+  TenantDetailDto,
+  TenantLeadDto,
+  TenantPlanDto,
+  ComplaintDto,
+  ComplaintStatusDto,
   CreateSalePaymentRequest,
   OpenCashSessionRequest,
   CloseCashSessionRequest,
@@ -2403,5 +2408,118 @@ export class DirectoryApiService {
 
   dispenseHospitalConsumption(id: string) {
     return this.http.patch<{ ok: boolean }>(`${this.base}/hospital/consumptions/${id}/dispense`, {});
+  }
+
+  listTenants(filters?: {
+    search?: string;
+    status?: string;
+    plan?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const params: Record<string, string> = {};
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    if (filters?.status && filters.status !== 'all') params['status'] = filters.status;
+    if (filters?.plan && filters.plan !== 'all') params['plan'] = filters.plan;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<TenantDetailDto>>(`${this.base}/tenants`, { params });
+  }
+
+  createTenant(body: {
+    nombre: string;
+    ruc?: string;
+    plan?: TenantPlanDto;
+    slug?: string;
+    maxEstablishments?: number;
+    maxUsers?: number;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    notes?: string;
+  }) {
+    return this.http.post<TenantDetailDto>(`${this.base}/tenants`, body);
+  }
+
+  updateTenant(
+    id: string,
+    body: {
+      nombre?: string;
+      ruc?: string;
+      plan?: TenantPlanDto;
+      maxEstablishments?: number;
+      maxUsers?: number;
+      contactName?: string;
+      contactEmail?: string;
+      contactPhone?: string;
+      notes?: string;
+      enabledModules?: string[];
+      applyPlanDefaults?: boolean;
+    },
+  ) {
+    return this.http.patch<TenantDetailDto>(`${this.base}/tenants/${id}`, body);
+  }
+
+  activateTenant(id: string) {
+    return this.http.post<TenantDetailDto>(`${this.base}/tenants/${id}/activate`, {});
+  }
+
+  suspendTenant(id: string) {
+    return this.http.post<TenantDetailDto>(`${this.base}/tenants/${id}/suspend`, {});
+  }
+
+  provisionTenant(
+    id: string,
+    body: {
+      establishmentNombre: string;
+      establishmentCodigo?: string;
+      adminNombre: string;
+      adminEmail: string;
+      adminPassword: string;
+    },
+  ) {
+    return this.http.post<{ tenantId: string }>(`${this.base}/tenants/${id}/provision`, body);
+  }
+
+  listTenantLeads(filters?: { status?: string; page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.status && filters.status !== 'all') params['status'] = filters.status;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<TenantLeadDto>>(`${this.base}/tenants/leads`, { params });
+  }
+
+  convertTenantLead(id: string, body: { establishmentNombre: string; establishmentCodigo?: string; adminPassword?: string }) {
+    return this.http.post<{ tenant: TenantDetailDto; temporaryPassword?: string }>(
+      `${this.base}/tenants/leads/${id}/convert`,
+      body,
+    );
+  }
+
+  listComplaints(filters?: {
+    search?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const params: Record<string, string> = {};
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    if (filters?.status && filters.status !== 'all') params['status'] = filters.status;
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<ComplaintDto>>(`${this.base}/tenants/complaints`, {
+      params,
+    });
+  }
+
+  updateComplaint(
+    id: string,
+    body: {
+      status?: ComplaintStatusDto;
+      internalNotes?: string;
+      responseNotes?: string;
+    },
+  ) {
+    return this.http.patch<ComplaintDto>(`${this.base}/tenants/complaints/${id}`, body);
   }
 }

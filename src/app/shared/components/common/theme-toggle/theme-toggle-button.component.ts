@@ -5,8 +5,9 @@ import { IconComponent } from '../../ui/icon/icon.component';
 
 @Component({
   selector: 'app-theme-toggle-button',
+  standalone: true,
   templateUrl: './theme-toggle-button.component.html',
-  imports:[CommonModule, IconComponent]
+  imports: [CommonModule, IconComponent],
 })
 export class ThemeToggleButtonComponent {
   

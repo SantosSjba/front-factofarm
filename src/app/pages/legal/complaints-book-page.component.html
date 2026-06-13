@@ -1,0 +1,208 @@
+<app-public-legal-layout>
+  @if (numeroRegistro()) {
+    <div class="rounded-2xl border border-success-200 bg-success-50 p-6 dark:border-success-500/30 dark:bg-success-500/10">
+      <div class="mb-4 flex items-center gap-3">
+        <app-icon name="mdi:check-circle-outline" iconClass="size-8 text-success-600 dark:text-success-400" />
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Reclamo registrado</h1>
+      </div>
+      <p class="mb-2 text-sm text-gray-700 dark:text-gray-300">
+        Su registro fue ingresado en el Libro de Reclamaciones Virtual de FactoFarm.
+      </p>
+      <p class="mb-4 text-sm font-medium text-gray-900 dark:text-white">
+        Número de registro: <span class="text-brand-600 dark:text-brand-400">{{ numeroRegistro() }}</span>
+      </p>
+      <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+        Responderemos en un plazo máximo de
+        <strong>{{ responseDeadlineDays }} días hábiles</strong>,
+        conforme a la {{ legalFramework }}.
+      </p>
+    </div>
+  } @else {
+    <div class="mb-8">
+      <span class="mb-3 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+        <app-icon name="mdi:book-edit-outline" iconClass="size-4" />
+        Ley N° 29571 · INDECOPI
+      </span>
+      <h1 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">
+        Libro de reclamaciones virtual
+      </h1>
+      <p class="text-sm text-gray-600 dark:text-gray-400">{{ legalFramework }}</p>
+    </div>
+
+    <section class="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-950">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
+        Datos del proveedor del servicio
+      </h2>
+      <dl class="grid gap-3 text-sm sm:grid-cols-2">
+        <div>
+          <dt class="text-gray-500 dark:text-gray-400">Razón social</dt>
+          <dd class="font-medium text-gray-900 dark:text-white">{{ provider.legalName }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500 dark:text-gray-400">RUC</dt>
+          <dd class="font-medium text-gray-900 dark:text-white">{{ provider.ruc }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+          <dt class="text-gray-500 dark:text-gray-400">Domicilio</dt>
+          <dd class="font-medium text-gray-900 dark:text-white">{{ provider.address }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <article class="ff-legal-prose mb-8">
+      <h2>Derechos del consumidor</h2>
+      <p>
+        Conforme al Código de Protección y Defensa del Consumidor, usted puede presentar de forma gratuita
+        una <strong>queja</strong> o un <strong>reclamo</strong>:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Definición</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Reclamo</td>
+            <td>Disconformidad relacionada con los productos o servicios contratados.</td>
+          </tr>
+          <tr>
+            <td>Queja</td>
+            <td>Disconformidad no relacionada con los productos o servicios, sino con la atención recibida.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Plazo de respuesta</h2>
+      <p>
+        La empresa debe responder en un plazo no mayor a <strong>quince (15) días hábiles</strong>,
+        salvo norma distinta aplicable.
+      </p>
+
+      <h2>Autoridad competente</h2>
+      <p>
+        Si no recibe respuesta satisfactoria, puede acudir a <strong>INDECOPI</strong> o a las instancias
+        de conciliación previstas en la normativa de protección al consumidor.
+      </p>
+
+      <h2>Presentación del reclamo</h2>
+      <p>
+        Complete el formulario con información verídica. Al enviarlo recibirá un número de registro
+        para el seguimiento de su caso.
+      </p>
+    </article>
+
+    <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 sm:p-8">
+      <h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Formulario de hoja de reclamación</h2>
+      <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+        Los campos marcados son obligatorios. La presentación de un reclamo no impide acudir a otras vías de solución de controversias.
+      </p>
+
+      <form (submit)="onSubmit($event)">
+        <app-form-stack>
+          <app-form-field label="Tipo" for="complaint-tipo">
+            <app-form-select
+              id="complaint-tipo"
+              [options]="tipoOptions"
+              [value]="tipo()"
+              [showPlaceholder]="false"
+              (valueChange)="onTipoChange($event)"
+            />
+          </app-form-field>
+
+          <app-form-row>
+            <app-form-field label="Nombres y apellidos" for="complaint-nombre">
+              <app-input-field
+                id="complaint-nombre"
+                [value]="nombresApellidos()"
+                (valueChange)="nombresApellidos.set($event + '')"
+                [isRequired]="true"
+              />
+            </app-form-field>
+            <app-form-field label="Documento de identidad (DNI / CE)" for="complaint-doc">
+              <app-input-field
+                id="complaint-doc"
+                [value]="documentoIdentidad()"
+                (valueChange)="documentoIdentidad.set($event + '')"
+                [isRequired]="true"
+              />
+            </app-form-field>
+          </app-form-row>
+
+          <app-form-field label="Domicilio" for="complaint-domicilio">
+            <app-input-field
+              id="complaint-domicilio"
+              [value]="domicilio()"
+              (valueChange)="domicilio.set($event + '')"
+              [isRequired]="true"
+            />
+          </app-form-field>
+
+          <app-form-row>
+            <app-form-field label="Teléfono" for="complaint-telefono">
+              <app-input-field
+                id="complaint-telefono"
+                type="tel"
+                [value]="telefono()"
+                (valueChange)="telefono.set($event + '')"
+                [isRequired]="true"
+              />
+            </app-form-field>
+            <app-form-field label="Correo electrónico (opcional)" for="complaint-email">
+              <app-input-field
+                id="complaint-email"
+                type="email"
+                [value]="email()"
+                (valueChange)="email.set($event + '')"
+              />
+            </app-form-field>
+          </app-form-row>
+
+          <app-form-row>
+            <app-form-field label="Bien contratado (producto o servicio)" for="complaint-bien">
+              <app-input-field
+                id="complaint-bien"
+                placeholder="Ej. Suscripción FactoFarm / soporte técnico"
+                [value]="bienContratado()"
+                (valueChange)="bienContratado.set($event + '')"
+                [isRequired]="true"
+              />
+            </app-form-field>
+            <app-form-field label="Monto reclamado (opcional)" for="complaint-monto">
+              <app-input-field
+                id="complaint-monto"
+                placeholder="Ej. S/ 150.00"
+                [value]="montoReclamado()"
+                (valueChange)="montoReclamado.set($event + '')"
+              />
+            </app-form-field>
+          </app-form-row>
+
+          <app-form-field label="Detalle del reclamo o queja" for="complaint-detalle">
+            <app-text-area [rows]="4" [value]="detalle()" (valueChange)="detalle.set($event)" />
+          </app-form-field>
+
+          <app-form-field label="Pedido del consumidor" for="complaint-pedido">
+            <app-text-area
+              placeholder="Indique qué solución solicita"
+              [rows]="3"
+              [value]="pedido()"
+              (valueChange)="pedido.set($event)"
+            />
+          </app-form-field>
+
+          @if (formError()) {
+            <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200" role="alert">
+              {{ formError() }}
+            </div>
+          }
+
+          <app-button className="w-full sm:w-auto" size="sm" [disabled]="submitting()" (btnClick)="onSubmit($event)">
+            {{ submitting() ? 'Registrando…' : 'Registrar en libro de reclamaciones' }}
+          </app-button>
+        </app-form-stack>
+      </form>
+    </section>
+  }
+</app-public-legal-layout>

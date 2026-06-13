@@ -2,9 +2,16 @@ import { Routes } from '@angular/router';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 
 /**
- * Entradas de primer nivel: panel admin (lazy), autenticación (lazy), redirecciones y fallback.
+ * Entradas de primer nivel: landing pública, panel admin (lazy), autenticación (lazy), redirecciones y fallback.
  */
 export const routes: Routes = [
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./pages/landing/landing.component').then((m) => m.LandingComponent),
+    title: 'FactoFarm | Software para farmacias y boticas',
+  },
   {
     path: '',
     loadChildren: () =>
@@ -21,16 +28,22 @@ export const routes: Routes = [
       {
         path: 'privacidad',
         loadComponent: () =>
-          import('./pages/legal/legal-page.component').then((m) => m.LegalPageComponent),
-        data: { docType: 'privacy' },
+          import('./pages/legal/privacy-policy-page.component').then((m) => m.PrivacyPolicyPageComponent),
         title: 'FactoFarm | Política de privacidad',
       },
       {
         path: 'terminos',
         loadComponent: () =>
-          import('./pages/legal/legal-page.component').then((m) => m.LegalPageComponent),
-        data: { docType: 'terms' },
+          import('./pages/legal/terms-of-use-page.component').then((m) => m.TermsOfUsePageComponent),
         title: 'FactoFarm | Términos de uso',
+      },
+      {
+        path: 'libro-reclamaciones',
+        loadComponent: () =>
+          import('./pages/legal/complaints-book-page.component').then(
+            (m) => m.ComplaintsBookPageComponent,
+          ),
+        title: 'FactoFarm | Libro de reclamaciones',
       },
     ],
   },

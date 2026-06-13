@@ -1,0 +1,115 @@
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="[{ label: 'Plataforma' }, { label: 'Clientes SaaS' }]" />
+</div>
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md">
+    Clientes SaaS
+  </h1>
+  <div data-toolbar-actions>
+    <app-button size="sm" (btnClick)="openCreateModal()">Nuevo cliente</app-button>
+  </div>
+</app-page-toolbar>
+
+<app-list-filters
+  [searchValue]="searchTerm()"
+  searchPlaceholder="Buscar por nombre, RUC o correo"
+  [selectValue]="statusFilter()"
+  [selectOptions]="statusOptions"
+  selectPlaceholder="Estado"
+  clearLabel="Limpiar filtros"
+  (searchValueChange)="onSearchChange($event)"
+  (selectValueChange)="onStatusChange($event)"
+  (clear)="clearFilters()"
+/>
+
+@let listState = tenantsQuery | queryPageState: totalItems();
+
+<app-component-card
+  title="Clientes registrados"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="Sin clientes registrados"
+  (retry)="refetch()"
+>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-left">
+      <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+        <tr>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Cliente</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Plan</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Estado</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Uso</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Contacto</th>
+          <th class="px-5 py-3 text-theme-xs text-gray-500">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of tenantsQuery.data()?.items ?? []; track row.id) {
+          <tr class="border-b border-gray-50 dark:border-white/[0.03]">
+            <td class="px-5 py-4">
+              <p class="font-medium text-gray-800 dark:text-white">{{ row.nombre }}</p>
+              <p class="text-theme-xs text-gray-500">{{ row.slug }}</p>
+            </td>
+            <td class="px-5 py-4 text-sm">{{ planLabel(row.plan) }}</td>
+            <td class="px-5 py-4 text-sm">{{ statusLabel(row.status) }}</td>
+            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+              {{ row.usage.users }}/{{ row.maxUsers }} usuarios ·
+              {{ row.usage.establishments }}/{{ row.maxEstablishments }} sedes
+            </td>
+            <td class="px-5 py-4 text-sm">
+              <div>{{ row.contactName || '—' }}</div>
+              <div class="text-theme-xs text-gray-500">{{ row.contactEmail || '—' }}</div>
+            </td>
+            <td class="px-5 py-4">
+              <div class="flex flex-wrap gap-2">
+                <app-button size="sm" variant="outline" (btnClick)="openEditModal(row)">
+                  Gestionar
+                </app-button>
+                <app-button size="sm" variant="outline" (btnClick)="openProvisionModal(row)">
+                  Aprovisionar
+                </app-button>
+                @if (row.status !== 'ACTIVE') {
+                  <app-button size="sm" variant="outline" (btnClick)="setStatus(row, 'activate')">
+                    Activar
+                  </app-button>
+                }
+                @if (row.status !== 'SUSPENDED') {
+                  <app-button size="sm" variant="outline" (btnClick)="setStatus(row, 'suspend')">
+                    Suspender
+                  </app-button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="border-t border-gray-100 p-4 dark:border-white/[0.05]">
+    <app-pagination
+      [currentPage]="currentPage()"
+      [totalItems]="totalItems()"
+      [pageSize]="itemsPerPage"
+      (currentPageChange)="currentPage.set($event)"
+    />
+  </div>
+</app-component-card>
+
+<app-tenant-form-modal [isOpen]="modalOpen()" (closed)="closeCreateModal()" />
+
+<app-tenant-provision-modal
+  [isOpen]="provisionOpen()"
+  [tenant]="selectedTenant()"
+  (closed)="closeProvisionModal()"
+/>
+
+<app-tenant-edit-modal
+  [isOpen]="editOpen()"
+  [tenant]="selectedTenant()"
+  (closed)="closeEditModal()"
+/>

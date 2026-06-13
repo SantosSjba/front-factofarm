@@ -917,4 +917,69 @@ pre[class*="language-"].line-numbers {
   .ff-form-row-3 {
     @apply grid gap-4 sm:grid-cols-3;
   }
+
+  .ff-legal-prose {
+    @apply text-sm leading-relaxed text-gray-700 dark:text-gray-300;
+  }
+
+  .ff-legal-prose h1 {
+    @apply mb-4 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl;
+  }
+
+  .ff-legal-prose h2 {
+    @apply mb-3 mt-8 text-lg font-semibold text-gray-900 dark:text-white;
+  }
+
+  .ff-legal-prose h3 {
+    @apply mb-2 mt-5 text-base font-semibold text-gray-900 dark:text-white;
+  }
+
+  .ff-legal-prose p {
+    @apply mb-4;
+  }
+
+  .ff-legal-prose ul,
+  .ff-legal-prose ol {
+    @apply mb-4 ml-5 list-outside space-y-2;
+  }
+
+  .ff-legal-prose ul {
+    @apply list-disc;
+  }
+
+  .ff-legal-prose ol {
+    @apply list-decimal;
+  }
+
+  .ff-legal-prose a {
+    @apply font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400;
+  }
+
+  .ff-legal-prose strong {
+    @apply font-semibold text-gray-900 dark:text-white;
+  }
+
+  .ff-legal-prose .ff-legal-meta {
+    @apply mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-800 dark:bg-gray-950;
+  }
+
+  .ff-legal-prose table {
+    @apply mb-6 w-full overflow-hidden rounded-xl border border-gray-200 text-left text-sm dark:border-gray-800;
+  }
+
+  .ff-legal-prose thead {
+    @apply bg-gray-50 dark:bg-gray-950;
+  }
+
+  .ff-legal-prose th {
+    @apply border-b border-gray-200 px-4 py-3 font-semibold text-gray-900 dark:border-gray-800 dark:text-white;
+  }
+
+  .ff-legal-prose td {
+    @apply border-b border-gray-100 px-4 py-3 align-top dark:border-gray-800;
+  }
+
+  .ff-legal-prose tbody tr:last-child td {
+    @apply border-b-0;
+  }
 }

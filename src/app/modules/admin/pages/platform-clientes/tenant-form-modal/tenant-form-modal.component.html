@@ -1,0 +1,74 @@
+<app-modal
+  [isOpen]="isOpen()"
+  (close)="onClose()"
+  className="w-full max-w-xl shadow-theme-lg"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Nuevo cliente SaaS
+    </h3>
+  </div>
+
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    <app-form-stack>
+      <app-form-field label="Nombre comercial">
+        <app-input-field
+          [value]="nombre()"
+          placeholder="Ej. Farmacia San Martín"
+          (valueChange)="nombre.set('' + $event)"
+        />
+      </app-form-field>
+
+      <app-form-row>
+        <app-form-field label="RUC (opcional)">
+          <app-input-field [value]="ruc()" (valueChange)="ruc.set('' + $event)" />
+        </app-form-field>
+        <app-form-field label="Plan">
+          <app-form-select
+            [value]="plan()"
+            [options]="planOptions"
+            [showPlaceholder]="false"
+            (valueChange)="plan.set($any($event))"
+          />
+        </app-form-field>
+      </app-form-row>
+
+      <app-form-row>
+        <app-form-field label="Contacto">
+          <app-input-field [value]="contactName()" (valueChange)="contactName.set('' + $event)" />
+        </app-form-field>
+        <app-form-field label="Teléfono">
+          <app-input-field [value]="contactPhone()" (valueChange)="contactPhone.set('' + $event)" />
+        </app-form-field>
+      </app-form-row>
+
+      <app-form-field label="Correo contacto">
+        <app-input-field
+          type="email"
+          [value]="contactEmail()"
+          placeholder="contacto@farmacia.com"
+          (valueChange)="contactEmail.set('' + $event)"
+        />
+      </app-form-field>
+
+      <app-form-field label="Notas internas">
+        <app-input-field [value]="notes()" (valueChange)="notes.set('' + $event)" />
+      </app-form-field>
+    </app-form-stack>
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+  >
+    <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="onClose()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="createMutation.isPending()" (btnClick)="submit()">
+      {{ submitLabel() }}
+    </app-button>
+  </div>
+</app-modal>

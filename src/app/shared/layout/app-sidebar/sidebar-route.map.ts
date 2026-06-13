@@ -1,5 +1,8 @@
 /** Mapeo Permission.code → ruta del panel admin. */
 export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string }> = {
+  'nav.platform_clientes': { path: '/platform/clientes' },
+  'nav.platform_leads': { path: '/platform/leads' },
+  'nav.platform_reclamaciones': { path: '/platform/reclamaciones' },
   'nav.dashboard_admin': { path: '/dashboard' },
   'nav.usuarios': { path: '/usuarios' },
   'nav.gestion_personal': { path: '/gestion-personal' },

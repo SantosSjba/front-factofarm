@@ -18,6 +18,15 @@ export type NavItem = {
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
   {
+    icon: 'lucide:building-2',
+    name: 'Plataforma',
+    subItems: [
+      { name: 'Clientes SaaS', path: '/platform/clientes', permissionCode: 'nav.platform_clientes' },
+      { name: 'Leads comerciales', path: '/platform/leads', permissionCode: 'nav.platform_leads' },
+      { name: 'Libro de reclamaciones', path: '/platform/reclamaciones', permissionCode: 'nav.platform_reclamaciones' },
+    ],
+  },
+  {
     icon: 'lucide:layout-dashboard',
     name: 'Dashboard',
     subItems: [

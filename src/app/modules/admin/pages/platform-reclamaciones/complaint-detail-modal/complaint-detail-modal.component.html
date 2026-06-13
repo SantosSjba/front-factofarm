@@ -1,0 +1,82 @@
+<app-modal
+  [isOpen]="isOpen()"
+  (close)="onClose()"
+  className="w-full max-w-3xl shadow-theme-lg"
+  maxHeightClass="max-h-[min(90dvh,820px)]"
+  bodyClass="custom-scrollbar"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Reclamo {{ title() }}
+    </h3>
+    @if (complaint(); as row) {
+      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
+        {{ row.tipo === 'RECLAMO' ? 'Reclamo' : 'Queja' }} · {{ row.nombresApellidos }}
+      </p>
+    }
+  </div>
+
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    @if (complaint(); as row) {
+      <div class="mb-5 grid gap-3 rounded-xl border border-gray-100 p-4 text-theme-sm dark:border-white/[0.06]">
+        <div><span class="text-gray-500">Documento:</span> {{ row.documentoIdentidad }}</div>
+        <div><span class="text-gray-500">Teléfono:</span> {{ row.telefono }}</div>
+        <div><span class="text-gray-500">Correo:</span> {{ row.email || '—' }}</div>
+        <div><span class="text-gray-500">Domicilio:</span> {{ row.domicilio }}</div>
+        <div><span class="text-gray-500">Bien contratado:</span> {{ row.bienContratado }}</div>
+        <div><span class="text-gray-500">Monto:</span> {{ row.montoReclamado || '—' }}</div>
+        <div>
+          <span class="text-gray-500">Detalle:</span>
+          <p class="mt-1 whitespace-pre-wrap">{{ row.detalle }}</p>
+        </div>
+        <div>
+          <span class="text-gray-500">Pedido:</span>
+          <p class="mt-1 whitespace-pre-wrap">{{ row.pedido }}</p>
+        </div>
+      </div>
+
+      <app-form-stack>
+        <app-form-field label="Estado">
+          <app-form-select
+            [value]="status()"
+            [options]="statusOptions"
+            [showPlaceholder]="false"
+            (valueChange)="status.set($any($event))"
+          />
+        </app-form-field>
+
+        <app-form-field label="Notas internas (plataforma)">
+          <app-text-area
+            [value]="internalNotes()"
+            [rows]="4"
+            (valueChange)="internalNotes.set('' + $event)"
+          />
+        </app-form-field>
+
+        <app-form-field label="Respuesta al consumidor">
+          <app-text-area
+            [value]="responseNotes()"
+            [rows]="4"
+            placeholder="Texto de respuesta conforme Ley 29571 (15 días hábiles)"
+            (valueChange)="responseNotes.set('' + $event)"
+          />
+        </app-form-field>
+      </app-form-stack>
+    }
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+  >
+    <app-button variant="outline" [disabled]="updateMutation.isPending()" (btnClick)="onClose()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="updateMutation.isPending()" (btnClick)="submit()">
+      {{ submitLabel() }}
+    </app-button>
+  </div>
+</app-modal>

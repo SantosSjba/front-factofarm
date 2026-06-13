@@ -1,0 +1,119 @@
+<app-modal
+  [isOpen]="isOpen()"
+  (close)="onClose()"
+  className="w-full max-w-4xl shadow-theme-lg"
+  maxHeightClass="max-h-[min(90dvh,880px)]"
+  bodyClass="custom-scrollbar"
+>
+  <div
+    data-modal-header
+    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
+  >
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Gestionar cliente
+    </h3>
+    @if (tenantNombre()) {
+      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ tenantNombre() }}</p>
+    }
+  </div>
+
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+    <app-form-stack>
+      <app-form-field label="Nombre comercial">
+        <app-input-field [value]="nombre()" (valueChange)="nombre.set('' + $event)" />
+      </app-form-field>
+
+      <app-form-row>
+        <app-form-field label="RUC">
+          <app-input-field [value]="ruc()" (valueChange)="ruc.set('' + $event)" />
+        </app-form-field>
+        <app-form-field label="Plan comercial">
+          <app-form-select
+            [value]="plan()"
+            [options]="planOptions"
+            [showPlaceholder]="false"
+            (valueChange)="onPlanChange($event)"
+          />
+        </app-form-field>
+      </app-form-row>
+
+      <app-form-row>
+        <app-form-field label="Máx. usuarios">
+          <app-input-field
+            type="number"
+            [value]="'' + maxUsers()"
+            (valueChange)="maxUsers.set(+$event || 1)"
+          />
+        </app-form-field>
+        <app-form-field label="Máx. sedes">
+          <app-input-field
+            type="number"
+            [value]="'' + maxEstablishments()"
+            (valueChange)="maxEstablishments.set(+$event || 1)"
+          />
+        </app-form-field>
+      </app-form-row>
+
+      <app-checkbox
+        label="Aplicar límites y módulos del plan seleccionado"
+        [checked]="applyPlanDefaults()"
+        (checkedChange)="applyPlanDefaults.set($event)"
+      />
+
+      <app-form-row>
+        <app-form-field label="Contacto">
+          <app-input-field [value]="contactName()" (valueChange)="contactName.set('' + $event)" />
+        </app-form-field>
+        <app-form-field label="Teléfono">
+          <app-input-field [value]="contactPhone()" (valueChange)="contactPhone.set('' + $event)" />
+        </app-form-field>
+      </app-form-row>
+
+      <app-form-field label="Correo contacto">
+        <app-input-field
+          type="email"
+          [value]="contactEmail()"
+          (valueChange)="contactEmail.set('' + $event)"
+        />
+      </app-form-field>
+
+      <app-form-field label="Notas internas">
+        <app-input-field [value]="notes()" (valueChange)="notes.set('' + $event)" />
+      </app-form-field>
+
+      <div>
+        <p class="mb-3 text-theme-sm font-medium text-gray-700 dark:text-gray-200">
+          Módulos habilitados
+        </p>
+        <p class="mb-4 text-theme-sm text-gray-500 dark:text-gray-400">
+          Controla qué secciones del menú puede usar este cliente. Al cambiar el plan puede marcar
+          «Aplicar límites del plan» para restaurar el preset comercial.
+        </p>
+        <div class="space-y-4">
+          @for (tree of tenantMenuTrees(); track tree.id) {
+            <app-permission-menu-tree
+              [tree]="tree"
+              [selectedCodes]="navCodesList()"
+              (parentToggle)="onPermissionParent(tree, $event)"
+              (childToggle)="onPermissionChild($event)"
+            />
+          } @empty {
+            <p class="text-theme-sm text-gray-500">Cargando módulos…</p>
+          }
+        </div>
+      </div>
+    </app-form-stack>
+  </div>
+
+  <div
+    data-modal-footer
+    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+  >
+    <app-button variant="outline" [disabled]="updateMutation.isPending()" (btnClick)="onClose()">
+      Cancelar
+    </app-button>
+    <app-button [disabled]="updateMutation.isPending()" (btnClick)="submit()">
+      {{ submitLabel() }}
+    </app-button>
+  </div>
+</app-modal>

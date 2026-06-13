@@ -2965,3 +2965,75 @@ export interface HospitalConsumptionListItemDto {
     product: { id: string; nombre: string };
   }>;
 }
+
+export type TenantPlanDto = 'BOTICA' | 'FARMACIA_PRO' | 'CADENA' | 'CUSTOM';
+export type TenantStatusDto = 'PENDING' | 'TRIAL' | 'ACTIVE' | 'SUSPENDED';
+export type TenantLeadStatusDto = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'REJECTED';
+
+export interface TenantUsageDto {
+  users: number;
+  establishments: number;
+  usersRemaining: number;
+  establishmentsRemaining: number;
+}
+
+export interface TenantDetailDto {
+  id: string;
+  nombre: string;
+  ruc: string | null;
+  slug: string;
+  plan: TenantPlanDto;
+  status: TenantStatusDto;
+  maxEstablishments: number;
+  maxUsers: number;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  notes: string | null;
+  activatedAt: string | null;
+  suspendedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  usage: TenantUsageDto;
+  enabledModules: string[];
+}
+
+export type ComplaintKindDto = 'RECLAMO' | 'QUEJA';
+export type ComplaintStatusDto = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'CLOSED';
+
+export interface ComplaintDto {
+  id: string;
+  numeroRegistro: string;
+  tipo: ComplaintKindDto;
+  status: ComplaintStatusDto;
+  nombresApellidos: string;
+  domicilio: string;
+  documentoIdentidad: string;
+  telefono: string;
+  email: string | null;
+  bienContratado: string;
+  montoReclamado: string | null;
+  detalle: string;
+  pedido: string;
+  internalNotes: string | null;
+  responseNotes: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TenantLeadDto {
+  id: string;
+  tenantId: string | null;
+  nombre: string;
+  farmacia: string;
+  telefono: string;
+  email: string;
+  mensaje: string | null;
+  status: TenantLeadStatusDto;
+  planInterest: TenantPlanDto | null;
+  source: string;
+  convertedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -11,6 +11,7 @@ import { PERMISSION_ROUTE_MAP } from '../../shared/layout/app-sidebar/sidebar-ro
 import { map, Observable, of, catchError } from 'rxjs';
 
 const TREE_SECTION_MATCHERS: Record<string, (item: NavItem) => boolean> = {
+  'nav.platform': (item) => item.name === 'Plataforma',
   'nav.dashboard': (item) => item.name === 'Dashboard',
   'nav.usuarios_series': (item) =>
     item.subItems?.some((s) => s.permissionCode === 'nav.usuarios') ?? false,
@@ -108,6 +109,22 @@ function mergeDynamicSections(staticNav: NavItem[], trees: PermissionMenuNodeDto
           ...item,
           name: sectionName,
           subItems: mergeNavLabels(item.subItems ?? [], dynamicSubItems),
+        };
+      }
+
+      if (tree.code === 'nav.platform') {
+        const dynamicSubItems = navSubItemsFromTree(tree);
+        const dynamicCodes = new Set(dynamicSubItems.map((s) => s.permissionCode).filter(Boolean));
+        const staticExtras = (item.subItems ?? []).filter(
+          (s) =>
+            s.permissionCode &&
+            !dynamicCodes.has(s.permissionCode) &&
+            PERMISSION_ROUTE_MAP[s.permissionCode],
+        );
+        return {
+          ...item,
+          name: sectionName,
+          subItems: [...dynamicSubItems, ...staticExtras],
         };
       }
 

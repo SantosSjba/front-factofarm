@@ -33,6 +33,33 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Dashboard',
       },
       {
+        path: 'platform/clientes',
+        ...guarded(P.platformClientes),
+        loadComponent: () =>
+          import('./pages/platform-clientes/platform-clientes.component').then(
+            (m) => m.PlatformClientesComponent,
+          ),
+        title: 'FactoFarm | Clientes SaaS',
+      },
+      {
+        path: 'platform/leads',
+        ...guarded(P.platformLeads),
+        loadComponent: () =>
+          import('./pages/platform-leads/platform-leads.component').then(
+            (m) => m.PlatformLeadsComponent,
+          ),
+        title: 'FactoFarm | Leads comerciales',
+      },
+      {
+        path: 'platform/reclamaciones',
+        ...guarded(P.platformReclamaciones),
+        loadComponent: () =>
+          import('./pages/platform-reclamaciones/platform-reclamaciones.component').then(
+            (m) => m.PlatformReclamacionesComponent,
+          ),
+        title: 'FactoFarm | Libro de reclamaciones',
+      },
+      {
         path: 'usuarios',
         ...guarded(P.usuarios),
         loadComponent: () =>

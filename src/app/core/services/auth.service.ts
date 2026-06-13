@@ -31,14 +31,20 @@ export class AuthService {
   hasPermission(code: string): boolean {
     const user = this.userSignal();
     if (!user) return false;
+    if (user.role === 'SUPER_ADMIN') {
+      return true;
+    }
     if (
       user.role === 'ADMINISTRADOR' ||
-      user.role === 'SUPER_ADMIN' ||
       user.role === 'ADMIN_CADENA'
     ) {
       return true;
     }
     return user.permissionCodes.includes(code);
+  }
+
+  isPlatformAdmin(): boolean {
+    return this.userSignal()?.role === 'SUPER_ADMIN';
   }
 
   login(email: string, password: string): Observable<void> {
