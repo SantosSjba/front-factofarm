@@ -27,6 +27,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.resumenes': { path: '/resumenes' },
   'nav.anulaciones': { path: '/anulaciones' },
   'nav.cotizaciones': { path: '/cotizaciones' },
+  'nav.promociones': { path: '/promociones-campanas' },
   'nav.inventario_movimientos': { path: '/inventario-movimientos' },
   'nav.traslados': { path: '/traslados' },
   'nav.devolucion_retiro': { path: '/devolucion-retiro' },

@@ -2,6 +2,7 @@
 import {
   Component,
   HostListener,
+  OnDestroy,
   computed,
   effect,
   inject,
@@ -23,6 +24,7 @@ import type {
   CustomerItemDto,
   PaymentMethod,
   PosCatalogItemDto,
+  CreateSaleRequest,
   SaleBillingStatusDto,
   SaleDetailDto,
   SaleDocumentType,
@@ -34,6 +36,19 @@ import type {
   CreateSaleSubstitutionRequest,
   SunatDocumentStatus,
 } from '../../models/directory.models';
+import {
+  createPaymentLine,
+  paymentRequiresReference,
+  POS_PAYMENT_OPTIONS,
+  type PosPaymentLine,
+} from '../../utils/pos-payment.util';
+import { PosPrintService } from '../../services/pos/pos-print.service';
+import { PosBarcodeWedgeService } from '../../services/pos/pos-barcode-wedge.service';
+import { PosOfflineQueueService } from '../../services/pos/pos-offline-queue.service';
+import { PosRealtimeService } from '../../services/pos/pos-realtime.service';
+import { PosCustomerDisplayService } from '../../services/pos/pos-customer-display.service';
+
+type SaleMutationResult = SaleDetailDto | { offlineQueued: true; offlineLocalId: string };
 
 const IGV_RATE = 0.18;
 
@@ -59,14 +74,6 @@ const DOC_OPTIONS: { value: SaleDocumentType; label: string }[] = [
   { value: 'TICKET', label: 'Ticket' },
 ];
 
-const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
-  { value: 'EFECTIVO', label: 'Efectivo' },
-  { value: 'TARJETA', label: 'Tarjeta' },
-  { value: 'YAPE', label: 'Yape' },
-  { value: 'PLIN', label: 'Plin' },
-  { value: 'TRANSFERENCIA', label: 'Transferencia' },
-];
-
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
@@ -81,14 +88,24 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
   ],
   templateUrl: './punto-venta.component.html',
 })
-export class PuntoVentaComponent {
+export class PuntoVentaComponent implements OnDestroy {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private readonly posPrint = inject(PosPrintService);
+  private readonly barcodeWedge = inject(PosBarcodeWedgeService);
+  private readonly offlineQueue = inject(PosOfflineQueueService);
+  private readonly posRealtime = inject(PosRealtimeService);
+  private readonly customerDisplay = inject(PosCustomerDisplayService);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  private readonly onOnline = () => {
+    this.isOnline.set(true);
+    void this.syncOfflineQueue();
+  };
+  private readonly onOffline = () => this.isOnline.set(false);
 
   protected readonly docOptions = DOC_OPTIONS;
-  protected readonly paymentOptions = PAYMENT_OPTIONS;
+  protected readonly paymentOptions = POS_PAYMENT_OPTIONS;
 
   protected readonly warehouseId = signal('');
   protected readonly documentType = signal<SaleDocumentType>('BOLETA');
@@ -112,8 +129,7 @@ export class PuntoVentaComponent {
   protected readonly lotPreviewRows = signal<{ codigoLote: string; cantidad: string }[]>([]);
   protected readonly manualLotCode = signal('');
   protected readonly manualLotQty = signal(1);
-  protected readonly paymentMethod = signal<PaymentMethod>('EFECTIVO');
-  protected readonly paymentAmount = signal(0);
+  protected readonly paymentLines = signal<PosPaymentLine[]>([createPaymentLine()]);
   protected readonly lastSale = signal<SaleDetailDto | null>(null);
   protected readonly lastSunatStatus = signal<SaleBillingStatusDto | null>(null);
   protected readonly interactionAlerts = signal<SaleInteractionAlertDto[]>([]);
@@ -124,6 +140,8 @@ export class PuntoVentaComponent {
   protected readonly substituteModalProductId = signal<string | null>(null);
   protected readonly substituteOptions = signal<PosSubstituteItemDto[]>([]);
   protected readonly substituteLoading = signal(false);
+  protected readonly isOnline = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  protected readonly offlinePending = computed(() => this.offlineQueue.pendingCount());
 
   private interactionTimer: ReturnType<typeof setTimeout> | null = null;
   private sunatPollTimer: ReturnType<typeof setInterval> | null = null;
@@ -137,6 +155,12 @@ export class PuntoVentaComponent {
     queryKey: ['cash', 'active-session'] as const,
     queryFn: () => firstValueFrom(this.api.getActiveCashSession()),
     refetchInterval: 60_000,
+  }));
+
+  protected readonly posPaymentSettingsQuery = injectQuery(() => ({
+    queryKey: ['establishments', 'pos-payment-settings'] as const,
+    queryFn: () => firstValueFrom(this.api.getPosPaymentSettings()),
+    staleTime: 5 * 60_000,
   }));
 
   protected readonly warehouseOptions = computed(() => [
@@ -153,6 +177,12 @@ export class PuntoVentaComponent {
 
   protected readonly cartSubtotal = computed(() => this.cartTotal() / (1 + IGV_RATE));
   protected readonly cartIgv = computed(() => this.cartTotal() - this.cartSubtotal());
+  protected readonly paymentPaidTotal = computed(() =>
+    this.paymentLines().reduce((acc, line) => acc + (Number(line.monto) || 0), 0),
+  );
+  protected readonly paymentRemaining = computed(
+    () => Math.round((this.cartTotal() - this.paymentPaidTotal()) * 100) / 100,
+  );
   protected readonly requiresRx = computed(() => this.cart().some((l) => l.necesitaRecetaMedica));
   protected readonly requiresControlled = computed(() => this.cart().some((l) => l.esControlado));
   protected readonly approverOptions = computed(() => [
@@ -163,6 +193,10 @@ export class PuntoVentaComponent {
     this.interactionAlerts().some((a) => a.severidad === 'GRAVE'),
   );
   protected readonly cashSession = computed(() => this.cashSessionQuery.data());
+  protected readonly posPaymentHints = computed(() => this.posPaymentSettingsQuery.data());
+  protected readonly hasPosPaymentHints = computed(
+    () => this.posPaymentHints()?.posYapeNumero || this.posPaymentHints()?.posPlinNumero,
+  );
   protected readonly lotModalLine = computed(() =>
     this.cart().find((l) => l.productId === this.lotModalProductId()) ?? null,
   );
@@ -183,9 +217,63 @@ export class PuntoVentaComponent {
   }
 
   constructor() {
+    this.posRealtime.connect({
+      onStockUpdated: (payload) => {
+        const wh = this.warehouseId();
+        if (wh && payload.warehouseId === wh) {
+          this.catalog.set([]);
+        }
+      },
+      onBillingStatus: (payload) => {
+        const last = this.lastSale();
+        if (last?.id === payload.saleId) {
+          this.lastSunatStatus.set({
+            electronicDocumentId: '',
+            sunatStatus: payload.sunatStatus,
+            sunatCodigo: payload.sunatCodigo ?? null,
+            sunatDescripcion: payload.sunatDescripcion ?? null,
+            serie: last.serie ?? '',
+            numero: last.numero ?? '',
+          });
+        }
+      },
+    });
+    this.barcodeWedge.onScan((code) => {
+      this.search.set(code);
+      void this.runSearch();
+    });
+    void this.offlineQueue.refreshCount();
+    window.addEventListener('online', this.onOnline);
+    window.addEventListener('offline', this.onOffline);
+
+    effect(() => {
+      const session = this.cashSession();
+      this.barcodeWedge.setEnabled(session?.cashRegister?.barcodeWedgeEnabled ?? false);
+    });
+
+    effect(() => {
+      const session = this.cashSession();
+      if (!session?.cashRegister?.customerDisplayEnabled) return;
+      const cart = this.cart();
+      if (!cart.length) {
+        this.customerDisplay.publish({ type: 'clear' });
+        return;
+      }
+      this.customerDisplay.publish({
+        type: 'cart',
+        total: this.cartTotal(),
+        lines: cart.map((l) => ({
+          nombre: l.nombre,
+          quantity: l.quantity,
+          precio: l.precio,
+        })),
+      });
+    });
+
     effect(() => {
       if (this.payModalOpen()) {
-        this.paymentAmount.set(Math.round(this.cartTotal() * 100) / 100);
+        const total = Math.round(this.cartTotal() * 100) / 100;
+        this.paymentLines.set([createPaymentLine('EFECTIVO', total)]);
       }
     });
 
@@ -201,6 +289,15 @@ export class PuntoVentaComponent {
         void this.refreshInteractions();
       }, 400);
     });
+  }
+
+  ngOnDestroy() {
+    this.posRealtime.disconnect();
+    this.barcodeWedge.setEnabled(false);
+    window.removeEventListener('online', this.onOnline);
+    window.removeEventListener('offline', this.onOffline);
+    if (this.interactionTimer) clearTimeout(this.interactionTimer);
+    if (this.sunatPollTimer) clearInterval(this.sunatPollTimer);
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -227,7 +324,21 @@ export class PuntoVentaComponent {
       return;
     }
     try {
-      const rows = await firstValueFrom(this.api.getPosCatalog(wh, this.search()));
+      const term = this.search().trim();
+      const rows = await firstValueFrom(this.api.getPosCatalog(wh, term));
+      const wedgeEnabled = this.cashSession()?.cashRegister?.barcodeWedgeEnabled ?? false;
+      if (wedgeEnabled && term) {
+        const normalized = term.toLowerCase();
+        const exact = rows.filter(
+          (r) =>
+            r.codigoBarra?.toLowerCase() === normalized ||
+            r.codigoInterno?.toLowerCase() === normalized,
+        );
+        if (exact.length === 1) {
+          this.addToCart(exact[0]);
+          return;
+        }
+      }
       this.catalog.set(rows);
       if (rows.length === 0) this.notify.info('Sin resultados');
     } catch (err) {
@@ -435,8 +546,43 @@ export class PuntoVentaComponent {
     if (this.requiresControlled()) {
       void this.loadApprovers();
     }
-    this.paymentAmount.set(this.cartTotal());
     this.payModalOpen.set(true);
+  }
+
+  protected readonly requiresPaymentReference = paymentRequiresReference;
+
+  protected get paymentLineRows(): PosPaymentLine[] {
+    return this.paymentLines();
+  }
+
+  protected updatePaymentLine(
+    localId: string,
+    patch: Partial<Pick<PosPaymentLine, 'metodo' | 'monto' | 'referencia'>>,
+  ) {
+    this.paymentLines.update((lines) =>
+      lines.map((line) => (line.localId === localId ? { ...line, ...patch } : line)),
+    );
+  }
+
+  protected addPaymentLine() {
+    const remaining = Math.max(0, this.paymentRemaining());
+    this.paymentLines.update((lines) => [...lines, createPaymentLine('YAPE', remaining)]);
+  }
+
+  protected removePaymentLine(localId: string) {
+    this.paymentLines.update((lines) =>
+      lines.length <= 1 ? lines : lines.filter((line) => line.localId !== localId),
+    );
+  }
+
+  protected fillRemaining(localId: string) {
+    const remaining = this.paymentRemaining();
+    if (remaining <= 0) return;
+    const line = this.paymentLines().find((item) => item.localId === localId);
+    if (!line) return;
+    this.updatePaymentLine(localId, {
+      monto: Math.round((line.monto + remaining) * 100) / 100,
+    });
   }
 
   protected async loadApprovers() {
@@ -517,55 +663,96 @@ export class PuntoVentaComponent {
       }));
   }
 
+  protected buildSaleRequest(): CreateSaleRequest {
+    const substitutions = this.buildSubstitutions();
+    return {
+      warehouseId: this.warehouseId(),
+      cashSessionId: this.cashSession()?.id,
+      customerId: this.customerId() || undefined,
+      documentType: this.documentType(),
+      serie: this.serie().trim() || undefined,
+      prescriptionValidated: this.prescriptionValidated() || !!this.prescriptionId(),
+      prescriptionId: this.prescriptionId() || undefined,
+      controlledApprovedById: this.controlledApprovedById() || undefined,
+      prescriptionNote: this.prescriptionNote().trim() || undefined,
+      promotionCode: this.promotionCode().trim() || undefined,
+      comentario: this.comentario().trim() || undefined,
+      substitutions: substitutions.length ? substitutions : undefined,
+      items: this.cart().map((l) => ({
+        productId: l.productId,
+        quantity: l.quantity,
+        unitPrice: l.precio,
+        lotAllocationMode: l.manejaLotes ? l.lotMode : undefined,
+        manualLots: l.lotMode === 'MANUAL' ? l.manualLots : undefined,
+      })),
+      payments: this.paymentLines().map((line) => ({
+        metodo: line.metodo,
+        monto: line.monto,
+        referencia: line.referencia.trim() || undefined,
+      })),
+    };
+  }
+
   protected readonly saleMutation = injectMutation(() => ({
-    mutationFn: () => {
+    mutationFn: async (): Promise<SaleMutationResult> => {
       const total = this.cartTotal();
-      const amount = this.paymentAmount();
-      if (Math.abs(amount - total) > 0.02) {
-        throw new Error('El monto de pago debe coincidir con el total');
+      const paid = this.paymentPaidTotal();
+      if (Math.abs(paid - total) > 0.02) {
+        throw new Error('La suma de los pagos debe coincidir con el total');
+      }
+      for (const line of this.paymentLines()) {
+        if (line.monto <= 0) {
+          throw new Error('Cada pago debe tener un monto mayor a cero');
+        }
+        if (paymentRequiresReference(line.metodo) && !line.referencia.trim()) {
+          throw new Error(`Ingrese el código de operación para ${line.metodo}`);
+        }
       }
       if (this.requiresControlled() && !this.controlledApprovedById()) {
         throw new Error('Seleccione el farmacéutico que autoriza la dispensación de controlados');
       }
-      const substitutions = this.buildSubstitutions();
-      return firstValueFrom(
-        this.api.createSale(
-          {
-            warehouseId: this.warehouseId(),
-            cashSessionId: this.cashSession()?.id,
-            customerId: this.customerId() || undefined,
-            documentType: this.documentType(),
-            serie: this.serie().trim() || undefined,
-            prescriptionValidated: this.prescriptionValidated() || !!this.prescriptionId(),
-            prescriptionId: this.prescriptionId() || undefined,
-            controlledApprovedById: this.controlledApprovedById() || undefined,
-            prescriptionNote: this.prescriptionNote().trim() || undefined,
-            promotionCode: this.promotionCode().trim() || undefined,
-            comentario: this.comentario().trim() || undefined,
-            substitutions: substitutions.length ? substitutions : undefined,
-            items: this.cart().map((l) => ({
-              productId: l.productId,
-              quantity: l.quantity,
-              unitPrice: l.precio,
-              lotAllocationMode: l.manejaLotes ? l.lotMode : undefined,
-              manualLots: l.lotMode === 'MANUAL' ? l.manualLots : undefined,
-            })),
-            payments: [{ metodo: this.paymentMethod(), monto: amount }],
-          },
-          crypto.randomUUID(),
-        ),
-      );
+      const body = this.buildSaleRequest();
+      try {
+        return await firstValueFrom(this.api.createSale(body, crypto.randomUUID()));
+      } catch (err) {
+        if (this.shouldQueueOffline(err)) {
+          const offlineLocalId = crypto.randomUUID();
+          await this.offlineQueue.enqueue(offlineLocalId, body);
+          return { offlineQueued: true, offlineLocalId };
+        }
+        throw err;
+      }
     },
-    onSuccess: (sale) => {
+    onSuccess: (result) => {
+      if ('offlineQueued' in result) {
+        this.notify.warning('Venta guardada localmente. Se sincronizará al reconectar.');
+        this.payModalOpen.set(false);
+        this.clearCart();
+        return;
+      }
+      const sale = result;
       this.notify.success(`Venta ${sale.serie ?? ''}-${sale.numero ?? ''} registrada`);
       this.lastSale.set(sale);
       this.lastSunatStatus.set(null);
       if (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') {
+        this.posRealtime.joinSale(sale.id);
         this.pollSunatStatus(sale.id);
       }
       this.payModalOpen.set(false);
       this.clearCart();
-      this.printTicket(sale);
+      const hw = this.cashSession()?.cashRegister;
+      if (this.posPrint.shouldAutoPrint(hw)) {
+        this.posPrint.printTicket(sale, hw);
+      }
+      if (hw?.customerDisplayEnabled) {
+        this.customerDisplay.publish({
+          type: 'sale',
+          documentType: sale.documentType,
+          serie: sale.serie,
+          numero: sale.numero,
+          total: sale.total,
+        });
+      }
       void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
       void this.queryClient.invalidateQueries({ queryKey: ['inventory'] });
@@ -579,7 +766,44 @@ export class PuntoVentaComponent {
 
   protected reprintLast() {
     const sale = this.lastSale();
-    if (sale) this.printTicket(sale);
+    if (sale) this.posPrint.printTicket(sale, this.cashSession()?.cashRegister);
+  }
+
+  private shouldQueueOffline(err: unknown): boolean {
+    if (!navigator.onLine) return true;
+    if (err && typeof err === 'object' && 'status' in err) {
+      const status = (err as { status?: number }).status;
+      return status === 0 || status === 502 || status === 503 || status === 504;
+    }
+    return false;
+  }
+
+  private async syncOfflineQueue() {
+    const pending = await this.offlineQueue.list();
+    if (!pending.length) return;
+    try {
+      const res = await firstValueFrom(
+        this.api.syncSales({
+          sales: pending.map((row) => ({
+            offlineLocalId: row.offlineLocalId,
+            sale: row.sale,
+          })),
+        }),
+      );
+      for (const row of res.results) {
+        if (row.ok) await this.offlineQueue.remove(row.offlineLocalId);
+      }
+      if (res.synced > 0) {
+        this.notify.success(`${res.synced} venta(s) offline sincronizada(s)`);
+        void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
+        void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
+      }
+      if (res.failed > 0) {
+        this.notify.warning(`${res.failed} venta(s) no se pudieron sincronizar`);
+      }
+    } catch {
+      /* reintento al siguiente evento online */
+    }
   }
 
   protected sunatStatusClass(status: SunatDocumentStatus): string {
@@ -614,39 +838,5 @@ export class PuntoVentaComponent {
     };
     void poll();
     this.sunatPollTimer = setInterval(() => void poll(), 2000);
-  }
-
-  protected printTicket(sale: SaleDetailDto) {
-    const lines = sale.items
-      .map(
-        (i) =>
-          `<tr><td>${i.producto}</td><td align="right">${i.cantidad}</td><td align="right">${i.totalLinea}</td></tr>`,
-      )
-      .join('');
-    const lotInfo = sale.items
-      .flatMap((i) => i.lotes.map((l) => `${i.producto}: ${l.codigoLote} × ${l.cantidad}`))
-      .join('<br/>');
-    const html = `<!DOCTYPE html><html><head><title>Ticket ${sale.serie}-${sale.numero}</title>
-      <style>body{font-family:monospace;font-size:12px;max-width:280px;margin:0 auto;padding:8px}
-      table{width:100%;border-collapse:collapse}td{padding:2px 0}.totals{margin-top:8px;border-top:1px dashed #000;padding-top:4px}</style></head>
-      <body onload="window.print();window.close()">
-      <h3 style="text-align:center;margin:0">FactoFarm</h3>
-      <p style="text-align:center;margin:4px 0">${sale.documentType} ${sale.serie ?? ''}-${sale.numero ?? ''}</p>
-      <p style="font-size:10px">${new Date(sale.createdAt).toLocaleString('es-PE')}</p>
-      ${sale.customer ? `<p>Cliente: ${sale.customer.nombre}</p>` : ''}
-      <table>${lines}</table>
-      <div class="totals">
-        <div>Subtotal: S/ ${sale.subtotal}</div>
-        <div>IGV: S/ ${sale.igvTotal}</div>
-        <div><strong>Total: S/ ${sale.total}</strong></div>
-      </div>
-      ${lotInfo ? `<p style="font-size:10px;margin-top:8px">Lotes:<br/>${lotInfo}</p>` : ''}
-      <p style="text-align:center;margin-top:12px;font-size:10px">Gracias por su compra</p>
-      </body></html>`;
-    const w = window.open('', '_blank', 'width=320,height=600');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-    }
   }
 }

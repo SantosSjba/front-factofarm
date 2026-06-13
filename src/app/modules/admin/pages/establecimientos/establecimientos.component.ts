@@ -143,6 +143,8 @@ export class EstablecimientosComponent {
   protected readonly inventoryLotAllocationMethod = signal<'FEFO' | 'FIFO'>('FEFO');
   protected readonly blockExpiredProductSales = signal(true);
   protected readonly adjustmentQtyThreshold = signal(50);
+  protected readonly posYapeNumero = signal('');
+  protected readonly posPlinNumero = signal('');
 
   protected readonly valuationMethodOptions = [
     { value: 'PEPS', label: 'PEPS (primeras entradas, primeras salidas)' },
@@ -305,6 +307,8 @@ export class EstablecimientosComponent {
         this.adjustmentQtyThreshold.set(
           Number.parseFloat(current.adjustmentQtyThreshold ?? '50') || 50,
         );
+        this.posYapeNumero.set(current.posYapeNumero ?? '');
+        this.posPlinNumero.set(current.posPlinNumero ?? '');
         return;
       }
       this.resetForm();
@@ -334,6 +338,17 @@ export class EstablecimientosComponent {
       return;
     }
 
+    const yapeDigits = this.normDigits(this.posYapeNumero());
+    const plinDigits = this.normDigits(this.posPlinNumero());
+    if (yapeDigits && (yapeDigits.length < 9 || yapeDigits.length > 15)) {
+      this.notify.warning('Número Yape inválido: use entre 9 y 15 dígitos.');
+      return;
+    }
+    if (plinDigits && (plinDigits.length < 9 || plinDigits.length > 15)) {
+      this.notify.warning('Número Plin inválido: use entre 9 y 15 dígitos.');
+      return;
+    }
+
     const body: CreateEstablishmentRequest = {
       nombre: this.nombre().trim(),
       codigo: this.norm(this.codigo()),
@@ -356,6 +371,8 @@ export class EstablecimientosComponent {
       inventoryLotAllocationMethod: this.inventoryLotAllocationMethod(),
       blockExpiredProductSales: this.blockExpiredProductSales(),
       adjustmentQtyThreshold: this.adjustmentQtyThreshold(),
+      posYapeNumero: yapeDigits,
+      posPlinNumero: plinDigits,
       activo: true,
     };
 
@@ -500,6 +517,13 @@ export class EstablecimientosComponent {
     this.inventoryLotAllocationMethod.set('FEFO');
     this.blockExpiredProductSales.set(true);
     this.adjustmentQtyThreshold.set(50);
+    this.posYapeNumero.set('');
+    this.posPlinNumero.set('');
+  }
+
+  private normDigits(value: string): string | undefined {
+    const digits = value.replace(/\D/g, '');
+    return digits ? digits : undefined;
   }
 
   private norm(value: string): string | undefined {

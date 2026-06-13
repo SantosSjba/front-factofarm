@@ -16,6 +16,25 @@ export const routes: Routes = [
       import('./modules/auth/auth.routes').then((m) => m.authRoutes),
   },
   {
+    path: 'legal',
+    children: [
+      {
+        path: 'privacidad',
+        loadComponent: () =>
+          import('./pages/legal/legal-page.component').then((m) => m.LegalPageComponent),
+        data: { docType: 'privacy' },
+        title: 'FactoFarm | Política de privacidad',
+      },
+      {
+        path: 'terminos',
+        loadComponent: () =>
+          import('./pages/legal/legal-page.component').then((m) => m.LegalPageComponent),
+        data: { docType: 'terms' },
+        title: 'FactoFarm | Términos de uso',
+      },
+    ],
+  },
+  {
     path: 'signin',
     redirectTo: 'auth/signin',
     pathMatch: 'full',

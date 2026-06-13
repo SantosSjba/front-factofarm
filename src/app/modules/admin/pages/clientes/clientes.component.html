@@ -284,10 +284,10 @@
             />
             <app-button
               variant="outline"
-              [disabled]="!canConsultRuc() || rucConsultMutation.isPending()"
-              (btnClick)="consultSunatRuc()"
+              [disabled]="!canConsultDocument() || isDocumentConsultPending()"
+              (btnClick)="consultDocument()"
             >
-              {{ rucConsultMutation.isPending() ? 'Consultando…' : 'Consultar SUNAT' }}
+              {{ isDocumentConsultPending() ? 'Consultando…' : consultDocumentLabel() }}
             </app-button>
           </div>
         </div>
@@ -416,6 +416,18 @@
           <app-label>Zona</app-label>
           <app-form-select className="mt-2" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
         </div>
+        @if (!editing()) {
+          <div class="md:col-span-2 rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+            <label class="flex items-start gap-2">
+              <input type="checkbox" class="mt-1" [checked]="lpdpConsentAccepted()" (change)="lpdpConsentAccepted.set($any($event.target).checked)" />
+              <span>
+                Autorizo el tratamiento de mis datos personales conforme a la
+                <a href="/legal/privacidad" target="_blank" rel="noopener">Política de privacidad (LPDP)</a>.
+                Conozco mis derechos ARCO.
+              </span>
+            </label>
+          </div>
+        }
       </div>
     }
   </div>

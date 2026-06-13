@@ -49,6 +49,31 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Auditoría',
       },
       {
+        path: 'lpdp',
+        ...guarded(P.lpdp),
+        loadComponent: () =>
+          import('./pages/lpdp/lpdp.component').then((m) => m.LpdpComponent),
+        title: 'FactoFarm | LPDP / ARCO',
+      },
+      {
+        path: 'farmaceutico-titular',
+        ...guarded(P.farmaceuticoTitular),
+        loadComponent: () =>
+          import('./pages/farmaceutico-titular/farmaceutico-titular.component').then(
+            (m) => m.FarmaceuticoTitularComponent,
+          ),
+        title: 'FactoFarm | Farmacéutico titular',
+      },
+      {
+        path: 'precios-regulados',
+        ...guarded(P.preciosRegulados),
+        loadComponent: () =>
+          import('./pages/precios-regulados/precios-regulados.component').then(
+            (m) => m.PreciosReguladosComponent,
+          ),
+        title: 'FactoFarm | Precios regulados',
+      },
+      {
         path: 'establecimientos',
         ...guarded(P.establecimientos),
         loadComponent: () =>
@@ -225,6 +250,15 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Punto de Venta',
       },
       {
+        path: 'pos-pantalla-cliente',
+        ...guarded(P.puntoVenta),
+        loadComponent: () =>
+          import('./pages/pos-pantalla-cliente/pos-pantalla-cliente.component').then(
+            (m) => m.PosPantallaClienteComponent,
+          ),
+        title: 'FactoFarm | Pantalla cliente POS',
+      },
+      {
         path: 'caja-chica-pos',
         ...guarded(P.cajaChicaPos),
         loadComponent: () =>
@@ -269,6 +303,15 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./pages/cotizaciones/cotizaciones.component').then((m) => m.CotizacionesComponent),
         title: 'FactoFarm | Cotizaciones',
+      },
+      {
+        path: 'promociones-campanas',
+        ...guarded(P.promociones),
+        loadComponent: () =>
+          import('./pages/promociones-campanas/promociones-campanas.component').then(
+            (m) => m.PromocionesCampanasComponent,
+          ),
+        title: 'FactoFarm | Promociones',
       },
       {
         path: 'inventario-movimientos',

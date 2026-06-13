@@ -1,5 +1,5 @@
 ﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -14,7 +14,7 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import type { PaymentMethod } from '../../models/directory.models';
+import type { PaymentMethod, PosPrinterPaperWidth } from '../../models/directory.models';
 
 @Component({
   selector: 'app-caja-chica-pos',
@@ -49,6 +49,13 @@ export class CajaChicaPosComponent {
   protected readonly movMonto = signal(0);
   protected readonly movComentario = signal('');
 
+  protected readonly hardwarePaperWidth = signal<PosPrinterPaperWidth>('MM_80');
+  protected readonly hardwareAutoPrint = signal(true);
+  protected readonly hardwareOpenDrawer = signal(true);
+  protected readonly hardwareWedge = signal(true);
+  protected readonly hardwareCustomerDisplay = signal(false);
+  protected readonly hardwarePrinterName = signal('');
+
   protected readonly registersQuery = injectQuery(() => ({
     queryKey: ['cash', 'registers'] as const,
     queryFn: () => firstValueFrom(this.api.listCashRegisters()),
@@ -72,6 +79,28 @@ export class CajaChicaPosComponent {
 
   protected readonly session = computed(() => this.sessionQuery.data());
   protected readonly summary = computed(() => this.summaryQuery.data());
+
+  constructor() {
+    effect(() => {
+      if (this.session()?.cashRegister) this.loadHardwareFromSession();
+    });
+  }
+
+  protected readonly paperWidthOptions = [
+    { value: 'MM_80', label: '80 mm (ticket estándar)' },
+    { value: 'MM_58', label: '58 mm (ticket compacto)' },
+  ];
+
+  protected loadHardwareFromSession() {
+    const reg = this.session()?.cashRegister;
+    if (!reg) return;
+    this.hardwarePaperWidth.set(reg.printerPaperWidth);
+    this.hardwareAutoPrint.set(reg.printerAutoPrint);
+    this.hardwareOpenDrawer.set(reg.openCashDrawerOnPrint);
+    this.hardwareWedge.set(reg.barcodeWedgeEnabled);
+    this.hardwareCustomerDisplay.set(reg.customerDisplayEnabled);
+    this.hardwarePrinterName.set(reg.escposPrinterName ?? '');
+  }
 
   protected posInitError(): string | null {
     if (this.registersQuery.isError()) {
@@ -135,5 +164,24 @@ export class CajaChicaPosComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el movimiento')),
+  }));
+
+  protected readonly hardwareMutation = injectMutation(() => ({
+    mutationFn: () =>
+      firstValueFrom(
+        this.api.updateCashRegisterHardware(this.session()!.cashRegister.id, {
+          printerPaperWidth: this.hardwarePaperWidth(),
+          printerAutoPrint: this.hardwareAutoPrint(),
+          openCashDrawerOnPrint: this.hardwareOpenDrawer(),
+          barcodeWedgeEnabled: this.hardwareWedge(),
+          customerDisplayEnabled: this.hardwareCustomerDisplay(),
+          escposPrinterName: this.hardwarePrinterName().trim() || undefined,
+        }),
+      ),
+    onSuccess: () => {
+      this.notify.success('Hardware POS actualizado');
+      void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar la configuración')),
   }));
 }

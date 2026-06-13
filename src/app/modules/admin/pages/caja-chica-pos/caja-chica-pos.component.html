@@ -43,6 +43,9 @@
         {{ summary()?.saldoActual ?? session()!.montoApertura | currency: 'PEN' : 'symbol' : '1.2-2' }}
       </p>
       <p class="mt-1 text-xs text-gray-500">Apertura: {{ session()!.openedAt | date: 'short' }}</p>
+      <app-button variant="outline" className="mt-3" (btnClick)="loadHardwareFromSession()">
+        Cargar config hardware
+      </app-button>
     </app-component-card>
 
     <app-component-card title="Movimiento manual" className="lg:col-span-1">
@@ -72,8 +75,85 @@
     </app-component-card>
   </div>
 
+  <app-component-card title="Hardware POS (caja activa)" className="mt-4">
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div>
+        <app-label>Ancho de papel</app-label>
+        <app-form-select
+          [options]="paperWidthOptions"
+          [value]="hardwarePaperWidth()"
+          (valueChange)="hardwarePaperWidth.set($any($event))"
+        />
+      </div>
+      <div>
+        <app-label>Nombre impresora (OS)</app-label>
+        <app-input-field
+          [value]="hardwarePrinterName()"
+          (valueChange)="hardwarePrinterName.set('' + $event)"
+          placeholder="Opcional — impresión por navegador"
+        />
+      </div>
+      <div class="flex flex-wrap gap-4 text-sm lg:col-span-2">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" [checked]="hardwareAutoPrint()" (change)="hardwareAutoPrint.set($any($event.target).checked)" />
+          Imprimir ticket al cobrar
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" [checked]="hardwareOpenDrawer()" (change)="hardwareOpenDrawer.set($any($event.target).checked)" />
+          Abrir cajón al imprimir
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" [checked]="hardwareWedge()" (change)="hardwareWedge.set($any($event.target).checked)" />
+          Escáner keyboard wedge
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" [checked]="hardwareCustomerDisplay()" (change)="hardwareCustomerDisplay.set($any($event.target).checked)" />
+          Pantalla cliente
+        </label>
+      </div>
+      <div class="lg:col-span-2">
+        <app-button variant="primary" [disabled]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">
+          Guardar hardware
+        </app-button>
+        <p class="mt-2 text-xs text-gray-500">
+          Pantalla cliente:
+          <a class="text-brand-600 underline" href="/pos-pantalla-cliente" target="_blank" rel="noopener">
+            /pos-pantalla-cliente
+          </a>
+        </p>
+      </div>
+    </div>
+  </app-component-card>
+
   @if (summary(); as s) {
     <app-component-card title="Movimientos y ventas" className="mt-4">
+      @if (s.totalesPorMetodo && (s.totalesPorMetodo | keyvalue).length) {
+        <div class="mb-6">
+          <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Totales por medio de pago</h4>
+          <div class="flex flex-wrap gap-2 text-sm">
+            @for (entry of s.totalesPorMetodo | keyvalue; track entry.key) {
+              <span class="rounded-full bg-gray-100 px-3 py-1 dark:bg-gray-800">
+                {{ entry.key }}: {{ entry.value | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              </span>
+            }
+          </div>
+        </div>
+      }
+
+      @if (s.pagosDigitales.length) {
+        <div class="mb-6">
+          <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Códigos de operación (conciliación)</h4>
+          <div class="max-h-48 overflow-auto text-sm">
+            @for (p of s.pagosDigitales; track p.saleId + p.metodo + p.referencia) {
+              <div class="flex justify-between border-b border-gray-100 py-2 dark:border-gray-800">
+                <span>{{ p.comprobante }} · {{ p.metodo }} · {{ p.referencia ?? '—' }}</span>
+                <span>{{ p.monto | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <div class="grid gap-6 lg:grid-cols-2">
         <div>
           <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Movimientos</h4>

@@ -5,6 +5,16 @@
     [showRetry]="true"
     (retry)="refetchPosBootstrap()"
   >
+  @if (!isOnline() || offlinePending() > 0) {
+    <div class="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+      @if (!isOnline()) {
+        <span>Modo offline — las ventas se guardan localmente.</span>
+      }
+      @if (offlinePending() > 0) {
+        <span class="ml-2">Pendientes de sincronizar: {{ offlinePending() }}</span>
+      }
+    </div>
+  }
   <header class="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:gap-3 sm:px-4 sm:py-3">
     <div class="w-full min-w-[140px] flex-1 sm:w-auto">
       <app-form-select
@@ -291,16 +301,84 @@
   </app-page-state>
 </div>
 
-<app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-md">
+<app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-xl">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Cobrar venta</h3>
     <div class="space-y-1 text-sm">
       <div class="flex justify-between"><span>Subtotal</span><span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between"><span>IGV</span><span>{{ cartIgv() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between text-lg font-bold"><span>Total</span><span>{{ cartTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+      <div class="flex justify-between text-xs" [class.text-rose-600]="paymentRemaining() !== 0" [class.text-emerald-600]="paymentRemaining() === 0">
+        <span>Pagado / pendiente</span>
+        <span>{{ paymentPaidTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }} · falta {{ paymentRemaining() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+      </div>
     </div>
-    <app-form-select [options]="paymentOptions" [value]="paymentMethod()" (valueChange)="paymentMethod.set($any($event))" />
-    <app-input-field type="number" [value]="paymentAmount()" (valueChange)="paymentAmount.set(+$event)" />
+
+    @if (hasPosPaymentHints()) {
+      <div class="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100">
+        <p class="font-medium">Cuentas del local</p>
+        <p class="mt-1 text-xs text-sky-800/90 dark:text-sky-200/80">
+          Indique al cliente el número antes de registrar el código de operación.
+        </p>
+        <div class="mt-2 flex flex-wrap gap-2">
+          @if (posPaymentHints()?.posYapeNumero) {
+            <span class="rounded-md border border-sky-200/80 bg-white px-2.5 py-1 font-mono text-xs dark:border-sky-800 dark:bg-black/25">
+              Yape · {{ posPaymentHints()!.posYapeNumero }}
+            </span>
+          }
+          @if (posPaymentHints()?.posPlinNumero) {
+            <span class="rounded-md border border-sky-200/80 bg-white px-2.5 py-1 font-mono text-xs dark:border-sky-800 dark:bg-black/25">
+              Plin · {{ posPaymentHints()!.posPlinNumero }}
+            </span>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h4 class="text-sm font-medium text-gray-700">Medios de pago</h4>
+        <app-button size="sm" variant="outline" (btnClick)="addPaymentLine()">+ Otro medio</app-button>
+      </div>
+      @for (line of paymentLineRows; track line.localId) {
+        <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <app-form-select
+              [options]="paymentOptions"
+              [value]="line.metodo"
+              (valueChange)="updatePaymentLine(line.localId, { metodo: $any($event) })"
+            />
+            <app-input-field
+              type="number"
+              placeholder="Monto"
+              [value]="line.monto"
+              (valueChange)="updatePaymentLine(line.localId, { monto: +$event })"
+            />
+          </div>
+          @if (requiresPaymentReference(line.metodo)) {
+            <app-input-field
+              class="mt-2"
+              placeholder="Código / N° operación"
+              [value]="line.referencia"
+              (valueChange)="updatePaymentLine(line.localId, { referencia: '' + $event })"
+            />
+          }
+          <div class="mt-2 flex gap-2">
+            @if (paymentRemaining() > 0) {
+              <button type="button" class="text-xs text-brand-600 hover:underline" (click)="fillRemaining(line.localId)">
+                Completar saldo
+              </button>
+            }
+            @if (paymentLineRows.length > 1) {
+              <button type="button" class="text-xs text-rose-600 hover:underline" (click)="removePaymentLine(line.localId)">
+                Quitar
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
     <app-input-field [value]="promotionCode()" (valueChange)="promotionCode.set('' + $event)" placeholder="Código promoción" />
     @if (requiresControlled()) {
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">

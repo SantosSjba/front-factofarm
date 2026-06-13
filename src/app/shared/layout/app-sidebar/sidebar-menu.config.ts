@@ -113,6 +113,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
         ],
       },
       { name: 'Cotizaciones', path: '/cotizaciones', permissionCode: 'nav.cotizaciones' },
+      { name: 'Promociones y cupones', path: '/promociones-campanas', permissionCode: 'nav.promociones' },
     ],
   },
   {

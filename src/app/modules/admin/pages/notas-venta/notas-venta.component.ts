@@ -16,7 +16,7 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import type { SaleDetailDto, SaleDocumentType, SaleStatus, SunatDocumentStatus } from '../../models/directory.models';
+import type { SaleDetailDto, SaleDocumentType, SaleStatus, SunatDocumentStatus, PaymentMethod } from '../../models/directory.models';
 
 type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string };
 
@@ -56,6 +56,17 @@ export class NotasVentaComponent {
   protected readonly documentType = signal<string>('');
   protected readonly dateFrom = signal('');
   protected readonly dateTo = signal('');
+  protected readonly paymentMetodo = signal<string>('');
+  protected readonly paymentReferencia = signal('');
+
+  protected readonly paymentMethodOptions = [
+    { value: '', label: 'Todos los medios' },
+    { value: 'EFECTIVO', label: 'Efectivo' },
+    { value: 'YAPE', label: 'Yape' },
+    { value: 'PLIN', label: 'Plin' },
+    { value: 'TARJETA', label: 'Tarjeta' },
+    { value: 'TRANSFERENCIA', label: 'Transferencia' },
+  ];
 
   protected readonly estadoOptions = [
     { value: '', label: 'Todos los estados' },
@@ -82,6 +93,8 @@ export class NotasVentaComponent {
       this.documentType(),
       this.dateFrom(),
       this.dateTo(),
+      this.paymentMetodo(),
+      this.paymentReferencia(),
     ] as const,
     queryFn: () =>
       firstValueFrom(
@@ -92,6 +105,8 @@ export class NotasVentaComponent {
           documentType: (this.documentType() || undefined) as SaleDocumentType | undefined,
           from: this.dateFrom() || undefined,
           to: this.dateTo() || undefined,
+          paymentMetodo: (this.paymentMetodo() || undefined) as PaymentMethod | undefined,
+          paymentReferencia: this.paymentReferencia().trim() || undefined,
         }),
       ),
   }));

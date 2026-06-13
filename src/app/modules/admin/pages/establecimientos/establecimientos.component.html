@@ -272,6 +272,33 @@
         />
       </div>
 
+      <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">Pagos digitales POS</h4>
+        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Números que verá el cajero al cobrar (Yape / Plin). No integran pasarela; solo referencia para el cliente.
+        </p>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <app-label>Número Yape</app-label>
+            <app-input-field
+              className="mt-2"
+              placeholder="9 dígitos, ej. 987654321"
+              [value]="posYapeNumero()"
+              (valueChange)="posYapeNumero.set($event + '')"
+            />
+          </div>
+          <div>
+            <app-label>Número Plin</app-label>
+            <app-input-field
+              className="mt-2"
+              placeholder="9 dígitos, ej. 912345678"
+              [value]="posPlinNumero()"
+              (valueChange)="posPlinNumero.set($event + '')"
+            />
+          </div>
+        </div>
+      </div>
+
       <div class="md:col-span-2 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
         <h4 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y BPA</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

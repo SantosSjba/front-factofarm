@@ -118,6 +118,8 @@ export interface EstablishmentOptionDto {
   inventoryLotAllocationMethod?: 'FEFO' | 'FIFO';
   blockExpiredProductSales?: boolean;
   adjustmentQtyThreshold?: string;
+  posYapeNumero?: string | null;
+  posPlinNumero?: string | null;
 }
 
 export interface EstablishmentListFiltersRequest {
@@ -128,6 +130,13 @@ export interface EstablishmentListFiltersRequest {
 }
 
 export type EstablishmentListResponseDto = PaginatedResponseDto<EstablishmentOptionDto>;
+
+export interface PosPaymentSettingsDto {
+  id: string;
+  nombre: string;
+  posYapeNumero: string | null;
+  posPlinNumero: string | null;
+}
 
 export interface DashboardInventoryAlertsDto {
   stockBajo: number;
@@ -244,6 +253,8 @@ export interface CreateEstablishmentRequest {
   inventoryLotAllocationMethod?: 'FEFO' | 'FIFO';
   blockExpiredProductSales?: boolean;
   adjustmentQtyThreshold?: number;
+  posYapeNumero?: string;
+  posPlinNumero?: string;
 }
 
 export type UpdateEstablishmentRequest = Partial<CreateEstablishmentRequest>;
@@ -677,6 +688,8 @@ export interface CreateCustomerRequest {
   zoneId?: string | null;
   vendedorAsignadoId?: string | null;
   addresses?: CustomerAddressDto[];
+  lpdpConsentAccepted?: boolean;
+  lpdpConsentVersion?: string;
 }
 
 export type UpdateCustomerRequest = Partial<CreateCustomerRequest>;
@@ -1716,19 +1729,67 @@ export interface SaleListFiltersRequest {
   documentType?: SaleDocumentType;
   from?: string;
   to?: string;
+  paymentMetodo?: PaymentMethod;
+  paymentReferencia?: string;
 }
 
 export interface CashRegisterDto {
   id: string;
   nombre: string;
   activo: boolean;
+  printerPaperWidth: PosPrinterPaperWidth;
+  printerAutoPrint: boolean;
+  openCashDrawerOnPrint: boolean;
+  barcodeWedgeEnabled: boolean;
+  customerDisplayEnabled: boolean;
+  escposPrinterName: string | null;
+}
+
+export type PosPrinterPaperWidth = 'MM_58' | 'MM_80';
+
+export type CashRegisterHardwareDto = Pick<
+  CashRegisterDto,
+  | 'printerPaperWidth'
+  | 'printerAutoPrint'
+  | 'openCashDrawerOnPrint'
+  | 'barcodeWedgeEnabled'
+  | 'customerDisplayEnabled'
+  | 'escposPrinterName'
+>;
+
+export interface UpdateCashRegisterHardwareRequest {
+  printerPaperWidth?: PosPrinterPaperWidth;
+  printerAutoPrint?: boolean;
+  openCashDrawerOnPrint?: boolean;
+  barcodeWedgeEnabled?: boolean;
+  customerDisplayEnabled?: boolean;
+  escposPrinterName?: string;
 }
 
 export interface CashActiveSessionDto {
   id: string;
   montoApertura: string;
   openedAt: string;
-  cashRegister: { id: string; nombre: string };
+  cashRegister: {
+    id: string;
+    nombre: string;
+    printerPaperWidth: PosPrinterPaperWidth;
+    printerAutoPrint: boolean;
+    openCashDrawerOnPrint: boolean;
+    barcodeWedgeEnabled: boolean;
+    customerDisplayEnabled: boolean;
+    escposPrinterName: string | null;
+  };
+}
+
+export interface SyncSalesRequest {
+  sales: { offlineLocalId: string; sale: CreateSaleRequest }[];
+}
+
+export interface SyncSalesResponse {
+  synced: number;
+  failed: number;
+  results: { offlineLocalId: string; ok: boolean; saleId?: string; error?: string }[];
 }
 
 export interface OpenCashSessionRequest {
@@ -1753,6 +1814,14 @@ export interface CashSessionSummaryDto {
   estado: string;
   montoApertura: string;
   saldoActual: string;
+  totalesPorMetodo: Partial<Record<PaymentMethod, string>>;
+  pagosDigitales: {
+    saleId: string;
+    comprobante: string;
+    metodo: PaymentMethod;
+    monto: string;
+    referencia: string | null;
+  }[];
   movimientos: {
     id: string;
     tipo: CashMovementType;
@@ -2230,4 +2299,317 @@ export interface PrescriptionSummaryDto {
   fechaEmision: string;
   estado: string;
   medicoNombre: string | null;
+}
+
+export interface LegalDocumentDto {
+  version: string;
+  title: string;
+  content: string;
+}
+
+export interface ValidateDniResponseDto {
+  dni: string;
+  nombre: string;
+}
+
+export interface LpdTreatmentMatrixDto {
+  version: string;
+  encryptionEnabled: boolean;
+  rows: Array<{
+    proceso: string;
+    datos: string[];
+    finalidad: string;
+    baseLegal: string;
+    retencion: string;
+    destinatarios: string[];
+  }>;
+}
+
+export interface ArcoRequestDto {
+  id: string;
+  requestType: string;
+  status: string;
+  createdAt: string;
+  customer?: { id: string; nombre: string; numeroDocumento: string };
+}
+
+export interface LpdpRetentionDto {
+  policy: string;
+  cutoffDate: string;
+  candidates: Array<{ id: string; nombre: string; numeroDocumento: string; updatedAt: string }>;
+}
+
+export interface PharmacistLicenseDto {
+  id: string;
+  colegiaturaCqp: string;
+  fullName: string;
+  vigenciaHasta: string | null;
+  activo: boolean;
+  titularEstablishments?: Array<{ id: string; nombre: string; codigo: string | null }>;
+}
+
+export interface CreatePharmacistLicenseRequest {
+  colegiaturaCqp: string;
+  fullName: string;
+  vigenciaHasta?: string;
+  userId?: string;
+  activo?: boolean;
+}
+
+export interface RegulatedPriceDto {
+  id: string;
+  codigoDigemid: string | null;
+  nombre: string;
+  precioMaximo: string;
+}
+
+export interface UpsertRegulatedPriceRequest {
+  codigoDigemid?: string;
+  nombre: string;
+  precioMaximo: number;
+  vigenteDesde?: string;
+  vigenteHasta?: string;
+  fuente?: string;
+}
+
+export interface PleExportDto {
+  filename: string;
+  content: string;
+  rowCount: number;
+}
+
+export type TaxWithholdingKind = 'RETENCION' | 'PERCEPCION' | 'DETRACCION';
+
+export interface SunatWithholdingRateDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  kind: TaxWithholdingKind;
+  tasa: string;
+  activo: boolean;
+}
+
+export interface TaxWithholdingRecordDto {
+  id: string;
+  kind: TaxWithholdingKind;
+  partyNombre: string;
+  partyDocType: string;
+  partyDocNumber: string;
+  regimenCodigo: string | null;
+  fechaOperacion: string;
+  comprobanteModificadoSerie: string | null;
+  comprobanteModificadoNumero: string | null;
+  baseImponible: string;
+  tasa: string;
+  monto: string;
+  observaciones: string | null;
+  electronicDocument?: {
+    id: string;
+    serie: string;
+    numero: string;
+    sunatStatus: string;
+    documentType?: string;
+  } | null;
+}
+
+export interface CreateTaxWithholdingRequest {
+  partyNombre: string;
+  partyDocType: string;
+  partyDocNumber: string;
+  regimenCodigo?: string;
+  tasa?: number;
+  baseImponible: number;
+  fechaOperacion?: string;
+  comprobanteModificadoTipo?: string;
+  comprobanteModificadoSerie?: string;
+  comprobanteModificadoNumero?: string;
+  observaciones?: string;
+}
+
+export interface TaxWithholdingCalculateDto {
+  baseImponible: string;
+  tasa: string;
+  monto: string;
+}
+
+export interface SyncDetraccionesResponseDto {
+  synced: number;
+  totalCandidates?: number;
+  message?: string;
+}
+
+export interface SanitaryRegistryAlertDto {
+  id: string;
+  nombre: string;
+  registroSanitario: string | null;
+  codigoMedicamentoDigemid: string | null;
+  registroSanitarioVigencia: string | null;
+  estado: string;
+}
+
+export interface LotTraceabilityDto {
+  codigoLote: string;
+  entradas: Array<{
+    fecha: string;
+    producto: string;
+    codigo: string;
+    almacen: string;
+    cantidad: string;
+    referencia: string;
+  }>;
+  ventas: Array<{
+    saleId: string;
+    documento: string;
+    fecha: string;
+    producto: string;
+    cantidad: string;
+    cliente: string;
+    documentoCliente: string;
+  }>;
+}
+
+export type DeliveryOrderStatus =
+  | 'RECIBIDO'
+  | 'PREPARANDO'
+  | 'EN_CAMINO'
+  | 'ENTREGADO'
+  | 'CANCELADO';
+
+export type DeliveryChannel = 'TELEFONO' | 'WHATSAPP' | 'WEB' | 'PRESENCIAL';
+
+export type PromotionType =
+  | 'PORCENTAJE_ITEM'
+  | 'MONTO_ITEM'
+  | 'PORCENTAJE_VENTA'
+  | 'CANTIDAD_MINIMA'
+  | 'DOS_POR_UNO';
+
+export interface DeliveryOrderListItemDto {
+  id: string;
+  numero: string;
+  estado: DeliveryOrderStatus;
+  canal: DeliveryChannel;
+  clienteNombre: string;
+  clienteTelefono: string;
+  total: string;
+  createdAt: string;
+  assignedTo: { id: string; nombre: string } | null;
+}
+
+export interface DeliveryOrderDetailDto {
+  id: string;
+  numero: string;
+  estado: DeliveryOrderStatus;
+  canal: DeliveryChannel;
+  clienteNombre: string;
+  clienteTelefono: string;
+  clienteEmail: string | null;
+  direccionEntrega: string;
+  referenciaDireccion: string | null;
+  distritoEntrega: string | null;
+  costoDelivery: string;
+  subtotal: string;
+  igvTotal: string;
+  total: string;
+  notasCliente: string | null;
+  notasInternas: string | null;
+  programadoPara: string | null;
+  entregadoAt: string | null;
+  cancelReason: string | null;
+  saleId: string | null;
+  createdAt: string;
+  customer: { id: string; nombre: string; numeroDocumento: string } | null;
+  warehouse: { id: string; nombre: string };
+  createdBy: { id: string; nombre: string };
+  assignedTo: { id: string; nombre: string } | null;
+  sale: { id: string; serie: string | null; numero: string | null; total: string } | null;
+  items: Array<{
+    id: string;
+    productId: string;
+    producto: string;
+    codigoInterno: string | null;
+    cantidad: string;
+    precioUnitario: string;
+    totalLinea: string;
+    notas: string | null;
+  }>;
+  notifications: Array<{
+    id: string;
+    channel: string;
+    templateKey: string;
+    destino: string;
+    enviadoOk: boolean;
+    createdAt: string;
+  }>;
+  whatsappLink?: string | null;
+}
+
+export interface CreateDeliveryOrderRequest {
+  warehouseId: string;
+  customerId?: string;
+  canal?: DeliveryChannel;
+  clienteNombre: string;
+  clienteTelefono: string;
+  clienteEmail?: string;
+  direccionEntrega: string;
+  referenciaDireccion?: string;
+  distritoEntrega?: string;
+  costoDelivery?: number;
+  notasCliente?: string;
+  notasInternas?: string;
+  programadoPara?: string;
+  items: Array<{ productId: string; quantity: number; unitPrice?: number; notas?: string }>;
+}
+
+export interface PromotionListItemDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: PromotionType;
+  valor: string;
+  cantidadMinima: number | null;
+  activo: boolean;
+  validFrom: string | null;
+  validTo: string | null;
+  createdAt: string;
+}
+
+export interface CreatePromotionRequest {
+  codigo: string;
+  nombre: string;
+  tipo: PromotionType;
+  valor: number;
+  cantidadMinima?: number;
+  activo?: boolean;
+  validFrom?: string;
+  validTo?: string;
+}
+
+export interface CustomerLoyaltyHistoryDto {
+  customerId: string;
+  nombre: string;
+  puntosAcumulados: number;
+  transactions: Array<{
+    id: string;
+    tipo: string;
+    puntos: number;
+    saldoAfter: number;
+    referencia: string | null;
+    createdAt: string;
+  }>;
+}
+
+export interface CustomerPurchaseRecommendationsDto {
+  frequentPurchases: Array<{
+    productId: string;
+    nombre: string;
+    codigoInterno: string | null;
+    qty: number;
+  }>;
+  recommendations: Array<{
+    productId: string;
+    nombre: string;
+    codigoInterno: string | null;
+    qty: number;
+  }>;
 }

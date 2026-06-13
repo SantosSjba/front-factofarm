@@ -64,6 +64,7 @@ import type {
   SupplierProductItemDto,
   UpsertSupplierProductRequest,
   EstablishmentOptionDto,
+  PosPaymentSettingsDto,
   EstablishmentDocumentTypeOptionDto,
   EstablishmentSeriesItemDto,
   ExportCustomersRequest,
@@ -173,6 +174,18 @@ import type {
   SaleListFiltersRequest,
   CashRegisterDto,
   CashActiveSessionDto,
+  UpdateCashRegisterHardwareRequest,
+  SyncSalesRequest,
+  SyncSalesResponse,
+  DeliveryOrderListItemDto,
+  DeliveryOrderDetailDto,
+  DeliveryOrderStatus,
+  CreateDeliveryOrderRequest,
+  PromotionListItemDto,
+  CreatePromotionRequest,
+  CustomerLoyaltyHistoryDto,
+  CustomerPurchaseRecommendationsDto,
+  CreateSalePaymentRequest,
   OpenCashSessionRequest,
   CloseCashSessionRequest,
   CashMovementRequest,
@@ -203,6 +216,24 @@ import type {
   SaleBillingStatusDto,
   CreateSaleReturnRequest,
   SaleReturnResponseDto,
+  LegalDocumentDto,
+  ValidateDniResponseDto,
+  LpdTreatmentMatrixDto,
+  ArcoRequestDto,
+  LpdpRetentionDto,
+  PharmacistLicenseDto,
+  CreatePharmacistLicenseRequest,
+  RegulatedPriceDto,
+  UpsertRegulatedPriceRequest,
+  PleExportDto,
+  SunatWithholdingRateDto,
+  TaxWithholdingKind,
+  TaxWithholdingRecordDto,
+  CreateTaxWithholdingRequest,
+  TaxWithholdingCalculateDto,
+  SyncDetraccionesResponseDto,
+  SanitaryRegistryAlertDto,
+  LotTraceabilityDto,
 } from '../models/directory.models';
 
 @Injectable({ providedIn: 'root' })
@@ -272,6 +303,10 @@ export class DirectoryApiService {
 
   updateEstablishment(id: string, body: UpdateEstablishmentRequest) {
     return this.http.patch<EstablishmentOptionDto>(`${this.base}/establishments/${id}`, body);
+  }
+
+  getPosPaymentSettings() {
+    return this.http.get<PosPaymentSettingsDto>(`${this.base}/establishments/pos-payment-settings`);
   }
 
   deleteEstablishment(id: string) {
@@ -1362,6 +1397,8 @@ export class DirectoryApiService {
     if (filters?.documentType) params['documentType'] = filters.documentType;
     if (filters?.from) params['from'] = filters.from;
     if (filters?.to) params['to'] = filters.to;
+    if (filters?.paymentMetodo) params['paymentMetodo'] = filters.paymentMetodo;
+    if (filters?.paymentReferencia?.trim()) params['paymentReferencia'] = filters.paymentReferencia.trim();
     return this.http.get<PaginatedResponseDto<SaleListItemDto>>(`${this.base}/sales`, { params });
   }
 
@@ -1386,6 +1423,10 @@ export class DirectoryApiService {
     return this.http.post<SaleDetailDto>(`${this.base}/sales`, body, { headers });
   }
 
+  syncSales(body: SyncSalesRequest) {
+    return this.http.post<SyncSalesResponse>(`${this.base}/sales/sync`, body);
+  }
+
   voidSale(id: string, reason: string) {
     return this.http.post<SaleDetailDto>(`${this.base}/sales/${id}/void`, { reason });
   }
@@ -1394,9 +1435,97 @@ export class DirectoryApiService {
     return this.http.post<SaleReturnResponseDto>(`${this.base}/sales/${saleId}/returns`, body);
   }
 
+  // —— Delivery ——
+  listDeliveryOrders(page = 1, pageSize = 15, estado?: string, search?: string) {
+    const params: Record<string, string | number> = { page, pageSize };
+    if (estado) params['estado'] = estado;
+    if (search?.trim()) params['search'] = search.trim();
+    return this.http.get<PaginatedResponseDto<DeliveryOrderListItemDto>>(`${this.base}/delivery-orders`, {
+      params,
+    });
+  }
+
+  getDeliveryOrder(id: string) {
+    return this.http.get<DeliveryOrderDetailDto>(`${this.base}/delivery-orders/${id}`);
+  }
+
+  createDeliveryOrder(body: CreateDeliveryOrderRequest) {
+    return this.http.post<DeliveryOrderDetailDto>(`${this.base}/delivery-orders`, body);
+  }
+
+  updateDeliveryOrderStatus(
+    id: string,
+    body: { estado: DeliveryOrderStatus; cancelReason?: string },
+  ) {
+    return this.http.patch<DeliveryOrderDetailDto & { whatsappLink?: string | null }>(
+      `${this.base}/delivery-orders/${id}/status`,
+      body,
+    );
+  }
+
+  assignDeliveryOrder(id: string, assignedToId?: string) {
+    return this.http.patch<DeliveryOrderDetailDto>(`${this.base}/delivery-orders/${id}/assign`, {
+      assignedToId,
+    });
+  }
+
+  completeDeliverySale(
+    id: string,
+    body: { cashSessionId?: string; payments: CreateSalePaymentRequest[] },
+  ) {
+    return this.http.post<{ order: DeliveryOrderDetailDto; sale: SaleDetailDto }>(
+      `${this.base}/delivery-orders/${id}/complete-sale`,
+      body,
+    );
+  }
+
+  // —— Promociones / marketing ——
+  listPromotions(page = 1, pageSize = 15, search?: string) {
+    const params: Record<string, string | number> = { page, pageSize };
+    if (search?.trim()) params['search'] = search.trim();
+    return this.http.get<PaginatedResponseDto<PromotionListItemDto>>(`${this.base}/promotions`, {
+      params,
+    });
+  }
+
+  createPromotion(body: CreatePromotionRequest) {
+    return this.http.post<PromotionListItemDto>(`${this.base}/promotions`, body);
+  }
+
+  deletePromotion(id: string) {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/promotions/${id}`);
+  }
+
+  validatePromotionCode(code: string) {
+    return this.http.get<{ valid: boolean; reason?: string; promotion?: PromotionListItemDto }>(
+      `${this.base}/promotions/validate`,
+      { params: { code } },
+    );
+  }
+
+  getCustomerLoyaltyHistory(customerId: string) {
+    return this.http.get<CustomerLoyaltyHistoryDto>(
+      `${this.base}/marketing/customers/${customerId}/loyalty`,
+    );
+  }
+
+  adjustCustomerLoyalty(customerId: string, body: { puntos: number; referencia?: string }) {
+    return this.http.post(`${this.base}/marketing/customers/${customerId}/loyalty/adjust`, body);
+  }
+
+  getCustomerPurchaseRecommendations(customerId: string) {
+    return this.http.get<CustomerPurchaseRecommendationsDto>(
+      `${this.base}/marketing/customers/${customerId}/recommendations`,
+    );
+  }
+
   // —— Caja ——
   listCashRegisters() {
     return this.http.get<CashRegisterDto[]>(`${this.base}/cash-registers`);
+  }
+
+  updateCashRegisterHardware(id: string, body: UpdateCashRegisterHardwareRequest) {
+    return this.http.patch<CashRegisterDto>(`${this.base}/cash-registers/${id}/hardware`, body);
   }
 
   getActiveCashSession() {
@@ -1738,6 +1867,123 @@ export class DirectoryApiService {
     if (filters?.from) params['from'] = filters.from;
     if (filters?.to) params['to'] = filters.to;
     return this.http.get<unknown[]>(`${this.base}/pharmaceutical/reports/dispensation-by-medico`, { params });
+  }
+
+  getLegalPrivacy() {
+    return this.http.get<LegalDocumentDto>(`${this.base}/legal/privacy`);
+  }
+
+  getLegalTerms() {
+    return this.http.get<LegalDocumentDto>(`${this.base}/legal/terms`);
+  }
+
+  validateBillingDni(dni: string) {
+    return this.http.get<ValidateDniResponseDto>(`${this.base}/billing/validate-dni/${encodeURIComponent(dni)}`);
+  }
+
+  getLpdpTreatmentMatrix() {
+    return this.http.get<LpdTreatmentMatrixDto>(`${this.base}/compliance/lpdp/treatment-matrix`);
+  }
+
+  listArcoRequests(status?: string) {
+    const params = status ? { status } : undefined;
+    return this.http.get<ArcoRequestDto[]>(`${this.base}/compliance/lpdp/arco`, { params });
+  }
+
+  getLpdpRetentionCandidates() {
+    return this.http.get<LpdpRetentionDto>(`${this.base}/compliance/lpdp/retention-candidates`);
+  }
+
+  listPharmacistLicenses(includeInactive = false) {
+    return this.http.get<PharmacistLicenseDto[]>(`${this.base}/compliance/pharmacist-licenses`, {
+      params: includeInactive ? { includeInactive: 'true' } : {},
+    });
+  }
+
+  createPharmacistLicense(body: CreatePharmacistLicenseRequest) {
+    return this.http.post<PharmacistLicenseDto>(`${this.base}/compliance/pharmacist-licenses`, body);
+  }
+
+  listRegulatedPrices(search?: string) {
+    return this.http.get<RegulatedPriceDto[]>(`${this.base}/compliance/regulated-prices`, {
+      params: search ? { search } : {},
+    });
+  }
+
+  upsertRegulatedPrice(body: UpsertRegulatedPriceRequest) {
+    return this.http.post<RegulatedPriceDto>(`${this.base}/compliance/regulated-prices`, body);
+  }
+
+  getPleExport(book: '14.1' | '8.1' | '13.1', period: string) {
+    return this.http.get<PleExportDto>(`${this.base}/compliance/ple/${book}`, {
+      params: { period },
+    });
+  }
+
+  listSunatWithholdingRates(kind?: TaxWithholdingKind) {
+    const params = kind ? { kind } : undefined;
+    return this.http.get<SunatWithholdingRateDto[]>(`${this.base}/compliance/sunat-rates`, { params });
+  }
+
+  listTaxWithholdingRecords(kind: TaxWithholdingKind, period?: string) {
+    const params = period ? { period } : undefined;
+    return this.http.get<TaxWithholdingRecordDto[]>(`${this.base}/compliance/tax-withholding/${kind}`, { params });
+  }
+
+  calculateTaxWithholding(baseImponible: number, tasa: number) {
+    return this.http.post<TaxWithholdingCalculateDto>(`${this.base}/compliance/tax-withholding/calculate`, {
+      baseImponible,
+      tasa,
+    });
+  }
+
+  createRetencion(body: CreateTaxWithholdingRequest) {
+    return this.http.post<TaxWithholdingRecordDto>(`${this.base}/compliance/tax-withholding/retenciones`, body);
+  }
+
+  createPercepcion(body: CreateTaxWithholdingRequest) {
+    return this.http.post<TaxWithholdingRecordDto>(`${this.base}/compliance/tax-withholding/percepciones`, body);
+  }
+
+  syncDetracciones(period?: string) {
+    const params = period ? { period } : undefined;
+    return this.http.post<SyncDetraccionesResponseDto>(
+      `${this.base}/compliance/tax-withholding/detracciones/sync`,
+      null,
+      { params },
+    );
+  }
+
+  downloadSunatSalesRegister(period: string) {
+    return this.http.get(`${this.base}/compliance/sunat-books/sales-register`, {
+      params: { period },
+      responseType: 'blob',
+    });
+  }
+
+  downloadSunatInventoryRegister(period: string) {
+    return this.http.get(`${this.base}/compliance/sunat-books/inventory-register`, {
+      params: { period },
+      responseType: 'blob',
+    });
+  }
+
+  getSanitaryRegistryAlerts(daysAhead = 90) {
+    return this.http.get<SanitaryRegistryAlertDto[]>(`${this.base}/pharmaceutical/reports/sanitary-registry-alerts`, {
+      params: { daysAhead: String(daysAhead) },
+    });
+  }
+
+  getLotTraceability(codigoLote: string) {
+    return this.http.get<LotTraceabilityDto>(`${this.base}/pharmaceutical/reports/lot-traceability`, {
+      params: { codigoLote },
+    });
+  }
+
+  exportInspectionDigemid() {
+    return this.http.get(`${this.base}/pharmaceutical/reports/inspection-export`, {
+      responseType: 'blob',
+    });
   }
 
   fileDownloadUrl(fileId: string) {

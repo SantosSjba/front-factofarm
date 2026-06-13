@@ -343,6 +343,8 @@ export class ClientesComponent {
   protected readonly editing = signal<CustomerItemDto | null>(null);
   protected readonly selected = signal<CustomerItemDto | null>(null);
 
+  protected readonly lpdpConsentAccepted = signal(false);
+
   protected readonly form = signal<CreateCustomerRequest>({
     nombre: '',
     tipoDocumento: 'DNI',
@@ -618,6 +620,11 @@ export class ClientesComponent {
       ...body,
       addresses: [mainAddress, ...this.extraAddresses()],
     };
+    const id = this.editing()?.id;
+    if (!id) {
+      payload.lpdpConsentAccepted = this.lpdpConsentAccepted();
+      payload.lpdpConsentVersion = '2026-06-11';
+    }
 
     const validation = await this.validateCustomerPayload(payload);
     if (validation.length) {
@@ -625,7 +632,6 @@ export class ClientesComponent {
       return;
     }
 
-    const id = this.editing()?.id;
     this.saveMutation.mutate({ id, body: payload });
   }
 
@@ -681,6 +687,15 @@ export class ClientesComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo consultar el RUC')),
   }));
 
+  protected readonly dniConsultMutation = injectMutation(() => ({
+    mutationFn: (dni: string) => firstValueFrom(this.api.validateBillingDni(dni)),
+    onSuccess: (data) => {
+      this.updateFormField('nombre', data.nombre);
+      this.notify.success('DNI validado en RENIEC');
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo consultar el DNI')),
+  }));
+
   protected consultSunatRuc() {
     if (this.form().tipoDocumento !== 'RUC') {
       this.notify.warning('La consulta SUNAT aplica solo a RUC');
@@ -692,6 +707,40 @@ export class ClientesComponent {
       return;
     }
     this.rucConsultMutation.mutate(ruc);
+  }
+
+  protected consultReniecDni() {
+    if (this.form().tipoDocumento !== 'DNI') {
+      this.notify.warning('La consulta RENIEC aplica solo a DNI');
+      return;
+    }
+    const dni = this.form().numeroDocumento.trim();
+    if (!/^\d{8}$/.test(dni)) {
+      this.notify.warning('Ingrese un DNI válido de 8 dígitos');
+      return;
+    }
+    this.dniConsultMutation.mutate(dni);
+  }
+
+  protected canConsultDocument(): boolean {
+    const tipo = this.form().tipoDocumento;
+    const doc = this.form().numeroDocumento.trim();
+    if (tipo === 'RUC') return /^\d{11}$/.test(doc);
+    if (tipo === 'DNI') return /^\d{8}$/.test(doc);
+    return false;
+  }
+
+  protected consultDocumentLabel(): string {
+    return this.form().tipoDocumento === 'DNI' ? 'Consultar RENIEC' : 'Consultar SUNAT';
+  }
+
+  protected consultDocument() {
+    if (this.form().tipoDocumento === 'DNI') this.consultReniecDni();
+    else this.consultSunatRuc();
+  }
+
+  protected isDocumentConsultPending(): boolean {
+    return this.rucConsultMutation.isPending() || this.dniConsultMutation.isPending();
   }
 
   protected canConsultRuc(): boolean {
@@ -940,6 +989,7 @@ export class ClientesComponent {
     this.districtId.set('');
     this.extraAddress.set({ pais: 'PERU' });
     this.extraAddresses.set([]);
+    this.lpdpConsentAccepted.set(false);
     this.form.set({
       nombre: '',
       nombreComercial: '',
