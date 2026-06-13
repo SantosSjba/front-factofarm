@@ -314,6 +314,15 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Promociones',
       },
       {
+        path: 'convenios-seguros',
+        ...guarded(P.convenios),
+        loadComponent: () =>
+          import('./pages/convenios-seguros/convenios-seguros.component').then(
+            (m) => m.ConveniosSegurosComponent,
+          ),
+        title: 'FactoFarm | Convenios',
+      },
+      {
         path: 'inventario-movimientos',
         ...guarded(P.inventarioMovimientos),
         loadComponent: () =>
@@ -582,6 +591,15 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Balance',
       },
       {
+        path: 'conciliacion-bancaria',
+        ...guarded(P.conciliacionBancaria),
+        loadComponent: () =>
+          import('./pages/conciliacion-bancaria/conciliacion-bancaria.component').then(
+            (m) => m.ConciliacionBancariaComponent,
+          ),
+        title: 'FactoFarm | Conciliación bancaria',
+      },
+      {
         path: 'ingresos-egresos-medio-pago',
         ...guarded(P.ingresosEgresosMedioPago),
         loadComponent: () =>
@@ -637,6 +655,15 @@ export const adminRoutes: Routes = [
             './pages/recepcion-productos-farmaceuticos/recepcion-productos-farmaceuticos.component'
           ).then((m) => m.RecepcionProductosFarmaceuticosComponent),
         title: 'FactoFarm | Recepción productos farmacéuticos',
+      },
+      {
+        path: 'hospital-dispensacion',
+        ...guarded(P.hospitalDispensacion),
+        loadComponent: () =>
+          import('./pages/hospital-dispensacion/hospital-dispensacion.component').then(
+            (m) => m.HospitalDispensacionComponent,
+          ),
+        title: 'FactoFarm | Dispensación hospitalaria',
       },
     ],
   },

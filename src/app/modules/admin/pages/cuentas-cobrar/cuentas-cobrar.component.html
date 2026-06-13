@@ -1,0 +1,66 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Cuentas por cobrar</h1>
+</app-page-toolbar>
+
+@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+
+<app-component-card title="Documentos pendientes" className="mt-4"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay documentos pendientes"
+  (retry)="listQuery.refetch()">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b text-xs uppercase text-gray-500">
+      <tr>
+        <th class="px-3 py-2">Documento</th>
+        <th class="px-3 py-2">Cliente</th>
+        <th class="px-3 py-2">Convenio</th>
+        <th class="px-3 py-2">Emisión</th>
+        <th class="px-3 py-2">Vencimiento</th>
+        <th class="px-3 py-2">Estado</th>
+        <th class="px-3 py-2 text-right">Saldo</th>
+        <th class="px-3 py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of listQuery.data()?.items ?? []; track row.id) {
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="px-3 py-2">{{ row.documentoRef ?? (row.sale ? row.sale.serie + '-' + row.sale.numero : '—') }}</td>
+          <td class="px-3 py-2">{{ row.customer.nombre }}</td>
+          <td class="px-3 py-2">{{ row.agreement?.nombre ?? '—' }}</td>
+          <td class="px-3 py-2">{{ row.fechaEmision | date: 'shortDate' }}</td>
+          <td class="px-3 py-2">{{ row.fechaVencimiento | date: 'shortDate' }}</td>
+          <td class="px-3 py-2">{{ row.estado }}</td>
+          <td class="px-3 py-2 text-right font-medium">{{ row.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+          <td class="px-3 py-2 text-right">
+            @if (row.estado !== 'PAGADA' && row.estado !== 'ANULADA') {
+              <button type="button" class="text-brand-600 hover:underline" (click)="openPay(row)">Cobrar</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (listQuery.data(); as data) {
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="20" (currentPageChange)="page.set($event)" />
+  }
+</app-component-card>
+
+<app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-md">
+  <div class="space-y-4 p-6">
+    <h3 class="text-lg font-semibold">Registrar cobro</h3>
+    @if (selectedAr(); as ar) {
+      <p class="text-sm text-gray-600 dark:text-gray-400">{{ ar.customer.nombre }} · Saldo: {{ ar.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+    }
+    <app-input-field type="number" [value]="payAmount()" (valueChange)="payAmount.set(parseNum($event))" placeholder="Monto" />
+    <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Método" />
+    <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" placeholder="Referencia" />
+    <app-button variant="primary" [disabled]="payMutation.isPending()" (btnClick)="payMutation.mutate()">Confirmar cobro</app-button>
+  </div>
+</app-modal>

@@ -114,6 +114,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       },
       { name: 'Cotizaciones', path: '/cotizaciones', permissionCode: 'nav.cotizaciones' },
       { name: 'Promociones y cupones', path: '/promociones-campanas', permissionCode: 'nav.promociones' },
+      { name: 'Convenios y seguros', path: '/convenios-seguros', permissionCode: 'nav.convenios' },
     ],
   },
   {
@@ -235,6 +236,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       { name: 'Pagos', path: '/pagos', permissionCode: 'nav.pagos' },
       { name: 'Balance', path: '/balance', permissionCode: 'nav.balance' },
       {
+        name: 'Conciliación bancaria',
+        path: '/conciliacion-bancaria',
+        permissionCode: 'nav.conciliacion_bancaria',
+      },
+      {
         name: 'Ingresos y Egresos M. pago',
         path: '/ingresos-egresos-medio-pago',
         permissionCode: 'nav.ingresos_egresos_medio_pago',
@@ -258,6 +264,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
         name: 'Recepcion de productos farmaceuticos',
         path: '/recepcion-productos-farmaceuticos',
         permissionCode: 'nav.recepcion_productos_farmaceuticos',
+      },
+      {
+        name: 'Dispensación hospitalaria',
+        path: '/hospital-dispensacion',
+        permissionCode: 'nav.hospital_dispensacion',
       },
     ],
   },

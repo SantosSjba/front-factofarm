@@ -185,6 +185,16 @@ import type {
   CreatePromotionRequest,
   CustomerLoyaltyHistoryDto,
   CustomerPurchaseRecommendationsDto,
+  AgreementListItemDto,
+  CreateAgreementRequest,
+  AccountReceivableListItemDto,
+  CashFlowReportDto,
+  MarginReportDto,
+  BankAccountDto,
+  BankMovementListItemDto,
+  HospitalAreaListItemDto,
+  HospitalAreaType,
+  HospitalConsumptionListItemDto,
   CreateSalePaymentRequest,
   OpenCashSessionRequest,
   CloseCashSessionRequest,
@@ -1988,5 +1998,115 @@ export class DirectoryApiService {
 
   fileDownloadUrl(fileId: string) {
     return `${this.base}/files/${fileId}`;
+  }
+
+  listAgreements(filters?: { page?: number; pageSize?: number; search?: string }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.search) params['search'] = filters.search;
+    return this.http.get<PaginatedResponseDto<AgreementListItemDto>>(`${this.base}/agreements`, { params });
+  }
+
+  createAgreement(body: CreateAgreementRequest) {
+    return this.http.post<AgreementListItemDto>(`${this.base}/agreements`, body);
+  }
+
+  deleteAgreement(id: string) {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/agreements/${id}`);
+  }
+
+  generateAgreementMonthlyBilling(id: string, periodo: string) {
+    return this.http.post<{ id: string; periodo: string; totalCobertura: string }>(
+      `${this.base}/agreements/${id}/monthly-billing`,
+      { periodo },
+    );
+  }
+
+  listAccountsReceivable(filters?: { page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<AccountReceivableListItemDto>>(
+      `${this.base}/accounts-receivable`,
+      { params },
+    );
+  }
+
+  registerAccountReceivablePayment(id: string, body: { amount: number; metodo?: string; referencia?: string }) {
+    return this.http.post<{ ok: boolean; saldo: string }>(
+      `${this.base}/accounts-receivable/${id}/payments`,
+      body,
+    );
+  }
+
+  getCashFlow(from: string, to: string) {
+    return this.http.get<CashFlowReportDto>(`${this.base}/finance/cash-flow`, {
+      params: { from, to },
+    });
+  }
+
+  getMarginReport(from: string, to: string) {
+    return this.http.get<MarginReportDto>(`${this.base}/finance/margin-report`, {
+      params: { from, to },
+    });
+  }
+
+  listBankAccounts() {
+    return this.http.get<BankAccountDto[]>(`${this.base}/finance/bank-accounts`);
+  }
+
+  listBankMovements(filters?: { page?: number; pageSize?: number; conciliado?: boolean }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.conciliado !== undefined) params['conciliado'] = String(filters.conciliado);
+    return this.http.get<PaginatedResponseDto<BankMovementListItemDto>>(
+      `${this.base}/finance/bank-movements`,
+      { params },
+    );
+  }
+
+  reconcileBankMovements(movementIds: string[]) {
+    return this.http.post<{ ok: boolean; reconciled: number }>(
+      `${this.base}/finance/bank-movements/reconcile`,
+      { movementIds },
+    );
+  }
+
+  getPurchaseBudgetVsActual(anio: number) {
+    return this.http.get<{ anio: number; months: Array<{ mes: number; presupuesto: string; actual: string; variacion: string; variacionPorcentaje: string }> }>(
+      `${this.base}/finance/purchase-budgets/vs-actual`,
+      { params: { anio: String(anio) } },
+    );
+  }
+
+  upsertPurchaseBudget(body: { anio: number; mes: number; montoPresupuestado: number; notas?: string }) {
+    return this.http.post<{ id: string }>(`${this.base}/finance/purchase-budgets`, body);
+  }
+
+  listHospitalAreas(filters?: { page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<HospitalAreaListItemDto>>(`${this.base}/hospital/areas`, { params });
+  }
+
+  createHospitalArea(body: { codigo: string; nombre: string; tipo: HospitalAreaType }) {
+    return this.http.post<HospitalAreaListItemDto>(`${this.base}/hospital/areas`, body);
+  }
+
+  listHospitalConsumptions(filters?: { page?: number; pageSize?: number }) {
+    const params: Record<string, string> = {};
+    if (filters?.page) params['page'] = String(filters.page);
+    if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    return this.http.get<PaginatedResponseDto<HospitalConsumptionListItemDto>>(
+      `${this.base}/hospital/consumptions`,
+      { params },
+    );
+  }
+
+  dispenseHospitalConsumption(id: string) {
+    return this.http.patch<{ ok: boolean }>(`${this.base}/hospital/consumptions/${id}/dispense`, {});
   }
 }

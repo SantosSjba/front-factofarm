@@ -2613,3 +2613,122 @@ export interface CustomerPurchaseRecommendationsDto {
     qty: number;
   }>;
 }
+
+export type AgreementType = 'EPS' | 'CLINICA' | 'EMPRESA' | 'HOSPITAL' | 'SEGURO';
+export type HospitalAreaType = 'PABELLON' | 'SERVICIO' | 'CARRO_PARO' | 'BOTIQUIN';
+
+export interface AgreementListItemDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: AgreementType;
+  institucionTipo: string | null;
+  coberturaPorcentaje: string;
+  diasCredito: number;
+  activo: boolean;
+  createdAt: string;
+}
+
+export interface CreateAgreementRequest {
+  codigo: string;
+  nombre: string;
+  tipo: AgreementType;
+  institucionTipo?: string;
+  coberturaPorcentaje?: number;
+  diasCredito?: number;
+  contactoNombre?: string;
+  contactoEmail?: string;
+  contactoTelefono?: string;
+  notas?: string;
+}
+
+export interface AccountReceivableListItemDto {
+  id: string;
+  documentoRef: string | null;
+  montoTotal: string;
+  montoPagado: string;
+  saldo: string;
+  fechaEmision: string;
+  fechaVencimiento: string | null;
+  estado: string;
+  customer: { id: string; nombre: string; numeroDocumento: string };
+  agreement: { id: string; codigo: string; nombre: string } | null;
+  sale: { id: string; serie: string | null; numero: string | null } | null;
+}
+
+export interface CashFlowReportDto {
+  from: string;
+  to: string;
+  ingresos: { ventas: string; ventasCount: number; cobrosClientes: string; cobrosCount: number };
+  egresos: {
+    compras: string;
+    comprasCount: number;
+    pagosProveedores: string;
+    pagosProveedoresCount: number;
+  };
+  caja: { movimientosTotal: string; movimientosCount: number };
+  flujoNeto: string;
+}
+
+export interface MarginReportDto {
+  ventaTotal: string;
+  costoTotal: string;
+  margen: string;
+  margenPorcentaje: string;
+  topProducts: Array<{
+    productId: string;
+    nombre: string;
+    venta: string;
+    costo: string;
+    margen: string;
+  }>;
+}
+
+export interface BankAccountDto {
+  id: string;
+  nombre: string;
+  tipo: string;
+  banco: string | null;
+  numeroCuenta: string | null;
+  saldoLibro: string;
+  activo: boolean;
+}
+
+export interface BankMovementListItemDto {
+  id: string;
+  bankAccountId: string;
+  bankAccount: { id: string; nombre: string };
+  tipo: string;
+  monto: string;
+  referencia: string | null;
+  descripcion: string | null;
+  conciliado: boolean;
+  conciliadoAt: string | null;
+  movimientoAt: string;
+}
+
+export interface HospitalAreaListItemDto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: HospitalAreaType;
+  activo: boolean;
+}
+
+export interface HospitalConsumptionListItemDto {
+  id: string;
+  estado: string;
+  motivo: string | null;
+  comentario: string | null;
+  dispensadoAt: string | null;
+  createdAt: string;
+  hospitalArea: { id: string; codigo: string; nombre: string; tipo: HospitalAreaType };
+  solicitadoPor: { id: string; nombre: string };
+  items: Array<{
+    id: string;
+    productId: string;
+    cantidad: string;
+    notas: string | null;
+    product: { id: string; nombre: string };
+  }>;
+}

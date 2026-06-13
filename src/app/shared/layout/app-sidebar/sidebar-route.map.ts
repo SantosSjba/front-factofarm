@@ -28,6 +28,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.anulaciones': { path: '/anulaciones' },
   'nav.cotizaciones': { path: '/cotizaciones' },
   'nav.promociones': { path: '/promociones-campanas' },
+  'nav.convenios': { path: '/convenios-seguros' },
   'nav.inventario_movimientos': { path: '/inventario-movimientos' },
   'nav.traslados': { path: '/traslados' },
   'nav.devolucion_retiro': { path: '/devolucion-retiro' },
@@ -61,6 +62,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.cuentas_pagar': { path: '/cuentas-pagar' },
   'nav.pagos': { path: '/pagos' },
   'nav.balance': { path: '/balance' },
+  'nav.conciliacion_bancaria': { path: '/conciliacion-bancaria' },
   'nav.ingresos_egresos_medio_pago': { path: '/ingresos-egresos-medio-pago' },
   'nav.reporte_digemid': { path: '/reporte-digemid' },
   'nav.recetas': { path: '/recetas' },
@@ -68,4 +70,5 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.cie_10': { path: '/cie-10' },
   'nav.reporte_psicotropicos': { path: '/reporte-psicotropicos-estupefacientes' },
   'nav.recepcion_productos_farmaceuticos': { path: '/recepcion-productos-farmaceuticos' },
+  'nav.hospital_dispensacion': { path: '/hospital-dispensacion' },
 };
