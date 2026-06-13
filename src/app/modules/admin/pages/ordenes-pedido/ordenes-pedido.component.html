@@ -120,7 +120,7 @@
           }
           <app-button variant="outline" (btnClick)="completeSale(order)">Cobrar y entregar</app-button>
         </div>
-        <div class="grid gap-2 sm:grid-cols-2">
+        <div class="ff-form-row">
           <app-form-select
             [options]="userOptions()"
             [value]="assignUserId()"
@@ -199,21 +199,25 @@
     <div class="sm:col-span-2 flex gap-2">
       <app-input-field
         class="flex-1"
-        placeholder="Buscar producto"
+        placeholder="Filtrar producto"
         [value]="productSearch()"
         (valueChange)="productSearch.set('' + $event)"
       />
       <app-button variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
-    @if (catalog().length) {
-      <div class="sm:col-span-2 max-h-40 overflow-auto rounded border p-2">
+    <div class="sm:col-span-2 max-h-40 overflow-auto rounded border p-2 dark:border-gray-700">
+      @if (!warehouseId()) {
+        <p class="py-3 text-center text-sm text-gray-500">Seleccione un almacén</p>
+      } @else if (catalog().length === 0) {
+        <p class="py-3 text-center text-sm text-gray-500">No hay productos con stock</p>
+      } @else {
         @for (item of catalog(); track item.id) {
-          <button type="button" class="block w-full text-left py-1 hover:text-brand-600" (click)="addLine(item)">
+          <button type="button" class="block w-full text-left py-1.5 hover:text-brand-600" (click)="addLine(item)">
             {{ item.nombre }} — S/ {{ item.precio }}
           </button>
         }
-      </div>
-    }
+      }
+    </div>
     @if (lines().length) {
       <ul class="sm:col-span-2 divide-y text-sm">
         @for (line of lines(); track line.productId) {

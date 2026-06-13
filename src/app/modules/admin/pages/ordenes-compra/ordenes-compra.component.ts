@@ -1,6 +1,6 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -119,10 +119,20 @@ export class OrdenesCompraComponent {
     this.lines().reduce((acc, l) => acc + (l.unitPrice ?? 0) * l.quantity, 0),
   );
 
+  constructor() {
+    effect((onCleanup) => {
+      if (!this.createOpen() || !this.warehouseId()) return;
+      const term = this.search().trim();
+      const timer = setTimeout(() => void this.searchProducts(), term ? 350 : 0);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
+
   protected async searchProducts() {
     if (!this.warehouseId()) return;
     try {
-      const rows = await firstValueFrom(this.api.getPosCatalog(this.warehouseId(), this.search()));
+      const term = this.search().trim();
+      const rows = await firstValueFrom(this.api.getPosCatalog(this.warehouseId(), term || undefined));
       this.catalog.set(rows);
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'Error al buscar productos'));
@@ -142,8 +152,8 @@ export class OrdenesCompraComponent {
         { productId: item.id, nombre: item.nombre, quantity: 1, unitPrice: price },
       ]);
     }
-    this.catalog.set([]);
     this.search.set('');
+    void this.searchProducts();
   }
 
   protected openDetail(id: string) {

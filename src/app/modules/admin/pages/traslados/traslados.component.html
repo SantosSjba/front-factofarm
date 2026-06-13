@@ -11,19 +11,15 @@
   </div>
 </app-page-toolbar>
 
-<div class="mb-4">
-  <label class="text-theme-sm text-gray-600">Estado</label>
-  <select
-    class="mt-1 block max-w-xs rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
+<div class="mb-4 max-w-xs">
+  <app-label>Estado</app-label>
+  <app-form-select
+    className="mt-1"
+    placeholder="Todos"
+    [options]="estadoFilterOptions"
     [value]="estadoFilter()"
-    (change)="onEstadoChange($any($event.target).value)"
-  >
-    <option value="">Todos</option>
-    <option value="BORRADOR">Borrador</option>
-    <option value="EN_TRANSITO">En tránsito</option>
-    <option value="RECIBIDO">Recibido</option>
-    <option value="ANULADO">Anulado</option>
-  </select>
+    (valueChange)="onEstadoChange($event)"
+  />
 </div>
 
 @let listState = transfersQuery | queryPageState: totalRows();

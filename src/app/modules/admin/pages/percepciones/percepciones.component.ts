@@ -8,6 +8,8 @@ import { BreadcrumbInlineComponent } from '../../../../shared/components/common/
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { SunatWithholdingRateDto } from '../../models/directory.models';
 
@@ -19,6 +21,8 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormSelectComponent,
+    LabelComponent,
     DatePipe,
   ],
   template: `
@@ -38,17 +42,13 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
         <app-input-field placeholder="Número comprobante ref." [value]="refNumero()" (valueChange)="refNumero.set($event + '')" />
         <app-input-field placeholder="Base imponible" [value]="baseImponible()" (valueChange)="onBaseChange($event + '')" />
         <div>
-          <label class="mb-1 block text-sm text-gray-600">Régimen</label>
-          <select
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          <app-label>Régimen</app-label>
+          <app-form-select
+            placeholder="Seleccione tasa"
+            [options]="regimenOptions()"
             [value]="regimenCodigo()"
-            (change)="onRegimenChange($any($event.target).value)"
-          >
-            <option value="">Seleccione tasa</option>
-            @for (rate of perceptionRateRows; track rate.codigo) {
-              <option [value]="rate.codigo">{{ rate.nombre }} ({{ rate.tasa }}%)</option>
-            }
-          </select>
+            (valueChange)="onRegimenChange($event)"
+          />
         </div>
         <app-input-field placeholder="Monto calculado" [value]="montoCalculado()" [disabled]="true" />
         <app-button class="mt-6" [disabled]="createMutation.isPending()" (btnClick)="emitPerception()">
@@ -119,6 +119,13 @@ export class PercepcionesComponent {
 
   protected readonly perceptionRates = computed(
     () => this.ratesQuery.data() ?? ([] as SunatWithholdingRateDto[]),
+  );
+
+  protected readonly regimenOptions = computed(() =>
+    this.perceptionRates().map((rate) => ({
+      value: rate.codigo,
+      label: `${rate.nombre} (${rate.tasa}%)`,
+    })),
   );
 
   protected readonly records = computed(() => this.recordsQuery.data() ?? []);

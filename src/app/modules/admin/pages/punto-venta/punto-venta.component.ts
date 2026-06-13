@@ -16,6 +16,10 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { FormRowComponent } from '../../../../shared/components/form/form-row/form-row.component';
+import { FormStackComponent } from '../../../../shared/components/form/form-stack/form-stack.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -82,6 +86,10 @@ const DOC_OPTIONS: { value: SaleDocumentType; label: string }[] = [
     CurrencyPipe,
     ButtonComponent,
     FormSelectComponent,
+    FormFieldComponent,
+    FormRowComponent,
+    FormStackComponent,
+    LabelComponent,
     InputFieldComponent,
     ModalComponent,
     PageStateComponent,
@@ -116,6 +124,7 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly customerOptions = signal<CustomerItemDto[]>([]);
   protected readonly search = signal('');
   protected readonly catalog = signal<PosCatalogItemDto[]>([]);
+  protected readonly catalogLoading = signal(false);
   protected readonly cart = signal<CartLine[]>([]);
   protected readonly prescriptionValidated = signal(false);
   protected readonly prescriptionId = signal('');
@@ -144,6 +153,7 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly offlinePending = computed(() => this.offlineQueue.pendingCount());
 
   private interactionTimer: ReturnType<typeof setTimeout> | null = null;
+  private catalogLoadTimer: ReturnType<typeof setTimeout> | null = null;
   private sunatPollTimer: ReturnType<typeof setInterval> | null = null;
 
   protected readonly warehousesQuery = injectQuery(() => ({
@@ -189,6 +199,12 @@ export class PuntoVentaComponent implements OnDestroy {
     { value: '', label: 'Farmacéutico autorizador…' },
     ...this.pharmaApprovers().map((u) => ({ value: u.id, label: u.nombre })),
   ]);
+  protected readonly prescriptionOptions = computed(() =>
+    this.patientPrescriptions().map((rx) => ({
+      value: rx.id,
+      label: `${rx.numero} · ${rx.estado} · ${rx.medicoNombre ?? 'Sin médico'}`,
+    })),
+  );
   protected readonly hasGraveInteractions = computed(() =>
     this.interactionAlerts().some((a) => a.severidad === 'GRAVE'),
   );
@@ -221,8 +237,11 @@ export class PuntoVentaComponent implements OnDestroy {
       onStockUpdated: (payload) => {
         const wh = this.warehouseId();
         if (wh && payload.warehouseId === wh) {
-          this.catalog.set([]);
+          void this.loadCatalog(false);
         }
+      },
+      onSaleCompleted: () => {
+        void this.loadCatalog(false);
       },
       onBillingStatus: (payload) => {
         const last = this.lastSale();
@@ -245,6 +264,31 @@ export class PuntoVentaComponent implements OnDestroy {
     void this.offlineQueue.refreshCount();
     window.addEventListener('online', this.onOnline);
     window.addEventListener('offline', this.onOffline);
+
+    effect(() => {
+      const warehouses = this.warehousesQuery.data();
+      if (!warehouses?.length || this.warehouseId()) return;
+      this.warehouseId.set(warehouses[0]!.id);
+    });
+
+    effect((onCleanup) => {
+      const wh = this.warehouseId();
+      const term = this.search().trim();
+      if (!wh) {
+        this.catalog.set([]);
+        return;
+      }
+      if (this.catalogLoadTimer) clearTimeout(this.catalogLoadTimer);
+      this.catalogLoadTimer = setTimeout(() => {
+        void this.loadCatalog(false);
+      }, term ? 350 : 0);
+      onCleanup(() => {
+        if (this.catalogLoadTimer) {
+          clearTimeout(this.catalogLoadTimer);
+          this.catalogLoadTimer = null;
+        }
+      });
+    });
 
     effect(() => {
       const session = this.cashSession();
@@ -297,6 +341,7 @@ export class PuntoVentaComponent implements OnDestroy {
     window.removeEventListener('online', this.onOnline);
     window.removeEventListener('offline', this.onOffline);
     if (this.interactionTimer) clearTimeout(this.interactionTimer);
+    if (this.catalogLoadTimer) clearTimeout(this.catalogLoadTimer);
     if (this.sunatPollTimer) clearInterval(this.sunatPollTimer);
   }
 
@@ -308,7 +353,7 @@ export class PuntoVentaComponent implements OnDestroy {
     }
     if (event.key === 'F2' && this.cart().length > 0) {
       event.preventDefault();
-      this.openPayModal();
+      void this.openPayModal();
     }
     if (event.key === 'F4') {
       event.preventDefault();
@@ -317,17 +362,18 @@ export class PuntoVentaComponent implements OnDestroy {
     }
   }
 
-  protected async runSearch() {
+  protected async loadCatalog(explicit = false) {
     const wh = this.warehouseId();
     if (!wh) {
-      this.notify.warning('Seleccione un almacén');
+      if (explicit) this.notify.warning('Seleccione un almacén');
       return;
     }
+    this.catalogLoading.set(true);
     try {
       const term = this.search().trim();
-      const rows = await firstValueFrom(this.api.getPosCatalog(wh, term));
+      const rows = await firstValueFrom(this.api.getPosCatalog(wh, term || undefined));
       const wedgeEnabled = this.cashSession()?.cashRegister?.barcodeWedgeEnabled ?? false;
-      if (wedgeEnabled && term) {
+      if (explicit && wedgeEnabled && term) {
         const normalized = term.toLowerCase();
         const exact = rows.filter(
           (r) =>
@@ -340,10 +386,17 @@ export class PuntoVentaComponent implements OnDestroy {
         }
       }
       this.catalog.set(rows);
-      if (rows.length === 0) this.notify.info('Sin resultados');
+      if (explicit && rows.length === 0) this.notify.info('Sin resultados');
     } catch (err) {
-      this.notify.error(httpErrorMessage(err, 'Error al buscar productos'));
+      this.catalog.set([]);
+      this.notify.error(httpErrorMessage(err, 'Error al cargar productos'));
+    } finally {
+      this.catalogLoading.set(false);
     }
+  }
+
+  protected runSearch() {
+    void this.loadCatalog(true);
   }
 
   protected async searchCustomers() {
@@ -385,10 +438,18 @@ export class PuntoVentaComponent implements OnDestroy {
   protected addToCart(item: PosCatalogItemDto) {
     const price = Number.parseFloat(item.precio);
     const stock = Number.parseFloat(item.stock);
+    if (stock <= 0) {
+      this.notify.warning(
+        item.manejaLotes
+          ? 'Sin stock vendible en lotes elegibles (revise vencimientos o lotes registrados)'
+          : 'Sin stock disponible',
+      );
+      return;
+    }
     const existing = this.cart().find((l) => l.productId === item.id);
     const nextQty = (existing?.quantity ?? 0) + 1;
     if (nextQty > stock) {
-      this.notify.warning(`Stock insuficiente (${item.stock})`);
+      this.notify.warning(`Stock insuficiente (disponible: ${stock})`);
       return;
     }
     if (existing) {
@@ -413,16 +474,24 @@ export class PuntoVentaComponent implements OnDestroy {
       ]);
     }
     this.search.set('');
-    this.catalog.set([]);
     this.searchInput()?.nativeElement.focus();
+    void this.loadCatalog(false);
   }
 
   protected updateQty(productId: string, delta: number) {
+    const catalogItem = this.catalog().find((p) => p.id === productId);
+    const maxStock = catalogItem ? Number.parseFloat(catalogItem.stock) : Number.POSITIVE_INFINITY;
     this.cart.update((lines) =>
       lines
-        .map((l) =>
-          l.productId === productId ? { ...l, quantity: Math.max(0, l.quantity + delta) } : l,
-        )
+        .map((l) => {
+          if (l.productId !== productId) return l;
+          const nextQty = Math.max(0, l.quantity + delta);
+          if (nextQty > maxStock) {
+            this.notify.warning(`Stock insuficiente (${catalogItem?.stock ?? '?'})`);
+            return l;
+          }
+          return { ...l, quantity: nextQty };
+        })
         .filter((l) => l.quantity > 0),
     );
   }
@@ -441,6 +510,35 @@ export class PuntoVentaComponent implements OnDestroy {
     this.comentario.set('');
     this.interactionAlerts.set([]);
     this.interactionsAcknowledged.set(false);
+    void this.loadCatalog(false);
+  }
+
+  protected stockForProduct(productId: string): number | null {
+    const item = this.catalog().find((p) => p.id === productId);
+    return item ? Number.parseFloat(item.stock) : null;
+  }
+
+  protected cartQtyForProduct(productId: string): number {
+    return this.cart().find((l) => l.productId === productId)?.quantity ?? 0;
+  }
+
+  protected validateCartStock(showNotify = true): boolean {
+    for (const line of this.cart()) {
+      const stock = this.stockForProduct(line.productId);
+      if (stock === null) {
+        if (showNotify) {
+          this.notify.warning(`${line.nombre}: ya no tiene stock en este almacén`);
+        }
+        return false;
+      }
+      if (line.quantity > stock) {
+        if (showNotify) {
+          this.notify.warning(`${line.nombre}: stock disponible ${stock}`);
+        }
+        return false;
+      }
+    }
+    return true;
   }
 
   protected acknowledgeInteractions() {
@@ -529,12 +627,14 @@ export class PuntoVentaComponent implements OnDestroy {
     }
   }
 
-  protected openPayModal() {
+  protected async openPayModal() {
     if (!this.warehouseId()) {
       this.notify.warning('Seleccione almacén');
       return;
     }
     if (this.cart().length === 0) return;
+    await this.loadCatalog(false);
+    if (!this.validateCartStock()) return;
     if (this.requiresRx() && !this.prescriptionValidated() && !this.prescriptionId()) {
       this.notify.warning('Seleccione una receta o valide manualmente antes de cobrar');
       return;
@@ -740,6 +840,7 @@ export class PuntoVentaComponent implements OnDestroy {
       }
       this.payModalOpen.set(false);
       this.clearCart();
+      void this.loadCatalog(false);
       const hw = this.cashSession()?.cashRegister;
       if (this.posPrint.shouldAutoPrint(hw)) {
         this.posPrint.printTicket(sale, hw);
@@ -760,7 +861,9 @@ export class PuntoVentaComponent implements OnDestroy {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la venta')),
   }));
 
-  protected confirmSale() {
+  protected async confirmSale() {
+    await this.loadCatalog(false);
+    if (!this.validateCartStock()) return;
     this.saleMutation.mutate();
   }
 

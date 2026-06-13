@@ -15,30 +15,37 @@
       }
     </div>
   }
-  <header class="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:gap-3 sm:px-4 sm:py-3">
-    <div class="w-full min-w-[140px] flex-1 sm:w-auto">
+  <header class="flex flex-wrap items-end gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+    <div class="w-full min-w-[180px] flex-1 sm:max-w-xs">
+      <app-label>Almacén</app-label>
       <app-form-select
+        className="mt-1.5"
         [options]="warehouseOptions()"
         [value]="warehouseId()"
         (valueChange)="warehouseId.set($event)"
       />
     </div>
-    <div class="w-[calc(50%-4px)] min-w-[120px] sm:w-auto sm:min-w-[140px]">
+    <div class="w-full min-w-[140px] sm:w-auto sm:max-w-[180px]">
+      <app-label>Comprobante</app-label>
       <app-form-select
+        className="mt-1.5"
+        [showPlaceholder]="false"
         [options]="docOptions"
         [value]="documentType()"
         (valueChange)="documentType.set($any($event))"
       />
     </div>
-    <div class="w-[calc(50%-4px)] min-w-[100px] sm:w-auto">
+    <div class="w-full min-w-[120px] sm:w-auto sm:max-w-[140px]">
+      <app-label>Serie</app-label>
       <app-input-field
-        placeholder="Serie (opc.)"
+        className="mt-1.5"
+        placeholder="Opcional"
         ariaLabel="Serie del comprobante (opcional)"
         [value]="serie()"
         (valueChange)="serie.set('' + $event)"
       />
     </div>
-    <div class="text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
+    <div class="pb-1 text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
       @if (cashSession(); as session) {
         <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
           {{ session.cashRegister.nombre }}
@@ -152,8 +159,8 @@
           #searchInput
           type="search"
           class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-          placeholder="Código, nombre o barras…"
-          aria-label="Buscar producto por código, nombre o barras"
+          placeholder="Filtrar por código, nombre o barras…"
+          aria-label="Filtrar productos por código, nombre o barras"
           autocomplete="off"
           [value]="search()"
           (input)="search.set($any($event.target).value)"
@@ -161,6 +168,18 @@
         />
         <app-button variant="primary" (btnClick)="runSearch()">Buscar</app-button>
       </div>
+
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        @if (catalogLoading()) {
+          Cargando productos con stock…
+        } @else if (catalog().length > 0) {
+          {{ catalog().length }} producto(s) disponible(s) · escriba para filtrar
+        } @else if (warehouseId()) {
+          No hay productos con stock en este almacén
+        } @else {
+          Seleccione un almacén para ver el catálogo
+        }
+      </p>
 
       <div class="mt-3 max-h-[40vh] overflow-auto rounded-xl border border-gray-100 md:max-h-[50vh] dark:border-gray-800">
         <table class="w-full text-left text-sm">
@@ -179,16 +198,32 @@
                 <td class="px-2 py-2 font-medium sm:px-3">
                   {{ item.nombre }}
                   @if (item.necesitaRecetaMedica) { <span class="text-xs text-rose-600">Rx</span> }
+                  @if (item.manejaLotes) { <span class="text-xs text-sky-600">Lote</span> }
                 </td>
                 <td class="hidden px-2 py-2 text-gray-500 sm:table-cell sm:px-3">{{ item.codigoInterno ?? '—' }}</td>
-                <td class="px-2 py-2 text-right sm:px-3">{{ item.stock }}</td>
+                <td class="px-2 py-2 text-right sm:px-3">
+                  {{ item.stock }}
+                  @if (cartQtyForProduct(item.id) > 0) {
+                    <span class="block text-xs text-gray-400">−{{ cartQtyForProduct(item.id) }} carrito</span>
+                  }
+                </td>
                 <td class="px-2 py-2 text-right sm:px-3">{{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
                 <td class="px-2 py-2 text-right sm:px-3">
                   <button type="button" class="rounded-lg bg-brand-500 px-2 py-1 text-xs text-white" (click)="addToCart(item)">+</button>
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="px-3 py-8 text-center text-gray-500">Busque productos</td></tr>
+              <tr>
+                <td colspan="5" class="px-3 py-8 text-center text-gray-500">
+                  @if (catalogLoading()) {
+                    Cargando productos…
+                  } @else if (!warehouseId()) {
+                    Seleccione un almacén
+                  } @else {
+                    No hay productos con stock disponibles
+                  }
+                </td>
+              </tr>
             }
           </tbody>
         </table>
@@ -243,17 +278,14 @@
       @if (requiresRx()) {
         <div class="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm dark:border-rose-900 dark:bg-rose-900/20">
           @if (patientPrescriptions().length > 0) {
-            <label class="mb-2 block text-xs font-medium text-rose-800">Receta del paciente</label>
-            <select
-              class="mb-2 w-full rounded border border-rose-200 px-2 py-1 text-sm"
+            <app-label>Receta del paciente</app-label>
+            <app-form-select
+              className="mb-2"
+              placeholder="Seleccionar receta activa…"
+              [options]="prescriptionOptions()"
               [value]="prescriptionId()"
-              (change)="onPrescriptionSelected($any($event.target).value)"
-            >
-              <option value="">Seleccionar receta activa…</option>
-              @for (rx of patientPrescriptions(); track rx.id) {
-                <option [value]="rx.id">{{ rx.numero }} · {{ rx.estado }} · {{ rx.medicoNombre ?? 'Sin médico' }}</option>
-              }
-            </select>
+              (valueChange)="onPrescriptionSelected($event)"
+            />
           }
           <label class="flex items-center gap-2">
             <input type="checkbox" [checked]="prescriptionValidated()" (change)="prescriptionValidated.set($any($event.target).checked)" />
@@ -302,9 +334,9 @@
 </div>
 
 <app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-xl">
-  <div class="space-y-4 p-6">
+  <app-form-stack className="p-6">
     <h3 class="text-lg font-semibold">Cobrar venta</h3>
-    <div class="space-y-1 text-sm">
+    <div class="space-y-2 text-sm">
       <div class="flex justify-between"><span>Subtotal</span><span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between"><span>IGV</span><span>{{ cartIgv() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between text-lg font-bold"><span>Total</span><span>{{ cartTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
@@ -335,62 +367,73 @@
       </div>
     }
 
-    <div class="space-y-3">
-      <div class="flex items-center justify-between">
-        <h4 class="text-sm font-medium text-gray-700">Medios de pago</h4>
+    <div>
+      <div class="mb-4 flex items-center justify-between">
+        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Medios de pago</h4>
         <app-button size="sm" variant="outline" (btnClick)="addPaymentLine()">+ Otro medio</app-button>
       </div>
-      @for (line of paymentLineRows; track line.localId) {
-        <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-          <div class="grid gap-2 sm:grid-cols-2">
-            <app-form-select
-              [options]="paymentOptions"
-              [value]="line.metodo"
-              (valueChange)="updatePaymentLine(line.localId, { metodo: $any($event) })"
-            />
-            <app-input-field
-              type="number"
-              placeholder="Monto"
-              [value]="line.monto"
-              (valueChange)="updatePaymentLine(line.localId, { monto: +$event })"
-            />
-          </div>
-          @if (requiresPaymentReference(line.metodo)) {
-            <app-input-field
-              class="mt-2"
-              placeholder="Código / N° operación"
-              [value]="line.referencia"
-              (valueChange)="updatePaymentLine(line.localId, { referencia: '' + $event })"
-            />
-          }
-          <div class="mt-2 flex gap-2">
-            @if (paymentRemaining() > 0) {
-              <button type="button" class="text-xs text-brand-600 hover:underline" (click)="fillRemaining(line.localId)">
-                Completar saldo
-              </button>
+      <app-form-stack>
+        @for (line of paymentLineRows; track line.localId) {
+          <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+            <app-form-row>
+              <app-form-field label="Medio de pago">
+                <app-form-select
+                  [showPlaceholder]="false"
+                  [options]="paymentOptions"
+                  [value]="line.metodo"
+                  (valueChange)="updatePaymentLine(line.localId, { metodo: $any($event) })"
+                />
+              </app-form-field>
+              <app-form-field label="Monto (S/)">
+                <app-input-field
+                  type="number"
+                  placeholder="0.00"
+                  [value]="line.monto"
+                  (valueChange)="updatePaymentLine(line.localId, { monto: +$event })"
+                />
+              </app-form-field>
+            </app-form-row>
+            @if (requiresPaymentReference(line.metodo)) {
+              <app-form-field label="Código / N° operación" className="mt-4">
+                <app-input-field
+                  placeholder="Ingrese el código de la operación"
+                  [value]="line.referencia"
+                  (valueChange)="updatePaymentLine(line.localId, { referencia: '' + $event })"
+                />
+              </app-form-field>
             }
-            @if (paymentLineRows.length > 1) {
-              <button type="button" class="text-xs text-rose-600 hover:underline" (click)="removePaymentLine(line.localId)">
-                Quitar
-              </button>
-            }
+            <div class="mt-4 flex gap-3">
+              @if (paymentRemaining() > 0) {
+                <button type="button" class="text-xs text-brand-600 hover:underline" (click)="fillRemaining(line.localId)">
+                  Completar saldo
+                </button>
+              }
+              @if (paymentLineRows.length > 1) {
+                <button type="button" class="text-xs text-rose-600 hover:underline" (click)="removePaymentLine(line.localId)">
+                  Quitar
+                </button>
+              }
+            </div>
           </div>
-        </div>
-      }
+        }
+      </app-form-stack>
     </div>
 
-    <app-input-field [value]="promotionCode()" (valueChange)="promotionCode.set('' + $event)" placeholder="Código promoción" />
+    <app-form-field label="Código promoción">
+      <app-input-field [value]="promotionCode()" (valueChange)="promotionCode.set('' + $event)" placeholder="Opcional" />
+    </app-form-field>
     @if (requiresControlled()) {
-      <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-        <p class="mb-2 font-medium text-amber-900">Autorización farmacéutico titular (controlados)</p>
-        <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
+      <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-900/20">
+        <app-form-field label="Autorización farmacéutico titular (controlados)">
+          <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
+        </app-form-field>
       </div>
     }
-    <div class="flex justify-end gap-2">
+    <div class="flex justify-end gap-3 pt-2">
       <app-button variant="outline" (btnClick)="payModalOpen.set(false)">Cancelar</app-button>
       <app-button variant="primary" [disabled]="saleMutation.isPending()" (btnClick)="confirmSale()">Confirmar e imprimir</app-button>
     </div>
-  </div>
+  </app-form-stack>
 </app-modal>
 
 <app-modal [isOpen]="!!lotModalProductId()" (close)="closeLotModal()" className="w-full max-w-lg">

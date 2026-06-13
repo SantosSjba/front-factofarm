@@ -63,18 +63,22 @@
     <app-form-select [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
     <app-form-select [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
     <div class="flex gap-2">
-      <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Buscar producto" />
+      <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />
       <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
-    @if (catalog().length > 0) {
-      <div class="max-h-32 overflow-auto rounded border text-sm dark:border-gray-700">
+    <div class="max-h-40 overflow-auto rounded border text-sm dark:border-gray-700">
+      @if (!warehouseId()) {
+        <p class="px-3 py-4 text-center text-gray-500">Seleccione un almacén</p>
+      } @else if (catalog().length === 0) {
+        <p class="px-3 py-4 text-center text-gray-500">No hay productos con stock</p>
+      } @else {
         @for (item of catalog(); track item.id) {
           <button type="button" class="block w-full border-b px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="addLine(item)">
             {{ item.nombre }} · {{ item.codigoInterno }}
           </button>
         }
-      </div>
-    }
+      }
+    </div>
     @for (line of lines(); track line.productId) {
       <div class="flex justify-between text-sm">
         <span>{{ line.nombre }} × {{ line.quantity }}</span>

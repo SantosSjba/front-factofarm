@@ -1,6 +1,6 @@
 ﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -10,6 +10,8 @@ import { ComponentCardComponent } from '../../../../shared/components/common/com
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { FormStackComponent } from '../../../../shared/components/form/form-stack/form-stack.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -32,6 +34,8 @@ type QuoteLine = { productId: string; nombre: string; quantity: number; precio: 
     ComponentCardComponent,
     PaginationComponent,
     ButtonComponent,
+    FormFieldComponent,
+    FormStackComponent,
     FormSelectComponent,
     InputFieldComponent,
     ModalComponent,
@@ -74,10 +78,20 @@ export class CotizacionesComponent {
     this.lines().reduce((acc, l) => acc + l.precio * l.quantity, 0),
   );
 
+  constructor() {
+    effect((onCleanup) => {
+      if (!this.createOpen() || !this.warehouseId()) return;
+      const term = this.search().trim();
+      const timer = setTimeout(() => void this.searchProducts(), term ? 350 : 0);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
+
   protected async searchProducts() {
     if (!this.warehouseId()) return;
     try {
-      const rows = await firstValueFrom(this.api.getPosCatalog(this.warehouseId(), this.search()));
+      const term = this.search().trim();
+      const rows = await firstValueFrom(this.api.getPosCatalog(this.warehouseId(), term || undefined));
       this.catalog.set(rows);
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'Error al buscar'));

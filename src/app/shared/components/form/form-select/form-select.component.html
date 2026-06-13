@@ -2,14 +2,14 @@
   <select
     [id]="id || null"
     [name]="name || null"
-    [attr.aria-label]="placeholder"
+    [attr.aria-label]="effectivePlaceholder"
     [disabled]="disabled"
     [ngClass]="selectClass"
     [value]="value"
     (change)="onChange($event)"
   >
-    @if (showPlaceholder && placeholder) {
-      <option value="">{{ placeholder }}</option>
+    @if (showPlaceholder && effectivePlaceholder) {
+      <option value="">{{ effectivePlaceholder }}</option>
     }
     @for (opt of renderedOptions; track opt.value) {
       <option [value]="opt.value">{{ opt.label }}</option>

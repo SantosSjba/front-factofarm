@@ -44,16 +44,13 @@
     </div>
     <div>
       <label class="text-theme-sm text-gray-600">Almacén (opcional)</label>
-      <select
-        class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
+      <app-form-select
+        className="mt-1"
+        placeholder="Todos"
+        [options]="warehouseOptions()"
         [value]="warehouseId()"
-        (change)="onWarehouseChange($any($event.target).value)"
-      >
-        <option value="">Todos</option>
-        @for (w of warehousesQuery.data() ?? []; track w.id) {
-          <option [value]="w.id">{{ w.nombre }} — {{ w.establishment.nombre }}</option>
-        }
-      </select>
+        (valueChange)="onWarehouseChange($event)"
+      />
     </div>
     <div>
       <label class="text-theme-sm text-gray-600">Desde</label>

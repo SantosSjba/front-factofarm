@@ -93,6 +93,13 @@ export class TrasladosComponent {
     queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()),
   }));
 
+  protected readonly estadoFilterOptions = [
+    { value: 'BORRADOR', label: 'Borrador' },
+    { value: 'EN_TRANSITO', label: 'En tránsito' },
+    { value: 'RECIBIDO', label: 'Recibido' },
+    { value: 'ANULADO', label: 'Anulado' },
+  ];
+
   protected readonly warehouseOptions = computed(() => [
     { value: '', label: 'Seleccionar' },
     ...(this.warehousesQuery.data() ?? []).map((w) => ({

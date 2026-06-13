@@ -9,6 +9,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { ProductListItemDto } from '../../models/directory.models';
 
@@ -23,6 +24,7 @@ import type { ProductListItemDto } from '../../models/directory.models';
     ComponentCardComponent,
     PaginationComponent,
     ButtonComponent,
+    FormSelectComponent,
   ],
   templateUrl: './reporte-kardex.component.html',
 })
@@ -74,6 +76,13 @@ export class ReporteKardexComponent {
         }),
       ),
   }));
+
+  protected readonly warehouseOptions = computed(() =>
+    (this.warehousesQuery.data() ?? []).map((w) => ({
+      value: w.id,
+      label: `${w.nombre} — ${w.establishment.nombre}`,
+    })),
+  );
 
   protected readonly rows = computed(() => this.kardexQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.kardexQuery.data()?.total ?? 0);

@@ -1728,7 +1728,10 @@ export interface PosCatalogItemDto {
   codigoInterno: string | null;
   codigoBarra: string | null;
   precio: string;
+  /** Stock realmente vendible (lotes elegibles si maneja lotes). */
   stock: string;
+  /** Stock total en almacén (puede diferir si hay lotes vencidos o desincronización). */
+  warehouseStock?: string;
   necesitaRecetaMedica: boolean;
   manejaLotes: boolean;
   esControlado: boolean;

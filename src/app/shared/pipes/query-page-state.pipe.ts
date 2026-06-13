@@ -3,6 +3,8 @@ import { httpErrorMessage } from '../../core/http/http-error-message';
 
 type QueryLike = {
   isPending: () => boolean;
+  isLoading?: () => boolean;
+  isFetching?: () => boolean;
   isError: () => boolean;
   error: unknown;
 };
@@ -13,6 +15,17 @@ export type QueryPageStateView = {
   empty: boolean;
 };
 
+/** Indica si la consulta sigue cargando datos (no confundir con isPending en queries deshabilitadas). */
+export function resolveQueryLoading(query: QueryLike): boolean {
+  if (typeof query.isLoading === 'function') {
+    return query.isLoading();
+  }
+  if (typeof query.isFetching === 'function') {
+    return query.isPending() && query.isFetching();
+  }
+  return query.isPending();
+}
+
 export function mapQueryPageState(
   query: QueryLike | null | undefined,
   itemCount = 0,
@@ -22,7 +35,7 @@ export function mapQueryPageState(
     return { loading: false, error: null, empty: itemCount === 0 };
   }
 
-  const loading = query.isPending();
+  const loading = resolveQueryLoading(query);
   const error = query.isError()
     ? httpErrorMessage(query.error, errorFallback)
     : null;
@@ -34,6 +47,8 @@ export function mapQueryPageState(
 @Pipe({
   name: 'queryPageState',
   standalone: true,
+  /** Debe re-evaluarse cuando la query pasa de pending → success con total 0. */
+  pure: false,
 })
 export class QueryPageStatePipe implements PipeTransform {
   transform(

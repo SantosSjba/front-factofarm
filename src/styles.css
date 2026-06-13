@@ -904,3 +904,17 @@ pre[class*="language-"] {
 pre[class*="language-"].line-numbers {
   padding-left: 2.8em !important;
 }
+
+@layer components {
+  .ff-form-stack {
+    @apply flex flex-col gap-4;
+  }
+
+  .ff-form-row {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+
+  .ff-form-row-3 {
+    @apply grid gap-4 sm:grid-cols-3;
+  }
+}

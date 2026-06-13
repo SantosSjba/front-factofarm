@@ -52,34 +52,42 @@
 </app-component-card>
 
 <app-modal [isOpen]="createOpen()" (close)="createOpen.set(false)" className="w-full max-w-2xl">
-  <div class="space-y-4 p-6">
+  <app-form-stack className="p-6">
     <h3 class="text-lg font-semibold">Nueva cotización</h3>
-    <app-form-select
-      [options]="warehouseOptions()"
-      [value]="warehouseId()"
-      (valueChange)="warehouseId.set($event)"
-    />
-    <div class="flex gap-2">
-      <app-input-field [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Buscar producto" />
+    <app-form-field label="Almacén">
+      <app-form-select
+        [options]="warehouseOptions()"
+        [value]="warehouseId()"
+        (valueChange)="warehouseId.set($event)"
+      />
+    </app-form-field>
+    <div class="flex gap-3">
+      <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />
       <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
-    @if (catalog().length > 0) {
-      <div class="max-h-32 overflow-auto rounded border text-sm">
+    <div class="max-h-40 overflow-auto rounded border text-sm dark:border-gray-700">
+      @if (!warehouseId()) {
+        <p class="px-3 py-4 text-center text-gray-500">Seleccione un almacén</p>
+      } @else if (catalog().length === 0) {
+        <p class="px-3 py-4 text-center text-gray-500">No hay productos con stock</p>
+      } @else {
         @for (item of catalog(); track item.id) {
-          <button type="button" class="block w-full border-b px-3 py-2 text-left hover:bg-gray-50" (click)="addLine(item)">
+          <button type="button" class="block w-full border-b px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="addLine(item)">
             {{ item.nombre }} · {{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}
           </button>
         }
-      </div>
-    }
+      }
+    </div>
     @for (line of lines(); track line.productId) {
       <div class="flex justify-between text-sm">
         <span>{{ line.nombre }} × {{ line.quantity }}</span>
         <span>{{ line.precio * line.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
       </div>
     }
-    <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
-    <div class="flex items-center justify-between">
+    <app-form-field label="Comentario">
+      <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Opcional" />
+    </app-form-field>
+    <div class="flex items-center justify-between pt-2">
       <span class="font-bold">{{ quoteTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
       <app-button
         variant="primary"
@@ -89,5 +97,5 @@
         Guardar
       </app-button>
     </div>
-  </div>
+  </app-form-stack>
 </app-modal>

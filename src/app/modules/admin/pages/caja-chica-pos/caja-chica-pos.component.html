@@ -15,6 +15,8 @@
       <div>
         <app-label>Caja</app-label>
         <app-form-select
+          className="mt-1.5"
+          placeholder="Seleccionar caja"
           [options]="registerOptions()"
           [value]="cashRegisterId()"
           (valueChange)="cashRegisterId.set($event)"
@@ -22,7 +24,7 @@
       </div>
       <div>
         <app-label>Monto inicial (S/)</app-label>
-        <app-input-field type="number" [value]="montoApertura()" (valueChange)="montoApertura.set(+$event)" />
+        <app-input-field className="mt-1.5" type="number" [value]="montoApertura()" (valueChange)="montoApertura.set(+$event)" />
       </div>
       <div class="sm:col-span-2">
         <app-button
@@ -49,50 +51,60 @@
     </app-component-card>
 
     <app-component-card title="Movimiento manual" className="lg:col-span-1">
-      <div class="space-y-3">
-        <app-form-select
-          [options]="[
-            { value: 'INGRESO', label: 'Ingreso' },
-            { value: 'EGRESO', label: 'Egreso' },
-          ]"
-          [value]="movTipo()"
-          (valueChange)="movTipo.set($any($event))"
-        />
-        <app-input-field type="number" [value]="movMonto()" (valueChange)="movMonto.set(+$event)" placeholder="Monto" />
-        <app-input-field [value]="movComentario()" (valueChange)="movComentario.set('' + $event)" placeholder="Comentario" />
+      <app-form-stack>
+        <app-form-field label="Tipo de movimiento">
+          <app-form-select
+            [showPlaceholder]="false"
+            [options]="[
+              { value: 'INGRESO', label: 'Ingreso' },
+              { value: 'EGRESO', label: 'Egreso' },
+            ]"
+            [value]="movTipo()"
+            (valueChange)="movTipo.set($any($event))"
+          />
+        </app-form-field>
+        <app-form-field label="Monto (S/)">
+          <app-input-field type="number" [value]="movMonto()" (valueChange)="movMonto.set(+$event)" placeholder="0.00" />
+        </app-form-field>
+        <app-form-field label="Comentario">
+          <app-input-field [value]="movComentario()" (valueChange)="movComentario.set('' + $event)" placeholder="Opcional" />
+        </app-form-field>
         <app-button variant="primary" [disabled]="movMonto() <= 0" (btnClick)="movementMutation.mutate()">
           Registrar
         </app-button>
-      </div>
+      </app-form-stack>
     </app-component-card>
 
     <app-component-card title="Cierre de caja" className="lg:col-span-1">
-      <div class="space-y-3">
-        <app-input-field type="number" [value]="montoCierre()" (valueChange)="montoCierre.set(+$event)" placeholder="Monto físico contado" />
-        <app-input-field [value]="notasCierre()" (valueChange)="notasCierre.set('' + $event)" placeholder="Notas" />
+      <app-form-stack>
+        <app-form-field label="Monto físico contado (S/)">
+          <app-input-field type="number" [value]="montoCierre()" (valueChange)="montoCierre.set(+$event)" placeholder="0.00" />
+        </app-form-field>
+        <app-form-field label="Notas">
+          <app-input-field [value]="notasCierre()" (valueChange)="notasCierre.set('' + $event)" placeholder="Opcional" />
+        </app-form-field>
         <app-button variant="outline" (btnClick)="closeMutation.mutate()">Cerrar caja</app-button>
-      </div>
+      </app-form-stack>
     </app-component-card>
   </div>
 
   <app-component-card title="Hardware POS (caja activa)" className="mt-4">
     <div class="grid gap-4 lg:grid-cols-2">
-      <div>
-        <app-label>Ancho de papel</app-label>
+      <app-form-field label="Ancho de papel">
         <app-form-select
+          [showPlaceholder]="false"
           [options]="paperWidthOptions"
           [value]="hardwarePaperWidth()"
           (valueChange)="hardwarePaperWidth.set($any($event))"
         />
-      </div>
-      <div>
-        <app-label>Nombre impresora (OS)</app-label>
+      </app-form-field>
+      <app-form-field label="Nombre impresora (OS)">
         <app-input-field
           [value]="hardwarePrinterName()"
           (valueChange)="hardwarePrinterName.set('' + $event)"
           placeholder="Opcional — impresión por navegador"
         />
-      </div>
+      </app-form-field>
       <div class="flex flex-wrap gap-4 text-sm lg:col-span-2">
         <label class="flex items-center gap-2">
           <input type="checkbox" [checked]="hardwareAutoPrint()" (change)="hardwareAutoPrint.set($any($event.target).checked)" />

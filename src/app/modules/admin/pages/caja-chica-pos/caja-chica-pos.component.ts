@@ -8,6 +8,8 @@ import { BreadcrumbInlineComponent } from '../../../../shared/components/common/
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { FormStackComponent } from '../../../../shared/components/form/form-stack/form-stack.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
@@ -27,6 +29,8 @@ import type { PaymentMethod, PosPrinterPaperWidth } from '../../models/directory
     PageToolbarComponent,
     ComponentCardComponent,
     ButtonComponent,
+    FormFieldComponent,
+    FormStackComponent,
     FormSelectComponent,
     InputFieldComponent,
     LabelComponent,

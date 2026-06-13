@@ -40,15 +40,13 @@
   </div>
   <div>
     <label class="text-theme-sm text-gray-600 dark:text-gray-400">Vencimiento</label>
-    <select
-      class="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
+    <app-form-select
+      className="mt-1"
+      [showPlaceholder]="false"
+      [options]="expiryOptions"
       [value]="expiryFilter()"
-      (change)="onExpiryChange($any($event.target).value)"
-    >
-      @for (opt of expiryOptions; track opt.value) {
-        <option [value]="opt.value">{{ opt.label }}</option>
-      }
-    </select>
+      (valueChange)="onExpiryChange($any($event))"
+    />
   </div>
 </div>
 

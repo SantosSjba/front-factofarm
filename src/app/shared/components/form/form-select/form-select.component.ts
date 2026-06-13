@@ -28,14 +28,19 @@ export class FormSelectComponent {
     return `${baseSelect} ${this.className}`.trim();
   }
 
-  /** Evita repetir placeholder cuando options ya trae "Seleccionar" vacío. */
+  /** Texto del option vacío: @Input placeholder o label del primer option con value ''. */
+  protected get effectivePlaceholder(): string {
+    if (this.placeholder !== 'Seleccionar') {
+      return this.placeholder;
+    }
+    const emptyOption = this.options.find((opt) => opt.value === '');
+    return emptyOption?.label?.trim() || this.placeholder;
+  }
+
+  /** Elimina options con value '' cuando el componente ya renderiza su propio placeholder. */
   protected get renderedOptions(): { value: string; label: string }[] {
-    if (!this.showPlaceholder || !this.placeholder) return this.options;
-    const normalizedPlaceholder = this.placeholder.trim().toLowerCase();
-    return this.options.filter((opt) => {
-      if (opt.value !== '') return true;
-      return opt.label.trim().toLowerCase() !== normalizedPlaceholder;
-    });
+    if (!this.showPlaceholder) return this.options;
+    return this.options.filter((opt) => opt.value !== '');
   }
 
   protected onChange(ev: Event) {

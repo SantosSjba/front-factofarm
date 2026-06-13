@@ -40,7 +40,7 @@
   <app-component-card title="Ítems a recibir" className="mt-4">
     <div class="space-y-4">
       @for (line of receiptLines(); track line.purchaseOrderItemId) {
-        <div class="grid gap-2 rounded-lg border border-gray-200 p-3 md:grid-cols-5 dark:border-gray-700">
+        <div class="grid gap-4 rounded-lg border border-gray-200 p-4 md:grid-cols-5 dark:border-gray-700">
           <div class="md:col-span-2">
             <p class="font-medium">{{ line.producto }}</p>
             <p class="text-xs text-gray-500">Pendiente: {{ line.pendiente }}</p>

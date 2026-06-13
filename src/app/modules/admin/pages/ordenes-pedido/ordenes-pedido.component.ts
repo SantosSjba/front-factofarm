@@ -1,5 +1,5 @@
 ﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -141,6 +141,23 @@ export class OrdenesPedidoComponent {
     this.lines().reduce((acc, l) => acc + l.precio * l.quantity, 0) + this.costoDelivery(),
   );
 
+  private catalogLoadTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    effect((onCleanup) => {
+      if (!this.createOpen() || !this.warehouseId()) return;
+      const term = this.productSearch().trim();
+      if (this.catalogLoadTimer) clearTimeout(this.catalogLoadTimer);
+      this.catalogLoadTimer = setTimeout(() => void this.searchProducts(), term ? 350 : 0);
+      onCleanup(() => {
+        if (this.catalogLoadTimer) {
+          clearTimeout(this.catalogLoadTimer);
+          this.catalogLoadTimer = null;
+        }
+      });
+    });
+  }
+
   protected readonly detail = computed(() => this.detailQuery.data());
   protected readonly nextStatus = computed(() => {
     const d = this.detail();
@@ -166,8 +183,9 @@ export class OrdenesPedidoComponent {
   protected async searchProducts() {
     if (!this.warehouseId()) return;
     try {
+      const term = this.productSearch().trim();
       const rows = await firstValueFrom(
-        this.api.getPosCatalog(this.warehouseId(), this.productSearch()),
+        this.api.getPosCatalog(this.warehouseId(), term || undefined),
       );
       this.catalog.set(rows);
     } catch (err) {
@@ -195,7 +213,7 @@ export class OrdenesPedidoComponent {
       ]);
     }
     this.productSearch.set('');
-    this.catalog.set([]);
+    void this.searchProducts();
   }
 
   protected readonly createMutation = injectMutation(() => ({
