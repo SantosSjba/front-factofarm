@@ -9,8 +9,11 @@
   ></div>
   }
   <div
+    #dialogPanel
     role="dialog"
     aria-modal="true"
+    [attr.aria-label]="ariaLabel"
+    tabindex="-1"
     [ngClass]="panelClasses()"
     (click)="onContentClick($event)"
   >

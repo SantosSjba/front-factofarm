@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  ElementRef,
   EventEmitter,
   HostListener,
   Input,
@@ -9,6 +10,7 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 
 /** Diálogo modal con altura limitada y scroll en el cuerpo; admite `data-modal-header|body|footer`. */
@@ -31,6 +33,11 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
   @Input() closeOnBackdrop = true;
   @Input() showCloseButton = true;
   @Input() isFullscreen = false;
+  @Input() ariaLabel = 'Diálogo';
+
+  @ViewChild('dialogPanel') private dialogPanel?: ElementRef<HTMLElement>;
+
+  private previouslyFocused?: HTMLElement | null;
 
   ngOnInit() {
     this.lockBody(this.isOpen);
@@ -38,10 +45,19 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnDestroy() {
     document.body.style.overflow = 'unset';
+    this.previouslyFocused?.focus();
   }
 
-  ngOnChanges(_changes: SimpleChanges) {
+  ngOnChanges(changes: SimpleChanges) {
     this.lockBody(this.isOpen);
+    if (changes['isOpen']?.currentValue === true) {
+      this.previouslyFocused = document.activeElement as HTMLElement | null;
+      setTimeout(() => this.focusDialog(), 0);
+    }
+    if (changes['isOpen']?.currentValue === false && this.previouslyFocused) {
+      this.previouslyFocused.focus();
+      this.previouslyFocused = null;
+    }
   }
 
   private lockBody(open: boolean) {
@@ -63,6 +79,38 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
     if (this.isOpen) {
       this.close.emit();
     }
+  }
+
+  @HostListener('document:keydown.tab', ['$event'])
+  onTab(event: Event) {
+    if (!(event instanceof KeyboardEvent)) return;
+    if (!this.isOpen) return;
+    const panel = this.dialogPanel?.nativeElement;
+    if (!panel) return;
+    const focusable = [
+      ...panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ].filter((el) => el.offsetParent !== null);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  private focusDialog() {
+    const panel = this.dialogPanel?.nativeElement;
+    if (!panel) return;
+    const focusable = panel.querySelector<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href]',
+    );
+    (focusable ?? panel).focus();
   }
 
   /** Panel interior: columna con altura limitada y sin desbordar. */

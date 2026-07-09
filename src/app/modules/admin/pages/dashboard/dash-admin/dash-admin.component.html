@@ -81,6 +81,21 @@
   </div>
 </app-page-state>
 
+<div class="mt-10 mb-4">
+  <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Ventas — últimos 14 días</h2>
+  <p class="mt-1 text-theme-sm text-gray-500">Monto vendido y cantidad de transacciones por día</p>
+</div>
+
+<app-page-state
+  [loading]="salesTrendQuery.isPending()"
+  [error]="salesTrendErrorMessage()"
+  (retry)="salesTrendQuery.refetch()"
+>
+  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
+    <app-dashboard-sales-chart [trend]="salesTrendQuery.data()" />
+  </app-component-card>
+</app-page-state>
+
 @if (statsQuery.data()?.inventoryAlerts; as alerts) {
   <div class="mt-8 mb-4">
     <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Alertas de inventario</h2>
@@ -136,6 +151,7 @@
   <app-component-card className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
     <div class="overflow-x-auto">
       <table class="min-w-full text-left">
+        <caption class="sr-only">Consolidado de ventas y stock por sucursal en los últimos 30 días</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Sucursal</th>

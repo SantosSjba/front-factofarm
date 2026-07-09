@@ -45,6 +45,7 @@ export class ReportePsicotropicosEstupefacientesComponent {
   protected readonly reportYear = signal(new Date().getFullYear());
   protected readonly reportMonth = signal(new Date().getMonth() + 1);
   protected readonly exporting = signal(false);
+  protected readonly helpOpen = signal(false);
 
   protected readonly ledgerQuery = injectQuery(() => ({
     queryKey: ['pharma', 'controlled-ledger', this.dateFrom(), this.dateTo()] as const,

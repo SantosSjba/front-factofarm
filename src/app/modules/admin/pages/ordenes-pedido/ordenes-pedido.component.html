@@ -6,6 +6,17 @@
   <app-button variant="primary" (btnClick)="createOpen.set(true)">Nuevo pedido</app-button>
 </app-page-toolbar>
 
+<div class="mb-4 rounded-xl border border-blue-light-200 bg-blue-light-50/80 p-4 text-sm text-gray-700 dark:border-blue-light-500/30 dark:bg-blue-light-500/10 dark:text-gray-200">
+  <p class="font-medium text-blue-light-700 dark:text-blue-light-300">Notificaciones WhatsApp</p>
+  <p class="mt-1">
+    Al cambiar el estado del pedido se genera un enlace <code class="text-brand-600">wa.me</code> con el mensaje precargado.
+    El envío es <strong>manual</strong> (abrir enlace y enviar desde WhatsApp); no hay integración con API Business de Meta.
+  </p>
+  <p class="mt-2 text-theme-xs text-gray-600 dark:text-gray-400">
+    Detalle: <code>docs/DELIVERY-WHATSAPP.md</code>
+  </p>
+</div>
+
 <app-page-state
   [loading]="listQuery.isPending()"
   [error]="listError()"
@@ -30,6 +41,7 @@
     @if (listQuery.data(); as list) {
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
+          <caption class="sr-only">Listado de pedidos delivery con cliente, estado, total y repartidor</caption>
           <thead>
             <tr class="border-b border-gray-200 text-left text-gray-500 dark:border-gray-700">
               <th class="py-2 pr-4">Número</th>

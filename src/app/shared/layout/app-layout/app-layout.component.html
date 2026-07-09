@@ -1,4 +1,10 @@
 <div class="min-h-screen xl:flex">
+  <a
+    href="#main-content"
+    class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100000] focus:rounded-lg focus:bg-brand-500 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+  >
+    Saltar al contenido principal
+  </a>
   <div>
     <app-sidebar></app-sidebar>
     <app-backdrop></app-backdrop>
@@ -14,7 +20,11 @@
     <!-- app header start -->
     <app-header/>
     <!-- app header end -->
-    <div class="mx-auto w-full min-w-0 max-w-(--breakpoint-2xl) p-4 md:p-6">
+    <div
+      id="main-content"
+      tabindex="-1"
+      class="mx-auto w-full min-w-0 max-w-(--breakpoint-2xl) p-4 md:p-6 focus:outline-none"
+    >
       <router-outlet></router-outlet>
     </div>
   </div>

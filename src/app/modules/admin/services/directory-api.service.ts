@@ -132,6 +132,7 @@ import type {
   UserListResponseDto,
   DashboardStatsDto,
   DashboardChainSummaryDto,
+  DashboardSalesTrendDto,
   ManagerDashboardDto,
   PharmacistDashboardDto,
   CashierDashboardDto,
@@ -312,6 +313,10 @@ export class DirectoryApiService {
 
   getDashboardChainSummary() {
     return this.http.get<DashboardChainSummaryDto>(`${this.base}/dashboard/chain-summary`);
+  }
+
+  getDashboardSalesTrend() {
+    return this.http.get<DashboardSalesTrendDto>(`${this.base}/dashboard/sales-trend`);
   }
 
   getManagerDashboard() {

@@ -18,6 +18,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { NotifyService } from '../../../../core/services/notify.service';
 import { userQueryKeys } from '../../../../core/query/user-query.keys';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { userRoleLabel } from '../../../../core/utils/user-role-label.util';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
@@ -122,11 +123,7 @@ export class UsuariosComponent {
   }
 
   protected roleLabel(role: string): string {
-    const m: Record<string, string> = {
-      ADMINISTRADOR: 'Administrador',
-      VENDEDOR: 'Vendedor',
-    };
-    return m[role] ?? role;
+    return userRoleLabel(role);
   }
 
   protected openModal() {

@@ -180,6 +180,18 @@ export interface DashboardChainSummaryDto {
   establishments: ChainSummaryEstablishmentDto[];
 }
 
+export interface DashboardSalesTrendPointDto {
+  date: string;
+  label: string;
+  total: string;
+  count: number;
+}
+
+export interface DashboardSalesTrendDto {
+  periodDays: number;
+  points: DashboardSalesTrendPointDto[];
+}
+
 export interface ManagerDashboardDto {
   ventasHoy: string;
   ventasHoyCount: number;
