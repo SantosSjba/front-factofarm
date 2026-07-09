@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { DashAdminComponent } from './dash-admin/dash-admin.component';
 import { DashManagerComponent } from './dash-manager/dash-manager.component';
@@ -33,8 +34,15 @@ import { DashCashierComponent } from './dash-cashier/dash-cashier.component';
     }
   `,
 })
-export class DashboardShellComponent {
+export class DashboardShellComponent implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  ngOnInit(): void {
+    if (this.auth.isPlatformAdmin()) {
+      void this.router.navigateByUrl('/platform/clientes');
+    }
+  }
 
   protected dashboardKind(): 'admin' | 'manager' | 'pharmacist' | 'cashier' {
     const role = this.auth.user()?.role ?? '';

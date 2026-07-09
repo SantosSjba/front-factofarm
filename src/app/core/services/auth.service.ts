@@ -34,12 +34,6 @@ export class AuthService {
     if (user.role === 'SUPER_ADMIN') {
       return true;
     }
-    if (
-      user.role === 'ADMINISTRADOR' ||
-      user.role === 'ADMIN_CADENA'
-    ) {
-      return true;
-    }
     return user.permissionCodes.includes(code);
   }
 

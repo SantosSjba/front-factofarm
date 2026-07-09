@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth.service';
 import { ButtonComponent } from '../../ui/button/button.component';
 
 const STORAGE_KEY = 'factofarm.onboarding.dismissed';
@@ -35,7 +36,11 @@ const STORAGE_KEY = 'factofarm.onboarding.dismissed';
   `,
 })
 export class OnboardingBannerComponent {
-  protected readonly visible = signal(localStorage.getItem(STORAGE_KEY) !== '1');
+  private readonly auth = inject(AuthService);
+
+  protected readonly visible = signal(
+    !this.auth.isPlatformAdmin() && localStorage.getItem(STORAGE_KEY) !== '1',
+  );
 
   protected dismiss(): void {
     localStorage.setItem(STORAGE_KEY, '1');
