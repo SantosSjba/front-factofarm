@@ -695,10 +695,15 @@
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
       [title]="editingProductId() ? 'Editar Producto' : 'Nuevo Producto'"
-      [tabs]="productTabs"
+      [tabs]="visibleProductTabs()"
       [activeId]="activeTab()"
       (tabChange)="setTab($event)"
     />
+    <div class="mt-2 flex justify-end px-4 sm:px-8">
+      <app-button size="sm" variant="outline" (btnClick)="formDetailLevel.set(formDetailLevel() === 'basic' ? 'advanced' : 'basic')">
+        {{ formDetailLevel() === 'basic' ? 'Modo avanzado' : 'Modo básico' }}
+      </app-button>
+    </div>
   </div>
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     @if (editLoading()) {
@@ -709,6 +714,7 @@
         <p class="mb-3 text-xs text-gray-500">Cargando catálogos de General...</p>
       }
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        @if (formDetailLevel() === 'advanced') {
         <app-checkbox
           [checked]="!!form().incluyeIgvVenta"
           (checkedChange)="updateForm('incluyeIgvVenta', $event)"
@@ -728,6 +734,7 @@
           (checkedChange)="updateForm('calcularCantidadPorPrecio', $event)"
           label="Calcular cantidad por precio"
         />
+        }
       </div>
       <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="md:col-span-2">

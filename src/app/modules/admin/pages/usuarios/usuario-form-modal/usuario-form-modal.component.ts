@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   Component,
   computed,
@@ -9,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { injectMutation, injectQueryClient } from '@tanstack/angular-query-experimental';
+import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import * as yup from 'yup';
 import { ModalComponent } from '../../../../../shared/components/ui/modal/modal.component';
@@ -30,6 +31,7 @@ import type {
   CreateUserProfileBody,
   CreateUserRequest,
   EstablishmentOptionDto,
+  EstablishmentSeriesItemDto,
   IdentityDocumentTypeDto,
   PermissionMenuNodeDto,
   UpdateUserRequest,
@@ -150,6 +152,7 @@ const usuarioPersonalesSchema = yup.object({
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ModalComponent,
     ButtonComponent,
     LabelComponent,
@@ -200,6 +203,25 @@ export class UsuarioFormModalComponent {
   protected readonly password = signal('');
   protected readonly password2 = signal('');
   protected readonly establecimientoId = signal('');
+
+  protected readonly documentSeriesQuery = injectQuery(() => ({
+    queryKey: ['establishment-series', 'usuario-modal', this.establecimientoId()] as const,
+    queryFn: () => firstValueFrom(this.api.listEstablishmentSeries(this.establecimientoId())),
+    enabled: this.activeTab() === 'documentos' && !!this.establecimientoId(),
+  }));
+
+  protected readonly documentSeries = computed(
+    () => this.documentSeriesQuery.data() ?? ([] as EstablishmentSeriesItemDto[]),
+  );
+
+  protected readonly documentTypeLabels: Record<string, string> = {
+    BOLETA_VENTA_ELECTRONICA: 'Boleta electrónica',
+    FACTURA_ELECTRONICA: 'Factura electrónica',
+    NOTA_CREDITO: 'Nota de crédito',
+    NOTA_DEBITO: 'Nota de débito',
+    GUIA_REMISION_REMITENTE: 'Guía remisión remitente',
+    NOTA_VENTA: 'Nota de venta',
+  };
   protected readonly role = signal<UserRoleDto>('CAJERO');
 
   protected readonly tipoDoc = signal('');

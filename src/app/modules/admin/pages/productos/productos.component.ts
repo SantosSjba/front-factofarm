@@ -386,7 +386,12 @@ export class ProductosComponent {
   protected readonly barcodeOpen = signal(false);
   protected readonly importOpen = signal(false);
   protected readonly activeTab = signal<ProductTab>('general');
-  protected readonly productTabs = PRODUCT_TABS;
+  protected readonly formDetailLevel = signal<'basic' | 'advanced'>('basic');
+  protected readonly visibleProductTabs = computed(() =>
+    this.formDetailLevel() === 'basic'
+      ? PRODUCT_TABS.filter((tab) => tab.id === 'general')
+      : PRODUCT_TABS,
+  );
   protected readonly historyTabs = HISTORY_TABS;
   protected readonly importMode = signal<ProductImportMode>('PRODUCTOS');
   protected readonly importFile = signal<File | null>(null);
@@ -825,6 +830,7 @@ export class ProductosComponent {
 
   protected openCreateModal() {
     this.activeTab.set('general');
+    this.formDetailLevel.set('basic');
     this.editingProductId.set(null);
     this.formOpen.set(true);
     this.resetForm();
@@ -832,6 +838,7 @@ export class ProductosComponent {
   }
 
   protected async openEditModal(row: ProductListItemDto) {
+    this.formDetailLevel.set('advanced');
     this.activeTab.set('general');
     this.formOpen.set(true);
     this.resetForm();

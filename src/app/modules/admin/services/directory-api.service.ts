@@ -252,6 +252,8 @@ import type {
   SunatDocumentStatus,
   SaleBillingStatusDto,
   CreateSaleReturnRequest,
+  CreateSaleDebitNoteRequest,
+  SaleDebitNoteResponseDto,
   SaleReturnResponseDto,
   LegalDocumentDto,
   ValidateDniResponseDto,
@@ -1586,6 +1588,10 @@ export class DirectoryApiService {
 
   createSaleReturn(saleId: string, body: CreateSaleReturnRequest) {
     return this.http.post<SaleReturnResponseDto>(`${this.base}/sales/${saleId}/returns`, body);
+  }
+
+  createSaleDebitNote(saleId: string, body: CreateSaleDebitNoteRequest) {
+    return this.http.post<SaleDebitNoteResponseDto>(`${this.base}/sales/${saleId}/debit-notes`, body);
   }
 
   // —— Delivery ——

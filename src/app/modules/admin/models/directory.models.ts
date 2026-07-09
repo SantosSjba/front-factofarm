@@ -1735,6 +1735,7 @@ export interface PosCatalogItemDto {
   necesitaRecetaMedica: boolean;
   manejaLotes: boolean;
   esControlado: boolean;
+  imagenArchivoId?: string | null;
 }
 
 export interface PosSubstituteItemDto {
@@ -1814,10 +1815,14 @@ export interface SaleDetailDto {
   payments: { metodo: PaymentMethod; monto: string; referencia: string | null }[];
 }
 
+export type SaleLineDiscountType = 'PORCENTAJE' | 'MONTO_FIJO';
+
 export interface CreateSaleItemRequest {
   productId: string;
   quantity: number;
   unitPrice?: number;
+  discountType?: SaleLineDiscountType;
+  discountValue?: number;
   lotAllocationMode?: SaleLotAllocationMode;
   manualLots?: { lotCode: string; quantity: number }[];
 }
@@ -2158,7 +2163,16 @@ export type SunatDocumentStatus =
   | 'ANULADO'
   | 'CONTINGENCIA';
 
-export type BillingProviderType = 'MOCK' | 'NUBEFACT' | 'FACTILIZA' | 'BIZLINKS';
+export type BillingProviderType = 'MOCK' | 'NUBEFACT' | 'FACTILIZA';
+
+export interface BillingProviderCapabilitiesDto {
+  mockAllowed: boolean;
+  supportsDailySummary: boolean;
+  supportsVoidDocument: boolean;
+  supportedSpecialDocuments: string[];
+  unsupportedSpecialDocuments: { documentType: string; reason: string }[];
+  notes: string[];
+}
 
 export interface BillingConfigDto {
   provider: BillingProviderType;
@@ -2173,6 +2187,7 @@ export interface BillingConfigDto {
   autoEmitGuiaOnTransfer: boolean;
   hasApiToken: boolean;
   hasCertificate: boolean;
+  capabilities?: BillingProviderCapabilitiesDto;
 }
 
 export interface UpsertBillingConfigRequest {
@@ -2286,6 +2301,18 @@ export interface SaleReturnResponseDto {
   saleReturnId: string;
   totalDevuelto: string;
   electronicDocumentId: string | null;
+}
+
+export interface CreateSaleDebitNoteRequest {
+  motivo: string;
+  descripcion: string;
+  total: number;
+}
+
+export interface SaleDebitNoteResponseDto {
+  ok: boolean;
+  message: string;
+  electronicDocumentId: string;
 }
 
 export interface MedicoItemDto {

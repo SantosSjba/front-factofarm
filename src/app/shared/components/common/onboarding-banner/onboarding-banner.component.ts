@@ -20,7 +20,8 @@ const STORAGE_KEY = 'factofarm.onboarding.dismissed';
           Primera configuración FactoFarm
         </h2>
         <p class="mt-1 text-sm text-brand-700 dark:text-brand-300">
-          Complete estos pasos para operar el POS: establecimiento → series SUNAT → productos → caja.
+          Complete estos pasos para operar el POS: establecimiento → series SUNAT → OSE → productos → caja.
+          <a routerLink="/onboarding" class="ml-1 font-medium underline">Ver asistente completo</a>
         </p>
         <ol class="mt-3 list-decimal space-y-1 pl-5 text-sm text-brand-800 dark:text-brand-200">
           <li><a routerLink="/establecimientos" class="underline">Verificar establecimiento</a></li>
@@ -28,7 +29,10 @@ const STORAGE_KEY = 'factofarm.onboarding.dismissed';
           <li><a routerLink="/productos" class="underline">Cargar catálogo de productos</a></li>
           <li><a routerLink="/caja-chica-pos" class="underline">Abrir caja e iniciar ventas</a></li>
         </ol>
-        <div class="mt-4">
+        <div class="mt-4 flex flex-wrap gap-2">
+          <a routerLink="/onboarding">
+            <app-button size="sm" variant="primary">Abrir asistente</app-button>
+          </a>
           <app-button size="sm" variant="outline" (btnClick)="dismiss()">Entendido, ocultar guía</app-button>
         </div>
       </div>

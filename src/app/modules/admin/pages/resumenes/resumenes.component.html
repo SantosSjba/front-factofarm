@@ -9,10 +9,19 @@
   </p>
   <div class="flex max-w-md flex-wrap items-end gap-3">
     <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set('' + $event)" />
-    <app-button variant="primary" [disabled]="summaryMutation.isPending()" (btnClick)="summaryMutation.mutate()">
+    <app-button
+      variant="primary"
+      [disabled]="summaryMutation.isPending() || !canSendDailySummary()"
+      (btnClick)="summaryMutation.mutate()"
+    >
       {{ summaryMutation.isPending() ? 'Enviando…' : 'Enviar RC' }}
     </app-button>
   </div>
+  @if (dailySummaryBlockedMessage(); as blocked) {
+    <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+      {{ blocked }}
+    </p>
+  }
   @if (summaryMutation.isError()) {
     <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200" role="alert">
       {{ summaryErrorMessage() }}

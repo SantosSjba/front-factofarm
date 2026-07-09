@@ -50,6 +50,10 @@ export class NotasVentaComponent {
   protected readonly pageSize = signal(15);
   protected readonly detailId = signal<string | null>(null);
   protected readonly returnSaleId = signal<string | null>(null);
+  protected readonly debitSaleId = signal<string | null>(null);
+  protected readonly debitMotivo = signal('');
+  protected readonly debitDescripcion = signal('');
+  protected readonly debitTotal = signal('');
   protected readonly returnMotivo = signal('');
   protected readonly returnLines = signal<ReturnLineDraft[]>([]);
   protected readonly estado = signal<string>('');
@@ -188,6 +192,24 @@ export class NotasVentaComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la devolución')),
   }));
 
+  protected readonly debitMutation = injectMutation(() => ({
+    mutationFn: () =>
+      firstValueFrom(
+        this.api.createSaleDebitNote(this.debitSaleId()!, {
+          motivo: this.debitMotivo().trim(),
+          descripcion: this.debitDescripcion().trim(),
+          total: Number(this.debitTotal()),
+        }),
+      ),
+    onSuccess: (res) => {
+      this.notify.success(`${res.message}. ND electrónica en proceso.`);
+      this.closeDebit();
+      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la nota de débito')),
+  }));
+
   protected onFilterChange() {
     this.page.set(1);
   }
@@ -205,6 +227,36 @@ export class NotasVentaComponent {
       (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') &&
       (sale.estado === 'COMPLETADA' || sale.estado === 'PARCIALMENTE_DEVUELTA')
     );
+  }
+
+  protected canDebit(sale: SaleDetailDto): boolean {
+    return this.canReturn(sale);
+  }
+
+  protected openDebit(saleId: string) {
+    this.debitSaleId.set(saleId);
+    this.debitMotivo.set('');
+    this.debitDescripcion.set('');
+    this.debitTotal.set('');
+  }
+
+  protected closeDebit() {
+    this.debitSaleId.set(null);
+    this.debitMotivo.set('');
+    this.debitDescripcion.set('');
+    this.debitTotal.set('');
+  }
+
+  protected submitDebit() {
+    if (!this.debitMotivo().trim() || !this.debitDescripcion().trim() || !this.debitTotal().trim()) {
+      this.notify.warning('Complete motivo, descripción y monto');
+      return;
+    }
+    if (Number(this.debitTotal()) <= 0) {
+      this.notify.warning('El monto debe ser mayor a cero');
+      return;
+    }
+    this.debitMutation.mutate();
   }
 
   protected openReturn(saleId: string) {

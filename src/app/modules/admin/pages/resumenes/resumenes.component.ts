@@ -1,6 +1,6 @@
 ﻿import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { injectMutation } from '@tanstack/angular-query-experimental';
+import { Component, computed, inject, signal } from '@angular/core';
+import { injectMutation, injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
@@ -32,6 +32,22 @@ export class ResumenesComponent {
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Resúmenes' }];
   protected readonly fecha = signal(new Date().toISOString().slice(0, 10));
   protected readonly lastResult = signal<{ id: string; message: string } | null>(null);
+
+  protected readonly billingConfigQuery = injectQuery(() => ({
+    queryKey: ['billing', 'config'] as const,
+    queryFn: () => firstValueFrom(this.api.getBillingConfig()),
+  }));
+
+  protected readonly canSendDailySummary = computed(() => {
+    const caps = this.billingConfigQuery.data()?.capabilities;
+    return caps ? caps.supportsDailySummary : true;
+  });
+
+  protected readonly dailySummaryBlockedMessage = computed(() => {
+    const caps = this.billingConfigQuery.data()?.capabilities;
+    if (!caps || caps.supportsDailySummary) return null;
+    return caps.notes.join(' ') || 'El resumen diario (RC) requiere Nubefact u otro OSE compatible.';
+  });
 
   protected readonly summaryMutation = injectMutation(() => ({
     mutationFn: () => firstValueFrom(this.api.sendDailyBillingSummary(this.fecha())),

@@ -91,7 +91,16 @@ function paginatedItems<T>(data: PaginatedResponseDto<T> | T[] | undefined): T[]
         @if (previewDescription()) {
           <p class="text-xs text-gray-500"><strong>Descripción en comprobante:</strong> {{ previewDescription() }}</p>
         }
-        <app-button variant="primary" [disabled]="emitMutation.isPending()" (btnClick)="emitMutation.mutate()">
+        @if (specialDocumentBlockedMessage(); as blocked) {
+          <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+            {{ blocked }}
+          </p>
+        }
+        <app-button
+          variant="primary"
+          [disabled]="emitMutation.isPending() || !canEmitSpecialDocument()"
+          (btnClick)="emitMutation.mutate()"
+        >
           Emitir guía transportista
         </app-button>
       </div>
@@ -112,6 +121,27 @@ export class GrTransportistaComponent {
   protected readonly docNumber = signal('');
   protected readonly description = signal('');
   protected readonly amount = signal('');
+
+  protected readonly billingConfigQuery = injectQuery(() => ({
+    queryKey: ['billing', 'config'] as const,
+    queryFn: () => firstValueFrom(this.api.getBillingConfig()),
+  }));
+
+  protected readonly billingCapabilities = computed(() => this.billingConfigQuery.data()?.capabilities);
+
+  protected canEmitSpecialDocument(): boolean {
+    const caps = this.billingCapabilities();
+    if (!caps) return true;
+    return !caps.unsupportedSpecialDocuments.some((row) => row.documentType === 'GUIA_REMISION_TRANSPORTISTA');
+  }
+
+  protected specialDocumentBlockedMessage(): string | null {
+    const caps = this.billingCapabilities();
+    return (
+      caps?.unsupportedSpecialDocuments.find((row) => row.documentType === 'GUIA_REMISION_TRANSPORTISTA')?.reason ??
+      null
+    );
+  }
 
   protected readonly carriersQuery = injectQuery(() => ({
     queryKey: ['shipping', 'carriers', 'gr-transportista'] as const,

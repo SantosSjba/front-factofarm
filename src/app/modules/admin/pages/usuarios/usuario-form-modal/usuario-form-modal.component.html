@@ -223,10 +223,40 @@
     }
 
     @if (activeTab() === 'documentos') {
-      <p class="text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">
-        Aquí podrá definir plantillas y series documentarias por usuario. Pendiente de reglas de negocio de
-        FactoFarm.
+      <p class="mb-3 text-theme-sm text-gray-600 dark:text-gray-400">
+        Series documentarias del establecimiento asignado. Se administran en
+        <a routerLink="/series" class="text-brand-600 underline">Series</a>
+        y
+        <a routerLink="/establecimientos" class="text-brand-600 underline">Establecimientos</a>.
       </p>
+      @if (!establecimientoId()) {
+        <p class="text-sm text-amber-700 dark:text-amber-300">Seleccione un establecimiento en Datos de Usuario.</p>
+      } @else if (documentSeriesQuery.isPending()) {
+        <p class="text-sm text-gray-500">Cargando series…</p>
+      } @else if (documentSeries().length === 0) {
+        <p class="text-sm text-amber-700 dark:text-amber-300">Sin series configuradas para este establecimiento.</p>
+      } @else {
+        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+          <table class="min-w-full text-sm">
+            <thead class="border-b bg-gray-50 text-left text-xs uppercase text-gray-500 dark:bg-gray-900">
+              <tr>
+                <th class="px-3 py-2">Tipo</th>
+                <th class="px-3 py-2">Serie</th>
+                <th class="px-3 py-2">Contingencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of documentSeries(); track row.id) {
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                  <td class="px-3 py-2">{{ documentTypeLabels[row.documentType] ?? row.documentType }}</td>
+                  <td class="px-3 py-2 font-mono">{{ row.numero }}</td>
+                  <td class="px-3 py-2">{{ row.esContingencia ? 'Sí' : 'No' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
   </div>
 

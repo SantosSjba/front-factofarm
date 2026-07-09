@@ -39,6 +39,7 @@ import type {
   PharmaApproverDto,
   CreateSaleSubstitutionRequest,
   SunatDocumentStatus,
+  SaleLineDiscountType,
 } from '../../models/directory.models';
 import {
   createPaymentLine,
@@ -67,9 +68,23 @@ type CartLine = {
   manejaLotes: boolean;
   lotMode: SaleLotAllocationMode;
   manualLots: { lotCode: string; quantity: number }[];
+  discountType?: SaleLineDiscountType | null;
+  discountValue?: number | null;
   substitutedFromProductId?: string;
   substitutedFromNombre?: string;
 };
+
+function lineGrossTotal(line: CartLine): number {
+  let gross = line.precio * line.quantity;
+  const discountValue = line.discountValue ?? 0;
+  if (line.discountType && discountValue > 0) {
+    gross =
+      line.discountType === 'PORCENTAJE'
+        ? gross - gross * (discountValue / 100)
+        : gross - discountValue;
+  }
+  return Math.max(0, Math.round(gross * 100) / 100);
+}
 
 const DOC_OPTIONS: { value: SaleDocumentType; label: string }[] = [
   { value: 'BOLETA', label: 'Boleta' },
@@ -151,6 +166,12 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly substituteLoading = signal(false);
   protected readonly isOnline = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
   protected readonly offlinePending = computed(() => this.offlineQueue.pendingCount());
+  protected readonly catalogViewMode = signal<'table' | 'tiles'>('tiles');
+  protected readonly discountTypeOptions = [
+    { value: '', label: 'Sin descuento' },
+    { value: 'PORCENTAJE', label: '% descuento' },
+    { value: 'MONTO_FIJO', label: 'Monto fijo' },
+  ];
 
   private interactionTimer: ReturnType<typeof setTimeout> | null = null;
   private catalogLoadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -182,7 +203,7 @@ export class PuntoVentaComponent implements OnDestroy {
   ]);
 
   protected readonly cartTotal = computed(() =>
-    this.cart().reduce((acc, line) => acc + line.precio * line.quantity, 0),
+    this.cart().reduce((acc, line) => acc + lineGrossTotal(line), 0),
   );
 
   protected readonly cartSubtotal = computed(() => this.cartTotal() / (1 + IGV_RATE));
@@ -216,6 +237,52 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly lotModalLine = computed(() =>
     this.cart().find((l) => l.productId === this.lotModalProductId()) ?? null,
   );
+
+  protected productImageUrl(imagenArchivoId?: string | null): string | null {
+    if (!imagenArchivoId) return null;
+    return this.api.fileDownloadUrl(imagenArchivoId);
+  }
+
+  protected toggleCatalogView() {
+    this.catalogViewMode.update((mode) => (mode === 'table' ? 'tiles' : 'table'));
+  }
+
+  protected openCustomerDisplay() {
+    window.open('/pos-pantalla-cliente', 'factofarm-customer-display', 'noopener,noreferrer,width=480,height=720');
+  }
+
+  protected updateLineDiscount(
+    productId: string,
+    patch: { discountType?: SaleLineDiscountType | null; discountValue?: number | null },
+  ) {
+    this.cart.update((lines) =>
+      lines.map((line) => {
+        if (line.productId !== productId) return line;
+        const discountType =
+          patch.discountType !== undefined ? patch.discountType : line.discountType;
+        const discountValue =
+          patch.discountValue !== undefined ? patch.discountValue : line.discountValue;
+        return {
+          ...line,
+          discountType: discountType || null,
+          discountValue: discountType ? discountValue ?? 0 : null,
+        };
+      }),
+    );
+  }
+
+  protected onLineDiscountTypeChange(productId: string, value: string) {
+    const discountType = value ? (value as SaleLineDiscountType) : null;
+    this.updateLineDiscount(productId, { discountType });
+  }
+
+  protected onLineDiscountValueChange(productId: string, value: string | number) {
+    this.updateLineDiscount(productId, { discountValue: Number(value) || 0 });
+  }
+
+  protected lineDisplayTotal(line: CartLine): number {
+    return lineGrossTotal(line);
+  }
 
   protected posBootstrapError(): string | null {
     if (this.warehousesQuery.isError()) {
@@ -782,6 +849,8 @@ export class PuntoVentaComponent implements OnDestroy {
         productId: l.productId,
         quantity: l.quantity,
         unitPrice: l.precio,
+        discountType: l.discountType ?? undefined,
+        discountValue: l.discountType && l.discountValue ? l.discountValue : undefined,
         lotAllocationMode: l.manejaLotes ? l.lotMode : undefined,
         manualLots: l.lotMode === 'MANUAL' ? l.manualLots : undefined,
       })),

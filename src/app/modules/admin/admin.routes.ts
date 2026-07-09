@@ -33,6 +33,13 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Dashboard',
       },
       {
+        path: 'onboarding',
+        ...guarded(P.dashboard),
+        loadComponent: () =>
+          import('./pages/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
+        title: 'FactoFarm | Configuración inicial',
+      },
+      {
         path: 'platform/clientes',
         ...guarded(P.platformClientes),
         loadComponent: () =>

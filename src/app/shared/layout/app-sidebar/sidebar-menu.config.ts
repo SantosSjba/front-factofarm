@@ -44,6 +44,8 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
         permissionCode: 'nav.gestion_personal',
       },
       { name: 'Auditoría', path: '/auditoria', permissionCode: 'nav.auditoria' },
+      { name: 'LPDP / ARCO', path: '/lpdp', permissionCode: 'nav.lpdp' },
+      { name: 'Farmacéutico titular', path: '/farmaceutico-titular', permissionCode: 'nav.farmaceutico_titular' },
       { name: 'Establecimientos', path: '/establecimientos', permissionCode: 'nav.establecimientos' },
     ],
   },
@@ -60,6 +62,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     name: 'Productos/Servicios',
     subItems: [
       { name: 'Productos', path: '/productos', permissionCode: 'nav.productos' },
+      { name: 'Precios regulados DIGEMED', path: '/precios-regulados', permissionCode: 'nav.precios_regulados' },
       {
         name: 'Conjuntos/Packs/Promociones',
         path: '/conjuntos-packs-promociones',
@@ -103,16 +106,10 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:shopping-cart',
-    name: 'POS',
+    name: 'Ventas y caja',
     subItems: [
-      { name: 'Punto de Venta', path: '/punto-venta', permissionCode: 'nav.punto_venta' },
-      { name: 'Caja Chica POS', path: '/caja-chica-pos', permissionCode: 'nav.caja_chica_pos' },
-    ],
-  },
-  {
-    icon: 'lucide:receipt-text',
-    name: 'Ventas',
-    subItems: [
+      { name: 'Punto de venta', path: '/punto-venta', permissionCode: 'nav.punto_venta' },
+      { name: 'Caja chica POS', path: '/caja-chica-pos', permissionCode: 'nav.caja_chica_pos' },
       {
         name: 'Comprobante electronico',
         path: '/comprobante-electronico',

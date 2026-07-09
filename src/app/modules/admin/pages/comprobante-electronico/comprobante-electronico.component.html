@@ -2,7 +2,7 @@
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Comprobantes electrónicos</h1>
   <div class="flex gap-2">
-    <app-button variant="outline" (btnClick)="specialOpen.set(true)">Comprobante especial</app-button>
+    <app-button variant="outline" (btnClick)="openSpecialModal()">Comprobante especial</app-button>
     <app-button variant="outline" (btnClick)="openConfig()">Configuración OSE</app-button>
   </div>
 </app-page-toolbar>
@@ -69,6 +69,19 @@
       Ver <a href="https://docs.factiliza.com/api-facturacion/endpoint/invoice/send" target="_blank" rel="noopener" class="text-brand-600 underline">documentación</a>.
     </p>
     <app-form-select [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
+    @if (billingCapabilities(); as caps) {
+      <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+        @for (note of caps.notes; track note) {
+          <p>{{ note }}</p>
+        }
+        @if (!caps.supportsDailySummary) {
+          <p>RC diario: no disponible con este OSE (use Nubefact).</p>
+        }
+        @if (!caps.supportsVoidDocument) {
+          <p>Comunicación de baja: no disponible con este OSE (use Nubefact).</p>
+        }
+      </div>
+    }
     <app-input-field [value]="rucEmisor()" (valueChange)="rucEmisor.set('' + $event)" placeholder="RUC emisor" />
     <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" placeholder="Razón social emisor" />
     <app-input-field [value]="apiUrl()" (valueChange)="apiUrl.set('' + $event)" placeholder="URL API (Factiliza: https://apife-qa.factiliza.com/api/v1)" />
@@ -160,7 +173,10 @@
 <app-modal [isOpen]="specialOpen()" (close)="specialOpen.set(false)" className="w-full max-w-lg">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Emitir comprobante especial</h3>
-    <app-form-select [options]="specialTypeOptions" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
+    <app-form-select [options]="filteredSpecialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
+    @if (specialDocumentBlockedReason(specialType()); as reason) {
+      <p class="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">{{ reason }}</p>
+    }
     <app-input-field [value]="specialCustomer()" (valueChange)="specialCustomer.set('' + $event)" placeholder="Razón social / nombre" />
     <div class="grid grid-cols-2 gap-2">
       <app-input-field [value]="specialDocType()" (valueChange)="specialDocType.set('' + $event)" placeholder="Tipo doc (6=RUC)" />
@@ -168,7 +184,11 @@
     </div>
     <app-input-field [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" placeholder="Concepto / descripción" />
     <app-input-field [value]="specialAmount()" (valueChange)="specialAmount.set('' + $event)" placeholder="Monto total (inc. IGV)" />
-    <app-button variant="primary" (btnClick)="emitSpecialMutation.mutate()" [disabled]="emitSpecialMutation.isPending()">
+    <app-button
+      variant="primary"
+      (btnClick)="emitSpecialMutation.mutate()"
+      [disabled]="emitSpecialMutation.isPending() || !!specialDocumentBlockedReason(specialType())"
+    >
       Emitir
     </app-button>
   </div>

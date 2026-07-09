@@ -15,10 +15,8 @@ export const authRoutes: Routes = [
   },
   {
     path: 'signup',
-    loadComponent: () =>
-      import('./pages/sign-up/sign-up.component').then((m) => m.SignUpComponent),
-    canActivate: [guestGuard],
-    title: 'FactoFarm | Registro',
+    redirectTo: 'signin',
+    pathMatch: 'full',
   },
   {
     path: 'forgot-password',

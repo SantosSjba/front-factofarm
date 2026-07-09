@@ -1,6 +1,6 @@
 ﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -72,9 +72,9 @@ export class ComprobanteElectronicoComponent {
   protected readonly specialAmount = signal('100');
 
   protected readonly providerOptions = [
-    { value: 'MOCK', label: 'Mock (desarrollo / demo)' },
+    { value: 'MOCK', label: 'Mock (solo desarrollo)' },
     { value: 'FACTILIZA', label: 'Factiliza OSE (recomendado)' },
-    { value: 'NUBEFACT', label: 'Nubefact OSE (legacy)' },
+    { value: 'NUBEFACT', label: 'Nubefact OSE' },
   ];
 
   protected readonly specialTypeOptions = [
@@ -118,6 +118,47 @@ export class ComprobanteElectronicoComponent {
     queryFn: () => firstValueFrom(this.api.getElectronicDocument(this.detailId()!)),
     enabled: !!this.detailId(),
   }));
+
+  protected readonly billingCapabilities = computed(() => this.configQuery.data()?.capabilities);
+
+  protected readonly filteredSpecialTypeOptions = computed(() => {
+    const caps = this.billingCapabilities();
+    if (!caps) return this.specialTypeOptions;
+    const blocked = new Set(caps.unsupportedSpecialDocuments.map((row) => row.documentType));
+    return this.specialTypeOptions.map((opt) => ({
+      ...opt,
+      disabled: blocked.has(opt.value),
+      label: blocked.has(opt.value) ? `${opt.label} (no disponible)` : opt.label,
+    }));
+  });
+
+  protected specialDocumentBlockedReason(type: string): string | null {
+    const caps = this.billingCapabilities();
+    return caps?.unsupportedSpecialDocuments.find((row) => row.documentType === type)?.reason ?? null;
+  }
+
+  protected canEmitSpecialDocuments(): boolean {
+    const caps = this.billingCapabilities();
+    if (!caps) return true;
+    return caps.supportedSpecialDocuments.length > 0;
+  }
+
+  protected openSpecialModal() {
+    const caps = this.billingCapabilities();
+    const firstAllowed = this.specialTypeOptions.find(
+      (opt) => !caps?.unsupportedSpecialDocuments.some((row) => row.documentType === opt.value),
+    );
+    if (!firstAllowed) {
+      this.notify.warning(
+        caps?.notes.join(' ') ?? 'Los comprobantes especiales no están disponibles con el OSE configurado.',
+      );
+      return;
+    }
+    this.specialType.set(
+      firstAllowed.value as 'RETENCION' | 'PERCEPCION' | 'LIQUIDACION_COMPRA' | 'GUIA_REMISION_TRANSPORTISTA',
+    );
+    this.specialOpen.set(true);
+  }
 
   protected openConfig() {
     const cfg = this.configQuery.data();
@@ -243,6 +284,8 @@ export class ComprobanteElectronicoComponent {
   }));
 
   protected canVoid(doc: ElectronicDocumentDetailDto): boolean {
+    const caps = this.billingCapabilities();
+    if (caps && !caps.supportsVoidDocument) return false;
     return (
       doc.documentType !== 'NOTA_CREDITO' &&
       doc.documentType !== 'RESUMEN_BOLETAS' &&

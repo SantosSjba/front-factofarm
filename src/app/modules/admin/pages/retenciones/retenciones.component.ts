@@ -51,7 +51,12 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
           />
         </div>
         <app-input-field placeholder="Monto calculado" [value]="montoCalculado()" [disabled]="true" />
-        <app-button class="mt-6" [disabled]="createMutation.isPending()" (btnClick)="emitRetention()">
+        @if (specialDocumentBlockedMessage(); as blocked) {
+          <p class="md:col-span-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+            {{ blocked }}
+          </p>
+        }
+        <app-button class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" (btnClick)="emitRetention()">
           Emitir retención
         </app-button>
       </div>
@@ -145,6 +150,24 @@ export class RetencionesComponent {
   protected readonly regimenCodigo = signal('');
   protected readonly selectedTasa = signal(0);
   protected readonly montoCalculado = signal('');
+
+  protected readonly billingConfigQuery = injectQuery(() => ({
+    queryKey: ['billing', 'config'] as const,
+    queryFn: () => firstValueFrom(this.api.getBillingConfig()),
+  }));
+
+  protected readonly billingCapabilities = computed(() => this.billingConfigQuery.data()?.capabilities);
+
+  protected canEmitSpecialDocument(): boolean {
+    const caps = this.billingCapabilities();
+    if (!caps) return true;
+    return !caps.unsupportedSpecialDocuments.some((row) => row.documentType === 'RETENCION');
+  }
+
+  protected specialDocumentBlockedMessage(): string | null {
+    const caps = this.billingCapabilities();
+    return caps?.unsupportedSpecialDocuments.find((row) => row.documentType === 'RETENCION')?.reason ?? null;
+  }
 
   protected readonly ratesQuery = injectQuery(() => ({
     queryKey: ['compliance', 'sunat-rates', 'RETENCION'] as const,
