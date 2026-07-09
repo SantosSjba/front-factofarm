@@ -214,6 +214,10 @@ export class UsuarioFormModalComponent {
     () => this.documentSeriesQuery.data() ?? ([] as EstablishmentSeriesItemDto[]),
   );
 
+  protected documentTypeLabel(type: string): string {
+    return this.documentTypeLabels[type] ?? type;
+  }
+
   protected readonly documentTypeLabels: Record<string, string> = {
     BOLETA_VENTA_ELECTRONICA: 'Boleta electrónica',
     FACTURA_ELECTRONICA: 'Factura electrónica',
