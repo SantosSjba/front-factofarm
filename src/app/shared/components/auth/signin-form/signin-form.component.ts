@@ -68,11 +68,10 @@ export class SigninFormComponent {
 
   private postLoginPath(): string {
     const user = this.auth.user();
-    if (!user) return '/';
-    if (user.role === 'CAJERO' || user.role === 'VENDEDOR') {
-      return '/punto-venta';
-    }
-    return '/';
+    if (!user) return '/dashboard';
+    if (user.role === 'SUPER_ADMIN') return '/platform/clientes';
+    if (user.role === 'CAJERO' || user.role === 'VENDEDOR') return '/punto-venta';
+    return '/dashboard';
   }
 
   private apiMessage(err: HttpErrorResponse): string {
