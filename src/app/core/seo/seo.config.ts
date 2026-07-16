@@ -21,46 +21,46 @@ export const PUBLIC_SEO: Record<string, SeoConfig> = {
     robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
     ogType: 'website',
     canonicalPath: '/',
-    jsonLd: [
-      {
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        name: 'FactoFarm',
-        url: siteUrl(),
-        logo: `${siteUrl()}/images/logo/logo-icon.svg`,
-        areaServed: {
-          '@type': 'Country',
-          name: 'Peru',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          name: 'FactoFarm',
+          url: siteUrl(),
+          logo: `${siteUrl()}/images/logo/logo-icon.svg`,
+          areaServed: {
+            '@type': 'Country',
+            name: 'Peru',
+          },
+          knowsLanguage: 'es-PE',
         },
-        knowsLanguage: 'es-PE',
-      },
-      {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'FactoFarm',
-        applicationCategory: 'BusinessApplication',
-        operatingSystem: 'Web',
-        description:
-          'Software de gestión para farmacias y boticas en Perú con POS, inventario, facturación SUNAT y reportes.',
-        offers: {
-          '@type': 'Offer',
-          priceCurrency: 'PEN',
-          availability: 'https://schema.org/InStock',
-          description: 'Cotización personalizada según operación de la farmacia o botica',
+        {
+          '@type': 'SoftwareApplication',
+          name: 'FactoFarm',
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'Web',
+          description:
+            'Software de gestión para farmacias y boticas en Perú con POS, inventario, facturación SUNAT y reportes.',
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'PEN',
+            availability: 'https://schema.org/InStock',
+            description: 'Cotización personalizada según operación de la farmacia o botica',
+          },
+          audience: {
+            '@type': 'BusinessAudience',
+            audienceType: 'Farmacias y boticas en Perú',
+          },
         },
-        audience: {
-          '@type': 'BusinessAudience',
-          audienceType: 'Farmacias y boticas en Perú',
+        {
+          '@type': 'WebSite',
+          name: 'FactoFarm',
+          url: siteUrl(),
+          inLanguage: 'es-PE',
         },
-      },
-      {
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: 'FactoFarm',
-        url: siteUrl(),
-        inLanguage: 'es-PE',
-      },
-    ],
+      ],
+    },
   },
   '/legal/privacidad': {
     title: 'Política de privacidad | FactoFarm · LPDP Perú',

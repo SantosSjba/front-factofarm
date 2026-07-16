@@ -91,9 +91,21 @@ export class SeoService {
     }
     if (!data) return;
 
+    // Safari lanza TypeError si el root de ld+json es un Array (busca @context en el array).
+    // Usar @graph con un único @context evita r["@context"].toLowerCase sobre undefined.
+    const payload = Array.isArray(data)
+      ? {
+          '@context': 'https://schema.org',
+          '@graph': data.map((item) => {
+            const { ['@context']: _ctx, ...rest } = item;
+            return rest;
+          }),
+        }
+      : data;
+
     this.jsonLdEl = this.doc.createElement('script');
     this.jsonLdEl.type = 'application/ld+json';
-    this.jsonLdEl.text = JSON.stringify(data);
+    this.jsonLdEl.text = JSON.stringify(payload);
     this.doc.head.appendChild(this.jsonLdEl);
   }
 }
