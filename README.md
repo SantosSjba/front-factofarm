@@ -120,6 +120,74 @@ ng e2e
 
 Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
 
+## Despliegue en Coolify (producción)
+
+El frontend **no se compila en el VPS**. Se construye la imagen Docker (Angular + nginx) en tu Mac, se publica como `latest` en Docker Hub y Coolify solo la descarga y ejecuta.
+
+| Recurso | Valor |
+|---------|--------|
+| Imagen | `santossjba/front-factofarm:latest` |
+| Coolify (proyecto) | FACTO FARM → production → `front-factofarm` |
+| URL | https://factofarm.factosysperu.com |
+| API que consume | https://api-factofarm.factosysperu.com/api/v1 |
+
+Las variables `NG_APP_*` se **hornean en el build** (Angular no lee env en runtime). El `Dockerfile` escribe un `.env` de producción antes de `pnpm run build` vía `scripts/sync-env.mjs`.
+
+### Requisitos en tu máquina
+
+- Docker Desktop (build `linux/amd64` + login a Docker Hub como `santossjba`)
+- Acceso a Coolify (`https://factosysperu.cloud`)
+
+### Paso a paso tras un cambio de código
+
+1. **Commit y push** (desde la raíz de `front-factofarm`):
+
+```bash
+git add -A
+git status   # no subir .env ni secretos
+git commit -m "mensaje claro del cambio"
+git push origin main
+```
+
+2. **Build y push de la imagen** (solo tag `latest`):
+
+```bash
+docker buildx build --platform linux/amd64 \
+  --build-arg NG_APP_API_BASE_URL=https://api-factofarm.factosysperu.com/api/v1 \
+  --build-arg NG_APP_PRODUCTION=true \
+  --build-arg NG_APP_SITE_URL=https://factofarm.factosysperu.com \
+  -t santossjba/front-factofarm:latest \
+  --push .
+```
+
+Si cambias dominio o URL de la API, ajusta esos `--build-arg` (y vuelve a build/push).
+
+3. **Redeploy en Coolify**
+
+- Abre **FACTO FARM → production → front-factofarm**
+- Confirma imagen `santossjba/front-factofarm` y tag `latest`
+- Puerto expuesto: `80`
+- Dominio: `https://factofarm.factosysperu.com`
+- Healthcheck: `GET /` en el puerto `80`
+- **Deploy** / **Force rebuild**
+
+4. **Verificar**
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" https://factofarm.factosysperu.com/
+```
+
+Debe responder `200`. En el navegador, fuerza recarga (`Cmd+Shift+R`) para evitar cache de JS antiguos.
+
+### Notas
+
+- El `.dockerignore` excluye `.pnpm-store` y `node_modules` para no inflar el contexto de build.
+- La imagen incluye `curl` porque Coolify lo usa en el healthcheck Alpine/nginx.
+- CORS de la API debe incluir `https://factofarm.factosysperu.com` (ya configurado en Coolify del backend).
+- No crear tags Docker adicionales: solo `latest`.
+
+---
+
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
