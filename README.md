@@ -122,6 +122,8 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 
 ## Despliegue en Coolify (producción)
 
+> Idea general y checklist para otras apps: [`docs/COOLIFY-DOCKER-DEPLOY.md`](./docs/COOLIFY-DOCKER-DEPLOY.md).
+
 El frontend **no se compila en el VPS**. Se construye la imagen Docker (Angular + nginx) en tu Mac, se publica como `latest` en Docker Hub y Coolify solo la descarga y ejecuta.
 
 | Recurso | Valor |
