@@ -1,0 +1,15 @@
+.git
+.github
+.pnpm-store
+node_modules
+dist
+.angular
+.env
+.env.*
+!.env.example
+*.md
+.vscode
+.idea
+coverage
+tmp
+**/.DS_Store
