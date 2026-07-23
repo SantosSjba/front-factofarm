@@ -1049,6 +1049,9 @@ export interface ProductHistoryStockItemDto {
   warehouseId: string;
   ubicacion: string;
   stock: string;
+  /** Código de sede del establecimiento (no series de producto). */
+  establishmentCodigo?: string;
+  /** @deprecated usar establishmentCodigo */
   series: string;
 }
 
