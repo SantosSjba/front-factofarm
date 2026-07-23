@@ -246,7 +246,7 @@
     <div class="sm:col-span-2">
       <app-button
         variant="primary"
-        [disabled]="!warehouseId() || !clienteNombre() || !clienteTelefono() || !direccionEntrega() || lines().length === 0 || createMutation.isPending()"
+        [disabled]="!warehouseId() || !clienteNombre() || !clienteTelefono() || !direccionEntrega() || lines().length === 0 || createMutation.isPending()" [loading]="createMutation.isPending()"
         (btnClick)="createMutation.mutate()"
       >
         Crear pedido

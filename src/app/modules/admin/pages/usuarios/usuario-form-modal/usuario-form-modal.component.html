@@ -267,7 +267,7 @@
     <app-button variant="outline" [disabled]="isSaving()" (btnClick)="onClose()">
       Cancelar
     </app-button>
-    <app-button [disabled]="isSaving()" (btnClick)="onSave()">
+    <app-button [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="onSave()">
       {{ submitLabel() }}
     </app-button>
   </div>

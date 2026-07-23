@@ -54,7 +54,7 @@
     </app-button>
     <app-button
       startIconName="mdi:account-convert-outline"
-      [disabled]="convertMutation.isPending()"
+      [disabled]="convertMutation.isPending()" [loading]="convertMutation.isPending()"
       (btnClick)="submit()"
     >
       {{ submitLabel() }}

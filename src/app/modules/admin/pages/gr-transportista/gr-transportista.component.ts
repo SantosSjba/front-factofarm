@@ -98,7 +98,7 @@ function paginatedItems<T>(data: PaginatedResponseDto<T> | T[] | undefined): T[]
         }
         <app-button
           variant="primary"
-          [disabled]="emitMutation.isPending() || !canEmitSpecialDocument()"
+          [disabled]="emitMutation.isPending() || !canEmitSpecialDocument()" [loading]="emitMutation.isPending()"
           (btnClick)="emitMutation.mutate()"
         >
           Emitir guía transportista

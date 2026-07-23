@@ -80,7 +80,7 @@
                       [iconOnly]="true"
                       startIconName="mdi:trash-can-outline"
                       tooltip="Eliminar"
-                      [disabled]="deleteMutation.isPending()"
+                      [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()"
                       (btnClick)="openDeleteConfirm(row)"
                     />
                   </ng-container>
@@ -134,10 +134,10 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">
+    <app-button variant="outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="closeFormModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="isSaving()" (btnClick)="submitForm()">
+    <app-button [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
       {{ submitLabel() }}
     </app-button>
   </div>
@@ -173,7 +173,7 @@
       Cancelar
     </app-button>
     <app-button
-      [disabled]="deleteMutation.isPending()"
+      [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()"
       (btnClick)="confirmDelete()"
     >
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}

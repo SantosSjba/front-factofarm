@@ -1,12 +1,19 @@
 import { Component, input, output } from '@angular/core';
+import { SpinnerComponent } from '../../ui/spinner/spinner.component';
 
 @Component({
   selector: 'app-page-state',
   standalone: true,
+  imports: [SpinnerComponent],
   template: `
     @if (loading()) {
-      <div class="flex min-h-[12rem] items-center justify-center text-sm text-gray-500" role="status" aria-live="polite">
-        {{ loadingLabel() }}
+      <div
+        class="flex min-h-[12rem] flex-col items-center justify-center gap-3 text-sm text-gray-500"
+        role="status"
+        aria-live="polite"
+      >
+        <app-spinner size="lg" [label]="loadingLabel()" />
+        <span>{{ loadingLabel() }}</span>
       </div>
     } @else if (error()) {
       <div class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-900 dark:bg-rose-900/20" role="alert">

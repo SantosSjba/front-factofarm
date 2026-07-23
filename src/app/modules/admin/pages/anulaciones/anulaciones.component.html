@@ -61,7 +61,7 @@
       <app-button variant="outline" (btnClick)="voidTargetId.set(null)">Cancelar</app-button>
       <app-button
         variant="primary"
-        [disabled]="!voidReason().trim() || voidMutation.isPending()"
+        [disabled]="!voidReason().trim() || voidMutation.isPending()" [loading]="voidMutation.isPending()"
         (btnClick)="voidMutation.mutate()"
       >
         Confirmar anulación

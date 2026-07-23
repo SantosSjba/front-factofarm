@@ -80,7 +80,7 @@
                     [iconOnly]="true"
                     startIconName="mdi:trash-can-outline"
                     tooltip="Eliminar"
-                    [disabled]="deleteEstablishmentMutation.isPending()"
+                    [disabled]="deleteEstablishmentMutation.isPending()" [loading]="deleteEstablishmentMutation.isPending()"
                     (btnClick)="openDeleteConfirm(row)"
                   />
                   <app-button
@@ -348,10 +348,10 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">
+    <app-button variant="outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="closeFormModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="isSaving()" (btnClick)="submitForm()">
+    <app-button [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
       {{ submitLabel() }}
     </app-button>
   </div>
@@ -388,7 +388,7 @@
       Cancelar
     </app-button>
     <app-button
-      [disabled]="deleteEstablishmentMutation.isPending()"
+      [disabled]="deleteEstablishmentMutation.isPending()" [loading]="deleteEstablishmentMutation.isPending()"
       (btnClick)="confirmDelete()"
     >
       {{ deleteEstablishmentMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
@@ -448,7 +448,7 @@
                     [iconOnly]="true"
                     startIconName="mdi:trash-can-outline"
                     tooltip="Eliminar"
-                    [disabled]="deleteSeriesMutation.isPending()"
+                    [disabled]="deleteSeriesMutation.isPending()" [loading]="deleteSeriesMutation.isPending()"
                     (btnClick)="removeSeries(row.id)"
                   />
                 </td>
@@ -494,7 +494,7 @@
       <div class="md:col-span-1">
         <app-button
           className="w-full"
-          [disabled]="createSeriesMutation.isPending()"
+          [disabled]="createSeriesMutation.isPending()" [loading]="createSeriesMutation.isPending()"
           (btnClick)="addSeries()"
         >
           <app-icon name="mdi:content-save" width="18" height="18" />

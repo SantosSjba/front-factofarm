@@ -56,7 +56,7 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
             {{ blocked }}
           </p>
         }
-        <app-button class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" (btnClick)="emitRetention()">
+        <app-button class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" [loading]="createMutation.isPending()" (btnClick)="emitRetention()">
           Emitir retención
         </app-button>
       </div>
@@ -102,7 +102,7 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
 
     <app-component-card class="mt-6" title="Detracciones" [loading]="detraccionesQuery.isPending()">
       <div class="mb-4 flex flex-wrap gap-3">
-        <app-button variant="outline" [disabled]="syncMutation.isPending()" (btnClick)="syncDetracciones()">
+        <app-button variant="outline" [disabled]="syncMutation.isPending()" [loading]="syncMutation.isPending()" (btnClick)="syncDetracciones()">
           Sincronizar desde facturas
         </app-button>
       </div>

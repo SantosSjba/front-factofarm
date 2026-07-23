@@ -109,7 +109,7 @@ import type { AgreementType } from '../../models/directory.models';
           <app-label>Cobertura %</app-label>
           <app-input-field type="number" [value]="formCobertura()" (valueChange)="formCobertura.set(parseNum($event))" />
         </div>
-        <app-button variant="primary" [disabled]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
+        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
       </div>
     </app-modal>
   `,

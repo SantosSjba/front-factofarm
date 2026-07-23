@@ -198,7 +198,13 @@
             </div>
           }
 
-          <app-button className="w-full sm:w-auto" size="sm" [disabled]="submitting()" (btnClick)="onSubmit($event)">
+          <app-button
+            className="w-full sm:w-auto"
+            size="sm"
+            [disabled]="submitting()"
+            [loading]="submitting()"
+            (btnClick)="onSubmit($event)"
+          >
             {{ submitting() ? 'Registrando…' : 'Registrar en libro de reclamaciones' }}
           </app-button>
         </app-form-stack>

@@ -168,7 +168,7 @@
         }
         <app-button size="sm" variant="outline" (btnClick)="refreshStatusMutation.mutate(doc.id)">Consultar SUNAT</app-button>
         @if (canVoid(doc)) {
-          <app-button size="sm" variant="outline" (btnClick)="voidMutation.mutate()" [disabled]="!voidReason().trim() || voidMutation.isPending()">
+          <app-button size="sm" variant="outline" (btnClick)="voidMutation.mutate()" [disabled]="!voidReason().trim() || voidMutation.isPending()" [loading]="voidMutation.isPending()">
             Comunicación de baja
           </app-button>
         }
@@ -217,7 +217,7 @@
     <app-button
       variant="primary"
       (btnClick)="emitSpecialMutation.mutate()"
-      [disabled]="emitSpecialMutation.isPending() || !!specialDocumentBlockedReason(specialType())"
+      [disabled]="emitSpecialMutation.isPending() || !!specialDocumentBlockedReason(specialType())" [loading]="emitSpecialMutation.isPending()"
     >
       Emitir
     </app-button>

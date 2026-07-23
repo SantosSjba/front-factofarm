@@ -67,6 +67,6 @@
     <app-input-field type="number" [value]="payAmount()" (valueChange)="payAmount.set(parseNum($event))" placeholder="Monto" />
     <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Método" />
     <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" placeholder="Referencia" />
-    <app-button variant="primary" [disabled]="payMutation.isPending()" (btnClick)="payMutation.mutate()">Confirmar cobro</app-button>
+    <app-button variant="primary" [disabled]="payMutation.isPending()" [loading]="payMutation.isPending()" (btnClick)="payMutation.mutate()">Confirmar cobro</app-button>
   </div>
 </app-modal>

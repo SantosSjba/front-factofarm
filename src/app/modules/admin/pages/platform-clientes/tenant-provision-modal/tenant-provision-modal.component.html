@@ -93,7 +93,7 @@
     </app-button>
     <app-button
       startIconName="mdi:account-key-outline"
-      [disabled]="provisionMutation.isPending()"
+      [disabled]="provisionMutation.isPending()" [loading]="provisionMutation.isPending()"
       (btnClick)="submit()"
     >
       {{ submitLabel() }}

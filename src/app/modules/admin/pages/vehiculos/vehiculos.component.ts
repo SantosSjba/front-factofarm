@@ -90,7 +90,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         <app-input-field [value]="marca()" (valueChange)="marca.set('' + $event)" placeholder="Marca" />
         <app-input-field [value]="modelo()" (valueChange)="modelo.set('' + $event)" placeholder="Modelo" />
         <app-input-field [value]="capacidadKg()" (valueChange)="capacidadKg.set('' + $event)" placeholder="Capacidad kg" />
-        <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()">Guardar</app-button>
+        <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
       </div>
     </app-modal>
   `,

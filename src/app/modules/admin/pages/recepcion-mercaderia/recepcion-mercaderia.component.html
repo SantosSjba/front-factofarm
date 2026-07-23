@@ -68,7 +68,7 @@
       }
       <app-input-field [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
       <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
-      <app-button variant="primary" [disabled]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
+      <app-button variant="primary" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
         Confirmar recepción
       </app-button>
     </div>

@@ -77,6 +77,6 @@
     <app-input-field [value]="nombres()" (valueChange)="nombres.set('' + $event)" placeholder="Nombres" />
     <app-input-field [value]="apellidos()" (valueChange)="apellidos.set('' + $event)" placeholder="Apellidos" />
     <app-input-field [value]="especialidad()" (valueChange)="especialidad.set('' + $event)" placeholder="Especialidad" />
-    <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()">Guardar</app-button>
+    <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
   </div>
 </app-modal>

@@ -161,7 +161,7 @@
     <app-button variant="outline" [disabled]="importPending()" (btnClick)="closeImportModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="importPending()" (btnClick)="processImport()">
+    <app-button [disabled]="importPending()" [loading]="importPending()" (btnClick)="processImport()">
       {{ importPending() ? 'Procesando...' : 'Procesar' }}
     </app-button>
   </div>
@@ -288,7 +288,7 @@
     <app-button variant="outline" [disabled]="outboundPending()" (btnClick)="closeOutboundModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="outboundPending()" (btnClick)="processOutbound()">
+    <app-button [disabled]="outboundPending()" [loading]="outboundPending()" (btnClick)="processOutbound()">
       {{ outboundPending() ? 'Procesando...' : 'Aceptar' }}
     </app-button>
   </div>
@@ -426,7 +426,7 @@
     <app-button variant="outline" [disabled]="inboundPending()" (btnClick)="closeInboundModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="inboundPending()" (btnClick)="processInbound()">
+    <app-button [disabled]="inboundPending()" [loading]="inboundPending()" (btnClick)="processInbound()">
       {{ inboundPending() ? 'Procesando...' : 'Aceptar' }}
     </app-button>
   </div>
@@ -499,7 +499,7 @@
     <app-button variant="outline" [disabled]="adjustmentPending()" (btnClick)="closeAdjustmentModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="adjustmentPending()" (btnClick)="processAdjustment()">
+    <app-button [disabled]="adjustmentPending()" [loading]="adjustmentPending()" (btnClick)="processAdjustment()">
       {{ adjustmentPending() ? 'Procesando...' : 'Registrar ajuste' }}
     </app-button>
   </div>

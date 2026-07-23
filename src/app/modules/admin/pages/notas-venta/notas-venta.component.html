@@ -90,7 +90,7 @@
                     [iconOnly]="true"
                     startIconName="mdi:cloud-upload-outline"
                     tooltip="Emitir a SUNAT"
-                    [disabled]="emitMutation.isPending()"
+                    [disabled]="emitMutation.isPending()" [loading]="emitMutation.isPending()"
                     (btnClick)="emitCpe(row.id)"
                   />
                 }
@@ -208,7 +208,7 @@
           <app-button
             variant="primary"
             startIconName="mdi:cloud-upload-outline"
-            [disabled]="emitMutation.isPending()"
+            [disabled]="emitMutation.isPending()" [loading]="emitMutation.isPending()"
             (btnClick)="emitCpe(sale.id)"
           >
             Emitir a SUNAT
@@ -257,7 +257,7 @@
       <app-button variant="outline" (btnClick)="closeConvert()">Cancelar</app-button>
       <app-button
         variant="primary"
-        [disabled]="convertMutation.isPending()"
+        [disabled]="convertMutation.isPending()" [loading]="convertMutation.isPending()"
         (btnClick)="convertMutation.mutate()"
       >
         {{ convertMutation.isPending() ? 'Migrando…' : 'Migrar y emitir' }}
@@ -314,7 +314,7 @@
         <span class="font-semibold">Total a devolver: {{ returnTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
         <div class="flex gap-2">
           <app-button variant="outline" (btnClick)="closeReturn()">Cancelar</app-button>
-          <app-button variant="primary" [disabled]="returnMutation.isPending()" (btnClick)="submitReturn()">
+          <app-button variant="primary" [disabled]="returnMutation.isPending()" [loading]="returnMutation.isPending()" (btnClick)="submitReturn()">
             Confirmar devolución
           </app-button>
         </div>
@@ -343,7 +343,7 @@
     </div>
     <div class="flex justify-end gap-2 border-t pt-4">
       <app-button variant="outline" (btnClick)="closeDebit()">Cancelar</app-button>
-      <app-button variant="primary" [disabled]="debitMutation.isPending()" (btnClick)="submitDebit()">
+      <app-button variant="primary" [disabled]="debitMutation.isPending()" [loading]="debitMutation.isPending()" (btnClick)="submitDebit()">
         Emitir ND
       </app-button>
     </div>

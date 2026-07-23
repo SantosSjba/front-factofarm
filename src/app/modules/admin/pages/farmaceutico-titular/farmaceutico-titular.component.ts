@@ -26,7 +26,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         <app-input-field placeholder="Nombre completo" [value]="fullName()" (valueChange)="fullName.set($event + '')" />
         <app-input-field placeholder="Vigencia YYYY-MM-DD" [value]="vigencia()" (valueChange)="vigencia.set($event + '')" />
       </div>
-      <app-button [disabled]="createMutation.isPending()" (btnClick)="create()">Registrar licencia</app-button>
+      <app-button [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="create()">Registrar licencia</app-button>
 
       <div class="mt-6 overflow-x-auto">
         <table class="min-w-full text-sm">

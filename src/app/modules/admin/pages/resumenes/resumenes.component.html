@@ -11,7 +11,7 @@
     <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set('' + $event)" />
     <app-button
       variant="primary"
-      [disabled]="summaryMutation.isPending() || !canSendDailySummary()"
+      [disabled]="summaryMutation.isPending() || !canSendDailySummary()" [loading]="summaryMutation.isPending()"
       (btnClick)="summaryMutation.mutate()"
     >
       {{ summaryMutation.isPending() ? 'Enviando…' : 'Enviar RC' }}

@@ -25,7 +25,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         <app-input-field placeholder="Código DIGEMID" [value]="codigo()" (valueChange)="codigo.set($event + '')" />
         <app-input-field placeholder="Nombre" [value]="nombre()" (valueChange)="nombre.set($event + '')" />
         <app-input-field placeholder="Precio máximo" [value]="precio()" (valueChange)="precio.set($event + '')" />
-        <app-button class="mt-6" [disabled]="saveMutation.isPending()" (btnClick)="save()">Guardar</app-button>
+        <app-button class="mt-6" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="save()">Guardar</app-button>
       </div>
 
       <div class="overflow-x-auto">

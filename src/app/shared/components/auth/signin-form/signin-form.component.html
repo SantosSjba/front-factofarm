@@ -85,7 +85,7 @@
       <app-button
         className="w-full"
         size="sm"
-        [disabled]="isLoading"
+        [disabled]="isLoading" [loading]="isLoading"
         (btnClick)="onSignIn()"
       >
         {{ isLoading ? 'Entrando…' : 'Iniciar sesión' }}

@@ -285,6 +285,7 @@
             <app-button
               variant="outline"
               [disabled]="!canConsultDocument() || isDocumentConsultPending()"
+              [loading]="isDocumentConsultPending()"
               (btnClick)="consultDocument()"
             >
               {{ isDocumentConsultPending() ? 'Consultando…' : consultDocumentLabel() }}
@@ -433,7 +434,7 @@
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
     <app-button variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button [disabled]="saveMutation.isPending()" (btnClick)="submitForm()">
+    <app-button [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submitForm()">
       {{ saveMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -451,7 +452,7 @@
         <span class="ml-2">{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
         <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
       </label>
-      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" (btnClick)="runImportPreview()">
+      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
         {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
       </app-button>
     </div>
@@ -470,7 +471,7 @@
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
     <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">Cancelar</app-button>
-    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" (btnClick)="processImport()">
+    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
       {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
     </app-button>
   </div>
@@ -525,7 +526,7 @@
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <app-button variant="outline" (btnClick)="deleteOpen.set(false)">Cancelar</app-button>
-    <app-button [disabled]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+    <app-button [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>
@@ -552,7 +553,7 @@
       <app-icon name="mdi:printer-outline" width="16" height="16" />
       <span>Imprimir</span>
     </app-button>
-    <app-button [disabled]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+    <app-button [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -568,7 +569,7 @@
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <app-button variant="outline" (btnClick)="tagsOpen.set(false)">Cancelar</app-button>
-    <app-button [disabled]="tagsMutation.isPending()" (btnClick)="submitTags()">
+    <app-button [disabled]="tagsMutation.isPending()" [loading]="tagsMutation.isPending()" (btnClick)="submitTags()">
       {{ tagsMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>

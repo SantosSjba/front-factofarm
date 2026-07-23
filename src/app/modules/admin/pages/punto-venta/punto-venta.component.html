@@ -677,7 +677,7 @@
       <app-button
         variant="primary"
         startIconName="mdi:printer-pos"
-        [disabled]="saleMutation.isPending()"
+        [disabled]="saleMutation.isPending()" [loading]="saleMutation.isPending()"
         (btnClick)="confirmSale()"
       >
         Confirmar e imprimir

@@ -56,7 +56,7 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
             {{ blocked }}
           </p>
         }
-        <app-button class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" (btnClick)="emitPerception()">
+        <app-button class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" [loading]="createMutation.isPending()" (btnClick)="emitPerception()">
           Emitir percepción
         </app-button>
       </div>

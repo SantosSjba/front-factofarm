@@ -103,7 +103,7 @@
                       [iconOnly]="true"
                       startIconName="mdi:trash-can-outline"
                       tooltip="Eliminar"
-                      [disabled]="deleteUserMutation.isPending()"
+                      [disabled]="deleteUserMutation.isPending()" [loading]="deleteUserMutation.isPending()"
                       (btnClick)="rowAction(u, 'eliminar')"
                     />
                     <app-button
@@ -168,13 +168,13 @@
   <div data-modal-footer class="mt-5 flex justify-end gap-3">
     <app-button
       variant="outline"
-      [disabled]="deleteUserMutation.isPending()"
+      [disabled]="deleteUserMutation.isPending()" [loading]="deleteUserMutation.isPending()"
       (btnClick)="closeDeleteConfirm()"
     >
       Cancelar
     </app-button>
     <app-button
-      [disabled]="deleteUserMutation.isPending()"
+      [disabled]="deleteUserMutation.isPending()" [loading]="deleteUserMutation.isPending()"
       (btnClick)="confirmDelete()"
     >
       {{ deleteUserMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}

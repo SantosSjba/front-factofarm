@@ -160,7 +160,7 @@
     @if (customerOptions().length) { <ul class="rounded border text-sm">@for (c of customerOptions(); track c.id) { <li class="cursor-pointer px-3 py-2 hover:bg-gray-50" (click)="selectCustomer(c)">{{ c.nombre }}</li> }</ul> }
     <app-form-select label="Severidad" [value]="severidad()" [options]="severityOptions" (valueChange)="severidad.set($any($event))" />
     <textarea class="w-full rounded-lg border px-3 py-2 text-sm" rows="4" placeholder="Descripción del evento adverso" [value]="descripcion()" (input)="descripcion.set($any($event.target).value)"></textarea>
-    <app-button [disabled]="!productId() || !descripcion().trim() || createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
+    <app-button [disabled]="!productId() || !descripcion().trim() || createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
   </div>
 </app-modal>
 
@@ -168,6 +168,6 @@
   <div class="space-y-3">
     <app-input-field label="N° reporte DIGEMID" [value]="digemidReportNumber()" (valueChange)="digemidReportNumber.set('' + $event)" />
     <textarea class="w-full rounded-lg border px-3 py-2 text-sm" rows="3" placeholder="Medidas correctivas" [value]="medidasCorrectivas()" (input)="medidasCorrectivas.set($any($event.target).value)"></textarea>
-    <app-button [disabled]="!digemidReportNumber().trim() || notifyMutation.isPending()" (btnClick)="notifyMutation.mutate()">Registrar notificación</app-button>
+    <app-button [disabled]="!digemidReportNumber().trim() || notifyMutation.isPending()" [loading]="notifyMutation.isPending()" (btnClick)="notifyMutation.mutate()">Registrar notificación</app-button>
   </div>
 </app-modal>

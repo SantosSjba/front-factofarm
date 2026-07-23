@@ -98,7 +98,7 @@
     </app-button>
     <app-button
       startIconName="mdi:content-save-outline"
-      [disabled]="updateMutation.isPending()"
+      [disabled]="updateMutation.isPending()" [loading]="updateMutation.isPending()"
       (btnClick)="submit()"
     >
       {{ submitLabel() }}

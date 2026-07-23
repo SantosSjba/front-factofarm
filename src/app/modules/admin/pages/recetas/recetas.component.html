@@ -81,7 +81,7 @@
         }
       </ul>
     </div>
-    <app-button variant="primary" (btnClick)="createMutation.mutate()" [disabled]="!customerId() || draftItems().length === 0 || createMutation.isPending()">
+    <app-button variant="primary" (btnClick)="createMutation.mutate()" [disabled]="!customerId() || draftItems().length === 0 || createMutation.isPending()" [loading]="createMutation.isPending()">
       Guardar receta
     </app-button>
   </div>

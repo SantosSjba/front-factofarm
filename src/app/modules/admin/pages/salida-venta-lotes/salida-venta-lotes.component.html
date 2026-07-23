@@ -150,7 +150,7 @@
 }
 
 <div *appHasPermission="'inventory.write'">
-  <app-button [disabled]="dispatchMutation.isPending()" (btnClick)="dispatch()">
+  <app-button [disabled]="dispatchMutation.isPending()" [loading]="dispatchMutation.isPending()" (btnClick)="dispatch()">
     {{ dispatchMutation.isPending() ? 'Despachando…' : 'Registrar salida de venta' }}
   </app-button>
 </div>

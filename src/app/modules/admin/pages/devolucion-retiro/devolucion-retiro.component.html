@@ -79,7 +79,7 @@
       <app-input-field [value]="comment()" (valueChange)="comment.set('' + $event)" />
     </div>
     <div class="md:col-span-2">
-      <app-button variant="primary" [disabled]="dispatchMutation.isPending()" (btnClick)="submit()">
+      <app-button variant="primary" [disabled]="dispatchMutation.isPending()" [loading]="dispatchMutation.isPending()" (btnClick)="submit()">
         Registrar salida
       </app-button>
     </div>

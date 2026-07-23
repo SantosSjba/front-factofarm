@@ -63,7 +63,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                         startIconName="mdi:file-certificate-outline"
                         tooltip="Emitir guía"
                         (btnClick)="emitGuiaMutation.mutate(row.id)"
-                        [disabled]="emitGuiaMutation.isPending()"
+                        [disabled]="emitGuiaMutation.isPending()" [loading]="emitGuiaMutation.isPending()"
                       />
                     }
                   </td>

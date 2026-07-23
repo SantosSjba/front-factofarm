@@ -12,19 +12,24 @@
     ' ' +
     disabledClasses
   "
-  [disabled]="disabled"
+  [disabled]="isDisabled"
+  [attr.aria-busy]="loading || null"
   [attr.aria-label]="tooltip || null"
   (click)="onClick($event)"
 >
-  @if (startIconName) {
+  @if (loading) {
+    <app-spinner [size]="spinnerSize" label="Procesando" />
+  } @else if (startIconName) {
     <app-icon [name]="startIconName" [iconClass]="iconSizeClass" />
   } @else if (startIcon) {
     <span class="flex items-center" [innerHTML]="startIcon | safeHtml"></span>
   }
-  <ng-content></ng-content>
-  @if (endIconName) {
+  @if (!(loading && iconOnly)) {
+    <ng-content></ng-content>
+  }
+  @if (!loading && endIconName) {
     <app-icon [name]="endIconName" [iconClass]="iconSizeClass" />
-  } @else if (endIcon) {
+  } @else if (!loading && endIcon) {
     <span class="flex items-center" [innerHTML]="endIcon | safeHtml"></span>
   }
 </button>

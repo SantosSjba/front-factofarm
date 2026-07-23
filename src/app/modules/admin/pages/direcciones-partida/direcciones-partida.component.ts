@@ -86,7 +86,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         @if (!editing()) { <app-input-field [value]="codigo()" (valueChange)="codigo.set('' + $event)" placeholder="Código" /> }
         <app-input-field [value]="nombre()" (valueChange)="nombre.set('' + $event)" placeholder="Nombre (ej. Almacén central)" />
         <app-input-field [value]="direccion()" (valueChange)="direccion.set('' + $event)" placeholder="Dirección completa" />
-        <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()">Guardar</app-button>
+        <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
       </div>
     </app-modal>
   `,

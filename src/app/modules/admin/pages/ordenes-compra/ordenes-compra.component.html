@@ -98,7 +98,7 @@
       <span class="font-bold">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
       <app-button
         variant="primary"
-        [disabled]="!supplierId() || !warehouseId() || lines().length === 0 || createMutation.isPending()"
+        [disabled]="!supplierId() || !warehouseId() || lines().length === 0 || createMutation.isPending()" [loading]="createMutation.isPending()"
         (btnClick)="createMutation.mutate()"
       >
         Crear OC

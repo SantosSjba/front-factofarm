@@ -29,7 +29,7 @@
       <div class="sm:col-span-2">
         <app-button
           variant="primary"
-          [disabled]="!cashRegisterId() || openMutation.isPending()"
+          [disabled]="!cashRegisterId() || openMutation.isPending()" [loading]="openMutation.isPending()"
           (btnClick)="openMutation.mutate()"
         >
           Abrir caja
@@ -124,7 +124,7 @@
         </label>
       </div>
       <div class="lg:col-span-2">
-        <app-button variant="primary" [disabled]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">
+        <app-button variant="primary" [disabled]="hardwareMutation.isPending()" [loading]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">
           Guardar hardware
         </app-button>
         <p class="mt-2 text-xs text-gray-500">

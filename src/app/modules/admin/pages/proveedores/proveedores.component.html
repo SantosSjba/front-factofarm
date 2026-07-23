@@ -116,7 +116,7 @@
                       [iconOnly]="true"
                       startIconName="mdi:trash-can-outline"
                       tooltip="Eliminar"
-                      [disabled]="deleteMutation.isPending()"
+                      [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()"
                       (btnClick)="openDeleteConfirm(row)"
                     />
                   </ng-container>
@@ -266,10 +266,10 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">
+    <app-button variant="outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="closeFormModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="isSaving()" (btnClick)="submitForm()">
+    <app-button [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
       {{ submitLabel() }}
     </app-button>
   </div>
@@ -322,7 +322,7 @@
     >
       Cancelar
     </app-button>
-    <app-button [disabled]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+    <app-button [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>
@@ -377,7 +377,7 @@
         <div class="mt-3">
           <app-button
             size="sm"
-            [disabled]="upsertProductMutation.isPending()"
+            [disabled]="upsertProductMutation.isPending()" [loading]="upsertProductMutation.isPending()"
             (btnClick)="submitProductLink()"
           >
             Vincular
@@ -406,14 +406,16 @@
               <td class="px-4 py-2 text-theme-sm">{{ link.plazoDias ?? '—' }}</td>
               <td class="px-4 py-2 text-end">
                 <ng-container *appHasPermission="'suppliers.write'">
-                  <button
-                    type="button"
-                    class="text-theme-xs text-error-600 hover:underline"
+                  <app-button
+                    size="sm"
+                    variant="ghost"
+                    className="text-error-600 hover:text-error-700"
                     [disabled]="removeProductMutation.isPending()"
-                    (click)="removeProduct(link)"
+                    [loading]="removeProductMutation.isPending()"
+                    (btnClick)="removeProduct(link)"
                   >
                     Quitar
-                  </button>
+                  </app-button>
                 </ng-container>
               </td>
             </tr>

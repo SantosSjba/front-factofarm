@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { SafeHtmlPipe } from '../../../pipe/safe-html.pipe';
 import { IconComponent } from '../icon/icon.component';
+import { SpinnerComponent } from '../spinner/spinner.component';
 import { TooltipDirective } from '../../../directives/tooltip.directive';
 
 @Component({
   selector: 'app-button',
-  imports: [CommonModule, SafeHtmlPipe, IconComponent, TooltipDirective],
+  imports: [CommonModule, SafeHtmlPipe, IconComponent, SpinnerComponent, TooltipDirective],
   templateUrl: './button.component.html',
   styles: `
     :host {
@@ -20,6 +21,8 @@ export class ButtonComponent {
   @Input() size: 'sm' | 'md' = 'md';
   @Input() variant: 'primary' | 'outline' | 'danger' | 'ghost' = 'primary';
   @Input() disabled = false;
+  /** Muestra spinner y deshabilita el botón durante la acción. */
+  @Input() loading = false;
   @Input() className = '';
   @Input() startIcon?: string;
   @Input() endIcon?: string;
@@ -32,6 +35,10 @@ export class ButtonComponent {
 
   @Output() btnClick = new EventEmitter<Event>();
 
+  get isDisabled(): boolean {
+    return this.disabled || this.loading;
+  }
+
   get sizeClasses(): string {
     if (this.iconOnly) {
       return this.size === 'sm' ? 'p-2' : 'p-2.5';
@@ -41,6 +48,10 @@ export class ButtonComponent {
 
   get iconSizeClass(): string {
     return this.size === 'sm' ? 'size-4' : 'size-[1.125rem]';
+  }
+
+  get spinnerSize(): 'xs' | 'sm' {
+    return this.size === 'sm' ? 'xs' : 'sm';
   }
 
   get variantClasses(): string {
@@ -57,11 +68,11 @@ export class ButtonComponent {
   }
 
   get disabledClasses(): string {
-    return this.disabled ? 'cursor-not-allowed opacity-50' : '';
+    return this.isDisabled ? 'cursor-not-allowed opacity-50' : '';
   }
 
   onClick(event: Event) {
-    if (!this.disabled) {
+    if (!this.isDisabled) {
       this.btnClick.emit(event);
     }
   }

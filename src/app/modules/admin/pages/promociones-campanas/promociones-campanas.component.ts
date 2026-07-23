@@ -108,7 +108,7 @@ import type { PromotionType } from '../../models/directory.models';
           <app-label>Valor (% o monto según tipo)</app-label>
           <app-input-field type="number" [value]="valor()" (valueChange)="valor.set(+$event)" />
         </div>
-        <app-button variant="primary" [disabled]="createMutation.isPending()" (btnClick)="createMutation.mutate()">
+        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">
           Guardar
         </app-button>
       </div>

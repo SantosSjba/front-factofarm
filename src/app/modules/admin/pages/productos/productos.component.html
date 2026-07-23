@@ -325,18 +325,24 @@
                         </button>
                         <button
                           type="button"
-                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                          class="inline-flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
                           [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()"
                           (click)="duplicateProductRow(row)"
                         >
+                          @if (duplicateMutation.isPending()) {
+                            <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
+                          }
                           {{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}
                         </button>
                         <button
                           type="button"
-                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
+                          class="inline-flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
                           [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
                           (click)="toggleProductStatus(row, 'product-actions-' + row.id)"
                         >
+                          @if (statusMutation.isPending()) {
+                            <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
+                          }
                           {{
                             statusMutation.isPending()
                               ? 'Procesando...'
@@ -354,10 +360,13 @@
                       <ng-container *appHasPermission="'products.delete'">
                         <button
                           type="button"
-                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                          class="inline-flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
                           [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
                           (click)="deleteProductRow(row, 'product-actions-' + row.id)"
                         >
+                          @if (deleteMutation.isPending()) {
+                            <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
+                          }
                           {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
                         </button>
                       </ng-container>
@@ -612,7 +621,7 @@
         <span class="ml-2">{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
         <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
       </label>
-      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" (btnClick)="runImportPreview()">
+      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
         {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
       </app-button>
     </div>
@@ -634,7 +643,7 @@
     <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">
       Cancelar
     </app-button>
-    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" (btnClick)="processImport()">
+    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
       {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
     </app-button>
   </div>
@@ -650,7 +659,7 @@
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
     <app-button
-      [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
+      [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()"
       (btnClick)="confirmProductAction()"
     >
       {{ confirmActionButtonLabel() }}
@@ -679,7 +688,7 @@
       <app-icon name="mdi:printer-outline" width="16" height="16" />
       <span>Imprimir</span>
     </app-button>
-    <app-button [disabled]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+    <app-button [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -1188,14 +1197,14 @@
               placeholder="Nueva categoría"
               (valueChange)="newCategoryName.set($event + '')"
             />
-            <button
-              type="button"
-              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+            <app-button
+              size="sm"
               [disabled]="creatingCategory() || categoriesQuery.isPending()"
-              (click)="createCategoryQuick()"
+              [loading]="creatingCategory()"
+              (btnClick)="createCategoryQuick()"
             >
               {{ creatingCategory() ? 'Guardando...' : 'Agregar' }}
-            </button>
+            </app-button>
           </div>
         </div>
         <div>
@@ -1214,14 +1223,14 @@
               placeholder="Nueva marca"
               (valueChange)="newBrandName.set($event + '')"
             />
-            <button
-              type="button"
-              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+            <app-button
+              size="sm"
               [disabled]="creatingBrand() || brandsQuery.isPending()"
-              (click)="createBrandQuick()"
+              [loading]="creatingBrand()"
+              (btnClick)="createBrandQuick()"
             >
               {{ creatingBrand() ? 'Guardando...' : 'Agregar' }}
-            </button>
+            </app-button>
           </div>
         </div>
         <div>
@@ -1240,14 +1249,14 @@
               placeholder="Nueva ubicación"
               (valueChange)="newLocationName.set($event + '')"
             />
-            <button
-              type="button"
-              class="inline-flex h-10 items-center rounded-lg bg-brand-500 px-3 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+            <app-button
+              size="sm"
               [disabled]="creatingLocation() || locationsQuery.isPending()"
-              (click)="createLocationQuick()"
+              [loading]="creatingLocation()"
+              (btnClick)="createLocationQuick()"
             >
               {{ creatingLocation() ? 'Guardando...' : 'Agregar' }}
-            </button>
+            </app-button>
           </div>
         </div>
       </div>
@@ -1380,7 +1389,7 @@
               <app-input-field type="number" placeholder="Plazo días" [value]="newSupplierPlazo()" (valueChange)="newSupplierPlazo.set($event + '')" />
             </div>
             <div class="mt-3">
-              <app-button size="sm" [disabled]="upsertProductSupplierMutation.isPending()" (btnClick)="linkProductSupplier()">
+              <app-button size="sm" [disabled]="upsertProductSupplierMutation.isPending()" [loading]="upsertProductSupplierMutation.isPending()" (btnClick)="linkProductSupplier()">
                 Vincular
               </app-button>
             </div>
@@ -1428,6 +1437,7 @@
     <app-button
       size="sm"
       [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading()"
+      [loading]="saveMutation.isPending() || updateMutation.isPending()"
       (btnClick)="submitProduct()"
     >
       {{

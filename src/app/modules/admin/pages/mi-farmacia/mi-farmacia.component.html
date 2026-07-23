@@ -19,7 +19,7 @@
     <app-button
       size="sm"
       startIconName="mdi:content-save-outline"
-      [disabled]="saving() || profileQuery.isPending()"
+      [disabled]="saving() || profileQuery.isPending()" [loading]="profileQuery.isPending()"
       (btnClick)="submit()"
     >
       {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
@@ -343,7 +343,7 @@
   <div class="mt-5 flex justify-end">
     <app-button
       startIconName="mdi:content-save-outline"
-      [disabled]="saving() || profileQuery.isPending()"
+      [disabled]="saving() || profileQuery.isPending()" [loading]="profileQuery.isPending()"
       (btnClick)="submit()"
     >
       {{ saving() ? 'Guardando…' : 'Guardar cambios' }}

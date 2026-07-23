@@ -45,7 +45,7 @@
       </div>
       <app-button
         variant="primary"
-        [disabled]="!zoneId() || registerMutation.isPending()"
+        [disabled]="!zoneId() || registerMutation.isPending()" [loading]="registerMutation.isPending()"
         (btnClick)="registerMutation.mutate()"
       >
         Registrar
