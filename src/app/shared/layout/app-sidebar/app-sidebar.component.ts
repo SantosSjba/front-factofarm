@@ -5,6 +5,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { IconComponent } from '../../components/ui/icon/icon.component';
 import { Subscription } from 'rxjs';
 import { SidebarMenuService } from '../../../core/services/sidebar-menu.service';
+import { TenantBrandingService } from '../../../core/services/tenant-branding.service';
 import { NavItem, NavSubItem } from './sidebar-menu.config';
 
 @Component({
@@ -14,6 +15,7 @@ import { NavItem, NavSubItem } from './sidebar-menu.config';
 })
 export class AppSidebarComponent implements OnInit, OnDestroy {
   private readonly sidebarMenu = inject(SidebarMenuService);
+  protected readonly branding = inject(TenantBrandingService);
 
   navItems: NavItem[] = [];
   othersItems: NavItem[] = [];
@@ -79,6 +81,8 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   toggleNestedSubmenu(parentKey: string, index: number) {
     const key = this.getNestedSubmenuKey(parentKey, index);
     this.nestedSubmenuOpen[key] = !this.nestedSubmenuOpen[key];
+    // Primero pintar hijos anidados; luego medir altura del contenedor padre.
+    this.cdr.detectChanges();
     this.updateSubmenuHeight(parentKey);
   }
 
@@ -90,6 +94,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       this.subMenuHeights[key] = 0;
     } else {
       this.openSubmenu = key;
+      this.cdr.detectChanges();
       this.updateSubmenuHeight(key);
     }
   }
@@ -118,6 +123,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
               if (subItem.subItems?.length) {
                 this.nestedSubmenuOpen[this.getNestedSubmenuKey(key, subIndex)] = true;
               }
+              this.cdr.detectChanges();
               this.updateSubmenuHeight(key);
             }
           });
@@ -131,10 +137,16 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   }
 
   private updateSubmenuHeight(key: string) {
-    setTimeout(() => {
+    // Medir en el siguiente frame para incluir submenús anidados ya renderizados.
+    // Si medimos con height fija previa, overflow:hidden puede recortar hermanos.
+    requestAnimationFrame(() => {
       const el = document.getElementById(key);
       if (!el) return;
-      this.subMenuHeights[key] = el.scrollHeight;
+      const previousHeight = el.style.height;
+      el.style.height = 'auto';
+      const measured = el.scrollHeight;
+      el.style.height = previousHeight;
+      this.subMenuHeights[key] = measured;
       this.cdr.detectChanges();
     });
   }

@@ -11,6 +11,8 @@ export type AuthUser = {
   permissionCodes: string[];
   /** Sesión de soporte FactoSys dentro de un cliente SaaS. */
   supportSession?: boolean;
+  /** Logo del establecimiento activo (`/api/v1/files/:id`). */
+  logoUrl?: string | null;
 };
 
 export type LoginResponse = {

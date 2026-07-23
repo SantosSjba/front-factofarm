@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { AuthService } from '../../../../core/services/auth.service';
 import { FilesApiService } from '../../../../core/services/files-api.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
@@ -15,11 +16,16 @@ import { FormRowComponent } from '../../../../shared/components/form/form-row/fo
 import { FormStackComponent } from '../../../../shared/components/form/form-stack/form-stack.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { ImageSquarePickerComponent } from '../../../../shared/components/form/image-square-picker/image-square-picker.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
-import type { UpdatePharmacyProfileRequest } from '../../models/directory.models';
+import type {
+  BillingProviderType,
+  SalePdfFormat,
+  UpdatePharmacyProfileRequest,
+} from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -37,6 +43,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     FormSelectComponent,
     InputFieldComponent,
     TextAreaComponent,
+    CheckboxComponent,
     ImageSquarePickerComponent,
     ButtonComponent,
     HelpHintComponent,
@@ -46,6 +53,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 export class MiFarmaciaComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly filesApi = inject(FilesApiService);
+  private readonly auth = inject(AuthService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
 
@@ -71,8 +79,19 @@ export class MiFarmaciaComponent {
   protected readonly logoArchivoId = signal<string | null>(null);
   protected readonly logoPreview = signal<string | null>(null);
   protected readonly logoUploadError = signal<string | null>(null);
+  protected readonly salePdfFormat = signal<SalePdfFormat>('TICKET_80');
+
+  protected readonly billingProvider = signal<BillingProviderType>('MOCK');
+  protected readonly apiUrl = signal('');
+  protected readonly consultaApiUrl = signal('');
+  protected readonly apiToken = signal('');
+  protected readonly modoSandbox = signal(true);
+  protected readonly autoEmitOnSale = signal(false);
+  protected readonly emitNotaVenta = signal(false);
+  protected readonly applyDetraccion = signal(false);
+  protected readonly autoEmitGuiaOnTransfer = signal(false);
   protected readonly hasOseCredentials = signal(false);
-  protected readonly billingProvider = signal('');
+  protected readonly electronicInvoicingEnabled = signal(false);
 
   protected readonly profileQuery = injectQuery(() => ({
     queryKey: ['pharmacy-profile'] as const,
@@ -106,12 +125,117 @@ export class MiFarmaciaComponent {
     (this.districtsQuery.data() ?? []).map((d) => ({ value: d.id, label: d.name })),
   );
 
+  protected readonly providerOptions = computed(() => {
+    const fromApi = this.profileQuery.data()?.billingProviderOptions;
+    if (fromApi?.length) {
+      return fromApi
+        .filter((o) => o.available)
+        .map((o) => ({ value: o.value, label: o.label }));
+    }
+    return [
+      { value: 'MOCK', label: 'Sin facturación electrónica (solo notas de venta)' },
+      { value: 'FACTILIZA', label: 'Factiliza' },
+      { value: 'NUBEFACT', label: 'Nubefact' },
+      { value: 'APISPERU', label: 'APIsPERU' },
+    ];
+  });
+
+  protected readonly needsOseCredentials = computed(() => {
+    const p = this.billingProvider();
+    return p === 'FACTILIZA' || p === 'NUBEFACT' || p === 'APISPERU';
+  });
+
+  /** Ayuda contextual: primero configuran el panel del proveedor; aquí solo pegamos credenciales. */
+  protected readonly providerHelp = computed(() => {
+    switch (this.billingProvider()) {
+      case 'FACTILIZA':
+        return 'Antes: cree su cuenta en Factiliza (app.factiliza.com), genere el token API y tenga el RUC listo. Luego pegue aquí la URL y el token; FactoFarm emitirá boletas/facturas por usted.';
+      case 'NUBEFACT':
+        return 'Antes: en el panel Nubefact vaya a Configuración → API (Integración), cree el local/series y genere RUTA + TOKEN. Luego péguelos aquí; FactoFarm enviará los comprobantes a esa ruta.';
+      case 'APISPERU':
+        return 'Antes: en APIsPERU inicie sesión, cree la empresa (certificado PEM + usuario SOL secundario) y copie el token permanente de esa empresa. Luego péguelo aquí; FactoFarm emitirá con ese Bearer.';
+      default:
+        return 'Sin proveedor OSE puede vender con nota de venta (no va a SUNAT). Si ya tiene cuenta en Factiliza, Nubefact o APIsPERU, elíjala e ingrese las credenciales del panel de ese proveedor.';
+    }
+  });
+
+  protected readonly providerSelectHelp = computed(() => {
+    switch (this.billingProvider()) {
+      case 'FACTILIZA':
+        return 'Requiere configuración previa en el panel Factiliza. Sin OSE use “solo notas de venta”.';
+      case 'NUBEFACT':
+        return 'Requiere RUTA y TOKEN ya generados en el panel Nubefact del local.';
+      case 'APISPERU':
+        return 'Requiere empresa ya creada en el panel APIsPERU (certificado + SOL).';
+      default:
+        return 'Elija un proveedor solo si ya tiene cuenta y credenciales en su panel. Sin eso, venda con nota de venta.';
+    }
+  });
+
+  protected readonly salePdfFormatOptions = computed(() => {
+    const fromApi = this.profileQuery.data()?.salePdfFormatOptions;
+    if (fromApi?.length) {
+      return fromApi.map((o) => ({ value: o.value, label: o.label }));
+    }
+    return [
+      { value: 'TICKET_80', label: 'Ticket 80 mm (impresora térmica)' },
+      { value: 'TICKET_58', label: 'Ticket 58 mm (impresora térmica)' },
+      { value: 'A4', label: 'Hoja A4 (impresora normal)' },
+    ];
+  });
+
+  protected readonly apiUrlHelp = computed(() => {
+    switch (this.billingProvider()) {
+      case 'FACTILIZA':
+        return 'URL base del API de Factiliza (la del panel o QA). Vacío = https://apife-qa.factiliza.com/api/v1';
+      case 'NUBEFACT':
+        return 'Pegue la RUTA completa que muestra Nubefact en Configuración → API (incluye el segmento del local).';
+      case 'APISPERU':
+        return 'URL base del API. Vacío = https://facturacion.apisperu.com/api/v1';
+      default:
+        return 'Endpoint del proveedor.';
+    }
+  });
+
+  protected readonly apiTokenHelp = computed(() => {
+    switch (this.billingProvider()) {
+      case 'FACTILIZA':
+        return 'Token Bearer generado en el panel Factiliza. Se guarda encriptado; vacío conserva el actual.';
+      case 'NUBEFACT':
+        return 'TOKEN del local en Nubefact (junto a la RUTA). Se guarda encriptado; vacío conserva el actual.';
+      case 'APISPERU':
+        return 'Token permanente de la empresa en APIsPERU (no el de login de 24 h). Se guarda encriptado; vacío conserva el actual.';
+      default:
+        return 'Token del proveedor. Se guarda encriptado.';
+    }
+  });
+
+  protected readonly defaultApiUrlHint = computed(() => {
+    switch (this.billingProvider()) {
+      case 'FACTILIZA':
+        return 'https://apife-qa.factiliza.com/api/v1';
+      case 'APISPERU':
+        return 'https://facturacion.apisperu.com/api/v1';
+      case 'NUBEFACT':
+        return 'Ruta completa del local (panel Nubefact → API)';
+      default:
+        return 'https://…';
+    }
+  });
+
+  protected readonly capabilityNotes = computed(
+    () => this.profileQuery.data()?.billingCapabilities?.notes ?? [],
+  );
+
   protected readonly saveMutation = injectMutation(() => ({
     mutationFn: (body: UpdatePharmacyProfileRequest) =>
       firstValueFrom(this.api.updatePharmacyProfile(body)),
     onSuccess: async () => {
       this.notify.success('Datos de la farmacia guardados');
+      this.apiToken.set('');
       await this.queryClient.invalidateQueries({ queryKey: ['pharmacy-profile'] });
+      await this.queryClient.invalidateQueries({ queryKey: ['billing', 'config'] });
+      await firstValueFrom(this.auth.loadMe());
     },
     onError: (err: unknown) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo guardar el perfil'));
@@ -142,8 +266,23 @@ export class MiFarmaciaComponent {
       this.logoPreview.set(
         profile.logoUrl ? this.filesApi.absoluteFileUrl(profile.logoUrl) : null,
       );
+      this.salePdfFormat.set(profile.salePdfFormat ?? 'TICKET_80');
+      const provider =
+        profile.billingProvider === 'FACTILIZA' ||
+        profile.billingProvider === 'NUBEFACT' ||
+        profile.billingProvider === 'APISPERU'
+          ? profile.billingProvider
+          : 'MOCK';
+      this.billingProvider.set(provider);
+      this.apiUrl.set(profile.apiUrl ?? '');
+      this.consultaApiUrl.set(profile.consultaApiUrl ?? '');
+      this.modoSandbox.set(profile.modoSandbox ?? true);
+      this.autoEmitOnSale.set(profile.autoEmitOnSale ?? false);
+      this.emitNotaVenta.set(profile.emitNotaVenta ?? false);
+      this.applyDetraccion.set(profile.applyDetraccion ?? false);
+      this.autoEmitGuiaOnTransfer.set(profile.autoEmitGuiaOnTransfer ?? false);
       this.hasOseCredentials.set(profile.hasOseCredentials);
-      this.billingProvider.set(profile.billingProvider ?? '');
+      this.electronicInvoicingEnabled.set(profile.electronicInvoicingEnabled);
     });
   }
 
@@ -156,6 +295,16 @@ export class MiFarmaciaComponent {
   protected onProvinceChange(value: string) {
     this.provinceId.set(value);
     this.districtId.set('');
+  }
+
+  protected onProviderChange(value: string) {
+    const next = (value || 'MOCK') as BillingProviderType;
+    this.billingProvider.set(next);
+    if (next === 'MOCK') {
+      this.autoEmitOnSale.set(false);
+      this.applyDetraccion.set(false);
+      this.autoEmitGuiaOnTransfer.set(false);
+    }
   }
 
   protected onLogoFile(file: File) {
@@ -189,11 +338,30 @@ export class MiFarmaciaComponent {
       return;
     }
 
-    this.saveMutation.mutate({
+    const provider = this.billingProvider();
+    const token = this.apiToken().trim();
+    if (
+      (provider === 'FACTILIZA' || provider === 'NUBEFACT' || provider === 'APISPERU') &&
+      !this.hasOseCredentials() &&
+      !token
+    ) {
+      this.notify.error('Ingrese el token API del proveedor OSE o elija “solo notas de venta”.');
+      return;
+    }
+
+    const body: UpdatePharmacyProfileRequest = {
       nombre: this.nombre().trim(),
       codigo: this.codigo().trim() || undefined,
       rucEmisor: ruc || undefined,
       razonSocialEmisor: this.razonSocialEmisor().trim() || undefined,
+      billingProvider: provider,
+      apiUrl: this.apiUrl().trim() || undefined,
+      consultaApiUrl: this.consultaApiUrl().trim() || undefined,
+      modoSandbox: this.modoSandbox(),
+      autoEmitOnSale: provider === 'MOCK' ? false : this.autoEmitOnSale(),
+      emitNotaVenta: this.emitNotaVenta(),
+      applyDetraccion: provider === 'MOCK' ? false : this.applyDetraccion(),
+      autoEmitGuiaOnTransfer: provider === 'MOCK' ? false : this.autoEmitGuiaOnTransfer(),
       direccionFiscal: this.direccionFiscal().trim() || undefined,
       direccionComercial: this.direccionComercial().trim() || undefined,
       telefono: this.telefono().trim() || undefined,
@@ -205,6 +373,10 @@ export class MiFarmaciaComponent {
       provinceId: this.provinceId() || null,
       districtId: this.districtId() || null,
       logoArchivoId: this.logoArchivoId(),
-    });
+      salePdfFormat: this.salePdfFormat(),
+    };
+    if (token) body.apiToken = token;
+
+    this.saveMutation.mutate(body);
   }
 }

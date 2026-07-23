@@ -149,7 +149,20 @@ export interface PosPaymentSettingsDto {
   posPlinNumero: string | null;
 }
 
+export interface BillingProviderOptionDto {
+  value: BillingProviderType;
+  label: string;
+  available: boolean;
+}
+
 /** Perfil comercial + fiscal del establecimiento activo. */
+export type SalePdfFormat = 'TICKET_80' | 'TICKET_58' | 'A4';
+
+export interface SalePdfFormatOptionDto {
+  value: SalePdfFormat;
+  label: string;
+}
+
 export interface PharmacyProfileDto {
   establishmentId: string;
   tenantId: string;
@@ -170,10 +183,22 @@ export interface PharmacyProfileDto {
   numeroRegistroDigemid: string | null;
   logoArchivoId: string | null;
   logoUrl: string | null;
+  salePdfFormat: SalePdfFormat;
+  salePdfFormatOptions: SalePdfFormatOptionDto[];
   rucEmisor: string | null;
   razonSocialEmisor: string | null;
   billingProvider: BillingProviderType;
+  apiUrl: string | null;
+  consultaApiUrl: string | null;
+  modoSandbox: boolean;
+  autoEmitOnSale: boolean;
+  emitNotaVenta: boolean;
+  applyDetraccion: boolean;
+  autoEmitGuiaOnTransfer: boolean;
   hasOseCredentials: boolean;
+  electronicInvoicingEnabled: boolean;
+  billingCapabilities: BillingProviderCapabilitiesDto | null;
+  billingProviderOptions: BillingProviderOptionDto[];
 }
 
 export interface UpdatePharmacyProfileRequest {
@@ -181,6 +206,15 @@ export interface UpdatePharmacyProfileRequest {
   codigo?: string;
   rucEmisor?: string;
   razonSocialEmisor?: string;
+  billingProvider?: BillingProviderType;
+  apiUrl?: string;
+  consultaApiUrl?: string;
+  apiToken?: string;
+  modoSandbox?: boolean;
+  autoEmitOnSale?: boolean;
+  emitNotaVenta?: boolean;
+  applyDetraccion?: boolean;
+  autoEmitGuiaOnTransfer?: boolean;
   direccionFiscal?: string;
   direccionComercial?: string;
   telefono?: string;
@@ -191,6 +225,7 @@ export interface UpdatePharmacyProfileRequest {
   provinceId?: string | null;
   districtId?: string | null;
   logoArchivoId?: string | null;
+  salePdfFormat?: SalePdfFormat;
   numeroRegistroDigemid?: string | null;
 }
 
@@ -1849,6 +1884,11 @@ export interface SaleListItemDto {
   storage?: DataStorageMode | 'hot' | 'archived';
   customer: { id: string; nombre: string } | null;
   seller: { id: string; nombre: string } | null;
+  /** Estado SUNAT del CPE asociado, o null si aún no se emitió. */
+  sunatStatus?: SunatDocumentStatus | null;
+  electronicDocumentId?: string | null;
+  canEmitCpe?: boolean;
+  canConvertToCpe?: boolean;
 }
 
 export interface SaleDetailDto {
@@ -2233,7 +2273,7 @@ export type SunatDocumentStatus =
   | 'ANULADO'
   | 'CONTINGENCIA';
 
-export type BillingProviderType = 'MOCK' | 'NUBEFACT' | 'FACTILIZA';
+export type BillingProviderType = 'MOCK' | 'NUBEFACT' | 'FACTILIZA' | 'APISPERU' | 'BIZLINKS';
 
 export interface BillingProviderCapabilitiesDto {
   mockAllowed: boolean;

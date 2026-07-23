@@ -14,7 +14,7 @@
       routerLink="/comprobante-electronico"
       class="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm text-gray-700 ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 dark:bg-white/5 dark:text-gray-200 dark:ring-white/15 dark:hover:bg-white/10"
     >
-      Credenciales OSE
+      Bandeja CPE
     </a>
     <app-button
       size="sm"
@@ -90,6 +90,17 @@
                 (valueChange)="codigo.set('' + $event)"
               />
             </app-form-field>
+            <app-form-field
+              label="Formato PDF de venta / nota"
+              helpText="Aplica al PDF generado por FactoFarm (nota de venta o voucher interno). El PDF oficial del OSE/SUNAT no cambia."
+            >
+              <app-form-select
+                [showPlaceholder]="false"
+                [options]="salePdfFormatOptions()"
+                [value]="salePdfFormat()"
+                (valueChange)="salePdfFormat.set($any($event))"
+              />
+            </app-form-field>
           </div>
         </div>
 
@@ -137,7 +148,7 @@
     <div class="space-y-5">
       <app-component-card
         title="Datos de facturación"
-        helpText="RUC y razón social del emisor SUNAT. Las credenciales OSE (token/certificado) se configuran en Comprobante electrónico."
+        helpText="RUC y razón social del emisor SUNAT."
         [loading]="profileQuery.isPending()"
       >
         <app-form-stack>
@@ -162,27 +173,119 @@
               />
             </app-form-field>
           </app-form-row>
+        </app-form-stack>
+      </app-component-card>
 
+      <app-component-card
+        title="Facturación electrónica (OSE / SUNAT)"
+        helpText="Primero configure su cuenta en el panel del proveedor (Factiliza, Nubefact o APIsPERU). Aquí solo pega URL y token; FactoFarm emite los CPE. Sin OSE puede vender con nota de venta."
+        [loading]="profileQuery.isPending()"
+      >
+        <app-form-stack>
           <div
-            class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-theme-sm text-gray-600 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-gray-300"
+            class="rounded-xl border px-4 py-3 text-theme-sm"
+            [class]="
+              electronicInvoicingEnabled()
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200'
+                : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200'
+            "
           >
-            <p>
-              Proveedor OSE:
-              <span class="font-medium text-gray-800 dark:text-white">
-                {{ billingProvider() || '—' }}
-              </span>
-              · Credenciales:
-              <span class="font-medium text-gray-800 dark:text-white">
-                {{ hasOseCredentials() ? 'Configuradas' : 'Pendientes' }}
-              </span>
-            </p>
-            <a
-              routerLink="/comprobante-electronico"
-              class="mt-2 inline-flex text-brand-600 hover:underline dark:text-brand-400"
-            >
-              Abrir configuración OSE / SUNAT
-            </a>
+            @if (electronicInvoicingEnabled()) {
+              <p>
+                CPE activa con
+                <span class="font-medium">{{ billingProvider() }}</span>
+                · credenciales
+                {{ hasOseCredentials() ? 'listas' : 'pendientes' }}.
+                FactoFarm usará el panel del proveedor para emitir a SUNAT.
+              </p>
+            } @else {
+              <p>
+                Sin CPE: las ventas pueden emitirse como
+                <span class="font-medium">nota de venta</span>
+                (no van a SUNAT). Cuando tenga cuenta y token en el panel del proveedor, elíjalo abajo.
+              </p>
+            }
           </div>
+
+          <app-form-field label="Proveedor OSE / PSE" [helpText]="providerSelectHelp()">
+            <app-form-select
+              [value]="billingProvider()"
+              [options]="providerOptions()"
+              (valueChange)="onProviderChange($event)"
+            />
+          </app-form-field>
+
+          <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ providerHelp() }}</p>
+
+          @if (capabilityNotes().length) {
+            <ul class="list-disc space-y-1 pl-5 text-theme-xs text-gray-600 dark:text-gray-300">
+              @for (note of capabilityNotes(); track note) {
+                <li>{{ note }}</li>
+              }
+            </ul>
+          }
+
+          @if (needsOseCredentials()) {
+            <app-form-field label="URL API" [helpText]="apiUrlHelp()">
+              <app-input-field
+                [value]="apiUrl()"
+                [placeholder]="defaultApiUrlHint()"
+                (valueChange)="apiUrl.set('' + $event)"
+              />
+            </app-form-field>
+
+            <app-form-field
+              label="URL consulta (RUC / CPE)"
+              helpText="Opcional. Solo si su proveedor da API de consulta aparte (p. ej. Factiliza: https://api.factiliza.com/v1)."
+            >
+              <app-input-field
+                [value]="consultaApiUrl()"
+                placeholder="https://…"
+                (valueChange)="consultaApiUrl.set('' + $event)"
+              />
+            </app-form-field>
+
+            <app-form-field label="Token API" [helpText]="apiTokenHelp()">
+              <app-input-field
+                type="password"
+                [value]="apiToken()"
+                [placeholder]="
+                  hasOseCredentials()
+                    ? '•••••••• (ya configurado · deje vacío para no cambiar)'
+                    : 'Pegue el token generado en el panel del proveedor'
+                "
+                (valueChange)="apiToken.set('' + $event)"
+              />
+            </app-form-field>
+
+            <div class="space-y-3">
+              <app-checkbox
+                label="Modo sandbox / pruebas"
+                [checked]="modoSandbox()"
+                (checkedChange)="modoSandbox.set($event)"
+              />
+              <app-checkbox
+                label="Emitir boleta/factura automáticamente al vender"
+                [checked]="autoEmitOnSale()"
+                (checkedChange)="autoEmitOnSale.set($event)"
+              />
+              <app-checkbox
+                label="Intentar emitir nota de venta electrónica (si el OSE lo soporta)"
+                [checked]="emitNotaVenta()"
+                (checkedChange)="emitNotaVenta.set($event)"
+              />
+              <app-checkbox
+                label="Aplicar detracción en facturas ≥ S/ 700"
+                [checked]="applyDetraccion()"
+                (checkedChange)="applyDetraccion.set($event)"
+              />
+              <app-checkbox
+                label="Emitir guía de remisión al despachar traslado"
+                [checked]="autoEmitGuiaOnTransfer()"
+                (checkedChange)="autoEmitGuiaOnTransfer.set($event)"
+              />
+            </div>
+          }
         </app-form-stack>
       </app-component-card>
 

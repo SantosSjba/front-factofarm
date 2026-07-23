@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { AppSidebarComponent } from '../app-sidebar/app-sidebar.component';
 import { BackdropComponent } from '../backdrop/backdrop.component';
 import { RouterModule } from '@angular/router';
 import { AppHeaderComponent } from '../app-header/app-header.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -13,12 +14,13 @@ import { AppHeaderComponent } from '../app-header/app-header.component';
     RouterModule,
     AppHeaderComponent,
     AppSidebarComponent,
-    BackdropComponent
+    BackdropComponent,
   ],
   templateUrl: './app-layout.component.html',
 })
+export class AppLayoutComponent implements OnInit {
+  private readonly auth = inject(AuthService);
 
-export class AppLayoutComponent {
   readonly isExpanded$;
   readonly isHovered$;
   readonly isMobileOpen$;
@@ -29,15 +31,21 @@ export class AppLayoutComponent {
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
   }
 
-  get containerClasses() {
+  ngOnInit(): void {
+    // Sincroniza logoUrl y permisos del cliente (sesión en storage puede estar desactualizada).
+    if (this.auth.isAuthenticated()) {
+      this.auth.loadMe().subscribe({ error: () => undefined });
+    }
+  }
+
+  get contentClasses() {
     return [
       'flex-1',
       'transition-all',
       'duration-300',
       'ease-in-out',
-      (this.isExpanded$ || this.isHovered$) ? 'xl:ml-[290px]' : 'xl:ml-[90px]',
-      this.isMobileOpen$ ? 'ml-0' : ''
+      this.isExpanded$ || this.isHovered$ ? 'xl:ml-[290px]' : 'xl:ml-[90px]',
+      this.isMobileOpen$ ? 'ml-0' : '',
     ];
   }
-
 }

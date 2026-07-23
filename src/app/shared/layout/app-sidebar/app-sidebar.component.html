@@ -25,15 +25,15 @@
     <a routerLink="/" class="logo-dark-glow">
       @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
       <img
-        src="/images/logo/logo-nav.png"
-        alt="FactoFarm"
+        [src]="branding.navLogoSrc()"
+        [alt]="branding.brandAlt()"
         class="h-auto max-h-14 w-auto max-w-[170px] object-contain"
       />
       } @else {
       <img
-        src="/images/logo/logo-icon.svg"
-        alt="FactoFarm"
-        class="h-9 w-9"
+        [src]="branding.iconLogoSrc()"
+        [alt]="branding.brandAlt()"
+        class="h-9 w-9 object-contain"
       />
       }
     </a>

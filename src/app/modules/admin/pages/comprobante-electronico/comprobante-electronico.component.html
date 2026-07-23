@@ -81,28 +81,42 @@
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Configuración OSE / SUNAT</h3>
     <p class="text-xs text-gray-500">
-      Factiliza: URL QA <code>https://apife-qa.factiliza.com/api/v1</code> · Token Bearer.
-      Ver <a href="https://docs.factiliza.com/api-facturacion/endpoint/invoice/send" target="_blank" rel="noopener" class="text-brand-600 underline">documentación</a>.
+      Preferible en
+      <a routerLink="/mi-farmacia" class="text-brand-600 underline">Mi farmacia</a>.
+      Primero configure el panel del proveedor; aquí solo pega URL y token para que FactoFarm emita.
     </p>
     <app-form-select [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
+    <p class="text-xs text-gray-600 dark:text-gray-300">{{ providerSetupHint() }}</p>
     @if (billingCapabilities(); as caps) {
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
         @for (note of caps.notes; track note) {
           <p>{{ note }}</p>
         }
         @if (!caps.supportsDailySummary) {
-          <p>RC diario: no disponible con este OSE (use Nubefact).</p>
+          <p>RC diario: no disponible con este conector (use Nubefact o el panel del OSE).</p>
         }
         @if (!caps.supportsVoidDocument) {
-          <p>Comunicación de baja: no disponible con este OSE (use Nubefact).</p>
+          <p>Comunicación de baja: no disponible con este conector (use Nubefact o APIsPERU).</p>
         }
       </div>
     }
     <app-input-field [value]="rucEmisor()" (valueChange)="rucEmisor.set('' + $event)" placeholder="RUC emisor" />
     <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" placeholder="Razón social emisor" />
-    <app-input-field [value]="apiUrl()" (valueChange)="apiUrl.set('' + $event)" placeholder="URL API (Factiliza: https://apife-qa.factiliza.com/api/v1)" />
-    <app-input-field [value]="consultaApiUrl()" (valueChange)="consultaApiUrl.set('' + $event)" placeholder="URL consulta RUC/CPE (https://api.factiliza.com/v1)" />
-    <app-input-field [value]="apiToken()" (valueChange)="apiToken.set('' + $event)" placeholder="Token API (se guarda encriptado)" />
+    <app-input-field
+      [value]="apiUrl()"
+      (valueChange)="apiUrl.set('' + $event)"
+      placeholder="URL / RUTA del panel del proveedor"
+    />
+    <app-input-field
+      [value]="consultaApiUrl()"
+      (valueChange)="consultaApiUrl.set('' + $event)"
+      placeholder="URL consulta (opcional)"
+    />
+    <app-input-field
+      [value]="apiToken()"
+      (valueChange)="apiToken.set('' + $event)"
+      placeholder="Token del panel del proveedor (encriptado)"
+    />
     <label class="flex items-center gap-2 text-sm">
       <input type="checkbox" [checked]="modoSandbox()" (change)="modoSandbox.set($any($event.target).checked)" />
       Modo sandbox

@@ -6,18 +6,27 @@
     (retry)="refetchPosBootstrap()"
   >
   @if (!isOnline() || offlinePending() > 0) {
-    <div class="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+    <div class="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+      <app-icon name="mdi:wifi-off" iconClass="size-4 shrink-0" />
       @if (!isOnline()) {
         <span>Modo offline — las ventas se guardan localmente.</span>
       }
       @if (offlinePending() > 0) {
-        <span class="ml-2">Pendientes de sincronizar: {{ offlinePending() }}</span>
+        <span class="ml-2 inline-flex items-center gap-1">
+          <app-icon name="mdi:cloud-sync-outline" iconClass="size-4" />
+          Pendientes de sincronizar: {{ offlinePending() }}
+        </span>
       }
     </div>
   }
   <header class="flex flex-wrap items-end gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
     <div class="w-full min-w-[180px] flex-1 sm:max-w-xs">
-      <app-label>Almacén</app-label>
+      <app-label>
+        <span class="inline-flex items-center gap-1.5">
+          <app-icon name="mdi:warehouse" iconClass="size-3.5 text-gray-400" />
+          Almacén
+        </span>
+      </app-label>
       <app-form-select
         className="mt-1.5"
         [options]="warehouseOptions()"
@@ -26,17 +35,34 @@
       />
     </div>
     <div class="w-full min-w-[140px] sm:w-auto sm:max-w-[180px]">
-      <app-label>Comprobante</app-label>
+      <app-label>
+        <span class="inline-flex items-center gap-1.5">
+          <app-icon name="mdi:file-document-outline" iconClass="size-3.5 text-gray-400" />
+          Comprobante
+          @if (!electronicInvoicingEnabled()) {
+            <app-help-hint
+              iconName="mdi:information-outline"
+              [iconSize]="16"
+              text="Sin OSE: solo nota de venta. Configure facturación en Mi farmacia para boleta/factura."
+            />
+          }
+        </span>
+      </app-label>
       <app-form-select
         className="mt-1.5"
         [showPlaceholder]="false"
-        [options]="docOptions"
+        [options]="docOptions()"
         [value]="documentType()"
         (valueChange)="documentType.set($any($event))"
       />
     </div>
     <div class="w-full min-w-[120px] sm:w-auto sm:max-w-[140px]">
-      <app-label>Serie</app-label>
+      <app-label>
+        <span class="inline-flex items-center gap-1.5">
+          <app-icon name="mdi:barcode" iconClass="size-3.5 text-gray-400" />
+          Serie
+        </span>
+      </app-label>
       <app-input-field
         className="mt-1.5"
         placeholder="Opcional"
@@ -47,25 +73,40 @@
     </div>
     <div class="pb-1 text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
       @if (cashSession(); as session) {
-        <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+          <app-icon name="mdi:cash-register" iconClass="size-3.5" />
           {{ session.cashRegister.nombre }}
         </span>
       } @else {
-        <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+        <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+          <app-icon name="mdi:alert-circle-outline" iconClass="size-3.5" />
           Sin caja
         </span>
       }
     </div>
     <div class="w-full text-xs text-gray-500 sm:block">
       <span class="inline-flex flex-wrap items-center gap-1.5">
+        <app-icon name="mdi:keyboard-outline" iconClass="size-3.5" />
         <kbd class="rounded border px-1.5 py-0.5">F1</kbd> buscar
         <kbd class="rounded border px-1.5 py-0.5">F2</kbd> cobrar
         <kbd class="rounded border px-1.5 py-0.5">F4</kbd> vaciar
       </span>
     </div>
     <div class="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
-      <app-button size="sm" variant="outline" (btnClick)="openCustomerDisplay()">Pantalla cliente</app-button>
-      <app-button size="sm" variant="outline" (btnClick)="toggleCatalogView()">
+      <app-button
+        size="sm"
+        variant="outline"
+        startIconName="mdi:monitor-account"
+        (btnClick)="openCustomerDisplay()"
+      >
+        Pantalla cliente
+      </app-button>
+      <app-button
+        size="sm"
+        variant="outline"
+        [startIconName]="catalogViewMode() === 'tiles' ? 'mdi:table' : 'mdi:view-grid-outline'"
+        (btnClick)="toggleCatalogView()"
+      >
         {{ catalogViewMode() === 'tiles' ? 'Vista tabla' : 'Vista tarjetas' }}
       </app-button>
     </div>
@@ -74,9 +115,13 @@
   <div class="border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:px-4">
     @if (customerId()) {
       <div class="flex items-center gap-2 text-sm">
+        <app-icon name="mdi:account-outline" iconClass="size-4 text-gray-400" />
         <span class="text-gray-500">Cliente:</span>
         <span class="font-medium">{{ customerLabel() }}</span>
-        <button type="button" class="text-brand-600 text-xs" (click)="clearCustomer()">Quitar</button>
+        <button type="button" class="inline-flex items-center gap-0.5 text-brand-600 text-xs" (click)="clearCustomer()">
+          <app-icon name="mdi:close" iconClass="size-3.5" />
+          Quitar
+        </button>
       </div>
     } @else {
       <div class="flex gap-2">
@@ -87,7 +132,9 @@
           [value]="customerSearch()"
           (valueChange)="customerSearch.set('' + $event)"
         />
-        <app-button size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
+        <app-button size="sm" variant="outline" startIconName="mdi:account-search-outline" (btnClick)="searchCustomers()">
+          Buscar
+        </app-button>
       </div>
       @if (customerOptions().length > 0) {
         <ul class="mt-1 max-h-24 overflow-auto rounded border text-sm dark:border-gray-700">
@@ -122,15 +169,34 @@
       [class.dark:bg-amber-950/30]="!hasGraveInteractions()"
     >
       <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <p class="text-base font-bold" [class.text-red-800]="hasGraveInteractions()" [class.dark:text-red-200]="hasGraveInteractions()" [class.text-amber-900]="!hasGraveInteractions()" [class.dark:text-amber-200]="!hasGraveInteractions()" [class.animate-pulse]="hasGraveInteractions()">
-          ⚠ Interacciones medicamentosas ({{ interactionAlerts().length }})
+        <p
+          class="inline-flex items-center gap-1.5 text-base font-bold"
+          [class.text-red-800]="hasGraveInteractions()"
+          [class.dark:text-red-200]="hasGraveInteractions()"
+          [class.text-amber-900]="!hasGraveInteractions()"
+          [class.dark:text-amber-200]="!hasGraveInteractions()"
+          [class.animate-pulse]="hasGraveInteractions()"
+        >
+          <app-icon
+            [name]="hasGraveInteractions() ? 'mdi:alert-octagon' : 'mdi:alert'"
+            iconClass="size-5"
+          />
+          Interacciones medicamentosas ({{ interactionAlerts().length }})
         </p>
         @if (!interactionsAcknowledged()) {
-          <app-button size="sm" variant="outline" (btnClick)="acknowledgeInteractions()">
+          <app-button
+            size="sm"
+            variant="outline"
+            startIconName="mdi:check-decagram"
+            (btnClick)="acknowledgeInteractions()"
+          >
             Confirmar revisión
           </app-button>
         } @else {
-          <span class="text-xs text-emerald-700 dark:text-emerald-300">Revisión confirmada</span>
+          <span class="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+            <app-icon name="mdi:check-circle" iconClass="size-3.5" />
+            Revisión confirmada
+          </span>
         }
       </div>
       <ul class="space-y-2 text-xs">
@@ -166,29 +232,43 @@
 
   <div class="grid flex-1 gap-0 md:grid-cols-5">
     <section class="border-b border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 md:col-span-3 md:border-b-0 md:border-r md:p-4">
+      <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+        <app-icon name="mdi:pill" iconClass="size-4 text-brand-500" />
+        Catálogo
+      </div>
       <div class="flex gap-2">
-        <input
-          #searchInput
-          type="search"
-          class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-          placeholder="Filtrar por código, nombre o barras…"
-          aria-label="Filtrar productos por código, nombre o barras"
-          autocomplete="off"
-          [value]="search()"
-          (input)="search.set($any($event.target).value)"
-          (keydown.enter)="runSearch()"
-        />
-        <app-button variant="primary" (btnClick)="runSearch()">Buscar</app-button>
+        <div class="relative flex-1">
+          <app-icon
+            name="mdi:magnify"
+            iconClass="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            #searchInput
+            type="search"
+            class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            placeholder="Filtrar por código, nombre o barras…"
+            aria-label="Filtrar productos por código, nombre o barras"
+            autocomplete="off"
+            [value]="search()"
+            (input)="search.set($any($event.target).value)"
+            (keydown.enter)="runSearch()"
+          />
+        </div>
+        <app-button variant="primary" startIconName="mdi:magnify" (btnClick)="runSearch()">Buscar</app-button>
       </div>
 
-      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+      <p class="mt-2 inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
         @if (catalogLoading()) {
+          <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
           Cargando productos con stock…
         } @else if (catalog().length > 0) {
+          <app-icon name="mdi:package-variant-closed" iconClass="size-3.5" />
           {{ catalog().length }} producto(s) disponible(s) · escriba para filtrar
         } @else if (warehouseId()) {
+          <app-icon name="mdi:package-variant-remove" iconClass="size-3.5" />
           No hay productos con stock en este almacén
         } @else {
+          <app-icon name="mdi:warehouse" iconClass="size-3.5" />
           Seleccione un almacén para ver el catálogo
         }
       </p>
@@ -206,7 +286,7 @@
                   @if (productImageUrl(item.imagenArchivoId); as imgUrl) {
                     <img [src]="imgUrl" [alt]="item.nombre" class="h-full w-full object-contain" loading="lazy" />
                   } @else {
-                    <span class="px-2 text-center text-[10px] uppercase tracking-wide text-gray-400">Sin imagen</span>
+                    <app-icon name="mdi:pill" iconClass="size-8 text-gray-300" />
                   }
                 </div>
                 <p class="line-clamp-2 min-h-[2.5rem] text-xs font-semibold text-gray-800 dark:text-white/90">{{ item.nombre }}</p>
@@ -255,7 +335,13 @@
                 </td>
                 <td class="px-2 py-2 text-right sm:px-3">{{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
                 <td class="px-2 py-2 text-right sm:px-3">
-                  <button type="button" class="rounded-lg bg-brand-500 px-2 py-1 text-xs text-white" (click)="addToCart(item)">+</button>
+                  <app-button
+                    size="sm"
+                    [iconOnly]="true"
+                    startIconName="mdi:cart-plus"
+                    tooltip="Agregar al carrito"
+                    (btnClick)="addToCart(item)"
+                  />
                 </td>
               </tr>
             } @empty {
@@ -279,9 +365,24 @@
 
     <section class="flex flex-col bg-white p-3 dark:bg-gray-900 md:col-span-2 md:p-4">
       <div class="mb-2 flex items-center justify-between">
-        <h2 class="font-semibold text-gray-800 dark:text-white/90">Carrito</h2>
+        <h2 class="inline-flex items-center gap-1.5 font-semibold text-gray-800 dark:text-white/90">
+          <app-icon name="mdi:cart-outline" iconClass="size-4 text-brand-500" />
+          Carrito
+          @if (cart().length > 0) {
+            <span class="rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+              {{ cart().length }}
+            </span>
+          }
+        </h2>
         @if (cart().length > 0) {
-          <button type="button" class="text-xs text-rose-600" (click)="clearCart()">Vaciar</button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 text-xs text-rose-600"
+            (click)="clearCart()"
+          >
+            <app-icon name="mdi:cart-off" iconClass="size-3.5" />
+            Vaciar
+          </button>
         }
       </div>
 
@@ -292,13 +393,24 @@
               <div class="min-w-0 flex-1">
                 <p class="truncate font-medium text-sm">{{ line.nombre }}</p>
                 @if (line.substitutedFromNombre) {
-                  <p class="text-xs text-amber-700">Sustituye: {{ line.substitutedFromNombre }}</p>
+                  <p class="inline-flex items-center gap-1 text-xs text-amber-700">
+                    <app-icon name="mdi:swap-horizontal" iconClass="size-3.5" />
+                    Sustituye: {{ line.substitutedFromNombre }}
+                  </p>
                 }
                 @if (line.esControlado) {
-                  <span class="text-xs font-medium text-rose-700">Controlado</span>
+                  <span class="inline-flex items-center gap-0.5 text-xs font-medium text-rose-700">
+                    <app-icon name="mdi:shield-alert-outline" iconClass="size-3.5" />
+                    Controlado
+                  </span>
                 }
                 @if (line.manejaLotes) {
-                  <button type="button" class="text-xs text-brand-600" (click)="openLotModal(line.productId)">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-0.5 text-xs text-brand-600"
+                    (click)="openLotModal(line.productId)"
+                  >
+                    <app-icon name="mdi:barcode-scan" iconClass="size-3.5" />
                     Lotes ({{ line.lotMode }})
                   </button>
                 }
@@ -324,23 +436,57 @@
             </div>
             <div class="mt-1 flex items-center justify-between">
               <div class="flex items-center gap-1">
-                <button type="button" class="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded border text-lg" (click)="updateQty(line.productId, -1)">−</button>
+                <button
+                  type="button"
+                  class="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded border"
+                  (click)="updateQty(line.productId, -1)"
+                  aria-label="Disminuir cantidad"
+                >
+                  <app-icon name="mdi:minus" iconClass="size-4" />
+                </button>
                 <span class="min-w-[1.5rem] text-center text-sm">{{ line.quantity }}</span>
-                <button type="button" class="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded border text-lg" (click)="updateQty(line.productId, 1)">+</button>
+                <button
+                  type="button"
+                  class="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded border"
+                  (click)="updateQty(line.productId, 1)"
+                  aria-label="Aumentar cantidad"
+                >
+                  <app-icon name="mdi:plus" iconClass="size-4" />
+                </button>
               </div>
-              <button type="button" class="text-xs text-rose-600" (click)="removeLine(line.productId)">Quitar</button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-0.5 text-xs text-rose-600"
+                (click)="removeLine(line.productId)"
+              >
+                <app-icon name="mdi:trash-can-outline" iconClass="size-3.5" />
+                Quitar
+              </button>
             </div>
-            <button type="button" class="mt-1 text-xs text-brand-600" (click)="openSubstituteModal(line.substitutedFromProductId ?? line.productId)">
+            <button
+              type="button"
+              class="mt-1 inline-flex items-center gap-0.5 text-xs text-brand-600"
+              (click)="openSubstituteModal(line.substitutedFromProductId ?? line.productId)"
+            >
+              <app-icon name="mdi:molecule" iconClass="size-3.5" />
               Ver genéricos
             </button>
           </div>
         } @empty {
-          <p class="py-6 text-center text-sm text-gray-500">Carrito vacío</p>
+          <div class="flex flex-col items-center gap-2 py-8 text-center text-sm text-gray-500">
+            <app-icon name="mdi:cart-outline" iconClass="size-10 text-gray-300" />
+            <p>Carrito vacío</p>
+            <p class="text-xs text-gray-400">Agregue productos desde el catálogo</p>
+          </div>
         }
       </div>
 
       @if (requiresRx()) {
         <div class="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm dark:border-rose-900 dark:bg-rose-900/20">
+          <p class="mb-2 inline-flex items-center gap-1 text-xs font-medium text-rose-800 dark:text-rose-200">
+            <app-icon name="mdi:prescription" iconClass="size-3.5" />
+            Requiere receta
+          </p>
           @if (patientPrescriptions().length > 0) {
             <app-label>Receta del paciente</app-label>
             <app-form-select
@@ -360,7 +506,10 @@
 
       @if (requiresControlled()) {
         <div class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-sm dark:border-amber-900 dark:bg-amber-900/20">
-          <p class="mb-2 text-xs font-medium text-amber-900">Doble validación — medicamento controlado</p>
+          <p class="mb-2 inline-flex items-center gap-1 text-xs font-medium text-amber-900">
+            <app-icon name="mdi:shield-lock-outline" iconClass="size-3.5" />
+            Doble validación — medicamento controlado
+          </p>
           <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
         </div>
       }
@@ -371,23 +520,43 @@
         <div class="flex justify-between text-base font-bold text-gray-800 dark:text-white">
           <span>Total</span><span>{{ cartTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
         </div>
-        <app-button class="mt-2 block w-full" variant="primary" [disabled]="cart().length === 0" (btnClick)="openPayModal()">
+        <app-button
+          class="mt-2 block w-full"
+          variant="primary"
+          startIconName="mdi:cash-register"
+          [disabled]="cart().length === 0"
+          (btnClick)="openPayModal()"
+        >
           Cobrar (F2)
         </app-button>
         @if (lastSale(); as sale) {
           <div class="mt-2 space-y-1 text-center text-xs text-emerald-600">
-            <div>
-              {{ sale.serie }}-{{ sale.numero }} · {{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
-              <button type="button" class="ml-1 underline" (click)="reprintLast()">Reimprimir</button>
+            <div class="inline-flex flex-wrap items-center justify-center gap-2">
+              <span class="inline-flex items-center gap-1">
+                <app-icon name="mdi:check-circle" iconClass="size-3.5" />
+                {{ sale.serie }}-{{ sale.numero }} · {{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              </span>
+              <button type="button" class="inline-flex items-center gap-0.5 underline" (click)="reprintLast()">
+                <app-icon name="mdi:printer-outline" iconClass="size-3.5" />
+                Reimprimir
+              </button>
+              <button type="button" class="inline-flex items-center gap-0.5 underline" (click)="downloadLastPdf()">
+                <app-icon name="mdi:file-pdf-box" iconClass="size-3.5" />
+                PDF
+              </button>
             </div>
             @if (lastSunatStatus(); as sunat) {
               <div>
-                <span class="rounded-full px-2 py-0.5 text-[10px] font-medium" [class]="sunatStatusClass(sunat.sunatStatus)">
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" [class]="sunatStatusClass(sunat.sunatStatus)">
+                  <app-icon name="mdi:cloud-check-outline" iconClass="size-3" />
                   SUNAT: {{ sunat.sunatStatus }}
                 </span>
               </div>
             } @else if (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') {
-              <div class="text-amber-600">Enviando comprobante electrónico…</div>
+              <div class="inline-flex items-center justify-center gap-1 text-amber-600">
+                <app-icon name="mdi:cloud-upload-outline" iconClass="size-3.5" />
+                Enviando comprobante electrónico…
+              </div>
             }
           </div>
         }
@@ -399,7 +568,10 @@
 
 <app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-xl">
   <app-form-stack className="p-6">
-    <h3 class="text-lg font-semibold">Cobrar venta</h3>
+    <h3 class="inline-flex items-center gap-2 text-lg font-semibold">
+      <app-icon name="mdi:cash-multiple" iconClass="size-5 text-brand-500" />
+      Cobrar venta
+    </h3>
     <div class="space-y-2 text-sm">
       <div class="flex justify-between"><span>Subtotal</span><span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between"><span>IGV</span><span>{{ cartIgv() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
@@ -433,8 +605,13 @@
 
     <div>
       <div class="mb-4 flex items-center justify-between">
-        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Medios de pago</h4>
-        <app-button size="sm" variant="outline" (btnClick)="addPaymentLine()">+ Otro medio</app-button>
+        <h4 class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <app-icon name="mdi:credit-card-outline" iconClass="size-4" />
+          Medios de pago
+        </h4>
+        <app-button size="sm" variant="outline" startIconName="mdi:plus" (btnClick)="addPaymentLine()">
+          Otro medio
+        </app-button>
       </div>
       <app-form-stack>
         @for (line of paymentLineRows; track line.localId) {
@@ -494,8 +671,17 @@
       </div>
     }
     <div class="flex justify-end gap-3 pt-2">
-      <app-button variant="outline" (btnClick)="payModalOpen.set(false)">Cancelar</app-button>
-      <app-button variant="primary" [disabled]="saleMutation.isPending()" (btnClick)="confirmSale()">Confirmar e imprimir</app-button>
+      <app-button variant="outline" startIconName="mdi:close" (btnClick)="payModalOpen.set(false)">
+        Cancelar
+      </app-button>
+      <app-button
+        variant="primary"
+        startIconName="mdi:printer-pos"
+        [disabled]="saleMutation.isPending()"
+        (btnClick)="confirmSale()"
+      >
+        Confirmar e imprimir
+      </app-button>
     </div>
   </app-form-stack>
 </app-modal>
@@ -503,10 +689,27 @@
 <app-modal [isOpen]="!!lotModalProductId()" (close)="closeLotModal()" className="w-full max-w-lg">
   @if (lotModalLine(); as line) {
     <div class="space-y-3 p-6">
-      <h3 class="font-semibold">Lotes — {{ line.nombre }}</h3>
+      <h3 class="inline-flex items-center gap-2 font-semibold">
+        <app-icon name="mdi:barcode-scan" iconClass="size-5 text-brand-500" />
+        Lotes — {{ line.nombre }}
+      </h3>
       <div class="flex gap-2">
-        <app-button size="sm" [variant]="line.lotMode === 'AUTO' ? 'primary' : 'outline'" (btnClick)="setLotMode('AUTO')">FEFO/FIFO</app-button>
-        <app-button size="sm" [variant]="line.lotMode === 'MANUAL' ? 'primary' : 'outline'" (btnClick)="setLotMode('MANUAL')">Manual</app-button>
+        <app-button
+          size="sm"
+          startIconName="mdi:auto-fix"
+          [variant]="line.lotMode === 'AUTO' ? 'primary' : 'outline'"
+          (btnClick)="setLotMode('AUTO')"
+        >
+          FEFO/FIFO
+        </app-button>
+        <app-button
+          size="sm"
+          startIconName="mdi:hand-pointing-right"
+          [variant]="line.lotMode === 'MANUAL' ? 'primary' : 'outline'"
+          (btnClick)="setLotMode('MANUAL')"
+        >
+          Manual
+        </app-button>
       </div>
       @if (line.lotMode === 'MANUAL') {
         <div class="flex gap-2">
@@ -529,7 +732,10 @@
 
 <app-modal [isOpen]="!!substituteModalProductId()" (close)="closeSubstituteModal()" className="w-full max-w-lg">
   <div class="space-y-3 p-6">
-    <h3 class="font-semibold">Sustitutos genéricos / bioequivalentes</h3>
+    <h3 class="inline-flex items-center gap-2 font-semibold">
+      <app-icon name="mdi:molecule" iconClass="size-5 text-brand-500" />
+      Sustitutos genéricos / bioequivalentes
+    </h3>
     @if (substituteLoading()) {
       <p class="text-sm text-gray-500">Buscando alternativas con stock…</p>
     } @else if (substituteOptions().length === 0) {

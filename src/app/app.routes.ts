@@ -13,6 +13,15 @@ export const routes: Routes = [
     title: 'FactoFarm | Software para farmacias y boticas',
   },
   {
+    // Pública: ventana secundaria del POS (sessionStorage no se comparte entre ventanas).
+    path: 'pos-pantalla-cliente',
+    loadComponent: () =>
+      import('./modules/admin/pages/pos-pantalla-cliente/pos-pantalla-cliente.component').then(
+        (m) => m.PosPantallaClienteComponent,
+      ),
+    title: 'FactoFarm | Pantalla cliente',
+  },
+  {
     path: '',
     loadChildren: () =>
       import('./modules/admin/admin.routes').then((m) => m.adminRoutes),

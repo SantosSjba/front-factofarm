@@ -36,6 +36,7 @@
           <th class="px-3 py-2">Cliente</th>
           <th class="px-3 py-2">Vendedor</th>
           <th class="px-3 py-2">Estado</th>
+          <th class="px-3 py-2">SUNAT</th>
           <th class="px-3 py-2 text-right">Total</th>
           <th class="px-3 py-2"></th>
         </tr>
@@ -53,6 +54,14 @@
             <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
             <td class="px-3 py-2">{{ row.seller?.nombre ?? '—' }}</td>
             <td class="px-3 py-2"><span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{{ row.estado }}</span></td>
+            <td class="px-3 py-2">
+              <span
+                class="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                [class]="row.sunatStatus ? sunatStatusClass(row.sunatStatus) : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'"
+              >
+                {{ sunatLabel(row) }}
+              </span>
+            </td>
             <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             <td class="px-3 py-2 text-right">
               <div class="flex flex-wrap items-center justify-end gap-1.5">
@@ -64,6 +73,37 @@
                   tooltip="Ver"
                   (btnClick)="openDetail(row.id)"
                 />
+                @if (!isArchivedRow(row)) {
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:file-pdf-box"
+                    tooltip="PDF"
+                    (btnClick)="downloadPdf(row.id)"
+                  />
+                }
+                @if (!isArchivedRow(row) && row.canEmitCpe) {
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:cloud-upload-outline"
+                    tooltip="Emitir a SUNAT"
+                    [disabled]="emitMutation.isPending()"
+                    (btnClick)="emitCpe(row.id)"
+                  />
+                }
+                @if (!isArchivedRow(row) && row.canConvertToCpe) {
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:swap-horizontal"
+                    tooltip="Migrar a boleta/factura"
+                    (btnClick)="openConvert(row.id)"
+                  />
+                }
                 @if (!isArchivedRow(row) && (row.documentType === 'BOLETA' || row.documentType === 'FACTURA')) {
                   @if (row.estado === 'COMPLETADA' || row.estado === 'PARCIALMENTE_DEVUELTA') {
                     <app-button
@@ -154,13 +194,79 @@
         <div class="flex justify-between"><span>IGV</span><span>{{ sale.igvTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
         <div class="flex justify-between font-bold"><span>Total</span><span>{{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       </div>
-      @if (canReturn(sale)) {
-        <div class="flex justify-end border-t pt-4">
+      <div class="flex flex-wrap justify-end gap-2 border-t pt-4">
+        @if (!isArchivedRow(sale)) {
+          <app-button
+            variant="outline"
+            startIconName="mdi:file-pdf-box"
+            (btnClick)="downloadPdf(sale.id)"
+          >
+            Descargar PDF
+          </app-button>
+        }
+        @if (
+          !isArchivedRow(sale) &&
+          (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') &&
+          !billingStatusQuery.data()
+        ) {
+          <app-button
+            variant="primary"
+            startIconName="mdi:cloud-upload-outline"
+            [disabled]="emitMutation.isPending()"
+            (btnClick)="emitCpe(sale.id)"
+          >
+            Emitir a SUNAT
+          </app-button>
+        }
+        @if (
+          !isArchivedRow(sale) &&
+          (sale.documentType === 'NOTA_VENTA' || sale.documentType === 'TICKET') &&
+          sale.estado === 'COMPLETADA'
+        ) {
+          <app-button
+            variant="primary"
+            startIconName="mdi:swap-horizontal"
+            (btnClick)="openConvert(sale.id); closeDetail()"
+          >
+            Migrar a boleta/factura
+          </app-button>
+        }
+        @if (canReturn(sale)) {
           <app-button variant="outline" (btnClick)="openReturn(sale.id); closeDetail()">Devolver productos</app-button>
-        </div>
-      }
+        }
+      </div>
     </div>
   }
+</app-modal>
+
+<app-modal [isOpen]="!!convertSaleId()" (close)="closeConvert()" className="w-full max-w-md">
+  <div class="space-y-4 p-6">
+    <h3 class="text-lg font-semibold">Migrar nota de venta</h3>
+    <p class="text-sm text-gray-500">
+      Se reasignará serie/número de boleta o factura y se encolará la emisión a SUNAT (requiere OSE configurado).
+      Para factura el cliente debe tener RUC.
+    </p>
+    <div>
+      <app-label>Comprobante destino</app-label>
+      <app-form-select
+        className="mt-1.5"
+        [showPlaceholder]="false"
+        [options]="convertDocOptions"
+        [value]="convertTarget()"
+        (valueChange)="convertTarget.set($any($event))"
+      />
+    </div>
+    <div class="flex justify-end gap-2">
+      <app-button variant="outline" (btnClick)="closeConvert()">Cancelar</app-button>
+      <app-button
+        variant="primary"
+        [disabled]="convertMutation.isPending()"
+        (btnClick)="convertMutation.mutate()"
+      >
+        {{ convertMutation.isPending() ? 'Migrando…' : 'Migrar y emitir' }}
+      </app-button>
+    </div>
+  </div>
 </app-modal>
 
 <app-modal [isOpen]="!!returnSaleId()" (close)="closeReturn()" className="w-full max-w-2xl">

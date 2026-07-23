@@ -1,6 +1,7 @@
 ﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -23,6 +24,7 @@ import type { BillingProviderType, ElectronicDocumentDetailDto, SunatDocumentSta
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    RouterLink,
     CurrencyPipe,
     DatePipe,
     BreadcrumbInlineComponent,
@@ -72,10 +74,25 @@ export class ComprobanteElectronicoComponent {
   protected readonly specialAmount = signal('100');
 
   protected readonly providerOptions = [
-    { value: 'MOCK', label: 'Mock (solo desarrollo)' },
-    { value: 'FACTILIZA', label: 'Factiliza OSE (recomendado)' },
-    { value: 'NUBEFACT', label: 'Nubefact OSE' },
+    { value: 'MOCK', label: 'Sin facturación electrónica (solo notas de venta)' },
+    { value: 'FACTILIZA', label: 'Factiliza' },
+    { value: 'NUBEFACT', label: 'Nubefact' },
+    { value: 'APISPERU', label: 'APIsPERU' },
   ];
+
+  /** Credenciales salen del panel del proveedor; aquí solo se pegan. */
+  protected readonly providerSetupHint = computed(() => {
+    switch (this.provider()) {
+      case 'FACTILIZA':
+        return 'Antes: token en app.factiliza.com. Aquí: URL + Bearer. FactoFarm emite por usted.';
+      case 'NUBEFACT':
+        return 'Antes: RUTA + TOKEN en Nubefact → Configuración → API. Aquí: péguelos; FactoFarm emite a esa ruta.';
+      case 'APISPERU':
+        return 'Antes: empresa + token permanente en panel APIsPERU (cert + SOL). Aquí: URL + Bearer.';
+      default:
+        return 'Sin OSE: solo notas de venta. Si ya configuró un proveedor en su panel, elíjalo e ingrese URL/token.';
+    }
+  });
 
   protected readonly specialTypeOptions = [
     { value: 'RETENCION', label: 'Retención electrónica' },

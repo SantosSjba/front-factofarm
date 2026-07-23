@@ -15,6 +15,8 @@ import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { FormRowComponent } from '../../../../shared/components/form/form-row/form-row.component';
@@ -86,11 +88,14 @@ function lineGrossTotal(line: CartLine): number {
   return Math.max(0, Math.round(gross * 100) / 100);
 }
 
-const DOC_OPTIONS: { value: SaleDocumentType; label: string }[] = [
+const DOC_OPTIONS_ALL: { value: SaleDocumentType; label: string }[] = [
+  { value: 'NOTA_VENTA', label: 'Nota de venta' },
   { value: 'BOLETA', label: 'Boleta' },
   { value: 'FACTURA', label: 'Factura' },
+];
+
+const DOC_OPTIONS_INTERNAL: { value: SaleDocumentType; label: string }[] = [
   { value: 'NOTA_VENTA', label: 'Nota de venta' },
-  { value: 'TICKET', label: 'Ticket' },
 ];
 
 @Component({
@@ -100,6 +105,8 @@ const DOC_OPTIONS: { value: SaleDocumentType; label: string }[] = [
     CommonModule,
     CurrencyPipe,
     ButtonComponent,
+    HelpHintComponent,
+    IconComponent,
     FormSelectComponent,
     FormFieldComponent,
     FormRowComponent,
@@ -121,17 +128,27 @@ export class PuntoVentaComponent implements OnDestroy {
   private readonly posRealtime = inject(PosRealtimeService);
   private readonly customerDisplay = inject(PosCustomerDisplayService);
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  private unsubscribeCustomerDisplay: (() => void) | null = null;
+  /** True tras abrir "Pantalla cliente" en esta sesión (sincroniza aunque el flag de caja esté off). */
+  private readonly customerDisplayOpened = signal(false);
+  /** Evita que vaciar el carrito borre el comprobante recién mostrado al cliente. */
+  private customerDisplaySaleHold = false;
   private readonly onOnline = () => {
     this.isOnline.set(true);
     void this.syncOfflineQueue();
   };
   private readonly onOffline = () => this.isOnline.set(false);
 
-  protected readonly docOptions = DOC_OPTIONS;
   protected readonly paymentOptions = POS_PAYMENT_OPTIONS;
+  /** True si Mi farmacia tiene OSE + token (boleta/factura SUNAT). */
+  protected readonly electronicInvoicingEnabled = signal(false);
+
+  protected readonly docOptions = computed(() =>
+    this.electronicInvoicingEnabled() ? DOC_OPTIONS_ALL : DOC_OPTIONS_INTERNAL,
+  );
 
   protected readonly warehouseId = signal('');
-  protected readonly documentType = signal<SaleDocumentType>('BOLETA');
+  protected readonly documentType = signal<SaleDocumentType>('NOTA_VENTA');
   protected readonly serie = signal('');
   protected readonly customerId = signal('');
   protected readonly customerLabel = signal('');
@@ -194,6 +211,12 @@ export class PuntoVentaComponent implements OnDestroy {
     staleTime: 5 * 60_000,
   }));
 
+  protected readonly pharmacyProfileQuery = injectQuery(() => ({
+    queryKey: ['pharmacy-profile'] as const,
+    queryFn: () => firstValueFrom(this.api.getPharmacyProfile()),
+    staleTime: 60_000,
+  }));
+
   protected readonly warehouseOptions = computed(() => [
     { value: '', label: 'Almacén de venta' },
     ...(this.warehousesQuery.data() ?? []).map((w) => ({
@@ -248,7 +271,87 @@ export class PuntoVentaComponent implements OnDestroy {
   }
 
   protected openCustomerDisplay() {
-    window.open('/pos-pantalla-cliente', 'factofarm-customer-display', 'noopener,noreferrer,width=480,height=720');
+    this.customerDisplayOpened.set(true);
+    window.open(
+      '/pos-pantalla-cliente',
+      'factofarm-customer-display',
+      'noopener,noreferrer,width=480,height=720',
+    );
+    // Reenvía el carrito: microtask + delay por si la ventana aún no suscribió BroadcastChannel.
+    queueMicrotask(() => this.publishCustomerDisplayCart());
+    window.setTimeout(() => this.publishCustomerDisplayCart(), 250);
+  }
+
+  private shouldSyncCustomerDisplay(): boolean {
+    return (
+      this.customerDisplayOpened() ||
+      !!this.cashSession()?.cashRegister?.customerDisplayEnabled
+    );
+  }
+
+  private documentLabelForDisplay(type: SaleDocumentType | string): string {
+    switch (type) {
+      case 'BOLETA':
+        return 'BOLETA DE VENTA';
+      case 'FACTURA':
+        return 'FACTURA';
+      case 'TICKET':
+        return 'TICKET';
+      default:
+        return 'NOTA DE VENTA';
+    }
+  }
+
+  private publishCustomerDisplayCart() {
+    if (!this.shouldSyncCustomerDisplay()) return;
+    if (this.customerDisplaySaleHold) return;
+
+    const cart = this.cart();
+    if (!cart.length) {
+      this.customerDisplay.publish({ type: 'clear' });
+      return;
+    }
+
+    const docType = this.documentType();
+    this.customerDisplay.publish({
+      type: 'cart',
+      phase: this.payModalOpen() ? 'paying' : 'cart',
+      documentType: docType,
+      documentLabel: this.documentLabelForDisplay(docType),
+      serie: this.serie().trim() || undefined,
+      customerName: this.customerLabel().trim() || null,
+      subtotal: this.cartSubtotal(),
+      igv: this.cartIgv(),
+      total: this.cartTotal(),
+      lines: cart.map((l) => ({
+        nombre: l.nombre,
+        quantity: l.quantity,
+        precio: l.precio,
+        total: lineGrossTotal(l),
+      })),
+    });
+  }
+
+  private publishCustomerDisplaySale(sale: SaleDetailDto) {
+    if (!this.shouldSyncCustomerDisplay()) return;
+    this.customerDisplaySaleHold = true;
+    this.customerDisplay.publish({
+      type: 'sale',
+      documentType: sale.documentType,
+      documentLabel: this.documentLabelForDisplay(sale.documentType),
+      serie: sale.serie,
+      numero: sale.numero,
+      subtotal: sale.subtotal,
+      igv: sale.igvTotal,
+      total: sale.total,
+      customerName: sale.customer?.nombre ?? (this.customerLabel().trim() || null),
+      lines: sale.items.map((i) => ({
+        nombre: i.producto,
+        quantity: Number(i.cantidad) || 0,
+        precio: Number(i.precioUnitario) || 0,
+        total: Number(i.totalLinea) || 0,
+      })),
+    });
   }
 
   protected updateLineDiscount(
@@ -363,22 +466,40 @@ export class PuntoVentaComponent implements OnDestroy {
     });
 
     effect(() => {
-      const session = this.cashSession();
-      if (!session?.cashRegister?.customerDisplayEnabled) return;
-      const cart = this.cart();
-      if (!cart.length) {
-        this.customerDisplay.publish({ type: 'clear' });
-        return;
+      const profile = this.pharmacyProfileQuery.data();
+      const enabled = !!profile?.electronicInvoicingEnabled;
+      this.electronicInvoicingEnabled.set(enabled);
+      if (!enabled && this.documentType() !== 'NOTA_VENTA') {
+        this.documentType.set('NOTA_VENTA');
       }
-      this.customerDisplay.publish({
-        type: 'cart',
-        total: this.cartTotal(),
-        lines: cart.map((l) => ({
-          nombre: l.nombre,
-          quantity: l.quantity,
-          precio: l.precio,
-        })),
-      });
+    });
+
+    effect(() => {
+      // Sync en vivo: carrito, totales, comprobante, cliente y modal de cobro.
+      void this.cart();
+      void this.cartTotal();
+      void this.cartSubtotal();
+      void this.documentType();
+      void this.serie();
+      void this.customerLabel();
+      void this.payModalOpen();
+      void this.customerDisplayOpened();
+      void this.cashSession()?.cashRegister?.customerDisplayEnabled;
+      if (!this.shouldSyncCustomerDisplay()) return;
+      this.publishCustomerDisplayCart();
+    });
+
+    // Responde cuando la pantalla cliente pide el estado al abrirse.
+    this.unsubscribeCustomerDisplay = this.customerDisplay.subscribe((msg) => {
+      if (msg.type === 'request-state') {
+        // Si pide estado, asume que hay una ventana cliente escuchando.
+        this.customerDisplayOpened.set(true);
+        if (this.customerDisplaySaleHold && this.lastSale()) {
+          this.publishCustomerDisplaySale(this.lastSale()!);
+        } else {
+          this.publishCustomerDisplayCart();
+        }
+      }
     });
 
     effect(() => {
@@ -405,6 +526,7 @@ export class PuntoVentaComponent implements OnDestroy {
   ngOnDestroy() {
     this.posRealtime.disconnect();
     this.barcodeWedge.setEnabled(false);
+    this.unsubscribeCustomerDisplay?.();
     window.removeEventListener('online', this.onOnline);
     window.removeEventListener('offline', this.onOffline);
     if (this.interactionTimer) clearTimeout(this.interactionTimer);
@@ -503,6 +625,8 @@ export class PuntoVentaComponent implements OnDestroy {
   }
 
   protected addToCart(item: PosCatalogItemDto) {
+    // Nueva venta: deja de retener el comprobante anterior en pantalla cliente.
+    this.customerDisplaySaleHold = false;
     const price = Number.parseFloat(item.precio);
     const stock = Number.parseFloat(item.stock);
     if (stock <= 0) {
@@ -577,6 +701,10 @@ export class PuntoVentaComponent implements OnDestroy {
     this.comentario.set('');
     this.interactionAlerts.set([]);
     this.interactionsAcknowledged.set(false);
+    // Si no estamos reteniendo el ticket de la venta recién hecha, limpia la pantalla cliente.
+    if (!this.customerDisplaySaleHold && this.shouldSyncCustomerDisplay()) {
+      this.customerDisplay.publish({ type: 'clear' });
+    }
     void this.loadCatalog(false);
   }
 
@@ -907,21 +1035,14 @@ export class PuntoVentaComponent implements OnDestroy {
         this.posRealtime.joinSale(sale.id);
         this.pollSunatStatus(sale.id);
       }
+      // Primero muestra el comprobante al cliente; luego vacía el carrito sin borrarlo.
+      this.publishCustomerDisplaySale(sale);
       this.payModalOpen.set(false);
       this.clearCart();
       void this.loadCatalog(false);
       const hw = this.cashSession()?.cashRegister;
       if (this.posPrint.shouldAutoPrint(hw)) {
         this.posPrint.printTicket(sale, hw);
-      }
-      if (hw?.customerDisplayEnabled) {
-        this.customerDisplay.publish({
-          type: 'sale',
-          documentType: sale.documentType,
-          serie: sale.serie,
-          numero: sale.numero,
-          total: sale.total,
-        });
       }
       void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
@@ -939,6 +1060,19 @@ export class PuntoVentaComponent implements OnDestroy {
   protected reprintLast() {
     const sale = this.lastSale();
     if (sale) this.posPrint.printTicket(sale, this.cashSession()?.cashRegister);
+  }
+
+  protected downloadLastPdf() {
+    const sale = this.lastSale();
+    if (!sale) return;
+    this.api.downloadSalePdf(sale.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo obtener el PDF')),
+    });
   }
 
   private shouldQueueOffline(err: unknown): boolean {

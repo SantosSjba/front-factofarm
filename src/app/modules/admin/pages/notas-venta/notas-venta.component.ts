@@ -16,7 +16,15 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import type { SaleDetailDto, SaleDocumentType, SaleStatus, SunatDocumentStatus, PaymentMethod, DataStorageMode } from '../../models/directory.models';
+import type {
+  SaleDetailDto,
+  SaleDocumentType,
+  SaleListItemDto,
+  SaleStatus,
+  SunatDocumentStatus,
+  PaymentMethod,
+  DataStorageMode,
+} from '../../models/directory.models';
 
 type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string };
 
@@ -63,6 +71,13 @@ export class NotasVentaComponent {
   protected readonly paymentMetodo = signal<string>('');
   protected readonly paymentReferencia = signal('');
   protected readonly storage = signal<DataStorageMode>('hot');
+  protected readonly convertSaleId = signal<string | null>(null);
+  protected readonly convertTarget = signal<'BOLETA' | 'FACTURA'>('BOLETA');
+
+  protected readonly convertDocOptions = [
+    { value: 'BOLETA', label: 'Boleta electrónica' },
+    { value: 'FACTURA', label: 'Factura electrónica' },
+  ];
 
   protected readonly storageOptions = [
     { value: 'hot', label: 'Activo' },
@@ -219,8 +234,51 @@ export class NotasVentaComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la nota de débito')),
   }));
 
+  protected readonly emitMutation = injectMutation(() => ({
+    mutationFn: (saleId: string) => firstValueFrom(this.api.emitElectronicDocumentFromSale(saleId)),
+    onSuccess: (doc) => {
+      this.notify.success(`Emisión en curso · SUNAT: ${doc.sunatStatus}`);
+      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir el CPE')),
+  }));
+
+  protected readonly convertMutation = injectMutation(() => ({
+    mutationFn: () =>
+      firstValueFrom(this.api.convertSaleToCpe(this.convertSaleId()!, this.convertTarget())),
+    onSuccess: (sale) => {
+      this.notify.success(
+        `Migrada a ${sale.documentType} ${sale.serie}-${sale.numero}. Emisión SUNAT en cola.`,
+      );
+      this.closeConvert();
+      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo migrar a boleta/factura')),
+  }));
+
   protected onFilterChange() {
     this.page.set(1);
+  }
+
+  protected openConvert(saleId: string) {
+    this.convertSaleId.set(saleId);
+    this.convertTarget.set('BOLETA');
+  }
+
+  protected closeConvert() {
+    this.convertSaleId.set(null);
+  }
+
+  protected emitCpe(saleId: string) {
+    this.emitMutation.mutate(saleId);
+  }
+
+  protected sunatLabel(row: SaleListItemDto): string {
+    if (row.sunatStatus) return row.sunatStatus;
+    if (row.documentType === 'BOLETA' || row.documentType === 'FACTURA') return 'SIN EMITIR';
+    return '—';
   }
 
   protected openDetail(id: string) {
@@ -229,6 +287,17 @@ export class NotasVentaComponent {
 
   protected closeDetail() {
     this.detailId.set(null);
+  }
+
+  protected downloadPdf(saleId: string) {
+    this.api.downloadSalePdf(saleId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo obtener el PDF')),
+    });
   }
 
   protected canReturn(sale: SaleDetailDto): boolean {

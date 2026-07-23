@@ -1581,6 +1581,11 @@ export class DirectoryApiService {
     return this.http.get<SaleDetailDto>(`${this.base}/sales/${id}`);
   }
 
+  /** PDF OSE si existe; si no, PDF generado en backend (nota de venta, etc.). */
+  downloadSalePdf(id: string) {
+    return this.http.get(`${this.base}/sales/${id}/pdf`, { responseType: 'blob' });
+  }
+
   getPosCatalog(warehouseId: string, search?: string) {
     const params: Record<string, string> = { warehouseId };
     if (search?.trim()) params['search'] = search.trim();
@@ -1872,6 +1877,13 @@ export class DirectoryApiService {
 
   emitElectronicDocumentFromSale(saleId: string) {
     return this.http.post<ElectronicDocumentDetailDto>(`${this.base}/billing/sales/${saleId}/emit`, {});
+  }
+
+  /** Migrar nota de venta → boleta/factura e iniciar emisión SUNAT. */
+  convertSaleToCpe(saleId: string, documentType: 'BOLETA' | 'FACTURA') {
+    return this.http.post<SaleDetailDto>(`${this.base}/sales/${saleId}/convert-to-cpe`, {
+      documentType,
+    });
   }
 
   getSaleBillingStatus(saleId: string) {

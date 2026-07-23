@@ -292,15 +292,6 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Punto de Venta',
       },
       {
-        path: 'pos-pantalla-cliente',
-        ...guarded(P.puntoVenta),
-        loadComponent: () =>
-          import('./pages/pos-pantalla-cliente/pos-pantalla-cliente.component').then(
-            (m) => m.PosPantallaClienteComponent,
-          ),
-        title: 'FactoFarm | Pantalla cliente POS',
-      },
-      {
         path: 'caja-chica-pos',
         ...guarded(P.cajaChicaPos),
         loadComponent: () =>

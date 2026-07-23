@@ -124,10 +124,14 @@ export class OnboardingComponent {
 
     const establishmentDone = !!establishment?.nombre?.trim() && !!establishment?.codigo?.trim();
     const seriesDone = series.length > 0;
+    // OSE es opcional: MOCK (solo NV) cuenta como configurado; proveedores reales requieren token.
+    const oseProviders = new Set(['FACTILIZA', 'NUBEFACT', 'APISPERU']);
     const oseDone =
-      billing?.provider === 'FACTILIZA' || billing?.provider === 'NUBEFACT'
-        ? !!billing?.rucEmisor?.trim()
-        : billing?.provider === 'MOCK';
+      !billing ||
+      billing.provider === 'MOCK' ||
+      (oseProviders.has(billing.provider) &&
+        !!billing.hasApiToken &&
+        !!billing.rucEmisor?.trim());
 
     return [
       {
@@ -147,8 +151,9 @@ export class OnboardingComponent {
       {
         id: 'ose',
         title: 'Facturación electrónica (OSE)',
-        description: 'Conecte Factiliza o Nubefact con certificado y token de producción.',
-        route: '/comprobante-electronico',
+        description:
+          'Opcional: conecte Factiliza, Nubefact o APIsPERU. Sin OSE puede vender con nota de venta.',
+        route: '/mi-farmacia',
         done: !!oseDone,
       },
       {
