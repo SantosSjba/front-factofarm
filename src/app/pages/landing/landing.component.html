@@ -468,6 +468,12 @@
               {{ contactEmail }}
             </a>
           }
+          @if (siteUrl) {
+            <a [href]="siteUrl" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 text-sm text-gray-600 hover:text-brand-600 dark:text-gray-400">
+              <app-icon name="mdi:web" iconClass="size-5" />
+              factosysperu.com
+            </a>
+          }
           <ul class="space-y-2 pt-2 text-sm text-gray-600 dark:text-gray-400">
             <li class="flex items-center gap-2"><app-icon name="mdi:check-circle-outline" iconClass="size-4 text-success-500" /> Respuesta en 24–48 horas hábiles</li>
             <li class="flex items-center gap-2"><app-icon name="mdi:check-circle-outline" iconClass="size-4 text-success-500" /> Demo personalizada según tu operación</li>

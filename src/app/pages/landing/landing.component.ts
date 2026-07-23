@@ -79,6 +79,7 @@ export class LandingComponent {
   protected readonly isAuthenticated = this.auth.isAuthenticated.bind(this.auth);
   protected readonly contactWhatsApp = environment.contactWhatsApp;
   protected readonly contactEmail = environment.contactEmail;
+  protected readonly siteUrl = environment.siteUrl;
   protected readonly currentYear = new Date().getFullYear();
 
   protected readonly mobileNavOpen = signal(false);

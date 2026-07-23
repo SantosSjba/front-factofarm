@@ -2,12 +2,12 @@
 export const envOverrides = {
   production: false,
   apiBaseUrl: "http://localhost:3000/api/v1",
-  contactWhatsApp: "",
-  contactEmail: "",
+  contactWhatsApp: "51944644276",
+  contactEmail: "contacto@factosysperu.com",
   company: {
     legalName: "FactoFarm S.A.C.",
     ruc: "20XXXXXXXXX",
     address: "Lima, Perú",
   },
-  siteUrl: "http://localhost:4200",
+  siteUrl: "https://factosysperu.com",
 };

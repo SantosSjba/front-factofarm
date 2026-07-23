@@ -13,12 +13,12 @@ const prodBuild = process.env.NODE_ENV === 'production';
 const defaults = {
   NG_APP_API_BASE_URL: prodBuild ? '/api/v1' : 'http://localhost:3000/api/v1',
   NG_APP_PRODUCTION: prodBuild ? 'true' : 'false',
-  NG_APP_CONTACT_WHATSAPP: '',
-  NG_APP_CONTACT_EMAIL: '',
+  NG_APP_CONTACT_WHATSAPP: '51944644276',
+  NG_APP_CONTACT_EMAIL: 'contacto@factosysperu.com',
   NG_APP_COMPANY_LEGAL_NAME: 'FactoFarm S.A.C.',
   NG_APP_COMPANY_RUC: '20XXXXXXXXX',
   NG_APP_COMPANY_ADDRESS: 'Lima, Perú',
-  NG_APP_SITE_URL: prodBuild ? 'https://factofarm.com' : 'http://localhost:4200',
+  NG_APP_SITE_URL: prodBuild ? 'https://factosysperu.com' : 'http://localhost:4200',
 };
 
 const vars = { ...defaults };
