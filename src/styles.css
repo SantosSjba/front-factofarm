@@ -339,6 +339,8 @@ layer(base);
     @apply inline-flex items-center;
   }
 
+  /* En fondos ya oscuros (panel auth) siempre; en el resto solo con tema dark */
+  .logo-dark-glow--always img,
   .dark .logo-dark-glow img {
     filter:
       drop-shadow(0 0 0.35px rgba(255, 255, 255, 1))
