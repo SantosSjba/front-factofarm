@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FactoFarm">
+  <rect width="64" height="64" rx="14" fill="#002840"/>
   <text
     x="32"
-    y="46"
+    y="45"
     text-anchor="middle"
     font-family="Arial, Helvetica, sans-serif"
-    font-size="34"
+    font-size="32"
     font-weight="800"
     letter-spacing="-1.5"
   >
-    <tspan fill="#002840">F</tspan><tspan fill="#30a038">F</tspan>
+    <tspan fill="#ffffff">F</tspan><tspan fill="#30a038">F</tspan>
   </text>
 </svg>

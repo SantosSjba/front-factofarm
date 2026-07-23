@@ -18,10 +18,41 @@ export class SeoService {
   private canonicalEl: HTMLLinkElement | null = null;
 
   init(): void {
+    this.ensureFavicons();
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => this.applyForCurrentRoute());
     this.applyForCurrentRoute();
+  }
+
+  /** Garantiza favicons FactoFarm (Safari pide /favicon.ico por defecto). */
+  private ensureFavicons(): void {
+    const icons: Array<{ rel: string; href: string; type?: string; sizes?: string }> = [
+      { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+      { rel: 'icon', href: '/images/logo/logo-icon.svg', type: 'image/svg+xml' },
+      { rel: 'icon', href: '/images/logo/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { rel: 'icon', href: '/images/logo/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+      { rel: 'apple-touch-icon', href: '/images/logo/apple-touch-icon.png' },
+    ];
+
+    for (const icon of icons) {
+      const selector = icon.type
+        ? `link[rel="${icon.rel}"][type="${icon.type}"]`
+        : icon.sizes === 'any'
+          ? `link[rel="${icon.rel}"][href="${icon.href}"]`
+          : `link[rel="${icon.rel}"][sizes="${icon.sizes ?? ''}"]`;
+      let el = this.doc.head.querySelector(selector) as HTMLLinkElement | null;
+      if (!el) {
+        el = this.doc.createElement('link');
+        el.setAttribute('rel', icon.rel);
+        this.doc.head.appendChild(el);
+      }
+      el.setAttribute('href', icon.href);
+      if (icon.type) el.setAttribute('type', icon.type);
+      else el.removeAttribute('type');
+      if (icon.sizes) el.setAttribute('sizes', icon.sizes);
+      else el.removeAttribute('sizes');
+    }
   }
 
   apply(config: SeoConfig, path = this.router.url): void {

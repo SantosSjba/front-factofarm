@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DropdownComponent } from '../../ui/dropdown/dropdown.component';
 import { CommonModule } from '@angular/common';
@@ -16,6 +16,14 @@ export class UserDropdownComponent {
   readonly auth = inject(AuthService);
 
   isOpen = false;
+
+  protected readonly isSupport = computed(() => this.auth.isSupportSession());
+
+  /** Nombre limpio (sin sufijo “(soporte)”) para no saturar el header. */
+  protected readonly displayName = computed(() => {
+    const raw = this.auth.user()?.nombre ?? 'Usuario';
+    return raw.replace(/\s*\(soporte\)\s*$/i, '').trim() || 'Usuario';
+  });
 
   toggleDropdown() {
     this.isOpen = !this.isOpen;

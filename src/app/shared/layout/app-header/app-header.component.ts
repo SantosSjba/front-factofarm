@@ -32,14 +32,15 @@ export class AppHeaderComponent {
 
   protected readonly tenantLabel = computed(() => {
     const user = this.auth.user();
-    if (!user || this.auth.isPlatformAdmin()) return null;
+    // En sesión de soporte el banner ya identifica al cliente; no duplicar badge.
+    if (!user || this.auth.isPlatformAdmin() || this.auth.isSupportSession()) return null;
     return user.tenantNombre ?? 'Mi farmacia';
   });
 
   protected readonly supportBanner = computed(() => {
     if (!this.auth.isSupportSession()) return null;
     const name = this.auth.user()?.tenantNombre ?? 'cliente';
-    return `Sesión de soporte FactoSys · ${name}`;
+    return `Soporte FactoSys · ${name}`;
   });
 
   protected endSupportSession(): void {
