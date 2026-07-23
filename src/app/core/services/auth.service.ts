@@ -62,7 +62,7 @@ export class AuthService {
 
   /** Ruta de inicio según rol (evita mandar SUPER_ADMIN al dashboard tenant). */
   defaultHomePath(): string {
-    if (this.isPlatformAdmin()) return '/platform/clientes';
+    if (this.isPlatformAdmin()) return '/platform/dashboard';
     const role = this.userSignal()?.role;
     if (role === 'CAJERO' || role === 'VENDEDOR') return '/punto-venta';
     return '/dashboard';

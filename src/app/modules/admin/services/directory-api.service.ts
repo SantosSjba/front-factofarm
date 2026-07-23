@@ -138,6 +138,9 @@ import type {
   ManagerDashboardDto,
   PharmacistDashboardDto,
   CashierDashboardDto,
+  WarehouseDashboardDto,
+  AccountantDashboardDto,
+  PlatformDashboardDto,
   RoleTemplateDto,
   StaffWorkScheduleRowDto,
   StaffAttendanceItemDto,
@@ -331,6 +334,18 @@ export class DirectoryApiService {
 
   getCashierDashboard() {
     return this.http.get<CashierDashboardDto>(`${this.base}/dashboard/cashier`);
+  }
+
+  getWarehouseDashboard() {
+    return this.http.get<WarehouseDashboardDto>(`${this.base}/dashboard/warehouse`);
+  }
+
+  getAccountantDashboard() {
+    return this.http.get<AccountantDashboardDto>(`${this.base}/dashboard/accountant`);
+  }
+
+  getPlatformDashboard() {
+    return this.http.get<PlatformDashboardDto>(`${this.base}/dashboard/platform`);
   }
 
   getRoleTemplates() {

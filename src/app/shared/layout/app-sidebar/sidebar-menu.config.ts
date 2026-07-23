@@ -21,6 +21,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     icon: 'lucide:building-2',
     name: 'Plataforma',
     subItems: [
+      { name: 'Dashboard', path: '/platform/dashboard', permissionCode: 'nav.platform_dashboard' },
       { name: 'Clientes SaaS', path: '/platform/clientes', permissionCode: 'nav.platform_clientes' },
       { name: 'Leads comerciales', path: '/platform/leads', permissionCode: 'nav.platform_leads' },
       { name: 'Libro de reclamaciones', path: '/platform/reclamaciones', permissionCode: 'nav.platform_reclamaciones' },
@@ -30,7 +31,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     icon: 'lucide:layout-dashboard',
     name: 'Dashboard',
     subItems: [
-      { name: 'Dashboard Admin', path: '/dashboard', permissionCode: 'nav.dashboard_admin' },
+      { name: 'Mi panel', path: '/dashboard', permissionCode: 'nav.dashboard_admin' },
     ],
   },
   {

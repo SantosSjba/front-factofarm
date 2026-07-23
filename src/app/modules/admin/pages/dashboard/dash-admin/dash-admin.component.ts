@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
+import { AuthService } from '../../../../../core/services/auth.service';
 import { LocaleService } from '../../../../../core/services/locale.service';
 import { DirectoryApiService } from '../../../services/directory-api.service';
 import { ComponentCardComponent } from '../../../../../shared/components/common/component-card/component-card.component';
@@ -25,7 +26,12 @@ import { DashboardSalesChartComponent } from './dashboard-sales-chart.component'
 })
 export class DashAdminComponent {
   private readonly api = inject(DirectoryApiService);
+  private readonly auth = inject(AuthService);
   protected readonly locale = inject(LocaleService);
+
+  protected readonly isChainAdmin = computed(
+    () => this.auth.user()?.role === 'ADMIN_CADENA',
+  );
 
   protected readonly statsQuery = injectQuery(() => ({
     queryKey: ['dashboard', 'stats'] as const,

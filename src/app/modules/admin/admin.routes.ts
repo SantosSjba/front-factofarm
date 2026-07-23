@@ -41,6 +41,15 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Configuración inicial',
       },
       {
+        path: 'platform/dashboard',
+        ...guarded(P.platformDashboard),
+        loadComponent: () =>
+          import('./pages/platform-dashboard/platform-dashboard.component').then(
+            (m) => m.PlatformDashboardComponent,
+          ),
+        title: 'FactoFarm | Dashboard plataforma',
+      },
+      {
         path: 'platform/clientes',
         ...guarded(P.platformClientes),
         loadComponent: () =>

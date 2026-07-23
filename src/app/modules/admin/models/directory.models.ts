@@ -299,6 +299,55 @@ export interface CashierDashboardDto {
   sesionCaja: { id: string; openedAt: string; montoApertura: string } | null;
 }
 
+export interface WarehouseDashboardDto {
+  stockBajo: number;
+  lotesVencidos: number;
+  porVencer30: number;
+  ajustesPendientes: number;
+  transferenciasEnTransito: number;
+  ordenesPendientesRecepcion: number;
+  recepcionesHoy: number;
+  zonasFrioSinLogHoy: number;
+}
+
+export interface AccountantDashboardDto {
+  cpePendientes: number;
+  cpeObservados: number;
+  cpeRechazados: number;
+  jobsFallidos: number;
+  jobsPendientes: number;
+  cxpAbiertas: number;
+  cxpVencidas: number;
+  cxpSaldo: string;
+  cxcAbiertas: number;
+  cxcVencidas: number;
+  cxcSaldo: string;
+}
+
+export interface PlatformDashboardDto {
+  tenants: {
+    pending: number;
+    trial: number;
+    active: number;
+    suspended: number;
+  };
+  leadsNuevos: number;
+  reclamacionesAbiertas: number;
+  reclamaciones7d: number;
+  tenantsActivados30d: number;
+  establecimientosActivos: number;
+  usuariosCliente: number;
+  recentTenants: Array<{
+    id: string;
+    nombre: string;
+    slug: string;
+    plan: string;
+    status: string;
+    createdAt: string;
+    activatedAt: string | null;
+  }>;
+}
+
 export interface RoleTemplateDto {
   role: UserRoleDto;
   label: string;

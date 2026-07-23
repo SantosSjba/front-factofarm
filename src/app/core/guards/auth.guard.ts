@@ -27,7 +27,7 @@ export const tenantDashboardGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (auth.isPlatformAdmin()) {
-    return router.createUrlTree(['/platform/clientes']);
+    return router.createUrlTree(['/platform/dashboard']);
   }
   return true;
 };
@@ -39,5 +39,5 @@ export const platformOnlyGuard: CanActivateFn = (route, state) => {
   if (!auth.isPlatformAdmin()) return true;
   const url = state.url;
   if (url.startsWith('/platform')) return true;
-  return router.createUrlTree(['/platform/clientes']);
+  return router.createUrlTree(['/platform/dashboard']);
 };

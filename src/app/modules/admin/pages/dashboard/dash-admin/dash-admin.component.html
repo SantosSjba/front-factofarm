@@ -1,9 +1,13 @@
 <div class="mb-6">
   <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white/90">
-    Dashboard Administrador
+    {{ isChainAdmin() ? 'Dashboard cadena' : 'Dashboard administrador' }}
   </h1>
   <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-    Resumen operativo de FactoFarm
+    {{
+      isChainAdmin()
+        ? 'Consolidado multi-sucursal y alertas del cliente SaaS'
+        : 'Resumen operativo de tu farmacia'
+    }}
   </p>
 </div>
 

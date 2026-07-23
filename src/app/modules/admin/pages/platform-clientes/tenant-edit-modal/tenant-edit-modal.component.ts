@@ -24,6 +24,7 @@ const PLAN_OPTIONS = [
 ];
 
 const PLATFORM_NAV = new Set([
+  'nav.platform_dashboard',
   'nav.platform_clientes',
   'nav.platform_leads',
   'nav.platform_reclamaciones',
