@@ -10,6 +10,7 @@ import { FormRowComponent } from '../../../../../shared/components/form/form-row
 import { FormStackComponent } from '../../../../../shared/components/form/form-stack/form-stack.component';
 import { CheckboxComponent } from '../../../../../shared/components/form/input/checkbox.component';
 import { PermissionMenuTreeComponent } from '../../../../../shared/components/ui/permission-menu-tree/permission-menu-tree.component';
+import { HelpHintComponent } from '../../../../../shared/components/ui/help-hint/help-hint.component';
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
 import { DirectoryApiService } from '../../../services/directory-api.service';
@@ -41,6 +42,7 @@ const PLATFORM_NAV = new Set([
     FormStackComponent,
     CheckboxComponent,
     PermissionMenuTreeComponent,
+    HelpHintComponent,
   ],
   templateUrl: './tenant-edit-modal.component.html',
 })

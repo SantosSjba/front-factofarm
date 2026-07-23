@@ -7,12 +7,19 @@
     data-modal-header
     class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
   >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Convertir lead
-    </h3>
-    @if (leadContact()) {
-      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ leadContact() }}</p>
-    }
+    <div class="pr-12">
+      <div class="flex items-center gap-2">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+          Convertir lead
+        </h3>
+        <app-help-hint
+          text="Crea el cliente SaaS, un establecimiento inicial y el usuario administrador usando los datos del lead."
+        />
+      </div>
+      @if (leadContact()) {
+        <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ leadContact() }}</p>
+      }
+    </div>
   </div>
 
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
@@ -21,7 +28,10 @@
     </p>
 
     <app-form-stack>
-      <app-form-field label="Nombre del establecimiento">
+      <app-form-field
+        label="Nombre del establecimiento"
+        helpText="Nombre de la primera sede que se creará junto al cliente."
+      >
         <app-input-field
           [value]="establishmentNombre()"
           (valueChange)="establishmentNombre.set('' + $event)"
@@ -34,10 +44,19 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="convertMutation.isPending()" (btnClick)="onClose()">
+    <app-button
+      variant="outline"
+      startIconName="mdi:close"
+      [disabled]="convertMutation.isPending()"
+      (btnClick)="onClose()"
+    >
       Cancelar
     </app-button>
-    <app-button [disabled]="convertMutation.isPending()" (btnClick)="submit()">
+    <app-button
+      startIconName="mdi:account-convert-outline"
+      [disabled]="convertMutation.isPending()"
+      (btnClick)="submit()"
+    >
       {{ submitLabel() }}
     </app-button>
   </div>

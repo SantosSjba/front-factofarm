@@ -68,23 +68,25 @@
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ row.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
               <td class="px-5 py-4 text-end">
-                <div class="flex flex-wrap justify-end gap-2">
+                <div class="flex flex-wrap justify-end gap-1.5">
                   <ng-container *appHasPermission="'units.write'">
-                    <button
-                      type="button"
-                      class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
-                      (click)="openEditModal(row)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg bg-error-50 px-3 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:hover:bg-error-500/25"
+                    <app-button
+                      size="sm"
+                      variant="outline"
+                      [iconOnly]="true"
+                      startIconName="mdi:pencil-outline"
+                      tooltip="Editar"
+                      (btnClick)="openEditModal(row)"
+                    />
+                    <app-button
+                      size="sm"
+                      variant="danger"
+                      [iconOnly]="true"
+                      startIconName="mdi:trash-can-outline"
+                      tooltip="Eliminar"
                       [disabled]="deleteMutation.isPending()"
-                      (click)="openDeleteConfirm(row)"
-                    >
-                      Eliminar
-                    </button>
+                      (btnClick)="openDeleteConfirm(row)"
+                    />
                   </ng-container>
                 </div>
               </td>

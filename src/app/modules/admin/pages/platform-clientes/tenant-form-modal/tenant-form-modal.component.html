@@ -7,14 +7,22 @@
     data-modal-header
     class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
   >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Nuevo cliente SaaS
-    </h3>
+    <div class="flex items-center gap-2 pr-12">
+      <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+        Nuevo cliente SaaS
+      </h3>
+      <app-help-hint
+        text="Registra un tenant (farmacia o cadena) con plan comercial y datos de contacto. Luego podrás aprovisionar sede y administrador."
+      />
+    </div>
   </div>
 
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <app-form-stack>
-      <app-form-field label="Nombre comercial">
+      <app-form-field
+        label="Nombre comercial"
+        helpText="Nombre visible del cliente en la plataforma y en reportes internos."
+      >
         <app-input-field
           [value]="nombre()"
           placeholder="Ej. Farmacia San Martín"
@@ -23,10 +31,16 @@
       </app-form-field>
 
       <app-form-row>
-        <app-form-field label="RUC (opcional)">
+        <app-form-field
+          label="RUC (opcional)"
+          helpText="RUC de la empresa. Puedes completarlo después si aún no lo tienes."
+        >
           <app-input-field [value]="ruc()" (valueChange)="ruc.set('' + $event)" />
         </app-form-field>
-        <app-form-field label="Plan">
+        <app-form-field
+          label="Plan"
+          helpText="Define límites y módulos por defecto (Botica, Farmacia Pro, Cadena o personalizado)."
+        >
           <app-form-select
             [value]="plan()"
             [options]="planOptions"
@@ -37,7 +51,7 @@
       </app-form-row>
 
       <app-form-row>
-        <app-form-field label="Contacto">
+        <app-form-field label="Contacto" helpText="Persona de contacto comercial o administrativo.">
           <app-input-field [value]="contactName()" (valueChange)="contactName.set('' + $event)" />
         </app-form-field>
         <app-form-field label="Teléfono">
@@ -45,7 +59,10 @@
         </app-form-field>
       </app-form-row>
 
-      <app-form-field label="Correo contacto">
+      <app-form-field
+        label="Correo contacto"
+        helpText="Correo principal para avisos comerciales y soporte. No es el login del administrador."
+      >
         <app-input-field
           type="email"
           [value]="contactEmail()"
@@ -54,7 +71,10 @@
         />
       </app-form-field>
 
-      <app-form-field label="Notas internas">
+      <app-form-field
+        label="Notas internas"
+        helpText="Solo visibles para el equipo FactoSys. El cliente no las ve."
+      >
         <app-input-field [value]="notes()" (valueChange)="notes.set('' + $event)" />
       </app-form-field>
     </app-form-stack>
@@ -64,10 +84,19 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="onClose()">
+    <app-button
+      variant="outline"
+      startIconName="mdi:close"
+      [disabled]="createMutation.isPending()"
+      (btnClick)="onClose()"
+    >
       Cancelar
     </app-button>
-    <app-button [disabled]="createMutation.isPending()" (btnClick)="submit()">
+    <app-button
+      startIconName="mdi:content-save-outline"
+      [disabled]="createMutation.isPending()"
+      (btnClick)="submit()"
+    >
       {{ submitLabel() }}
     </app-button>
   </div>

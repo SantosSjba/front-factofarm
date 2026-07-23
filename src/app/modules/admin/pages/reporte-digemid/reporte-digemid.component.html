@@ -58,7 +58,14 @@
               <td class="py-2 pr-3 max-w-xs truncate">{{ row.descripcion }}</td>
               <td class="py-2">
                 @if (!row.notificadoDigemid) {
-                  <button type="button" class="text-brand-600 text-sm font-medium" (click)="openNotify(row)">Notificar DIGEMID</button>
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:bell-outline"
+                    tooltip="Notificar DIGEMID"
+                    (btnClick)="openNotify(row)"
+                  />
                 }
               </td>
             </tr>

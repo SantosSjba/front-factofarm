@@ -65,29 +65,32 @@
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ row.esHospital ? 'Sí' : 'No' }}</td>
               <td class="px-5 py-4 text-end">
-                <div class="flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
-                    (click)="openEditModal(row)"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-lg bg-error-50 px-3 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:hover:bg-error-500/25"
+                <div class="flex flex-wrap justify-end gap-1.5">
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:pencil-outline"
+                    tooltip="Editar"
+                    (btnClick)="openEditModal(row)"
+                  />
+                  <app-button
+                    size="sm"
+                    variant="danger"
+                    [iconOnly]="true"
+                    startIconName="mdi:trash-can-outline"
+                    tooltip="Eliminar"
                     [disabled]="deleteEstablishmentMutation.isPending()"
-                    (click)="openDeleteConfirm(row)"
-                  >
-                    Eliminar
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-lg bg-warning-50 px-3 py-1.5 text-theme-xs font-medium text-warning-700 hover:bg-warning-100 dark:bg-warning-500/15 dark:text-warning-400 dark:hover:bg-warning-500/25"
-                    (click)="openSeriesModal(row)"
-                  >
-                    Series
-                  </button>
+                    (btnClick)="openDeleteConfirm(row)"
+                  />
+                  <app-button
+                    size="sm"
+                    variant="ghost"
+                    [iconOnly]="true"
+                    startIconName="mdi:format-list-numbered"
+                    tooltip="Series"
+                    (btnClick)="openSeriesModal(row)"
+                  />
                 </div>
               </td>
             </tr>
@@ -439,14 +442,15 @@
                 <td class="px-4 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
                   {{ row.esContingencia ? 'SI' : 'NO' }}</td>
                 <td class="px-4 py-3 text-end">
-                  <button
-                    type="button"
-                    class="rounded-lg bg-error-50 px-3 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:hover:bg-error-500/25"
+                  <app-button
+                    size="sm"
+                    variant="danger"
+                    [iconOnly]="true"
+                    startIconName="mdi:trash-can-outline"
+                    tooltip="Eliminar"
                     [disabled]="deleteSeriesMutation.isPending()"
-                    (click)="removeSeries(row.id)"
-                  >
-                    Eliminar
-                  </button>
+                    (btnClick)="removeSeries(row.id)"
+                  />
                 </td>
               </tr>
             } @empty {

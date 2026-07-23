@@ -10,6 +10,7 @@
 
 <app-component-card
   title="Solicitudes desde la landing"
+  helpText="Contactos capturados desde el formulario de la web pública. Puedes convertir un lead en cliente SaaS con sede y administrador."
   className="overflow-hidden"
   [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
@@ -41,9 +42,14 @@
             <td class="px-5 py-4 text-sm">{{ row.status }}</td>
             <td class="px-5 py-4">
               @if (row.status !== 'CONVERTED') {
-                <app-button size="sm" variant="outline" (btnClick)="openConvert(row)">
-                  Convertir a cliente
-                </app-button>
+                <app-button
+                  size="sm"
+                  variant="outline"
+                  [iconOnly]="true"
+                  startIconName="mdi:account-convert-outline"
+                  tooltip="Convertir a cliente"
+                  (btnClick)="openConvert(row)"
+                />
               }
             </td>
           </tr>

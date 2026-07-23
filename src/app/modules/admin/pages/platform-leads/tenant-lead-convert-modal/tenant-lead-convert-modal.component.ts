@@ -6,6 +6,7 @@ import { ButtonComponent } from '../../../../../shared/components/ui/button/butt
 import { InputFieldComponent } from '../../../../../shared/components/form/input/input-field.component';
 import { FormFieldComponent } from '../../../../../shared/components/form/form-field/form-field.component';
 import { FormStackComponent } from '../../../../../shared/components/form/form-stack/form-stack.component';
+import { HelpHintComponent } from '../../../../../shared/components/ui/help-hint/help-hint.component';
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
 import { DirectoryApiService } from '../../../services/directory-api.service';
@@ -20,6 +21,7 @@ import type { TenantLeadDto } from '../../../models/directory.models';
     InputFieldComponent,
     FormFieldComponent,
     FormStackComponent,
+    HelpHintComponent,
   ],
   templateUrl: './tenant-lead-convert-modal.component.html',
 })

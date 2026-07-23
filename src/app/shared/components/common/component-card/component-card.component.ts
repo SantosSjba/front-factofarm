@@ -1,17 +1,20 @@
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { HelpHintComponent } from '../../ui/help-hint/help-hint.component';
 import { PageStateComponent } from '../page-state/page-state.component';
 
 @Component({
   selector: 'app-component-card',
-  imports: [CommonModule, PageStateComponent],
+  imports: [CommonModule, PageStateComponent, HelpHintComponent],
   templateUrl: './component-card.component.html',
   styles: ``,
 })
 export class ComponentCardComponent {
   @Input() title!: string;
   @Input() desc: string = '';
+  /** Texto de ayuda mostrado en tooltip junto al título. */
+  @Input() helpText = '';
   @Input() className: string = '';
   /** Clases extra en el cuerdo bajo el título (p. ej. `p-0` para tablas a ancho completo). */
   @Input() bodyClass = '';

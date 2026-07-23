@@ -78,38 +78,42 @@
               <td class="px-5 py-4 text-end text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ u.establecimientoNombre }}</td>
               <td class="px-5 py-4 text-end">
-                <div class="flex flex-wrap justify-end gap-2">
+                <div class="flex flex-wrap justify-end gap-1.5">
                   @if (u.role === 'ADMINISTRADOR') {
-                    <button
-                      type="button"
-                      class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
-                      (click)="rowAction(u, 'editar')"
-                    >
-                      Editar
-                    </button>
+                    <app-button
+                      size="sm"
+                      variant="outline"
+                      [iconOnly]="true"
+                      startIconName="mdi:pencil-outline"
+                      tooltip="Editar"
+                      (btnClick)="rowAction(u, 'editar')"
+                    />
                   } @else {
-                    <button
-                      type="button"
-                      class="rounded-lg bg-brand-50 px-3 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400 dark:hover:bg-brand-500/25"
-                      (click)="rowAction(u, 'editar')"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
+                    <app-button
+                      size="sm"
+                      variant="outline"
+                      [iconOnly]="true"
+                      startIconName="mdi:pencil-outline"
+                      tooltip="Editar"
+                      (btnClick)="rowAction(u, 'editar')"
+                    />
+                    <app-button
+                      size="sm"
+                      variant="danger"
+                      [iconOnly]="true"
+                      startIconName="mdi:trash-can-outline"
+                      tooltip="Eliminar"
                       [disabled]="deleteUserMutation.isPending()"
-                      class="rounded-lg bg-error-50 px-3 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:hover:bg-error-500/25"
-                      (click)="rowAction(u, 'eliminar')"
-                    >
-                      {{ deleteUserMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg bg-success-50 px-3 py-1.5 text-theme-xs font-medium text-success-700 hover:bg-success-100 dark:bg-success-500/15 dark:text-success-400 dark:hover:bg-success-500/25"
-                      (click)="rowAction(u, 'permisos')"
-                    >
-                      Entrar Permisos
-                    </button>
+                      (btnClick)="rowAction(u, 'eliminar')"
+                    />
+                    <app-button
+                      size="sm"
+                      variant="outline"
+                      [iconOnly]="true"
+                      startIconName="mdi:shield-account-outline"
+                      tooltip="Permisos"
+                      (btnClick)="rowAction(u, 'permisos')"
+                    />
                   }
                 </div>
               </td>

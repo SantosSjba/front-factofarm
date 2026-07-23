@@ -62,9 +62,24 @@ import type { AgreementType } from '../../models/directory.models';
                   <td class="py-2">{{ row.tipo }}</td>
                   <td class="py-2">{{ row.coberturaPorcentaje }}%</td>
                   <td class="py-2">{{ row.diasCredito }} días</td>
-                  <td class="py-2 space-x-2">
-                    <app-button variant="outline" (btnClick)="billing(row.id)">Liquidar mes</app-button>
-                    <app-button variant="outline" (btnClick)="remove(row.id)">Eliminar</app-button>
+                  <td class="py-2">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <app-button
+                        size="sm"
+                        [iconOnly]="true"
+                        startIconName="mdi:calendar-check"
+                        tooltip="Liquidar mes"
+                        (btnClick)="billing(row.id)"
+                      />
+                      <app-button
+                        size="sm"
+                        variant="danger"
+                        [iconOnly]="true"
+                        startIconName="mdi:trash-can-outline"
+                        tooltip="Eliminar"
+                        (btnClick)="remove(row.id)"
+                      />
+                    </div>
                   </td>
                 </tr>
               }

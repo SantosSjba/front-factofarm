@@ -7,6 +7,7 @@ import { FormFieldComponent } from '../../../../../shared/components/form/form-f
 import { FormSelectComponent } from '../../../../../shared/components/form/form-select/form-select.component';
 import { FormStackComponent } from '../../../../../shared/components/form/form-stack/form-stack.component';
 import { TextAreaComponent } from '../../../../../shared/components/form/input/text-area.component';
+import { HelpHintComponent } from '../../../../../shared/components/ui/help-hint/help-hint.component';
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
 import { DirectoryApiService } from '../../../services/directory-api.service';
@@ -29,6 +30,7 @@ const STATUS_OPTIONS = [
     FormSelectComponent,
     FormStackComponent,
     TextAreaComponent,
+    HelpHintComponent,
   ],
   templateUrl: './complaint-detail-modal.component.html',
 })

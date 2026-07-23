@@ -1,24 +1,30 @@
 <button
   type="button"
+  [appTooltip]="tooltip"
+  appTooltipPlacement="top"
   [ngClass]="
     'inline-flex items-center justify-center gap-2 rounded-lg transition ' +
-    className + ' ' +
-    sizeClasses + ' ' +
-    variantClasses + ' ' +
+    className +
+    ' ' +
+    sizeClasses +
+    ' ' +
+    variantClasses +
+    ' ' +
     disabledClasses
   "
   [disabled]="disabled"
+  [attr.aria-label]="tooltip || null"
   (click)="onClick($event)"
 >
   @if (startIconName) {
-  <app-icon [name]="startIconName" [iconClass]="iconSizeClass" />
+    <app-icon [name]="startIconName" [iconClass]="iconSizeClass" />
   } @else if (startIcon) {
-  <span class="flex items-center" [innerHTML]="startIcon | safeHtml"></span>
+    <span class="flex items-center" [innerHTML]="startIcon | safeHtml"></span>
   }
   <ng-content></ng-content>
   @if (endIconName) {
-  <app-icon [name]="endIconName" [iconClass]="iconSizeClass" />
+    <app-icon [name]="endIconName" [iconClass]="iconSizeClass" />
   } @else if (endIcon) {
-  <span class="flex items-center" [innerHTML]="endIcon | safeHtml"></span>
+    <span class="flex items-center" [innerHTML]="endIcon | safeHtml"></span>
   }
 </button>

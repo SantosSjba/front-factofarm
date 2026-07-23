@@ -52,7 +52,13 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                   <td class="py-2">{{ row.items.length }}</td>
                   <td class="py-2">
                     @if (row.estado === 'SOLICITADO') {
-                      <app-button variant="outline" (btnClick)="dispense(row.id)">Dispensar</app-button>
+                      <app-button
+                        size="sm"
+                        [iconOnly]="true"
+                        startIconName="mdi:pill"
+                        tooltip="Dispensar"
+                        (btnClick)="dispense(row.id)"
+                      />
                     }
                   </td>
                 </tr>

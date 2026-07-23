@@ -26,6 +26,7 @@
 
 <app-component-card
   title="Registros Ley 29571"
+  helpText="Libro de reclamaciones a nivel plataforma (Ley 29571). Revisa cada registro, cambia el estado y deja la respuesta al consumidor."
   className="overflow-hidden"
   [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
@@ -58,9 +59,14 @@
             <td class="px-5 py-4 text-sm">{{ tipoLabel(row.tipo) }}</td>
             <td class="px-5 py-4 text-sm">{{ statusLabel(row.status) }}</td>
             <td class="px-5 py-4">
-              <app-button size="sm" variant="outline" (btnClick)="openDetail(row)">
-                Gestionar
-              </app-button>
+              <app-button
+                size="sm"
+                variant="outline"
+                [iconOnly]="true"
+                startIconName="mdi:file-document-edit-outline"
+                tooltip="Gestionar reclamo"
+                (btnClick)="openDetail(row)"
+              />
             </td>
           </tr>
         }

@@ -7,7 +7,9 @@
     Clientes SaaS
   </h1>
   <div data-toolbar-actions>
-    <app-button size="sm" (btnClick)="openCreateModal()">Nuevo cliente</app-button>
+    <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">
+      Nuevo cliente
+    </app-button>
   </div>
 </app-page-toolbar>
 
@@ -27,6 +29,7 @@
 
 <app-component-card
   title="Clientes registrados"
+  helpText="Farmacias y cadenas contratadas. Desde aquí puedes entrar a su panel, ajustar plan/límites o aprovisionar el acceso inicial."
   className="overflow-hidden"
   [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
@@ -65,27 +68,51 @@
               <div class="text-theme-xs text-gray-500">{{ row.contactEmail || '—' }}</div>
             </td>
             <td class="px-5 py-4">
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
                 @if (row.status === 'ACTIVE' || row.status === 'TRIAL') {
-                  <app-button size="sm" (btnClick)="enterClientPanel(row)">
-                    Ingresar al panel
-                  </app-button>
+                  <app-button
+                    size="sm"
+                    [iconOnly]="true"
+                    startIconName="mdi:open-in-new"
+                    tooltip="Ingresar al panel del cliente"
+                    (btnClick)="enterClientPanel(row)"
+                  />
                 }
-                <app-button size="sm" variant="outline" (btnClick)="openEditModal(row)">
-                  Gestionar
-                </app-button>
-                <app-button size="sm" variant="outline" (btnClick)="openProvisionModal(row)">
-                  Aprovisionar
-                </app-button>
+                <app-button
+                  size="sm"
+                  variant="outline"
+                  [iconOnly]="true"
+                  startIconName="mdi:cog-outline"
+                  tooltip="Gestionar cliente"
+                  (btnClick)="openEditModal(row)"
+                />
+                <app-button
+                  size="sm"
+                  variant="outline"
+                  [iconOnly]="true"
+                  startIconName="mdi:account-key-outline"
+                  tooltip="Aprovisionar acceso"
+                  (btnClick)="openProvisionModal(row)"
+                />
                 @if (row.status !== 'ACTIVE') {
-                  <app-button size="sm" variant="outline" (btnClick)="setStatus(row, 'activate')">
-                    Activar
-                  </app-button>
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:check-circle-outline"
+                    tooltip="Activar cliente"
+                    (btnClick)="setStatus(row, 'activate')"
+                  />
                 }
                 @if (row.status !== 'SUSPENDED') {
-                  <app-button size="sm" variant="outline" (btnClick)="setStatus(row, 'suspend')">
-                    Suspender
-                  </app-button>
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:pause-circle-outline"
+                    tooltip="Suspender cliente"
+                    (btnClick)="setStatus(row, 'suspend')"
+                  />
                 }
               </div>
             </td>

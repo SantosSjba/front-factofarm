@@ -9,14 +9,21 @@
     data-modal-header
     class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
   >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Reclamo {{ title() }}
-    </h3>
-    @if (complaint(); as row) {
-      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-        {{ row.tipo === 'RECLAMO' ? 'Reclamo' : 'Queja' }} · {{ row.nombresApellidos }}
-      </p>
-    }
+    <div class="pr-12">
+      <div class="flex items-center gap-2">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+          Reclamo {{ title() }}
+        </h3>
+        <app-help-hint
+          text="Consulta el detalle del reclamo o queja, actualiza el estado y registra la respuesta al consumidor según la Ley 29571."
+        />
+      </div>
+      @if (complaint(); as row) {
+        <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
+          {{ row.tipo === 'RECLAMO' ? 'Reclamo' : 'Queja' }} · {{ row.nombresApellidos }}
+        </p>
+      }
+    </div>
   </div>
 
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
@@ -39,7 +46,10 @@
       </div>
 
       <app-form-stack>
-        <app-form-field label="Estado">
+        <app-form-field
+          label="Estado"
+          helpText="Pendiente → En revisión → Resuelto → Cerrado. Refleja el avance de atención."
+        >
           <app-form-select
             [value]="status()"
             [options]="statusOptions"
@@ -48,7 +58,10 @@
           />
         </app-form-field>
 
-        <app-form-field label="Notas internas (plataforma)">
+        <app-form-field
+          label="Notas internas (plataforma)"
+          helpText="Notas solo para el equipo FactoSys; el consumidor no las ve."
+        >
           <app-text-area
             [value]="internalNotes()"
             [rows]="4"
@@ -56,7 +69,10 @@
           />
         </app-form-field>
 
-        <app-form-field label="Respuesta al consumidor">
+        <app-form-field
+          label="Respuesta al consumidor"
+          helpText="Texto de respuesta conforme Ley 29571 (plazo orientativo: 15 días hábiles)."
+        >
           <app-text-area
             [value]="responseNotes()"
             [rows]="4"
@@ -72,10 +88,19 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="updateMutation.isPending()" (btnClick)="onClose()">
+    <app-button
+      variant="outline"
+      startIconName="mdi:close"
+      [disabled]="updateMutation.isPending()"
+      (btnClick)="onClose()"
+    >
       Cancelar
     </app-button>
-    <app-button [disabled]="updateMutation.isPending()" (btnClick)="submit()">
+    <app-button
+      startIconName="mdi:content-save-outline"
+      [disabled]="updateMutation.isPending()"
+      (btnClick)="submit()"
+    >
       {{ submitLabel() }}
     </app-button>
   </div>

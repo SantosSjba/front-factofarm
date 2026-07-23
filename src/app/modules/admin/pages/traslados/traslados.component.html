@@ -52,14 +52,40 @@
             <td class="px-4 py-3 text-theme-sm">{{ row.guiaNumero || '—' }}</td>
             <td class="px-4 py-3 text-theme-sm">{{ row.items.length }}</td>
             <td class="px-4 py-3 text-end">
-              <div class="flex justify-end gap-2" *appHasPermission="'inventory.write'">
+              <div class="flex flex-wrap items-center justify-end gap-1.5" *appHasPermission="'inventory.write'">
                 @if (row.estado === 'BORRADOR') {
-                  <app-button size="sm" (btnClick)="dispatch(row)">Despachar</app-button>
-                  <app-button size="sm" variant="outline" (btnClick)="cancel(row)">Anular</app-button>
+                  <app-button
+                    size="sm"
+                    [iconOnly]="true"
+                    startIconName="mdi:truck-delivery-outline"
+                    tooltip="Despachar"
+                    (btnClick)="dispatch(row)"
+                  />
+                  <app-button
+                    size="sm"
+                    variant="danger"
+                    [iconOnly]="true"
+                    startIconName="mdi:cancel"
+                    tooltip="Anular"
+                    (btnClick)="cancel(row)"
+                  />
                 }
                 @if (row.estado === 'EN_TRANSITO') {
-                  <app-button size="sm" (btnClick)="receive(row)">Recibir</app-button>
-                  <app-button size="sm" variant="outline" (btnClick)="emitGuia(row)">Guía SUNAT</app-button>
+                  <app-button
+                    size="sm"
+                    [iconOnly]="true"
+                    startIconName="mdi:package-down"
+                    tooltip="Recibir"
+                    (btnClick)="receive(row)"
+                  />
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:file-certificate-outline"
+                    tooltip="Guía SUNAT"
+                    (btnClick)="emitGuia(row)"
+                  />
                 }
               </div>
             </td>

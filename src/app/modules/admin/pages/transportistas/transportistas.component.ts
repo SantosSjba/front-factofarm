@@ -53,8 +53,24 @@ import { DirectoryApiService } from '../../services/directory-api.service';
               <td class="px-3 py-2">{{ row.razonSocial }}</td>
               <td class="px-3 py-2">{{ row.telefono ?? '—' }}</td>
               <td class="px-3 py-2 text-right">
-                <button type="button" class="text-brand-600 hover:underline" (click)="openEdit(row)">Editar</button>
-                <button type="button" class="ml-2 text-red-600 hover:underline" (click)="deleteMutation.mutate(row.id)">Eliminar</button>
+                <div class="flex flex-wrap items-center justify-end gap-1.5">
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:pencil-outline"
+                    tooltip="Editar"
+                    (btnClick)="openEdit(row)"
+                  />
+                  <app-button
+                    size="sm"
+                    variant="danger"
+                    [iconOnly]="true"
+                    startIconName="mdi:trash-can-outline"
+                    tooltip="Eliminar"
+                    (btnClick)="deleteMutation.mutate(row.id)"
+                  />
+                </div>
               </td>
             </tr>
           }

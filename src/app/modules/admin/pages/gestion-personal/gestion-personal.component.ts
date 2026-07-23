@@ -174,10 +174,25 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                   <td>{{ leave.tipo }}</td>
                   <td>{{ leave.fromDate | date: 'shortDate' }} – {{ leave.toDate | date: 'shortDate' }}</td>
                   <td>{{ leave.estado }}</td>
-                  <td class="space-x-2">
+                  <td>
                     @if (leave.estado === 'SOLICITADO') {
-                      <button type="button" class="text-brand-600" (click)="updateLeave(leave.id, 'APROBADO')">Aprobar</button>
-                      <button type="button" class="text-error-500" (click)="updateLeave(leave.id, 'RECHAZADO')">Rechazar</button>
+                      <div class="flex flex-wrap items-center justify-end gap-1.5">
+                        <app-button
+                          size="sm"
+                          [iconOnly]="true"
+                          startIconName="mdi:check-circle-outline"
+                          tooltip="Aprobar"
+                          (btnClick)="updateLeave(leave.id, 'APROBADO')"
+                        />
+                        <app-button
+                          size="sm"
+                          variant="danger"
+                          [iconOnly]="true"
+                          startIconName="mdi:close-circle-outline"
+                          tooltip="Rechazar"
+                          (btnClick)="updateLeave(leave.id, 'RECHAZADO')"
+                        />
+                      </div>
                     }
                   </td>
                 </tr>

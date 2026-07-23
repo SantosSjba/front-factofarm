@@ -57,9 +57,14 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                   <td class="py-2">{{ row.guiaNumero || '—' }}</td>
                   <td class="py-2 text-right">
                     @if (row.estado === 'EN_TRANSITO') {
-                      <app-button size="sm" variant="outline" [disabled]="emitGuiaMutation.isPending()" (btnClick)="emitGuiaMutation.mutate(row.id)">
-                        Emitir guía
-                      </app-button>
+                      <app-button
+                        size="sm"
+                        [iconOnly]="true"
+                        startIconName="mdi:file-certificate-outline"
+                        tooltip="Emitir guía"
+                        (btnClick)="emitGuiaMutation.mutate(row.id)"
+                        [disabled]="emitGuiaMutation.isPending()"
+                      />
                     }
                   </td>
                 </tr>

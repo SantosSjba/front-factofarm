@@ -55,13 +55,36 @@
             <td class="px-3 py-2"><span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{{ row.estado }}</span></td>
             <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             <td class="px-3 py-2 text-right">
-              <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
-              @if (!isArchivedRow(row) && (row.documentType === 'BOLETA' || row.documentType === 'FACTURA')) {
-                @if (row.estado === 'COMPLETADA' || row.estado === 'PARCIALMENTE_DEVUELTA') {
-                  <button type="button" class="ml-2 text-amber-600 hover:underline" (click)="openReturn(row.id)">Devolver</button>
-                  <button type="button" class="ml-2 text-violet-600 hover:underline" (click)="openDebit(row.id)">ND</button>
+              <div class="flex flex-wrap items-center justify-end gap-1.5">
+                <app-button
+                  size="sm"
+                  variant="outline"
+                  [iconOnly]="true"
+                  startIconName="mdi:eye-outline"
+                  tooltip="Ver"
+                  (btnClick)="openDetail(row.id)"
+                />
+                @if (!isArchivedRow(row) && (row.documentType === 'BOLETA' || row.documentType === 'FACTURA')) {
+                  @if (row.estado === 'COMPLETADA' || row.estado === 'PARCIALMENTE_DEVUELTA') {
+                    <app-button
+                      size="sm"
+                      variant="outline"
+                      [iconOnly]="true"
+                      startIconName="mdi:undo"
+                      tooltip="Devolver"
+                      (btnClick)="openReturn(row.id)"
+                    />
+                    <app-button
+                      size="sm"
+                      variant="outline"
+                      [iconOnly]="true"
+                      startIconName="mdi:file-document-outline"
+                      tooltip="Nota de débito"
+                      (btnClick)="openDebit(row.id)"
+                    />
+                  }
                 }
-              }
+              </div>
             </td>
           </tr>
         } @empty {

@@ -9,17 +9,27 @@
     data-modal-header
     class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
   >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Gestionar cliente
-    </h3>
-    @if (tenantNombre()) {
-      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ tenantNombre() }}</p>
-    }
+    <div class="pr-12">
+      <div class="flex items-center gap-2">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+          Gestionar cliente
+        </h3>
+        <app-help-hint
+          text="Edita plan, límites, contacto y módulos del menú habilitados para este cliente SaaS."
+        />
+      </div>
+      @if (tenantNombre()) {
+        <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ tenantNombre() }}</p>
+      }
+    </div>
   </div>
 
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <app-form-stack>
-      <app-form-field label="Nombre comercial">
+      <app-form-field
+        label="Nombre comercial"
+        helpText="Nombre visible del cliente en la plataforma."
+      >
         <app-input-field [value]="nombre()" (valueChange)="nombre.set('' + $event)" />
       </app-form-field>
 
@@ -27,7 +37,10 @@
         <app-form-field label="RUC">
           <app-input-field [value]="ruc()" (valueChange)="ruc.set('' + $event)" />
         </app-form-field>
-        <app-form-field label="Plan comercial">
+        <app-form-field
+          label="Plan comercial"
+          helpText="Al cambiar el plan puedes aplicar automáticamente límites y módulos del preset."
+        >
           <app-form-select
             [value]="plan()"
             [options]="planOptions"
@@ -38,14 +51,20 @@
       </app-form-row>
 
       <app-form-row>
-        <app-form-field label="Máx. usuarios">
+        <app-form-field
+          label="Máx. usuarios"
+          helpText="Tope de usuarios activos que puede crear el cliente."
+        >
           <app-input-field
             type="number"
             [value]="'' + maxUsers()"
             (valueChange)="maxUsers.set(+$event || 1)"
           />
         </app-form-field>
-        <app-form-field label="Máx. sedes">
+        <app-form-field
+          label="Máx. sedes"
+          helpText="Tope de establecimientos (sedes) permitidos."
+        >
           <app-input-field
             type="number"
             [value]="'' + maxEstablishments()"
@@ -77,14 +96,23 @@
         />
       </app-form-field>
 
-      <app-form-field label="Notas internas">
+      <app-form-field
+        label="Notas internas"
+        helpText="Solo visibles para el equipo FactoSys."
+      >
         <app-input-field [value]="notes()" (valueChange)="notes.set('' + $event)" />
       </app-form-field>
 
       <div>
-        <p class="mb-3 text-theme-sm font-medium text-gray-700 dark:text-gray-200">
-          Módulos habilitados
-        </p>
+        <div class="mb-3 flex items-center gap-1.5">
+          <p class="text-theme-sm font-medium text-gray-700 dark:text-gray-200">
+            Módulos habilitados
+          </p>
+          <app-help-hint
+            text="Controla qué secciones del menú puede usar este cliente. Al cambiar el plan puedes restaurar el preset comercial."
+            [iconSize]="16"
+          />
+        </div>
         <p class="mb-4 text-theme-sm text-gray-500 dark:text-gray-400">
           Controla qué secciones del menú puede usar este cliente. Al cambiar el plan puede marcar
           «Aplicar límites del plan» para restaurar el preset comercial.
@@ -109,10 +137,19 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="updateMutation.isPending()" (btnClick)="onClose()">
+    <app-button
+      variant="outline"
+      startIconName="mdi:close"
+      [disabled]="updateMutation.isPending()"
+      (btnClick)="onClose()"
+    >
       Cancelar
     </app-button>
-    <app-button [disabled]="updateMutation.isPending()" (btnClick)="submit()">
+    <app-button
+      startIconName="mdi:content-save-outline"
+      [disabled]="updateMutation.isPending()"
+      (btnClick)="submit()"
+    >
       {{ submitLabel() }}
     </app-button>
   </div>

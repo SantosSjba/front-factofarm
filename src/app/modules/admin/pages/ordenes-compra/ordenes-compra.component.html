@@ -42,7 +42,14 @@
           </td>
           <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
           <td class="px-3 py-2 text-right">
-            <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
+            <app-button
+              size="sm"
+              variant="outline"
+              [iconOnly]="true"
+              startIconName="mdi:eye-outline"
+              tooltip="Ver"
+              (btnClick)="openDetail(row.id)"
+            />
           </td>
         </tr>
       } @empty {

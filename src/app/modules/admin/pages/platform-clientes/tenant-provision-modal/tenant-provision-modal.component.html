@@ -7,17 +7,27 @@
     data-modal-header
     class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
   >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Aprovisionar acceso
-    </h3>
-    @if (tenantNombre()) {
-      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ tenantNombre() }}</p>
-    }
+    <div class="pr-12">
+      <div class="flex items-center gap-2">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+          Aprovisionar acceso
+        </h3>
+        <app-help-hint
+          text="Crea la primera sede y el usuario administrador para que el cliente pueda iniciar sesión en su panel."
+        />
+      </div>
+      @if (tenantNombre()) {
+        <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ tenantNombre() }}</p>
+      }
+    </div>
   </div>
 
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <app-form-stack>
-      <app-form-field label="Establecimiento inicial">
+      <app-form-field
+        label="Establecimiento inicial"
+        helpText="Nombre de la primera sede (local o botica) del cliente."
+      >
         <app-input-field
           [value]="establishmentNombre()"
           (valueChange)="establishmentNombre.set('' + $event)"
@@ -25,7 +35,10 @@
       </app-form-field>
 
       <app-form-row>
-        <app-form-field label="Código sede">
+        <app-form-field
+          label="Código sede"
+          helpText="Código interno corto de la sede (ej. 0001)."
+        >
           <app-input-field
             [value]="establishmentCodigo()"
             placeholder="0001"
@@ -40,7 +53,10 @@
         </app-form-field>
       </app-form-row>
 
-      <app-form-field label="Administrador — correo">
+      <app-form-field
+        label="Administrador — correo"
+        helpText="Correo de acceso (login) del administrador del cliente."
+      >
         <app-input-field
           type="email"
           [value]="adminEmail()"
@@ -49,7 +65,10 @@
         />
       </app-form-field>
 
-      <app-form-field label="Contraseña inicial">
+      <app-form-field
+        label="Contraseña inicial"
+        helpText="Contraseña temporal. El administrador debería cambiarla al ingresar."
+      >
         <app-input-field
           type="password"
           [value]="adminPassword()"
@@ -64,10 +83,19 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="provisionMutation.isPending()" (btnClick)="onClose()">
+    <app-button
+      variant="outline"
+      startIconName="mdi:close"
+      [disabled]="provisionMutation.isPending()"
+      (btnClick)="onClose()"
+    >
       Cancelar
     </app-button>
-    <app-button [disabled]="provisionMutation.isPending()" (btnClick)="submit()">
+    <app-button
+      startIconName="mdi:account-key-outline"
+      [disabled]="provisionMutation.isPending()"
+      (btnClick)="submit()"
+    >
       {{ submitLabel() }}
     </app-button>
   </div>

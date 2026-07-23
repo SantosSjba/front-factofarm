@@ -7,6 +7,7 @@ import { InputFieldComponent } from '../../../../../shared/components/form/input
 import { FormFieldComponent } from '../../../../../shared/components/form/form-field/form-field.component';
 import { FormRowComponent } from '../../../../../shared/components/form/form-row/form-row.component';
 import { FormStackComponent } from '../../../../../shared/components/form/form-stack/form-stack.component';
+import { HelpHintComponent } from '../../../../../shared/components/ui/help-hint/help-hint.component';
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
 import { DirectoryApiService } from '../../../services/directory-api.service';
@@ -22,6 +23,7 @@ import type { TenantDetailDto } from '../../../models/directory.models';
     FormFieldComponent,
     FormRowComponent,
     FormStackComponent,
+    HelpHintComponent,
   ],
   templateUrl: './tenant-provision-modal.component.html',
 })

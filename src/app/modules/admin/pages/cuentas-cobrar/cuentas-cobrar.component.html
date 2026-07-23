@@ -36,7 +36,13 @@
           <td class="px-3 py-2 text-right font-medium">{{ row.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
           <td class="px-3 py-2 text-right">
             @if (row.estado !== 'PAGADA' && row.estado !== 'ANULADA') {
-              <button type="button" class="text-brand-600 hover:underline" (click)="openPay(row)">Cobrar</button>
+              <app-button
+                size="sm"
+                [iconOnly]="true"
+                startIconName="mdi:cash"
+                tooltip="Cobrar"
+                (btnClick)="openPay(row)"
+              />
             }
           </td>
         </tr>

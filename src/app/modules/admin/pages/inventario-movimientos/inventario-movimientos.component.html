@@ -79,28 +79,31 @@
               <td class="px-5 py-4 text-theme-sm">{{ row.almacen }}</td>
               <td class="px-5 py-4 text-theme-sm">{{ formatStock(row.stock) }}</td>
               <td class="px-5 py-4 text-end">
-                <div class="inline-flex gap-2">
-                  <button
-                    type="button"
-                    class="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
-                    (click)="openAdjustmentModal(row)"
-                  >
-                    Ajustar
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-lg bg-success-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-success-600"
-                    (click)="openInboundModal(row)"
-                  >
-                    +
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-lg bg-error-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-error-600"
-                    (click)="openOutboundModal(row)"
-                  >
-                    -
-                  </button>
+                <div class="inline-flex flex-wrap items-center gap-1.5">
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:tune-variant"
+                    tooltip="Ajustar"
+                    (btnClick)="openAdjustmentModal(row)"
+                  />
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:plus"
+                    tooltip="Entrada de stock"
+                    (btnClick)="openInboundModal(row)"
+                  />
+                  <app-button
+                    size="sm"
+                    variant="ghost"
+                    [iconOnly]="true"
+                    startIconName="mdi:minus"
+                    tooltip="Salida de stock"
+                    (btnClick)="openOutboundModal(row)"
+                  />
                 </div>
               </td>
             </tr>
@@ -531,9 +534,22 @@
                 <td class="px-3 py-2">{{ formatAdjustmentQty(row.cantidadAjuste) }}</td>
                 <td class="px-3 py-2">{{ row.requestedBy.nombre }}</td>
                 <td class="px-3 py-2 text-end">
-                  <div class="inline-flex gap-2" *appHasPermission="'inventory.adjust'">
-                    <app-button size="sm" (btnClick)="approvePending(row)">Aprobar</app-button>
-                    <app-button size="sm" variant="outline" (btnClick)="rejectPending(row)">Rechazar</app-button>
+                  <div class="inline-flex flex-wrap items-center gap-1.5" *appHasPermission="'inventory.adjust'">
+                    <app-button
+                      size="sm"
+                      [iconOnly]="true"
+                      startIconName="mdi:check-circle-outline"
+                      tooltip="Aprobar"
+                      (btnClick)="approvePending(row)"
+                    />
+                    <app-button
+                      size="sm"
+                      variant="danger"
+                      [iconOnly]="true"
+                      startIconName="mdi:close-circle-outline"
+                      tooltip="Rechazar"
+                      (btnClick)="rejectPending(row)"
+                    />
                   </div>
                 </td>
               </tr>

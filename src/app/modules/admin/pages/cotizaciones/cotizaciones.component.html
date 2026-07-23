@@ -33,9 +33,14 @@
           <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
           <td class="px-3 py-2 text-right">
             @if (row.estado === 'BORRADOR') {
-              <button type="button" class="text-brand-600 hover:underline" (click)="sendMutation.mutate(row.id)">
-                Enviar
-              </button>
+              <app-button
+                size="sm"
+                variant="outline"
+                [iconOnly]="true"
+                startIconName="mdi:send-outline"
+                tooltip="Enviar"
+                (btnClick)="sendMutation.mutate(row.id)"
+              />
             }
           </td>
         </tr>

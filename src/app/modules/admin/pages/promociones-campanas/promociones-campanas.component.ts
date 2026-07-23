@@ -69,7 +69,14 @@ import type { PromotionType } from '../../models/directory.models';
                   </td>
                   <td class="py-2">{{ row.activo ? 'Sí' : 'No' }}</td>
                   <td class="py-2">
-                    <app-button variant="outline" (btnClick)="remove(row.id)">Eliminar</app-button>
+                    <app-button
+                      size="sm"
+                      variant="danger"
+                      [iconOnly]="true"
+                      startIconName="mdi:trash-can-outline"
+                      tooltip="Eliminar"
+                      (btnClick)="remove(row.id)"
+                    />
                   </td>
                 </tr>
               }
