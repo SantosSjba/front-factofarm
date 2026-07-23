@@ -8,6 +8,9 @@ import { PageStateComponent } from '../page-state/page-state.component';
   selector: 'app-component-card',
   imports: [CommonModule, PageStateComponent, HelpHintComponent],
   templateUrl: './component-card.component.html',
+  host: {
+    class: 'mb-5 block',
+  },
   styles: ``,
 })
 export class ComponentCardComponent {

@@ -149,6 +149,51 @@ export interface PosPaymentSettingsDto {
   posPlinNumero: string | null;
 }
 
+/** Perfil comercial + fiscal del establecimiento activo. */
+export interface PharmacyProfileDto {
+  establishmentId: string;
+  tenantId: string;
+  tenantNombre: string;
+  tenantRuc: string | null;
+  nombre: string;
+  codigo: string | null;
+  pais: string;
+  departmentId: string | null;
+  provinceId: string | null;
+  districtId: string | null;
+  direccionFiscal: string | null;
+  direccionComercial: string | null;
+  telefono: string | null;
+  correoContacto: string | null;
+  direccionWeb: string | null;
+  informacionAdicional: string | null;
+  numeroRegistroDigemid: string | null;
+  logoArchivoId: string | null;
+  logoUrl: string | null;
+  rucEmisor: string | null;
+  razonSocialEmisor: string | null;
+  billingProvider: BillingProviderType;
+  hasOseCredentials: boolean;
+}
+
+export interface UpdatePharmacyProfileRequest {
+  nombre?: string;
+  codigo?: string;
+  rucEmisor?: string;
+  razonSocialEmisor?: string;
+  direccionFiscal?: string;
+  direccionComercial?: string;
+  telefono?: string;
+  correoContacto?: string;
+  direccionWeb?: string;
+  informacionAdicional?: string;
+  departmentId?: string | null;
+  provinceId?: string | null;
+  districtId?: string | null;
+  logoArchivoId?: string | null;
+  numeroRegistroDigemid?: string | null;
+}
+
 export interface DashboardInventoryAlertsDto {
   stockBajo: number;
   lotesVencidos: number;

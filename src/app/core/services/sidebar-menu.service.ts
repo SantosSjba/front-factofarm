@@ -88,6 +88,55 @@ function mergeNavLabels(staticItems: NavSubItem[], dynamicItems: NavSubItem[]): 
   });
 }
 
+/**
+ * Combina el menú estático con el árbol del API.
+ * Prioriza el orden/rutas del config (p. ej. «Mi farmacia» y «Establecimientos»
+ * pueden compartir `nav.establecimientos` con paths distintos).
+ */
+function mergeSectionSubItems(
+  staticSubs: NavSubItem[],
+  dynamicSubs: NavSubItem[],
+): NavSubItem[] {
+  const dynamicByPath = new Map(
+    dynamicSubs.filter((d) => d.path).map((d) => [d.path!, d] as const),
+  );
+  const usedPaths = new Set<string>();
+  const result: NavSubItem[] = [];
+
+  for (const s of staticSubs) {
+    if (s.subItems?.length) {
+      result.push({
+        ...s,
+        subItems: mergeSectionSubItems(s.subItems, dynamicSubs),
+      });
+      continue;
+    }
+    if (!s.path) continue;
+
+    const dyn = dynamicByPath.get(s.path);
+    if (dyn) {
+      result.push({
+        ...s,
+        name: dyn.name ?? s.name,
+        permissionCode: dyn.permissionCode ?? s.permissionCode,
+      });
+    } else {
+      // Ítem solo en el front (misma permiso, otra ruta): conservar.
+      result.push(s);
+    }
+    usedPaths.add(s.path);
+  }
+
+  for (const d of dynamicSubs) {
+    if (d.path && !usedPaths.has(d.path)) {
+      result.push(d);
+      usedPaths.add(d.path);
+    }
+  }
+
+  return result;
+}
+
 function mergeDynamicSections(staticNav: NavItem[], trees: PermissionMenuNodeDto[]): NavItem[] {
   let result = staticNav;
 
@@ -112,38 +161,11 @@ function mergeDynamicSections(staticNav: NavItem[], trees: PermissionMenuNodeDto
         };
       }
 
-      if (tree.code === 'nav.platform') {
-        const dynamicSubItems = navSubItemsFromTree(tree);
-        const dynamicCodes = new Set(dynamicSubItems.map((s) => s.permissionCode).filter(Boolean));
-        const staticExtras = (item.subItems ?? []).filter(
-          (s) =>
-            s.permissionCode &&
-            !dynamicCodes.has(s.permissionCode) &&
-            PERMISSION_ROUTE_MAP[s.permissionCode],
-        );
-        return {
-          ...item,
-          name: sectionName,
-          subItems: [...dynamicSubItems, ...staticExtras],
-        };
-      }
-
-      if (tree.code === 'nav.productos_catalogo') {
-        const dynamicPaths = new Set(dynamicSubItems.map((s) => s.path));
-        const staticRest = (item.subItems ?? []).filter(
-          (s) => !s.permissionCode || !dynamicPaths.has(s.path),
-        );
-        return {
-          ...item,
-          name: sectionName,
-          subItems: [
-            ...dynamicSubItems,
-            ...staticRest.filter((s) => !dynamicSubItems.some((d) => d.path === s.path)),
-          ],
-        };
-      }
-
-      return { ...item, name: sectionName, subItems: dynamicSubItems };
+      return {
+        ...item,
+        name: sectionName,
+        subItems: mergeSectionSubItems(item.subItems ?? [], dynamicSubItems),
+      };
     });
   }
 

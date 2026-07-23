@@ -1,0 +1,249 @@
+<div class="mb-5">
+  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
+</div>
+
+<app-page-toolbar>
+  <h1
+    data-toolbar-title
+    class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
+  >
+    Mi farmacia
+  </h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <a
+      routerLink="/comprobante-electronico"
+      class="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm text-gray-700 ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 dark:bg-white/5 dark:text-gray-200 dark:ring-white/15 dark:hover:bg-white/10"
+    >
+      Credenciales OSE
+    </a>
+    <app-button
+      size="sm"
+      startIconName="mdi:content-save-outline"
+      [disabled]="saving() || profileQuery.isPending()"
+      (btnClick)="submit()"
+    >
+      {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+    </app-button>
+  </div>
+</app-page-toolbar>
+
+@if (profileQuery.isError()) {
+  <app-component-card
+    title="No se pudo cargar"
+    [error]="'No se pudo cargar el perfil de la farmacia'"
+    (retry)="profileQuery.refetch()"
+  />
+} @else {
+  <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+    <app-component-card
+      title="Identidad del local"
+      helpText="Logo, nombre comercial y datos de contacto que representan a su farmacia en el sistema."
+      [loading]="profileQuery.isPending()"
+    >
+      <app-form-stack>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div>
+            <div class="mb-2 flex items-center gap-1.5">
+              <p class="text-theme-sm font-medium text-gray-700 dark:text-gray-200">Logo</p>
+              <app-help-hint
+                text="Se usa en tickets y documentos. Recomendado: PNG o JPG cuadrado, fondo claro."
+                [iconSize]="16"
+              />
+            </div>
+            <app-image-square-picker
+              [previewUrl]="logoPreview()"
+              sizeClass="h-28 w-28"
+              ariaLabel="Subir logo de la farmacia"
+              (fileSelected)="onLogoFile($event)"
+            />
+            @if (logoPreview()) {
+              <button
+                type="button"
+                class="mt-2 text-theme-xs text-error-600 hover:underline"
+                (click)="clearLogo()"
+              >
+                Quitar logo
+              </button>
+            }
+            @if (logoUploadError()) {
+              <p class="mt-1 text-theme-xs text-error-600">{{ logoUploadError() }}</p>
+            }
+          </div>
+          <div class="min-w-0 flex-1 space-y-4">
+            <app-form-field
+              label="Nombre del local"
+              helpText="Nombre comercial de esta sede (aparece en menús y reportes)."
+            >
+              <app-input-field
+                [value]="nombre()"
+                placeholder="Ej. Botica San Martín — Local 1"
+                (valueChange)="nombre.set('' + $event)"
+              />
+            </app-form-field>
+            <app-form-field
+              label="Código sede"
+              helpText="Código interno corto del local (ej. 0001)."
+            >
+              <app-input-field
+                [value]="codigo()"
+                placeholder="0001"
+                (valueChange)="codigo.set('' + $event)"
+              />
+            </app-form-field>
+          </div>
+        </div>
+
+        <app-form-row>
+          <app-form-field label="Teléfono">
+            <app-input-field [value]="telefono()" (valueChange)="telefono.set('' + $event)" />
+          </app-form-field>
+          <app-form-field label="Correo de contacto">
+            <app-input-field
+              type="email"
+              [value]="correoContacto()"
+              (valueChange)="correoContacto.set('' + $event)"
+            />
+          </app-form-field>
+        </app-form-row>
+
+        <app-form-field label="Sitio web">
+          <app-input-field
+            [value]="direccionWeb()"
+            placeholder="https://"
+            (valueChange)="direccionWeb.set('' + $event)"
+          />
+        </app-form-field>
+
+        <app-form-field
+          label="Registro DIGEMID"
+          helpText="Número de registro sanitario del establecimiento ante DIGEMID (si aplica)."
+        >
+          <app-input-field
+            [value]="numeroRegistroDigemid()"
+            (valueChange)="numeroRegistroDigemid.set('' + $event)"
+          />
+        </app-form-field>
+
+        <app-form-field label="Información adicional">
+          <app-text-area
+            [value]="informacionAdicional()"
+            [rows]="3"
+            (valueChange)="informacionAdicional.set('' + $event)"
+          />
+        </app-form-field>
+      </app-form-stack>
+    </app-component-card>
+
+    <div class="space-y-5">
+      <app-component-card
+        title="Datos de facturación"
+        helpText="RUC y razón social del emisor SUNAT. Las credenciales OSE (token/certificado) se configuran en Comprobante electrónico."
+        [loading]="profileQuery.isPending()"
+      >
+        <app-form-stack>
+          <app-form-row>
+            <app-form-field
+              label="RUC emisor"
+              helpText="RUC de 11 dígitos con el que emitirá boletas y facturas."
+            >
+              <app-input-field
+                [value]="rucEmisor()"
+                placeholder="20XXXXXXXXX"
+                (valueChange)="rucEmisor.set('' + $event)"
+              />
+            </app-form-field>
+            <app-form-field
+              label="Razón social"
+              helpText="Nombre legal registrado en SUNAT."
+            >
+              <app-input-field
+                [value]="razonSocialEmisor()"
+                (valueChange)="razonSocialEmisor.set('' + $event)"
+              />
+            </app-form-field>
+          </app-form-row>
+
+          <div
+            class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-theme-sm text-gray-600 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-gray-300"
+          >
+            <p>
+              Proveedor OSE:
+              <span class="font-medium text-gray-800 dark:text-white">
+                {{ billingProvider() || '—' }}
+              </span>
+              · Credenciales:
+              <span class="font-medium text-gray-800 dark:text-white">
+                {{ hasOseCredentials() ? 'Configuradas' : 'Pendientes' }}
+              </span>
+            </p>
+            <a
+              routerLink="/comprobante-electronico"
+              class="mt-2 inline-flex text-brand-600 hover:underline dark:text-brand-400"
+            >
+              Abrir configuración OSE / SUNAT
+            </a>
+          </div>
+        </app-form-stack>
+      </app-component-card>
+
+      <app-component-card
+        title="Dirección fiscal"
+        helpText="Ubigeo y direcciones que se usan en comprobantes y reportes."
+        [loading]="profileQuery.isPending()"
+      >
+        <app-form-stack>
+          <app-form-row>
+            <app-form-field label="Departamento">
+              <app-form-select
+                [value]="departmentId()"
+                [options]="departmentOptions()"
+                (valueChange)="onDepartmentChange($event)"
+              />
+            </app-form-field>
+            <app-form-field label="Provincia">
+              <app-form-select
+                [value]="provinceId()"
+                [options]="provinceOptions()"
+                [disabled]="!departmentId()"
+                (valueChange)="onProvinceChange($event)"
+              />
+            </app-form-field>
+          </app-form-row>
+
+          <app-form-field label="Distrito">
+            <app-form-select
+              [value]="districtId()"
+              [options]="districtOptions()"
+              [disabled]="!provinceId()"
+              (valueChange)="districtId.set($event)"
+            />
+          </app-form-field>
+
+          <app-form-field label="Dirección fiscal">
+            <app-input-field
+              [value]="direccionFiscal()"
+              (valueChange)="direccionFiscal.set('' + $event)"
+            />
+          </app-form-field>
+
+          <app-form-field label="Dirección comercial">
+            <app-input-field
+              [value]="direccionComercial()"
+              (valueChange)="direccionComercial.set('' + $event)"
+            />
+          </app-form-field>
+        </app-form-stack>
+      </app-component-card>
+    </div>
+  </div>
+
+  <div class="mt-5 flex justify-end">
+    <app-button
+      startIconName="mdi:content-save-outline"
+      [disabled]="saving() || profileQuery.isPending()"
+      (btnClick)="submit()"
+    >
+      {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+    </app-button>
+  </div>
+}

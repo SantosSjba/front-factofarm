@@ -46,6 +46,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       { name: 'Auditoría', path: '/auditoria', permissionCode: 'nav.auditoria' },
       { name: 'LPDP / ARCO', path: '/lpdp', permissionCode: 'nav.lpdp' },
       { name: 'Farmacéutico titular', path: '/farmaceutico-titular', permissionCode: 'nav.farmaceutico_titular' },
+      { name: 'Mi farmacia', path: '/mi-farmacia', permissionCode: 'nav.establecimientos' },
       { name: 'Establecimientos', path: '/establecimientos', permissionCode: 'nav.establecimientos' },
     ],
   },

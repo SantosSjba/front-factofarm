@@ -109,6 +109,13 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Precios regulados',
       },
       {
+        path: 'mi-farmacia',
+        ...guarded(P.establecimientos),
+        loadComponent: () =>
+          import('./pages/mi-farmacia/mi-farmacia.component').then((m) => m.MiFarmaciaComponent),
+        title: 'FactoFarm | Mi farmacia',
+      },
+      {
         path: 'establecimientos',
         ...guarded(P.establecimientos),
         loadComponent: () =>

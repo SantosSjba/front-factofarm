@@ -39,7 +39,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
       }
     </app-component-card>
 
-    <app-component-card class="mt-6" title="Solicitudes ARCO" [loading]="arcoQuery.isPending()">
+    <app-component-card title="Solicitudes ARCO" [loading]="arcoQuery.isPending()">
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
@@ -64,7 +64,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
       </div>
     </app-component-card>
 
-    <app-component-card class="mt-6" title="Retención programada" [loading]="retentionQuery.isPending()">
+    <app-component-card title="Retención programada" [loading]="retentionQuery.isPending()">
       @if (retentionQuery.data(); as retention) {
         <p class="mb-3 text-sm text-gray-600">{{ retention.policy }}</p>
         <ul class="space-y-2 text-sm">

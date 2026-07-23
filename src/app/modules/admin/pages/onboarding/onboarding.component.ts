@@ -133,8 +133,8 @@ export class OnboardingComponent {
       {
         id: 'establishment',
         title: 'Establecimiento y RUC',
-        description: 'Verifique razón social, RUC, ubigeo y datos DIGEMID del local.',
-        route: '/establecimientos',
+        description: 'Verifique logo, razón social, RUC, ubigeo y datos DIGEMID del local.',
+        route: '/mi-farmacia',
         done: establishmentDone,
       },
       {
