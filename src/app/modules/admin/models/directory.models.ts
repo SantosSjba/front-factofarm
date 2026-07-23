@@ -1889,6 +1889,12 @@ export interface SaleListItemDto {
   electronicDocumentId?: string | null;
   canEmitCpe?: boolean;
   canConvertToCpe?: boolean;
+  canReturn?: boolean;
+  canDebit?: boolean;
+  emitBlockedReason?: string | null;
+  convertBlockedReason?: string | null;
+  returnBlockedReason?: string | null;
+  debitBlockedReason?: string | null;
 }
 
 export interface SaleDetailDto {
@@ -1910,11 +1916,25 @@ export interface SaleDetailDto {
   fromColdStorage?: boolean;
   customer: { id: string; nombre: string; numeroDocumento: string } | null;
   seller: { id: string; nombre: string } | null;
+  sunatStatus?: SunatDocumentStatus | null;
+  electronicDocumentId?: string | null;
+  canEmitCpe?: boolean;
+  canConvertToCpe?: boolean;
+  canReturn?: boolean;
+  canDebit?: boolean;
+  emitBlockedReason?: string | null;
+  convertBlockedReason?: string | null;
+  returnBlockedReason?: string | null;
+  debitBlockedReason?: string | null;
   items: {
     id: string;
     producto: string;
     codigoInterno: string | null;
     cantidad: string;
+    /** Cantidad ya devuelta (acumulada). */
+    cantidadDevuelta?: string;
+    /** Saldo aún devoluble. */
+    cantidadRestante?: string;
     precioUnitario: string;
     subtotalLinea: string;
     igvLinea: string;

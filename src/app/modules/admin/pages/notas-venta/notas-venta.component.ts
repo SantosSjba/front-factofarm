@@ -173,13 +173,18 @@ export class NotasVentaComponent {
       const sale = this.returnSaleQuery.data();
       if (!sale || this.returnLines().length > 0) return;
       this.returnLines.set(
-        sale.items.map((item) => ({
-          saleItemId: item.id,
-          producto: item.producto,
-          maxQty: Number(item.cantidad),
-          quantity: Number(item.cantidad),
-          lotCode: item.lotes[0]?.codigoLote ?? '',
-        })),
+        sale.items
+          .map((item) => {
+            const maxQty = Number(item.cantidadRestante ?? item.cantidad);
+            return {
+              saleItemId: item.id,
+              producto: item.producto,
+              maxQty,
+              quantity: maxQty > 0 ? maxQty : 0,
+              lotCode: item.lotes[0]?.codigoLote ?? '',
+            };
+          })
+          .filter((line) => line.maxQty > 0),
       );
     });
   }
@@ -300,20 +305,24 @@ export class NotasVentaComponent {
     });
   }
 
-  protected canReturn(sale: SaleDetailDto): boolean {
-    if (sale.storage === 'archived' || sale.fromColdStorage) return false;
-    return (
-      (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') &&
-      (sale.estado === 'COMPLETADA' || sale.estado === 'PARCIALMENTE_DEVUELTA')
-    );
+  protected canReturn(sale: SaleDetailDto | { canReturn?: boolean; storage?: string; fromColdStorage?: boolean; archivedAt?: string | null }): boolean {
+    if (sale.storage === 'archived' || sale.fromColdStorage || ('archivedAt' in sale && sale.archivedAt)) {
+      return false;
+    }
+    if (typeof sale.canReturn === 'boolean') return sale.canReturn;
+    return false;
   }
 
   protected isArchivedRow(row: { storage?: string; archivedAt?: string | null }): boolean {
     return row.storage === 'archived' || !!row.archivedAt;
   }
 
-  protected canDebit(sale: SaleDetailDto): boolean {
-    return this.canReturn(sale);
+  protected canDebit(sale: SaleDetailDto | { canDebit?: boolean; storage?: string; fromColdStorage?: boolean; archivedAt?: string | null }): boolean {
+    if (sale.storage === 'archived' || sale.fromColdStorage || ('archivedAt' in sale && sale.archivedAt)) {
+      return false;
+    }
+    if (typeof sale.canDebit === 'boolean') return sale.canDebit;
+    return false;
   }
 
   protected openDebit(saleId: string) {

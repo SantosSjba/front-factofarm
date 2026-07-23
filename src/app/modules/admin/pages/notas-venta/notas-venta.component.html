@@ -104,25 +104,25 @@
                     (btnClick)="openConvert(row.id)"
                   />
                 }
-                @if (!isArchivedRow(row) && (row.documentType === 'BOLETA' || row.documentType === 'FACTURA')) {
-                  @if (row.estado === 'COMPLETADA' || row.estado === 'PARCIALMENTE_DEVUELTA') {
-                    <app-button
-                      size="sm"
-                      variant="outline"
-                      [iconOnly]="true"
-                      startIconName="mdi:undo"
-                      tooltip="Devolver"
-                      (btnClick)="openReturn(row.id)"
-                    />
-                    <app-button
-                      size="sm"
-                      variant="outline"
-                      [iconOnly]="true"
-                      startIconName="mdi:file-document-outline"
-                      tooltip="Nota de débito"
-                      (btnClick)="openDebit(row.id)"
-                    />
-                  }
+                @if (!isArchivedRow(row) && canReturn(row)) {
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:undo"
+                    tooltip="Devolver"
+                    (btnClick)="openReturn(row.id)"
+                  />
+                }
+                @if (!isArchivedRow(row) && canDebit(row)) {
+                  <app-button
+                    size="sm"
+                    variant="outline"
+                    [iconOnly]="true"
+                    startIconName="mdi:file-document-outline"
+                    tooltip="Nota de débito"
+                    (btnClick)="openDebit(row.id)"
+                  />
                 }
               </div>
             </td>
@@ -204,11 +204,7 @@
             Descargar PDF
           </app-button>
         }
-        @if (
-          !isArchivedRow(sale) &&
-          (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') &&
-          !billingStatusQuery.data()
-        ) {
+        @if (!isArchivedRow(sale) && sale.canEmitCpe) {
           <app-button
             variant="primary"
             startIconName="mdi:cloud-upload-outline"
@@ -217,12 +213,10 @@
           >
             Emitir a SUNAT
           </app-button>
+        } @else if (!isArchivedRow(sale) && sale.emitBlockedReason && (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') && !sale.electronicDocumentId) {
+          <p class="w-full text-right text-xs text-amber-700 dark:text-amber-300">{{ sale.emitBlockedReason }}</p>
         }
-        @if (
-          !isArchivedRow(sale) &&
-          (sale.documentType === 'NOTA_VENTA' || sale.documentType === 'TICKET') &&
-          sale.estado === 'COMPLETADA'
-        ) {
+        @if (!isArchivedRow(sale) && sale.canConvertToCpe) {
           <app-button
             variant="primary"
             startIconName="mdi:swap-horizontal"
@@ -233,6 +227,9 @@
         }
         @if (canReturn(sale)) {
           <app-button variant="outline" (btnClick)="openReturn(sale.id); closeDetail()">Devolver productos</app-button>
+        }
+        @if (canDebit(sale)) {
+          <app-button variant="outline" (btnClick)="openDebit(sale.id); closeDetail()">Nota de débito</app-button>
         }
       </div>
     </div>
