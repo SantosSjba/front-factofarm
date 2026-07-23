@@ -1,4 +1,4 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
@@ -16,7 +16,7 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import type { SaleDetailDto, SaleDocumentType, SaleStatus, SunatDocumentStatus, PaymentMethod } from '../../models/directory.models';
+import type { SaleDetailDto, SaleDocumentType, SaleStatus, SunatDocumentStatus, PaymentMethod, DataStorageMode } from '../../models/directory.models';
 
 type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string };
 
@@ -62,6 +62,13 @@ export class NotasVentaComponent {
   protected readonly dateTo = signal('');
   protected readonly paymentMetodo = signal<string>('');
   protected readonly paymentReferencia = signal('');
+  protected readonly storage = signal<DataStorageMode>('hot');
+
+  protected readonly storageOptions = [
+    { value: 'hot', label: 'Activo' },
+    { value: 'archived', label: 'Archivado' },
+    { value: 'all', label: 'Todos (tabla activa)' },
+  ];
 
   protected readonly paymentMethodOptions = [
     { value: '', label: 'Todos los medios' },
@@ -99,6 +106,7 @@ export class NotasVentaComponent {
       this.dateTo(),
       this.paymentMetodo(),
       this.paymentReferencia(),
+      this.storage(),
     ] as const,
     queryFn: () =>
       firstValueFrom(
@@ -111,6 +119,7 @@ export class NotasVentaComponent {
           to: this.dateTo() || undefined,
           paymentMetodo: (this.paymentMetodo() || undefined) as PaymentMethod | undefined,
           paymentReferencia: this.paymentReferencia().trim() || undefined,
+          storage: this.storage(),
         }),
       ),
   }));
@@ -223,10 +232,15 @@ export class NotasVentaComponent {
   }
 
   protected canReturn(sale: SaleDetailDto): boolean {
+    if (sale.storage === 'archived' || sale.fromColdStorage) return false;
     return (
       (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') &&
       (sale.estado === 'COMPLETADA' || sale.estado === 'PARCIALMENTE_DEVUELTA')
     );
+  }
+
+  protected isArchivedRow(row: { storage?: string; archivedAt?: string | null }): boolean {
+    return row.storage === 'archived' || !!row.archivedAt;
   }
 
   protected canDebit(sale: SaleDetailDto): boolean {

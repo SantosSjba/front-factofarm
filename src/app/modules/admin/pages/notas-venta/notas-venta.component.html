@@ -1,10 +1,11 @@
-﻿<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-breadcrumb-inline [segments]="breadcrumb" />
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Historial de ventas</h1>
 </app-page-toolbar>
 
 <app-component-card title="Filtros" className="mt-4 mb-4">
-  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    <app-form-select [options]="storageOptions" [value]="storage()" (valueChange)="storage.set($any($event)); onFilterChange()" />
     <app-form-select [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set($event); onFilterChange()" />
     <app-form-select [options]="docOptions" [value]="documentType()" (valueChange)="documentType.set($event); onFilterChange()" />
     <app-form-select [options]="paymentMethodOptions" [value]="paymentMetodo()" (valueChange)="paymentMetodo.set($event); onFilterChange()" />
@@ -12,6 +13,9 @@
     <input type="date" class="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" [value]="dateFrom()" (input)="dateFrom.set($any($event.target).value); onFilterChange()" />
     <input type="date" class="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" [value]="dateTo()" (input)="dateTo.set($any($event.target).value); onFilterChange()" />
   </div>
+  @if (storage() === 'archived') {
+    <p class="mt-3 text-theme-sm text-gray-500">Consulta de histórico en cold storage (solo lectura).</p>
+  }
 </app-component-card>
 
 @let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
@@ -40,14 +44,19 @@
         @for (row of listQuery.data()?.items ?? []; track row.id) {
           <tr class="border-b border-gray-100 dark:border-gray-800">
             <td class="px-3 py-2">{{ row.createdAt | date: 'short' }}</td>
-            <td class="px-3 py-2">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
+            <td class="px-3 py-2">
+              {{ row.documentType }} {{ row.serie }}-{{ row.numero }}
+              @if (isArchivedRow(row)) {
+                <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Archivado</span>
+              }
+            </td>
             <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
-            <td class="px-3 py-2">{{ row.seller.nombre }}</td>
+            <td class="px-3 py-2">{{ row.seller?.nombre ?? '—' }}</td>
             <td class="px-3 py-2"><span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{{ row.estado }}</span></td>
             <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             <td class="px-3 py-2 text-right">
               <button type="button" class="text-brand-600 hover:underline" (click)="openDetail(row.id)">Ver</button>
-              @if (row.documentType === 'BOLETA' || row.documentType === 'FACTURA') {
+              @if (!isArchivedRow(row) && (row.documentType === 'BOLETA' || row.documentType === 'FACTURA')) {
                 @if (row.estado === 'COMPLETADA' || row.estado === 'PARCIALMENTE_DEVUELTA') {
                   <button type="button" class="ml-2 text-amber-600 hover:underline" (click)="openReturn(row.id)">Devolver</button>
                   <button type="button" class="ml-2 text-violet-600 hover:underline" (click)="openDebit(row.id)">ND</button>
@@ -73,6 +82,9 @@
     <div class="space-y-4 p-6">
       <h3 class="text-lg font-semibold">{{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
       <p class="text-sm text-gray-500">{{ sale.createdAt | date: 'medium' }} · {{ sale.estado }}</p>
+      @if (isArchivedRow(sale)) {
+        <p class="text-sm text-slate-600 dark:text-slate-300">Registro archivado (cold storage) — consulta histórica.</p>
+      }
       @if (billingStatusQuery.data(); as sunat) {
         <p class="text-sm">
           Estado SUNAT:

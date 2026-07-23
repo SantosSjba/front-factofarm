@@ -1,4 +1,4 @@
-﻿<div class="mb-5">
+<div class="mb-5">
   <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 </div>
 
@@ -9,7 +9,7 @@
 </app-page-toolbar>
 
 <app-component-card title="Filtros" className="mb-4">
-  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
     <div>
       <label class="text-theme-sm text-gray-600">Producto</label>
       @if (selectedProductId()) {
@@ -53,6 +53,15 @@
       />
     </div>
     <div>
+      <label class="text-theme-sm text-gray-600">Almacenamiento</label>
+      <app-form-select
+        className="mt-1"
+        [options]="storageOptions"
+        [value]="storage()"
+        (valueChange)="onStorageChange($event)"
+      />
+    </div>
+    <div>
       <label class="text-theme-sm text-gray-600">Desde</label>
       <input
         type="date"
@@ -71,6 +80,9 @@
       />
     </div>
   </div>
+  @if (storage() === 'archived') {
+    <p class="mt-3 text-theme-sm text-gray-500">Histórico en cold storage. El saldo acumulado no se recalcula en modo archivado.</p>
+  }
 </app-component-card>
 
 @if (!selectedProductId()) {
@@ -99,12 +111,17 @@
         <tbody class="divide-y divide-gray-100">
           @for (row of rows(); track row.id) {
             <tr>
-              <td class="px-4 py-3 text-theme-sm">{{ row.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.tipo }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.motivo }}</td>
+              <td class="px-4 py-3 text-theme-sm">
+                {{ row.fecha | date: 'yyyy-MM-dd HH:mm' }}
+                @if (isArchivedRow(row)) {
+                  <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Archivado</span>
+                }
+              </td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.tipo ?? '—' }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.motivo ?? '—' }}</td>
               <td class="px-4 py-3 text-theme-sm">{{ row.cantidad }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.saldo }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.valorLinea }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.saldo ?? '—' }}</td>
+              <td class="px-4 py-3 text-theme-sm">{{ row.valorLinea ?? '—' }}</td>
             </tr>
           } @empty {
             <tr>

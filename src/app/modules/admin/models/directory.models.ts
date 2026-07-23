@@ -1532,20 +1532,26 @@ export interface InventoryLotListFiltersRequest {
   pageSize?: number;
 }
 
+/** hot = operativo; archived = cold storage; all = hot table incl. marcados archivedAt */
+export type DataStorageMode = 'hot' | 'archived' | 'all';
+
 export interface KardexLineDto {
   id: string;
   fecha: string;
-  tipo: string;
-  motivo: string;
-  almacen: string;
+  tipo: string | null;
+  motivo: string | null;
+  almacen: string | null;
   lote: string | null;
   cantidad: string;
-  saldo: string;
+  saldo: string | null;
   costoUnitario: string | null;
-  valorLinea: string;
+  valorLinea: string | null;
   referencia: string | null;
   comentario: string | null;
   usuario: string | null;
+  storage?: DataStorageMode | 'hot' | 'archived';
+  archivedAt?: string | null;
+  fromColdStorage?: boolean;
 }
 
 export type KardexListResponseDto = PaginatedResponseDto<KardexLineDto>;
@@ -1555,6 +1561,7 @@ export interface KardexFiltersRequest {
   warehouseId?: string;
   from?: string;
   to?: string;
+  storage?: DataStorageMode;
   page?: number;
   pageSize?: number;
 }
@@ -1793,8 +1800,10 @@ export interface SaleListItemDto {
   igvTotal: string;
   total: string;
   createdAt: string;
+  archivedAt?: string | null;
+  storage?: DataStorageMode | 'hot' | 'archived';
   customer: { id: string; nombre: string } | null;
-  seller: { id: string; nombre: string };
+  seller: { id: string; nombre: string } | null;
 }
 
 export interface SaleDetailDto {
@@ -1811,8 +1820,11 @@ export interface SaleDetailDto {
   prescriptionNote: string | null;
   comentario: string | null;
   createdAt: string;
+  archivedAt?: string | null;
+  storage?: DataStorageMode | 'hot' | 'archived';
+  fromColdStorage?: boolean;
   customer: { id: string; nombre: string; numeroDocumento: string } | null;
-  seller: { id: string; nombre: string };
+  seller: { id: string; nombre: string } | null;
   items: {
     id: string;
     producto: string;
@@ -1878,6 +1890,7 @@ export interface SaleListFiltersRequest {
   to?: string;
   paymentMetodo?: PaymentMethod;
   paymentReferencia?: string;
+  storage?: DataStorageMode;
 }
 
 export interface CashRegisterDto {

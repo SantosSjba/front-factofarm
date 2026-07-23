@@ -1375,6 +1375,7 @@ export class DirectoryApiService {
     if (filters.warehouseId) params['warehouseId'] = filters.warehouseId;
     if (filters.from) params['from'] = filters.from;
     if (filters.to) params['to'] = filters.to;
+    if (filters.storage) params['storage'] = filters.storage;
     if (filters.page) params['page'] = String(filters.page);
     if (filters.pageSize) params['pageSize'] = String(filters.pageSize);
     return this.http.get<KardexListResponseDto>(
@@ -1559,6 +1560,7 @@ export class DirectoryApiService {
     if (filters?.to) params['to'] = filters.to;
     if (filters?.paymentMetodo) params['paymentMetodo'] = filters.paymentMetodo;
     if (filters?.paymentReferencia?.trim()) params['paymentReferencia'] = filters.paymentReferencia.trim();
+    if (filters?.storage) params['storage'] = filters.storage;
     return this.http.get<PaginatedResponseDto<SaleListItemDto>>(`${this.base}/sales`, { params });
   }
 

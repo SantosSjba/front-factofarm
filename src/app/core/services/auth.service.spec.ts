@@ -23,12 +23,12 @@ describe('AuthService', () => {
   });
 
   it('login persiste tokens y usuario en sessionStorage', () => {
-    service.login('admin@factofarm.local', 'Admin123!').subscribe();
+    service.login('admin@factosysperu.com', 'Admin123!').subscribe();
 
     const req = http.expectOne(`${environment.apiBaseUrl}/auth/login`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
-      email: 'admin@factofarm.local',
+      email: 'admin@factosysperu.com',
       password: 'Admin123!',
     });
 
@@ -38,7 +38,7 @@ describe('AuthService', () => {
       user: {
         id: 'user-1',
         nombre: 'Admin',
-        email: 'admin@factofarm.local',
+        email: 'admin@factosysperu.com',
         role: 'ADMINISTRADOR',
         establecimientoId: 'est-1',
         permissionCodes: ['users.read'],

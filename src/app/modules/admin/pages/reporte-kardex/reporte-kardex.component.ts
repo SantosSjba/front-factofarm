@@ -1,4 +1,4 @@
-﻿import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
@@ -11,7 +11,7 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import type { ProductListItemDto } from '../../models/directory.models';
+import type { DataStorageMode, ProductListItemDto } from '../../models/directory.models';
 
 @Component({
   selector: 'app-reporte-kardex',
@@ -42,9 +42,16 @@ export class ReporteKardexComponent {
   protected readonly warehouseId = signal('');
   protected readonly dateFrom = signal('');
   protected readonly dateTo = signal('');
+  protected readonly storage = signal<DataStorageMode>('hot');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 50;
   protected readonly productOptions = signal<ProductListItemDto[]>([]);
+
+  protected readonly storageOptions = [
+    { value: 'hot', label: 'Activo' },
+    { value: 'archived', label: 'Archivado' },
+    { value: 'all', label: 'Todos (tabla activa)' },
+  ];
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
@@ -60,6 +67,7 @@ export class ReporteKardexComponent {
         warehouseId: this.warehouseId(),
         from: this.dateFrom() || undefined,
         to: this.dateTo() || undefined,
+        storage: this.storage(),
         page: this.currentPage(),
       },
     ] as const,
@@ -71,6 +79,7 @@ export class ReporteKardexComponent {
           warehouseId: this.warehouseId() || undefined,
           from: this.dateFrom() || undefined,
           to: this.dateTo() || undefined,
+          storage: this.storage(),
           page: this.currentPage(),
           pageSize: this.itemsPerPage,
         }),
@@ -112,7 +121,16 @@ export class ReporteKardexComponent {
     this.currentPage.set(1);
   }
 
+  protected onStorageChange(value: string) {
+    this.storage.set(value as DataStorageMode);
+    this.currentPage.set(1);
+  }
+
   protected onPageChange(page: number) {
     this.currentPage.set(page);
+  }
+
+  protected isArchivedRow(row: { storage?: string; fromColdStorage?: boolean }): boolean {
+    return row.storage === 'archived' || !!row.fromColdStorage;
   }
 }
