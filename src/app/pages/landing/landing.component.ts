@@ -80,6 +80,13 @@ export class LandingComponent {
   protected readonly contactWhatsApp = environment.contactWhatsApp;
   protected readonly contactEmail = environment.contactEmail;
   protected readonly siteUrl = environment.siteUrl;
+  protected readonly company = environment.company;
+  protected readonly businessHours = [
+    'Lun–Vie: 9:00 a. m. – 6:00 p. m.',
+    'Sáb: 9:00 a. m. – 2:00 p. m.',
+  ];
+  protected readonly supportNote =
+    'Te acompañamos en consultas técnicas y avances de proyecto.';
   protected readonly currentYear = new Date().getFullYear();
 
   protected readonly mobileNavOpen = signal(false);
@@ -248,7 +255,8 @@ export class LandingComponent {
     },
     {
       question: '¿Incluye facturación electrónica SUNAT?',
-      answer: 'Sí. El sistema contempla emisión de comprobantes electrónicos e integración con proveedores de facturación.',
+      answer:
+        'Sí, cuando tu establecimiento configura un proveedor OSE/PSE (p. ej. Factiliza o Nubefact) con credenciales de producción. En la puesta en marcha puedes operar con nota de venta mientras se activa la facturación electrónica.',
     },
     {
       question: '¿Cómo obtengo una cuenta?',

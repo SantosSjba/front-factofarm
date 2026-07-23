@@ -457,10 +457,6 @@
               <app-icon name="mdi:whatsapp" iconClass="size-4" />
               Escribir por WhatsApp
             </a>
-          } @else {
-            <p class="rounded-xl border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-              Configura <code class="text-brand-500">NG_APP_CONTACT_WHATSAPP</code> en tu <code>.env</code> para mostrar el botón de WhatsApp.
-            </p>
           }
           @if (contactEmail) {
             <a [href]="'mailto:' + contactEmail" class="flex items-center gap-3 text-sm text-gray-600 hover:text-brand-600 dark:text-gray-400">
@@ -474,6 +470,23 @@
               factosysperu.com
             </a>
           }
+          <div class="space-y-2 pt-2 text-sm text-gray-600 dark:text-gray-400">
+            <p class="flex items-start gap-2">
+              <app-icon name="mdi:map-marker-outline" iconClass="size-4 mt-0.5 shrink-0 text-brand-500" />
+              <span>{{ company.address }}</span>
+            </p>
+            <p class="flex items-start gap-2">
+              <app-icon name="mdi:clock-outline" iconClass="size-4 mt-0.5 shrink-0 text-brand-500" />
+              <span>{{ businessHours[0] }} · {{ businessHours[1] }}</span>
+            </p>
+            <p class="flex items-start gap-2">
+              <app-icon name="mdi:headset" iconClass="size-4 mt-0.5 shrink-0 text-brand-500" />
+              <span>{{ supportNote }}</span>
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-500">
+              {{ company.legalName }} · RUC {{ company.ruc }}
+            </p>
+          </div>
           <ul class="space-y-2 pt-2 text-sm text-gray-600 dark:text-gray-400">
             <li class="flex items-center gap-2"><app-icon name="mdi:check-circle-outline" iconClass="size-4 text-success-500" /> Respuesta en 24–48 horas hábiles</li>
             <li class="flex items-center gap-2"><app-icon name="mdi:check-circle-outline" iconClass="size-4 text-success-500" /> Demo personalizada según tu operación</li>

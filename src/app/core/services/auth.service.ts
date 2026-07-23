@@ -8,6 +8,7 @@ import { LocaleService } from './locale.service';
 const TOKEN_KEY = 'ff_access_token';
 const REFRESH_KEY = 'ff_refresh_token';
 const USER_KEY = 'ff_user';
+const REMEMBER_KEY = 'ff_remember';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -27,11 +28,11 @@ export class AuthService {
   }
 
   getAccessToken(): string | null {
-    return sessionStorage.getItem(TOKEN_KEY);
+    return this.readStorage(TOKEN_KEY);
   }
 
   getRefreshToken(): string | null {
-    return sessionStorage.getItem(REFRESH_KEY);
+    return this.readStorage(REFRESH_KEY);
   }
 
   isSupportSession(): boolean {
@@ -68,18 +69,24 @@ export class AuthService {
     return '/dashboard';
   }
 
-  persistSession(res: LoginResponse): void {
-    sessionStorage.setItem(TOKEN_KEY, res.accessToken);
-    sessionStorage.setItem(REFRESH_KEY, res.refreshToken);
-    sessionStorage.setItem(USER_KEY, JSON.stringify(res.user));
+  persistSession(res: LoginResponse, remember = this.isRememberEnabled()): void {
+    const store = remember ? localStorage : sessionStorage;
+    const other = remember ? sessionStorage : localStorage;
+    for (const key of [TOKEN_KEY, REFRESH_KEY, USER_KEY, REMEMBER_KEY]) {
+      other.removeItem(key);
+    }
+    store.setItem(TOKEN_KEY, res.accessToken);
+    store.setItem(REFRESH_KEY, res.refreshToken);
+    store.setItem(USER_KEY, JSON.stringify(res.user));
+    store.setItem(REMEMBER_KEY, remember ? '1' : '0');
     this.userSignal.set(res.user);
     this.locale.setTimeZone(res.user.timeZone);
   }
 
-  login(email: string, password: string): Observable<void> {
+  login(email: string, password: string, remember = false): Observable<void> {
     const url = `${environment.apiBaseUrl}/auth/login`;
     return this.http.post<LoginResponse>(url, { email, password }).pipe(
-      tap((res) => this.persistSession(res)),
+      tap((res) => this.persistSession(res, remember)),
       map(() => undefined),
     );
   }
@@ -87,7 +94,7 @@ export class AuthService {
   exchangePanelHandoff(code: string): Observable<void> {
     const url = `${environment.apiBaseUrl}/auth/exchange-panel-handoff`;
     return this.http.post<LoginResponse>(url, { code }).pipe(
-      tap((res) => this.persistSession(res)),
+      tap((res) => this.persistSession(res, false)),
       map(() => undefined),
     );
   }
@@ -102,7 +109,7 @@ export class AuthService {
     }
     const url = `${environment.apiBaseUrl}/auth/refresh`;
     return this.http.post<LoginResponse>(url, { refreshToken }).pipe(
-      tap((res) => this.persistSession(res)),
+      tap((res) => this.persistSession(res, this.isRememberEnabled())),
       map(() => true),
     );
   }
@@ -117,9 +124,12 @@ export class AuthService {
   }
 
   clearSession(): void {
-    sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(REFRESH_KEY);
-    sessionStorage.removeItem(USER_KEY);
+    for (const store of [sessionStorage, localStorage]) {
+      store.removeItem(TOKEN_KEY);
+      store.removeItem(REFRESH_KEY);
+      store.removeItem(USER_KEY);
+      store.removeItem(REMEMBER_KEY);
+    }
     this.userSignal.set(null);
     this.locale.resetTimeZone();
   }
@@ -138,15 +148,26 @@ export class AuthService {
     const url = `${environment.apiBaseUrl}/auth/me`;
     return this.http.get<AuthUser>(url).pipe(
       tap((user) => {
-        sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+        const store = this.isRememberEnabled() ? localStorage : sessionStorage;
+        store.setItem(USER_KEY, JSON.stringify(user));
         this.userSignal.set(user);
         this.locale.setTimeZone(user.timeZone);
       }),
     );
   }
 
+  private isRememberEnabled(): boolean {
+    return (
+      localStorage.getItem(REMEMBER_KEY) === '1' || sessionStorage.getItem(REMEMBER_KEY) === '1'
+    );
+  }
+
+  private readStorage(key: string): string | null {
+    return sessionStorage.getItem(key) ?? localStorage.getItem(key);
+  }
+
   private readUserFromStorage(): AuthUser | null {
-    const raw = sessionStorage.getItem(USER_KEY);
+    const raw = this.readStorage(USER_KEY);
     if (!raw) {
       return null;
     }
@@ -158,6 +179,7 @@ export class AuthService {
       return parsed;
     } catch {
       sessionStorage.removeItem(USER_KEY);
+      localStorage.removeItem(USER_KEY);
       return null;
     }
   }

@@ -1,5 +1,5 @@
 # FactoFarm — robots.txt
-# Actualizar Sitemap con el dominio de producción (NG_APP_SITE_URL)
+# Dominio producción: https://factofarm.factosysperu.com
 
 User-agent: *
 Allow: /$
@@ -12,5 +12,6 @@ Disallow: /punto-venta
 Disallow: /usuarios
 Disallow: /signin
 Disallow: /signup
+Disallow: /platform/
 
-Sitemap: https://factofarm.com/sitemap.xml
+Sitemap: https://factofarm.factosysperu.com/sitemap.xml

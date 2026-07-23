@@ -7,9 +7,9 @@ export const environment = {
   contactWhatsApp: envOverrides.contactWhatsApp || '',
   contactEmail: envOverrides.contactEmail || '',
   company: envOverrides.company ?? {
-    legalName: 'FactoFarm S.A.C.',
-    ruc: '20XXXXXXXXX',
-    address: 'Lima, Perú',
+    legalName: 'FACTOSYS PERU S.A.C.',
+    ruc: '20614608952',
+    address: 'Trujillo, La Libertad, Perú. Atendemos todo el Perú (24 departamentos y Callao).',
   },
   siteUrl: envOverrides.siteUrl || 'http://localhost:4200',
 };

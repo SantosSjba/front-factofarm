@@ -15,10 +15,11 @@ const defaults = {
   NG_APP_PRODUCTION: prodBuild ? 'true' : 'false',
   NG_APP_CONTACT_WHATSAPP: '51944644276',
   NG_APP_CONTACT_EMAIL: 'contacto@factosysperu.com',
-  NG_APP_COMPANY_LEGAL_NAME: 'FactoFarm S.A.C.',
-  NG_APP_COMPANY_RUC: '20XXXXXXXXX',
-  NG_APP_COMPANY_ADDRESS: 'Lima, Perú',
-  NG_APP_SITE_URL: prodBuild ? 'https://factosysperu.com' : 'http://localhost:4200',
+  NG_APP_COMPANY_LEGAL_NAME: 'FACTOSYS PERU S.A.C.',
+  NG_APP_COMPANY_RUC: '20614608952',
+  NG_APP_COMPANY_ADDRESS:
+    'Trujillo, La Libertad, Perú. Atendemos todo el Perú (24 departamentos y Callao).',
+  NG_APP_SITE_URL: prodBuild ? 'https://factofarm.factosysperu.com' : 'http://localhost:4200',
 };
 
 const vars = { ...defaults };
@@ -50,11 +51,14 @@ export const envOverrides = {
   contactWhatsApp: ${JSON.stringify(vars.NG_APP_CONTACT_WHATSAPP ?? '')},
   contactEmail: ${JSON.stringify(vars.NG_APP_CONTACT_EMAIL ?? '')},
   company: {
-    legalName: ${JSON.stringify(vars.NG_APP_COMPANY_LEGAL_NAME ?? 'FactoFarm S.A.C.')},
-    ruc: ${JSON.stringify(vars.NG_APP_COMPANY_RUC ?? '20XXXXXXXXX')},
-    address: ${JSON.stringify(vars.NG_APP_COMPANY_ADDRESS ?? 'Lima, Perú')},
+    legalName: ${JSON.stringify(vars.NG_APP_COMPANY_LEGAL_NAME ?? 'FACTOSYS PERU S.A.C.')},
+    ruc: ${JSON.stringify(vars.NG_APP_COMPANY_RUC ?? '20614608952')},
+    address: ${JSON.stringify(
+      vars.NG_APP_COMPANY_ADDRESS ??
+        'Trujillo, La Libertad, Perú. Atendemos todo el Perú (24 departamentos y Callao).',
+    )},
   },
-  siteUrl: ${JSON.stringify(vars.NG_APP_SITE_URL ?? (production ? 'https://factofarm.com' : 'http://localhost:4200'))},
+  siteUrl: ${JSON.stringify(vars.NG_APP_SITE_URL ?? (production ? 'https://factofarm.factosysperu.com' : 'http://localhost:4200'))},
 };
 `;
 

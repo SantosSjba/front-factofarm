@@ -5,9 +5,9 @@ export const envOverrides = {
   contactWhatsApp: "51944644276",
   contactEmail: "contacto@factosysperu.com",
   company: {
-    legalName: "FactoFarm S.A.C.",
-    ruc: "20XXXXXXXXX",
-    address: "Lima, Perú",
+    legalName: "FACTOSYS PERU S.A.C.",
+    ruc: "20614608952",
+    address: "Trujillo, La Libertad, Perú. Atendemos todo el Perú (24 departamentos y Callao).",
   },
-  siteUrl: "https://factosysperu.com",
+  siteUrl: "https://factofarm.factosysperu.com",
 };

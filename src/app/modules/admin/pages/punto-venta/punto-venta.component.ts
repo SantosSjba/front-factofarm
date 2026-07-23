@@ -827,6 +827,10 @@ export class PuntoVentaComponent implements OnDestroy {
       this.notify.warning('Seleccione almacén');
       return;
     }
+    if (!this.cashSession()) {
+      this.notify.warning('Abra una caja antes de cobrar');
+      return;
+    }
     if (this.cart().length === 0) return;
     await this.loadCatalog(false);
     if (!this.validateCartStock()) return;

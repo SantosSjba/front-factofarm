@@ -51,7 +51,7 @@ export class SigninFormComponent {
     }
     this.loginError = null;
     this.isLoading = true;
-    this.auth.login(this.email.trim(), this.password).subscribe({
+    this.auth.login(this.email.trim(), this.password, this.isChecked).subscribe({
       next: () => {
         this.isLoading = false;
         this.loginError = null;
