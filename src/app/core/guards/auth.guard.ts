@@ -12,12 +12,32 @@ export const authGuard: CanActivateFn = () => {
   return router.createUrlTree(['/auth/signin']);
 };
 
-/** Evita mostrar login si ya hay sesión (redirige al dashboard). */
+/** Evita mostrar login si ya hay sesión (redirige al home del rol). */
 export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isAuthenticated()) {
     return true;
   }
-  return router.createUrlTree(['/dashboard']);
+  return router.createUrlTree([auth.defaultHomePath()]);
+};
+
+/** SUPER_ADMIN no usa dashboard tenant; va a consola de plataforma. */
+export const tenantDashboardGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.isPlatformAdmin()) {
+    return router.createUrlTree(['/platform/clientes']);
+  }
+  return true;
+};
+
+/** Operadores FactoSys solo pueden rutas /platform/* (salvo sesión de soporte). */
+export const platformOnlyGuard: CanActivateFn = (route, state) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isPlatformAdmin()) return true;
+  const url = state.url;
+  if (url.startsWith('/platform')) return true;
+  return router.createUrlTree(['/platform/clientes']);
 };

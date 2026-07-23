@@ -1,5 +1,19 @@
 <header
-  class="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 xl:border-b">
+  class="sticky top-0 flex w-full flex-col bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 xl:border-b">
+  @if (supportBanner(); as banner) {
+    <div
+      class="flex items-center justify-between gap-3 bg-slate-800 px-4 py-2 text-xs text-white sm:px-6"
+    >
+      <span>{{ banner }}</span>
+      <button
+        type="button"
+        class="rounded border border-white/30 px-2 py-0.5 hover:bg-white/10"
+        (click)="endSupportSession()"
+      >
+        Cerrar sesión de soporte
+      </button>
+    </div>
+  }
   <div class="flex flex-col items-center justify-between grow xl:flex-row xl:px-6">
     <div
       class="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 xl:justify-normal xl:border-b-0 xl:px-0 lg:py-4">

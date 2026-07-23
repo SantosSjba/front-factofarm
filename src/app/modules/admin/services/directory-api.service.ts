@@ -2477,6 +2477,15 @@ export class DirectoryApiService {
     return this.http.post<TenantDetailDto>(`${this.base}/tenants/${id}/activate`, {});
   }
 
+  enterTenantPanel(id: string) {
+    return this.http.post<{
+      exchangeCode: string;
+      tenantId: string;
+      tenantNombre: string;
+      expiresInSeconds: number;
+    }>(`${this.base}/tenants/${id}/enter-panel`, {});
+  }
+
   suspendTenant(id: string) {
     return this.http.post<TenantDetailDto>(`${this.base}/tenants/${id}/suspend`, {});
   }

@@ -28,22 +28,58 @@ export class AuthService {
     return sessionStorage.getItem(REFRESH_KEY);
   }
 
+  isSupportSession(): boolean {
+    return !!this.userSignal()?.supportSession;
+  }
+
+  /** Operador FactoSys en consola de plataforma (no en sesión de soporte). */
+  isPlatformAdmin(): boolean {
+    const user = this.userSignal();
+    return user?.role === 'SUPER_ADMIN' && !user.supportSession;
+  }
+
   hasPermission(code: string): boolean {
     const user = this.userSignal();
     if (!user) return false;
+    if (this.isSupportSession()) {
+      return user.permissionCodes.includes(code);
+    }
     if (user.role === 'SUPER_ADMIN') {
-      return true;
+      return (
+        code.startsWith('nav.platform') ||
+        code.startsWith('tenants.') ||
+        code.startsWith('complaints.')
+      );
     }
     return user.permissionCodes.includes(code);
   }
 
-  isPlatformAdmin(): boolean {
-    return this.userSignal()?.role === 'SUPER_ADMIN';
+  /** Ruta de inicio según rol (evita mandar SUPER_ADMIN al dashboard tenant). */
+  defaultHomePath(): string {
+    if (this.isPlatformAdmin()) return '/platform/clientes';
+    const role = this.userSignal()?.role;
+    if (role === 'CAJERO' || role === 'VENDEDOR') return '/punto-venta';
+    return '/dashboard';
+  }
+
+  persistSession(res: LoginResponse): void {
+    sessionStorage.setItem(TOKEN_KEY, res.accessToken);
+    sessionStorage.setItem(REFRESH_KEY, res.refreshToken);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(res.user));
+    this.userSignal.set(res.user);
   }
 
   login(email: string, password: string): Observable<void> {
     const url = `${environment.apiBaseUrl}/auth/login`;
     return this.http.post<LoginResponse>(url, { email, password }).pipe(
+      tap((res) => this.persistSession(res)),
+      map(() => undefined),
+    );
+  }
+
+  exchangePanelHandoff(code: string): Observable<void> {
+    const url = `${environment.apiBaseUrl}/auth/exchange-panel-handoff`;
+    return this.http.post<LoginResponse>(url, { code }).pipe(
       tap((res) => this.persistSession(res)),
       map(() => undefined),
     );
@@ -98,13 +134,6 @@ export class AuthService {
         this.userSignal.set(user);
       }),
     );
-  }
-
-  private persistSession(res: LoginResponse): void {
-    sessionStorage.setItem(TOKEN_KEY, res.accessToken);
-    sessionStorage.setItem(REFRESH_KEY, res.refreshToken);
-    sessionStorage.setItem(USER_KEY, JSON.stringify(res.user));
-    this.userSignal.set(res.user);
   }
 
   private readUserFromStorage(): AuthUser | null {

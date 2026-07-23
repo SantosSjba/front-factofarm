@@ -123,6 +123,21 @@ export class PlatformClientesComponent {
     this.selectedTenant.set(null);
   }
 
+  protected async enterClientPanel(row: TenantDetailDto): Promise<void> {
+    try {
+      const handoff = await firstValueFrom(this.api.enterTenantPanel(row.id));
+      const url = `${window.location.origin}/auth/enter-tenant?code=${encodeURIComponent(handoff.exchangeCode)}`;
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        this.notify.warning('Permita ventanas emergentes para abrir el panel del cliente.');
+      } else {
+        this.notify.success(`Abriendo panel de ${handoff.tenantNombre}`);
+      }
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo abrir el panel del cliente'));
+    }
+  }
+
   protected async setStatus(row: TenantDetailDto, action: 'activate' | 'suspend'): Promise<void> {
     try {
       if (action === 'activate') {

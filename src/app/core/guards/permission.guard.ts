@@ -9,8 +9,7 @@ export const permissionGuard: CanActivateFn = (route) => {
   const required = route.data['permissions'] as string[] | undefined;
 
   if (!auth.isAuthenticated()) {
-    void router.navigate(['/auth/signin']);
-    return false;
+    return router.createUrlTree(['/auth/signin']);
   }
 
   if (!required?.length) {
@@ -19,8 +18,7 @@ export const permissionGuard: CanActivateFn = (route) => {
 
   const allowed = required.some((code) => auth.hasPermission(code));
   if (!allowed) {
-    void router.navigate(['/dashboard']);
-    return false;
+    return router.createUrlTree([auth.defaultHomePath()]);
   }
 
   return true;

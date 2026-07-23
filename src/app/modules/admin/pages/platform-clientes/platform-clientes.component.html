@@ -66,6 +66,11 @@
             </td>
             <td class="px-5 py-4">
               <div class="flex flex-wrap gap-2">
+                @if (row.status === 'ACTIVE' || row.status === 'TRIAL') {
+                  <app-button size="sm" (btnClick)="enterClientPanel(row)">
+                    Ingresar al panel
+                  </app-button>
+                }
                 <app-button size="sm" variant="outline" (btnClick)="openEditModal(row)">
                   Gestionar
                 </app-button>

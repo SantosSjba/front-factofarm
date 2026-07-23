@@ -14,6 +14,14 @@ export const authRoutes: Routes = [
     title: 'FactoFarm | Iniciar sesión',
   },
   {
+    path: 'enter-tenant',
+    loadComponent: () =>
+      import('./pages/enter-tenant-panel/enter-tenant-panel.component').then(
+        (m) => m.EnterTenantPanelComponent,
+      ),
+    title: 'FactoFarm | Acceso al cliente',
+  },
+  {
     path: 'signup',
     redirectTo: 'signin',
     pathMatch: 'full',

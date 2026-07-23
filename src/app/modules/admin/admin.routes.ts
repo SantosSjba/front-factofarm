@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '../../core/guards/auth.guard';
+import { authGuard, platformOnlyGuard, tenantDashboardGuard } from '../../core/guards/auth.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { AppLayoutComponent } from '../../shared/layout/app-layout/app-layout.component';
 import { ADMIN_ROUTE_PERMISSIONS as P } from './admin-route-permissions';
@@ -16,7 +16,7 @@ export const adminRoutes: Routes = [
   {
     path: '',
     component: AppLayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, platformOnlyGuard],
     children: [
       {
         path: '',
@@ -25,7 +25,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'dashboard',
-        ...guarded(P.dashboard),
+        canActivate: [tenantDashboardGuard, permissionGuard],
+        data: { permissions: [...P.dashboard] },
         loadComponent: () =>
           import('./pages/dashboard/dashboard-shell.component').then(
             (m) => m.DashboardShellComponent,

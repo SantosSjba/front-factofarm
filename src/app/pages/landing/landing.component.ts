@@ -317,7 +317,7 @@ export class LandingComponent {
   }
 
   protected goToDashboard(): void {
-    void this.router.navigate(['/dashboard']);
+    void this.router.navigateByUrl(this.auth.defaultHomePath());
   }
 
   protected toggleMobileNav(): void {

@@ -36,6 +36,17 @@ export class AppHeaderComponent {
     return user.tenantNombre ?? 'Mi farmacia';
   });
 
+  protected readonly supportBanner = computed(() => {
+    if (!this.auth.isSupportSession()) return null;
+    const name = this.auth.user()?.tenantNombre ?? 'cliente';
+    return `Sesión de soporte FactoSys · ${name}`;
+  });
+
+  protected endSupportSession(): void {
+    this.auth.logout();
+    void this.router.navigateByUrl('/auth/signin');
+  }
+
   isApplicationMenuOpen = false;
   readonly isMobileOpen$;
   searchTerm = '';
