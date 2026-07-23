@@ -50,12 +50,12 @@ export class SeoService {
     this.setMetaTag('property', 'og:type', config.ogType ?? 'website');
     this.setMetaTag('property', 'og:url', canonicalUrl);
     this.setMetaTag('property', 'og:locale', 'es_PE');
-    this.setMetaTag('property', 'og:image', `${siteUrl}/images/logo/logo-icon.svg`);
+    this.setMetaTag('property', 'og:image', `${siteUrl}/images/logo/logo.png`);
 
     this.setMetaTag('name', 'twitter:card', 'summary_large_image');
     this.setMetaTag('name', 'twitter:title', pageTitle);
     this.setMetaTag('name', 'twitter:description', config.description);
-    this.setMetaTag('name', 'twitter:image', `${siteUrl}/images/logo/logo-icon.svg`);
+    this.setMetaTag('name', 'twitter:image', `${siteUrl}/images/logo/logo.png`);
 
     this.setCanonical(canonicalUrl);
     this.setJsonLd(config.jsonLd ?? null);

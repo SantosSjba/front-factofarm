@@ -1,5 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
@@ -56,6 +57,7 @@ interface PricingPlan {
   selector: 'app-landing',
   standalone: true,
   imports: [
+    CommonModule,
     RouterLink,
     ButtonComponent,
     FormFieldComponent,
@@ -72,6 +74,7 @@ interface PricingPlan {
 export class LandingComponent {
   private readonly contactApi = inject(PublicContactService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   protected readonly isAuthenticated = this.auth.isAuthenticated.bind(this.auth);
   protected readonly contactWhatsApp = environment.contactWhatsApp;
@@ -89,6 +92,16 @@ export class LandingComponent {
   protected readonly submitting = signal(false);
   protected readonly submitted = signal(false);
   protected readonly formError = signal('');
+
+  protected readonly navItems = [
+    { id: 'beneficios', label: 'Beneficios' },
+    { id: 'modulos', label: 'Módulos' },
+    { id: 'planes', label: 'Planes' },
+    { id: 'como-funciona', label: 'Cómo funciona' },
+    { id: 'faq', label: 'Preguntas' },
+    { id: 'legal', label: 'Legal' },
+    { id: 'contacto', label: 'Contacto' },
+  ];
 
   protected readonly whatsAppHref = computed(() => {
     const phone = this.contactWhatsApp.replace(/\D/g, '');
@@ -301,6 +314,10 @@ export class LandingComponent {
   protected scrollTo(id: string): void {
     this.mobileNavOpen.set(false);
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  protected goToDashboard(): void {
+    void this.router.navigate(['/dashboard']);
   }
 
   protected toggleMobileNav(): void {

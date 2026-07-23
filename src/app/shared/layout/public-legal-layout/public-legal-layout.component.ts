@@ -10,9 +10,12 @@ import { ThemeToggleButtonComponent } from '../../components/common/theme-toggle
     <div class="min-h-screen bg-white dark:bg-gray-900">
       <header class="border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
         <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <a routerLink="/" class="flex items-center gap-2.5">
-            <img src="/images/logo/logo-icon.svg" alt="" class="h-8 w-8" />
-            <span class="text-lg font-semibold text-gray-900 dark:text-white">FactoFarm</span>
+          <a routerLink="/" class="logo-dark-glow inline-flex items-center">
+            <img
+              src="/images/logo/logo-nav.png"
+              alt="FactoFarm"
+              class="h-9 w-auto max-w-[180px] object-contain"
+            />
           </a>
           <div class="flex items-center gap-2">
             <app-theme-toggle-button />

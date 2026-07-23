@@ -59,7 +59,7 @@ export class DashboardSalesChartComponent {
     toolbar: { show: false },
   };
 
-  protected readonly colors = ['#465FFF', '#9CB9FF'];
+  protected readonly colors = ['#30A038', '#79C982'];
 
   protected readonly stroke: ApexStroke = {
     curve: 'smooth',

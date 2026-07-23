@@ -28,7 +28,7 @@ export const PUBLIC_SEO: Record<string, SeoConfig> = {
           '@type': 'Organization',
           name: 'FactoFarm',
           url: siteUrl(),
-          logo: `${siteUrl()}/images/logo/logo-icon.svg`,
+          logo: `${siteUrl()}/images/logo/logo.png`,
           areaServed: {
             '@type': 'Country',
             name: 'Peru',

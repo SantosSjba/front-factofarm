@@ -1,27 +1,32 @@
-<div class="min-h-screen bg-white dark:bg-gray-900">
+<div class="min-h-screen bg-white dark:bg-[#071822]">
   <header
-    class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95"
+    class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#071822]/95"
   >
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-      <a routerLink="/" class="flex items-center gap-2.5">
-        <img src="/images/logo/logo-icon.svg" alt="" class="h-9 w-9" />
-        <span class="text-lg font-semibold text-gray-900 dark:text-white sm:text-xl">FactoFarm</span>
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
+      <a routerLink="/" class="logo-dark-glow shrink-0">
+        <img
+          src="/images/logo/logo-nav.png"
+          alt="FactoFarm"
+          class="h-9 w-auto max-w-[180px] object-contain"
+        />
       </a>
 
-      <nav class="hidden items-center gap-6 lg:flex">
-        <button type="button" class="text-sm font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300" (click)="scrollTo('beneficios')">Beneficios</button>
-        <button type="button" class="text-sm font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300" (click)="scrollTo('modulos')">Módulos</button>
-        <button type="button" class="text-sm font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300" (click)="scrollTo('planes')">Planes</button>
-        <button type="button" class="text-sm font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300" (click)="scrollTo('como-funciona')">Cómo funciona</button>
-        <button type="button" class="text-sm font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300" (click)="scrollTo('faq')">Preguntas</button>
-        <button type="button" class="text-sm font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300" (click)="scrollTo('legal')">Legal</button>
-        <button type="button" class="text-sm font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300" (click)="scrollTo('contacto')">Contacto</button>
+      <nav class="hidden items-center gap-1 lg:flex" aria-label="Secciones principales">
+        @for (item of navItems; track item.id) {
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-400"
+            (click)="scrollTo(item.id)"
+          >
+            {{ item.label }}
+          </button>
+        }
       </nav>
 
-      <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-1.5 sm:gap-2">
         <button
           type="button"
-          class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-600 lg:hidden dark:border-gray-700 dark:text-gray-300"
+          class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 lg:hidden dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
           (click)="toggleMobileNav()"
           [attr.aria-expanded]="mobileNavOpen()"
           aria-label="Abrir menú"
@@ -32,14 +37,28 @@
         <app-theme-toggle-button />
 
         @if (isAuthenticated()) {
-          <a routerLink="/dashboard" class="hidden rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 sm:inline-flex">
+          <app-button
+            size="sm"
+            startIconName="mdi:view-dashboard-outline"
+            className="hidden sm:inline-flex"
+            (btnClick)="goToDashboard()"
+          >
             Ir al panel
-          </a>
+          </app-button>
         } @else {
-          <a routerLink="/auth/signin" class="hidden rounded-lg px-4 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 sm:inline-flex dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-white/5">
+          <a
+            routerLink="/auth/signin"
+            class="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-brand-600 sm:inline-flex dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-400"
+          >
+            <app-icon name="mdi:login" iconClass="size-4" />
             Iniciar sesión
           </a>
-          <app-button size="sm" className="hidden sm:inline-flex" (btnClick)="scrollTo('contacto')">
+          <app-button
+            size="sm"
+            startIconName="mdi:calendar-check-outline"
+            className="hidden sm:inline-flex"
+            (btnClick)="scrollTo('contacto')"
+          >
             Solicitar demo
           </app-button>
         }
@@ -48,15 +67,31 @@
 
     @if (mobileNavOpen()) {
       <div class="border-t border-gray-200 px-4 py-4 lg:hidden dark:border-gray-800">
-        <nav class="flex flex-col gap-1">
-          <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5" (click)="scrollTo('beneficios')">Beneficios</button>
-          <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5" (click)="scrollTo('modulos')">Módulos</button>
-          <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5" (click)="scrollTo('planes')">Planes</button>
-          <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5" (click)="scrollTo('como-funciona')">Cómo funciona</button>
-          <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5" (click)="scrollTo('faq')">Preguntas frecuentes</button>
-          <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5" (click)="scrollTo('legal')">Información legal</button>
-          <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5" (click)="scrollTo('contacto')">Contacto</button>
+        <nav class="flex flex-col gap-1" aria-label="Menú móvil">
+          @for (item of navItems; track item.id) {
+            <button
+              type="button"
+              class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+              (click)="scrollTo(item.id)"
+            >
+              {{ item.label }}
+            </button>
+          }
         </nav>
+        @if (!isAuthenticated()) {
+          <div class="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+            <a
+              routerLink="/auth/signin"
+              class="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-white/5"
+            >
+              <app-icon name="mdi:login" iconClass="size-4" />
+              Iniciar sesión
+            </a>
+            <app-button size="sm" startIconName="mdi:calendar-check-outline" className="w-full" (btnClick)="scrollTo('contacto')">
+              Solicitar demo
+            </app-button>
+          </div>
+        }
       </div>
     }
   </header>
@@ -69,40 +104,46 @@
       <app-grid-shape />
     </div>
 
-    <div class="relative mx-auto grid max-w-7xl gap-12 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-20">
+    <div class="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-12 lg:px-8 lg:py-16">
       <div>
-        <span class="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
-          <app-icon name="mdi:pharmacy" iconClass="size-4" />
+        <span class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300">
+          <app-icon name="mdi:pharmacy" iconClass="size-3.5" />
           Software para farmacias y boticas en Perú
         </span>
-        <h1 id="hero-title" class="mb-5 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl lg:leading-tight">
+        <h1 id="hero-title" class="mb-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:leading-tight">
           El sistema integral para vender, controlar stock y cumplir normativa
         </h1>
-        <p class="mb-8 max-w-xl text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
+        <p class="mb-6 max-w-xl text-base leading-relaxed text-gray-600 dark:text-gray-400">
           FactoFarm unifica punto de venta, inventario con lotes, compras, facturación electrónica SUNAT
           y reportes en una sola plataforma pensada para el ritmo de tu botica.
         </p>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <app-button size="sm" className="w-full sm:w-auto" (btnClick)="scrollTo('contacto')">
+        <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+          <app-button size="sm" startIconName="mdi:rocket-launch-outline" className="w-full sm:w-auto" (btnClick)="scrollTo('contacto')">
             Habilitar mi cuenta
           </app-button>
-          <app-button size="sm" variant="outline" className="w-full sm:w-auto" (btnClick)="scrollTo('modulos')">
+          <app-button size="sm" variant="outline" startIconName="mdi:view-grid-outline" className="w-full sm:w-auto" (btnClick)="scrollTo('modulos')">
             Ver módulos
           </app-button>
         </div>
-        <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-5 text-sm text-gray-500 dark:text-gray-400">
           @if (isAuthenticated()) {
-            ¿Listo para trabajar?
-            <a routerLink="/dashboard" class="font-medium text-brand-500 hover:text-brand-600">Ir al panel</a>
+            <span class="inline-flex items-center gap-1.5">
+              <app-icon name="mdi:check-circle-outline" iconClass="size-4 text-brand-500" />
+              ¿Listo para trabajar?
+              <a routerLink="/dashboard" class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Ir al panel</a>
+            </span>
           } @else {
-            ¿Ya tienes acceso?
-            <a routerLink="/auth/signin" class="font-medium text-brand-500 hover:text-brand-600">Inicia sesión aquí</a>
+            <span class="inline-flex items-center gap-1.5">
+              <app-icon name="mdi:account-key-outline" iconClass="size-4 text-gray-400" />
+              ¿Ya tienes acceso?
+              <a routerLink="/auth/signin" class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Inicia sesión aquí</a>
+            </span>
           }
         </p>
       </div>
 
       <div class="relative">
-        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900/90">
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-white/10 dark:bg-[#0c2235] dark:shadow-black/30">
           <div class="mb-5 flex items-center justify-between gap-3">
             <div>
               <p class="text-sm font-medium text-gray-800 dark:text-white">Panel FactoFarm</p>
@@ -141,7 +182,7 @@
   </section>
 
   <!-- Stats -->
-  <section class="border-y border-gray-200 bg-white py-10 dark:border-gray-800 dark:bg-gray-900">
+  <section class="border-y border-gray-200 bg-white py-10 dark:border-white/10 dark:bg-[#0a1e30]">
     <div class="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 sm:px-6 md:grid-cols-4 lg:px-8">
       @for (stat of stats; track stat.label) {
         <div class="text-center">
@@ -153,7 +194,7 @@
   </section>
 
   <!-- Benefits -->
-  <section id="beneficios" class="bg-gray-50 py-16 dark:bg-gray-950 sm:py-20">
+  <section id="beneficios" class="bg-gray-50 py-16 dark:bg-[#051018] sm:py-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="mx-auto mb-12 max-w-2xl text-center">
         <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">¿Por qué elegir FactoFarm?</h2>
@@ -161,7 +202,7 @@
       </div>
       <div class="grid gap-6 sm:grid-cols-2">
         @for (benefit of benefits; track benefit.title) {
-          <article class="flex gap-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <article class="flex gap-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-[#0c2235]">
             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10">
               <app-icon [name]="benefit.icon" iconClass="size-6 text-brand-600 dark:text-brand-400" />
             </div>
@@ -184,7 +225,7 @@
       </div>
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         @for (feature of features; track feature.title) {
-          <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500/30">
+          <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40 dark:hover:shadow-black/30">
             <div class="mb-4 inline-flex rounded-xl bg-brand-50 p-3 dark:bg-brand-500/10">
               <app-icon [name]="feature.icon" iconClass="size-6 text-brand-600 dark:text-brand-400" />
             </div>
@@ -224,7 +265,7 @@
       </div>
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         @for (step of steps; track step.number) {
-          <article class="rounded-2xl border border-gray-200 p-6 dark:border-gray-800">
+          <article class="rounded-2xl border border-gray-200 p-6 dark:border-white/10 dark:bg-[#0c2235]">
             <span class="mb-4 block text-3xl font-semibold text-brand-500">{{ step.number }}</span>
             <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{{ step.title }}</h3>
             <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{{ step.description }}</p>
@@ -235,7 +276,7 @@
   </section>
 
   <!-- Pricing -->
-  <section id="planes" class="border-t border-gray-200 bg-gray-50 py-16 dark:border-gray-800 dark:bg-gray-950 sm:py-20">
+  <section id="planes" class="border-t border-gray-200 bg-gray-50 py-16 dark:border-white/10 dark:bg-[#081c2c] sm:py-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="mx-auto mb-12 max-w-2xl text-center">
         <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Planes para cada tipo de botica</h2>
@@ -247,19 +288,15 @@
       <div class="grid gap-6 lg:grid-cols-3">
         @for (plan of plans; track plan.id) {
           <article
-            class="relative flex flex-col rounded-2xl border p-6 shadow-theme-xs"
-            [class.border-brand-500]="plan.highlighted"
-            [class.bg-white]="!plan.highlighted"
-            [class.dark:bg-gray-900]="!plan.highlighted"
-            [class.border-gray-200]="!plan.highlighted"
-            [class.dark:border-gray-800]="!plan.highlighted"
-            [class.bg-brand-950]="plan.highlighted"
-            [class.text-white]="plan.highlighted"
-            [class.ring-2]="plan.highlighted"
-            [class.ring-brand-500]="plan.highlighted"
+            class="relative flex flex-col rounded-2xl border p-6 shadow-theme-xs transition"
+            [ngClass]="
+              plan.highlighted
+                ? 'border-brand-500 bg-brand-950 text-white ring-2 ring-brand-500 dark:border-brand-400/50 dark:bg-gradient-to-b dark:from-[#0f3524] dark:to-brand-950 dark:ring-brand-400/30 dark:shadow-[0_0_32px_rgba(48,160,56,0.14)]'
+                : 'border-gray-200 bg-white dark:border-white/10 dark:bg-[#0c2235] dark:shadow-lg dark:shadow-black/25'
+            "
           >
             @if (plan.highlighted) {
-              <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-500 px-3 py-1 text-xs font-medium text-white">
+              <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-500 px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm dark:bg-brand-400 dark:text-brand-950">
                 Más elegido
               </span>
             }
@@ -268,14 +305,29 @@
               <h3 class="text-xl font-semibold" [class.text-gray-900]="!plan.highlighted" [class.dark:text-white]="!plan.highlighted">
                 {{ plan.name }}
               </h3>
-              <p class="mt-1 text-sm" [class.text-gray-600]="!plan.highlighted" [class.text-brand-100]="plan.highlighted" [class.dark:text-gray-400]="!plan.highlighted">
+              <p
+                class="mt-1 text-sm"
+                [class.text-gray-600]="!plan.highlighted"
+                [class.text-brand-100]="plan.highlighted"
+                [class.dark:text-gray-300]="!plan.highlighted"
+              >
                 {{ plan.subtitle }}
               </p>
             </div>
 
             <div class="mb-6">
-              <p class="text-xl font-semibold sm:text-2xl">{{ plan.priceLabel }}</p>
-              <p class="mt-1 text-sm" [class.text-gray-500]="!plan.highlighted" [class.text-brand-200]="plan.highlighted" [class.dark:text-gray-400]="!plan.highlighted">
+              <p
+                class="text-xl font-semibold sm:text-2xl"
+                [ngClass]="plan.highlighted ? 'text-white' : 'text-gray-900 dark:text-white'"
+              >
+                {{ plan.priceLabel }}
+              </p>
+              <p
+                class="mt-1 text-sm"
+                [class.text-gray-500]="!plan.highlighted"
+                [class.text-brand-200]="plan.highlighted"
+                [class.dark:text-gray-400]="!plan.highlighted"
+              >
                 {{ plan.priceNote }}
               </p>
             </div>
@@ -283,8 +335,11 @@
             <ul class="mb-8 flex-1 space-y-3">
               @for (feature of plan.features; track feature) {
                 <li class="flex items-start gap-2 text-sm">
-                  <app-icon name="mdi:check-circle-outline" iconClass="mt-0.5 size-4 shrink-0 text-success-500" />
-                  <span [class.text-gray-700]="!plan.highlighted" [class.text-brand-50]="plan.highlighted" [class.dark:text-gray-300]="!plan.highlighted">
+                  <app-icon
+                    name="mdi:check-circle-outline"
+                    [iconClass]="plan.highlighted ? 'mt-0.5 size-4 shrink-0 text-brand-200' : 'mt-0.5 size-4 shrink-0 text-success-500 dark:text-brand-400'"
+                  />
+                  <span [class.text-gray-700]="!plan.highlighted" [class.text-brand-50]="plan.highlighted" [class.dark:text-gray-200]="!plan.highlighted">
                     {{ feature }}
                   </span>
                 </li>
@@ -294,6 +349,7 @@
             <app-button
               className="w-full"
               size="sm"
+              startIconName="mdi:file-document-outline"
               [variant]="plan.highlighted ? 'primary' : 'outline'"
               (btnClick)="requestPlan(plan)"
             >
@@ -310,7 +366,7 @@
   </section>
 
   <!-- FAQ -->
-  <section id="faq" class="border-t border-gray-200 bg-gray-50 py-16 dark:border-gray-800 dark:bg-gray-950 sm:py-20">
+  <section id="faq" class="border-t border-gray-200 bg-gray-50 py-16 dark:border-white/10 dark:bg-[#051018] sm:py-20">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
       <div class="mb-10 text-center">
         <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Preguntas frecuentes</h2>
@@ -318,7 +374,7 @@
       </div>
       <div class="space-y-3">
         @for (faq of faqs; track faq.question; let i = $index) {
-          <article class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <article class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-[#0c2235]">
             <button
               type="button"
               class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
@@ -329,7 +385,7 @@
               <app-icon [name]="isFaqOpen(i) ? 'mdi:chevron-up' : 'mdi:chevron-down'" iconClass="size-5 shrink-0 text-gray-500" />
             </button>
             @if (isFaqOpen(i)) {
-              <div class="border-t border-gray-100 px-5 py-4 text-sm leading-relaxed text-gray-600 dark:border-gray-800 dark:text-gray-400">
+              <div class="border-t border-gray-100 px-5 py-4 text-sm leading-relaxed text-gray-600 dark:border-white/10 dark:text-gray-300">
                 {{ faq.answer }}
               </div>
             }
@@ -340,20 +396,25 @@
   </section>
 
   <!-- CTA strip -->
-  <section class="bg-brand-500 py-12">
-    <div class="mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 text-center sm:px-6 lg:flex-row lg:justify-between lg:px-8 lg:text-left">
-      <div>
-        <h2 class="mb-2 text-2xl font-semibold text-white">¿Listo para modernizar tu botica?</h2>
-        <p class="max-w-xl text-brand-100">Solicita una demo y te contactamos para habilitar tu cuenta con la configuración que necesitas.</p>
+  <section class="border-y border-brand-900/20 bg-brand-950 py-10">
+    <div class="mx-auto flex max-w-7xl flex-col items-center gap-5 px-4 sm:px-6 lg:flex-row lg:justify-between lg:px-8 lg:text-left">
+      <div class="max-w-2xl text-center lg:text-left">
+        <h2 class="mb-2 text-xl font-semibold text-white sm:text-2xl">¿Listo para modernizar tu botica?</h2>
+        <p class="text-sm leading-relaxed text-brand-100 sm:text-base">Solicita una demo y te contactamos para habilitar tu cuenta con la configuración que necesitas.</p>
       </div>
-      <app-button size="sm" variant="outline" className="!bg-white !text-brand-600 !ring-white hover:!bg-brand-50 shrink-0" (btnClick)="scrollTo('contacto')">
+      <app-button
+        size="sm"
+        startIconName="mdi:email-fast-outline"
+        className="shrink-0"
+        (btnClick)="scrollTo('contacto')"
+      >
         Solicitar información
       </app-button>
     </div>
   </section>
 
   <!-- Legal -->
-  <section id="legal" class="border-t border-gray-200 bg-white py-16 dark:border-gray-800 dark:bg-gray-900 sm:py-20">
+  <section id="legal" class="border-t border-gray-200 bg-white py-16 dark:border-white/10 dark:bg-[#0a1e30] sm:py-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="mx-auto mb-10 max-w-2xl text-center">
         <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Información legal</h2>
@@ -362,17 +423,17 @@
         </p>
       </div>
       <div class="grid gap-6 md:grid-cols-3">
-        <a routerLink="/legal/privacidad" class="group rounded-2xl border border-gray-200 p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-gray-800 dark:hover:border-brand-500/30">
+        <a routerLink="/legal/privacidad" class="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40">
           <app-icon name="mdi:shield-lock-outline" iconClass="mb-4 size-8 text-brand-600 dark:text-brand-400" />
           <h3 class="mb-2 text-lg font-semibold text-gray-900 group-hover:text-brand-600 dark:text-white">Política de privacidad</h3>
           <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Tratamiento de datos personales conforme a la Ley N° 29733 (LPDP).</p>
         </a>
-        <a routerLink="/legal/terminos" class="group rounded-2xl border border-gray-200 p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-gray-800 dark:hover:border-brand-500/30">
+        <a routerLink="/legal/terminos" class="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40">
           <app-icon name="mdi:file-document-outline" iconClass="mb-4 size-8 text-brand-600 dark:text-brand-400" />
           <h3 class="mb-2 text-lg font-semibold text-gray-900 group-hover:text-brand-600 dark:text-white">Términos de uso</h3>
           <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Condiciones de uso de la plataforma FactoFarm para farmacias y boticas.</p>
         </a>
-        <a routerLink="/legal/libro-reclamaciones" class="group rounded-2xl border border-gray-200 p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-gray-800 dark:hover:border-brand-500/30">
+        <a routerLink="/legal/libro-reclamaciones" class="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40">
           <app-icon name="mdi:book-edit-outline" iconClass="mb-4 size-8 text-brand-600 dark:text-brand-400" />
           <h3 class="mb-2 text-lg font-semibold text-gray-900 group-hover:text-brand-600 dark:text-white">Libro de reclamaciones</h3>
           <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Presenta un reclamo o queja virtual conforme a la Ley N° 29571 e INDECOPI.</p>
@@ -392,8 +453,8 @@
         </p>
         <div class="space-y-4">
           @if (contactWhatsApp) {
-            <a [href]="whatsAppHref()" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 rounded-xl bg-success-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-success-600">
-              <app-icon name="mdi:whatsapp" iconClass="size-5" />
+            <a [href]="whatsAppHref()" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-success-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-success-700">
+              <app-icon name="mdi:whatsapp" iconClass="size-4" />
               Escribir por WhatsApp
             </a>
           } @else {
@@ -415,7 +476,7 @@
         </div>
       </div>
 
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900 sm:p-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-white/10 dark:bg-[#0c2235] sm:p-8">
         @if (submitted()) {
           <div class="flex flex-col items-start gap-4 py-4">
             <div class="rounded-full bg-success-50 p-3 dark:bg-success-500/10">
@@ -461,7 +522,7 @@
                   {{ formError() }}
                 </div>
               }
-              <app-button className="w-full" size="sm" [disabled]="submitting()" (btnClick)="onSubmitContact($event)">
+              <app-button className="w-full" size="sm" startIconName="mdi:send-outline" [disabled]="submitting()" (btnClick)="onSubmitContact($event)">
                 {{ submitting() ? 'Enviando…' : 'Enviar solicitud' }}
               </app-button>
             </app-form-stack>
@@ -473,13 +534,16 @@
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-gray-200 bg-gray-50 py-12 dark:border-gray-800 dark:bg-gray-950">
+  <footer class="border-t border-gray-200 bg-gray-50 py-12 dark:border-white/10 dark:bg-[#051018]">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="grid gap-10 md:grid-cols-4">
         <div class="md:col-span-2">
-          <a routerLink="/" class="mb-4 inline-flex items-center gap-2.5">
-            <img src="/images/logo/logo-icon.svg" alt="" class="h-8 w-8" />
-            <span class="text-lg font-semibold text-gray-900 dark:text-white">FactoFarm</span>
+          <a routerLink="/" class="logo-dark-glow mb-4 inline-flex items-center">
+            <img
+              src="/images/logo/logo-nav.png"
+              alt="FactoFarm"
+              class="h-9 w-auto max-w-[200px] object-contain"
+            />
           </a>
           <p class="max-w-sm text-sm leading-relaxed text-gray-600 dark:text-gray-400">
             Plataforma de gestión para farmacias y boticas: ventas, inventario, compras, facturación y reportes en un solo lugar.

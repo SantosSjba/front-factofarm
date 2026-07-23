@@ -46,7 +46,7 @@ export class LineChartOneComponent {
     }
   };
 
-  public colors: string[] = ['#465FFF', '#9CB9FF'];
+  public colors: string[] = ['#30A038', '#79C982'];
 
   public stroke: ApexStroke = {
     curve: 'straight',

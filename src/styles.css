@@ -42,18 +42,18 @@ layer(base);
   --color-white: #ffffff;
   --color-black: #101828;
 
-  --color-brand-25: #f2f7ff;
-  --color-brand-50: #ecf3ff;
-  --color-brand-100: #dde9ff;
-  --color-brand-200: #c2d6ff;
-  --color-brand-300: #9cb9ff;
-  --color-brand-400: #7592ff;
-  --color-brand-500: #465fff;
-  --color-brand-600: #3641f5;
-  --color-brand-700: #2a31d8;
-  --color-brand-800: #252dae;
-  --color-brand-900: #262e89;
-  --color-brand-950: #161950;
+  --color-brand-25: #f4fbf5;
+  --color-brand-50: #e9f7eb;
+  --color-brand-100: #d3eed7;
+  --color-brand-200: #abdeb3;
+  --color-brand-300: #79c982;
+  --color-brand-400: #52b85c;
+  --color-brand-500: #30a038;
+  --color-brand-600: #288830;
+  --color-brand-700: #216c28;
+  --color-brand-800: #185522;
+  --color-brand-900: #103d19;
+  --color-brand-950: #002840;
 
   --color-blue-light-25: #f5fbff;
   --color-blue-light-50: #f0f9ff;
@@ -334,6 +334,19 @@ layer(base);
 }
 
 @layer utilities {
+  /* Contorno luminoso sobre el logo (respeta el alpha del PNG/SVG) */
+  .logo-dark-glow {
+    @apply inline-flex items-center;
+  }
+
+  .dark .logo-dark-glow img {
+    filter:
+      drop-shadow(0 0 0.35px rgba(255, 255, 255, 1))
+      drop-shadow(0 0 0.75px rgba(255, 255, 255, 0.9))
+      drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.55))
+      drop-shadow(0 0 3px rgba(255, 255, 255, 0.28));
+  }
+
   /* For Remove Date Icon */
   input[type="date"]::-webkit-inner-spin-button,
   input[type="time"]::-webkit-inner-spin-button,
@@ -576,13 +589,13 @@ span.flatpickr-weekday,
 .flatpickr-day.selected.nextMonthDay,
 .flatpickr-day.startRange.nextMonthDay,
 .flatpickr-day.endRange.nextMonthDay {
-  background: #465fff;
+  background: #30a038;
   @apply !border-brand-500 !bg-brand-500 hover:!border-brand-500 hover:!bg-brand-500;
 }
 .flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n + 1)),
 .flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n + 1)),
 .flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n + 1)) {
-  box-shadow: -10px 0 0 #465fff;
+  box-shadow: -10px 0 0 #30a038;
 }
 
 .flatpickr-months .flatpickr-prev-month svg,

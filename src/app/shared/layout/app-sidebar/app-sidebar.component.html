@@ -22,24 +22,19 @@
       'justify-start': (isExpanded$ | async) || (isHovered$ | async)
     }"
   >
-    <a routerLink="/">
+    <a routerLink="/" class="logo-dark-glow">
       @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
       <img
-        class="dark:hidden"
-        src="/images/logo/logo.svg"
-        alt="Logo"
-        width="150"
-        height="40"
-      />
-      <img
-        class="hidden dark:block"
-        src="/images/logo/logo-dark.svg"
-        alt="Logo"
-        width="150"
-        height="40"
+        src="/images/logo/logo-nav.png"
+        alt="FactoFarm"
+        class="h-auto max-h-14 w-auto max-w-[170px] object-contain"
       />
       } @else {
-      <img src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" />
+      <img
+        src="/images/logo/logo-icon.svg"
+        alt="FactoFarm"
+        class="h-9 w-9"
+      />
       }
     </a>
   </div>

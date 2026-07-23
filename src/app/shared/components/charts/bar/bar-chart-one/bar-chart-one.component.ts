@@ -42,7 +42,7 @@ export class BarChartOneComponent {
     },
   };
 
-  public colors: string[] = ['#465fff'];
+  public colors: string[] = ['#30a038'];
 
   public plotOptions: ApexPlotOptions = {
     bar: {
