@@ -1,5 +1,5 @@
-import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { CommonModule } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';  import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -11,6 +11,7 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 import type { DataStorageMode, ProductListItemDto } from '../../models/directory.models';
 
 @Component({
@@ -19,6 +20,7 @@ import type { DataStorageMode, ProductListItemDto } from '../../models/directory
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -30,6 +32,7 @@ import type { DataStorageMode, ProductListItemDto } from '../../models/directory
 })
 export class ReporteKardexComponent {
   private readonly api = inject(DirectoryApiService);
+  private readonly locale = inject(LocaleService);
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
     { label: 'Inventario' },
@@ -40,8 +43,8 @@ export class ReporteKardexComponent {
   protected readonly selectedProductId = signal<string | null>(null);
   protected readonly selectedProductLabel = signal('');
   protected readonly warehouseId = signal('');
-  protected readonly dateFrom = signal('');
-  protected readonly dateTo = signal('');
+  protected readonly dateFrom = signal(this.locale.monthStartYmd());
+  protected readonly dateTo = signal(this.locale.todayYmd());
   protected readonly storage = signal<DataStorageMode>('hot');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 50;

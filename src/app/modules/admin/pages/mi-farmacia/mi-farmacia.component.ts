@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FilesApiService } from '../../../../core/services/files-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
@@ -54,6 +55,7 @@ export class MiFarmaciaComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly filesApi = inject(FilesApiService);
   private readonly auth = inject(AuthService);
+  private readonly locale = inject(LocaleService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
 
@@ -80,6 +82,7 @@ export class MiFarmaciaComponent {
   protected readonly logoPreview = signal<string | null>(null);
   protected readonly logoUploadError = signal<string | null>(null);
   protected readonly salePdfFormat = signal<SalePdfFormat>('TICKET_80');
+  protected readonly timeZone = signal('America/Lima');
 
   protected readonly billingProvider = signal<BillingProviderType>('MOCK');
   protected readonly apiUrl = signal('');
@@ -184,6 +187,14 @@ export class MiFarmaciaComponent {
     ];
   });
 
+  protected readonly timeZoneOptions = computed(() => {
+    const fromApi = this.profileQuery.data()?.timeZoneOptions;
+    if (fromApi?.length) {
+      return fromApi.map((o) => ({ value: o.value, label: o.label }));
+    }
+    return [{ value: 'America/Lima', label: 'Lima' }];
+  });
+
   protected readonly apiUrlHelp = computed(() => {
     switch (this.billingProvider()) {
       case 'FACTILIZA':
@@ -267,6 +278,8 @@ export class MiFarmaciaComponent {
         profile.logoUrl ? this.filesApi.absoluteFileUrl(profile.logoUrl) : null,
       );
       this.salePdfFormat.set(profile.salePdfFormat ?? 'TICKET_80');
+      this.timeZone.set(profile.timeZone?.trim() || 'America/Lima');
+      this.locale.setTimeZone(profile.timeZone);
       const provider =
         profile.billingProvider === 'FACTILIZA' ||
         profile.billingProvider === 'NUBEFACT' ||
@@ -374,6 +387,7 @@ export class MiFarmaciaComponent {
       districtId: this.districtId() || null,
       logoArchivoId: this.logoArchivoId(),
       salePdfFormat: this.salePdfFormat(),
+      timeZone: this.timeZone(),
     };
     if (token) body.apiToken = token;
 

@@ -139,7 +139,7 @@
             <td class="px-4 py-3 text-theme-sm">{{ row.codigoLote }}</td>
             <td class="px-4 py-3 text-theme-sm">{{ row.cantidad }}</td>
             <td class="px-4 py-3 text-theme-sm">
-              {{ row.fechaVencimiento ? (row.fechaVencimiento | date: 'yyyy-MM-dd') : '—' }}
+              {{ row.fechaVencimiento ? (row.fechaVencimiento | appDate: 'yyyy-MM-dd') : '—' }}
             </td>
           </tr>
         }

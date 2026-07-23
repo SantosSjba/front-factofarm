@@ -1,5 +1,5 @@
-import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { CommonModule } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';  import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -23,6 +23,7 @@ import type { ProductListItemDto, SaleLotAllocationMode } from '../../models/dir
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,

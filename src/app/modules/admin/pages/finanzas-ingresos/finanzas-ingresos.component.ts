@@ -1,4 +1,4 @@
-﻿import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -11,6 +11,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-finanzas-ingresos',
@@ -64,12 +65,13 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 })
 export class FinanzasIngresosComponent {
   private readonly api = inject(DirectoryApiService);
+  private readonly locale = inject(LocaleService);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Finanzas' }, { label: 'Presupuesto compras' }];
-  protected readonly anio = signal(new Date().getFullYear());
+  protected readonly anio = signal(Number(this.locale.currentYearMonth().slice(0, 4)));
 
   protected parseNum(v: unknown) {
-    return Number(v) || new Date().getFullYear();
+    return Number(v) || Number(this.locale.currentYearMonth().slice(0, 4));
   }
 
   protected readonly budgetQuery = injectQuery(() => ({

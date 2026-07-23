@@ -489,7 +489,7 @@
               @for (item of historyPriceRows(); track item.id) {
                 <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
                   <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                    {{ item.createdAt | date: 'yyyy-MM-dd HH:mm' }}
+                    {{ item.createdAt | appDate: 'yyyy-MM-dd HH:mm' }}
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-800 dark:text-white/90">{{ item.fieldLabel }}</td>
                   <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
@@ -548,7 +548,7 @@
             } @else {
               @for (item of historySalesRows(); track item.id) {
                 <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
-                  <td class="px-4 py-3 text-sm">{{ item.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                  <td class="px-4 py-3 text-sm">{{ item.fecha | appDate: 'yyyy-MM-dd HH:mm' }}</td>
                   <td class="px-4 py-3 text-sm">{{ item.documento }}</td>
                   <td class="px-4 py-3 text-sm">{{ item.cliente ?? '—' }}</td>
                   <td class="px-4 py-3 text-right text-sm">{{ item.cantidad }}</td>
@@ -581,7 +581,7 @@
             } @else {
               @for (item of historyPurchasesRows(); track item.id) {
                 <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
-                  <td class="px-4 py-3 text-sm">{{ item.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                  <td class="px-4 py-3 text-sm">{{ item.fecha | appDate: 'yyyy-MM-dd HH:mm' }}</td>
                   <td class="px-4 py-3 text-sm">{{ item.numero ?? '—' }}</td>
                   <td class="px-4 py-3 text-sm">{{ item.proveedor }}</td>
                   <td class="px-4 py-3 text-sm">{{ item.estado }}</td>

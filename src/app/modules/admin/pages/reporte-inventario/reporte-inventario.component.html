@@ -185,7 +185,7 @@
       <tbody>
         @for (row of countRows(); track row.id) {
           <tr class="border-b border-gray-50">
-            <td class="px-4 py-3 text-theme-sm">{{ row.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+            <td class="px-4 py-3 text-theme-sm">{{ row.fecha | appDate: 'yyyy-MM-dd HH:mm' }}</td>
             <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
             <td class="px-4 py-3 text-theme-sm">
               <button

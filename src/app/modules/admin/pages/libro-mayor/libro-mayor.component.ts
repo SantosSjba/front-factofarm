@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -12,14 +13,15 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-libro-mayor',
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -59,7 +61,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
             <tbody>
               @for (row of r.items; track row.id) {
                 <tr class="border-b border-gray-100">
-                  <td class="py-2">{{ row.fecha | date: 'shortDate' }}</td>
+                  <td class="py-2">{{ row.fecha | appDate: 'shortDate' }}</td>
                   <td class="py-2">{{ row.cuenta }}</td>
                   <td class="py-2">{{ row.descripcion }}</td>
                   <td class="py-2">{{ row.origen }}</td>
@@ -73,20 +75,19 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         </app-component-card>
       }
     </app-page-state>
-  `,
-})
+  ` })
 export class LibroMayorComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Contabilidad' }, { label: 'Libro mayor' }];
   protected readonly page = signal(1);
-  protected readonly from = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10));
-  protected readonly to = signal(new Date().toISOString().slice(0, 10));
+  protected readonly from = signal(this.locale.monthStartYmd());
+  protected readonly to = signal(this.locale.todayYmd());
 
   protected readonly ledgerQuery = injectQuery(() => ({
     queryKey: ['general-ledger', this.from(), this.to(), this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.getGeneralLedger(this.from(), this.to(), this.page(), 30)),
-  }));
+    queryFn: () => firstValueFrom(this.api.getGeneralLedger(this.from(), this.to(), this.page(), 30)) }));
 
   protected ledgerError() {
     const err = this.ledgerQuery.error();

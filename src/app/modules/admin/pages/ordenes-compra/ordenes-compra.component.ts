@@ -1,4 +1,5 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
@@ -18,8 +19,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import type {
   PosCatalogItemDto,
   PurchaseOrderStatus,
-  SupplierOptionDto,
-} from '../../models/directory.models';
+  SupplierOptionDto } from '../../models/directory.models';
 
 type OrderLine = { productId: string; nombre: string; quantity: number; unitPrice?: number };
 
@@ -29,8 +29,8 @@ type OrderLine = { productId: string; nombre: string; quantity: number; unitPric
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -40,8 +40,7 @@ type OrderLine = { productId: string; nombre: string; quantity: number; unitPric
     InputFieldComponent,
     ModalComponent,
   ],
-  templateUrl: './ordenes-compra.component.html',
-})
+  templateUrl: './ordenes-compra.component.html' })
 export class OrdenesCompraComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -78,41 +77,34 @@ export class OrdenesCompraComponent {
         this.api.listPurchaseOrders({
           page: this.page(),
           pageSize: 15,
-          estado: (this.estado() || undefined) as PurchaseOrderStatus | undefined,
-        }),
-      ),
-  }));
+          estado: (this.estado() || undefined) as PurchaseOrderStatus | undefined }),
+      ) }));
 
   protected readonly detailQuery = injectQuery(() => ({
     queryKey: ['purchase-order', this.detailId()] as const,
     queryFn: () => firstValueFrom(this.api.getPurchaseOrder(this.detailId()!)),
-    enabled: !!this.detailId(),
-  }));
+    enabled: !!this.detailId() }));
 
   protected readonly suppliersQuery = injectQuery(() => ({
     queryKey: ['suppliers', 'options'] as const,
-    queryFn: () => firstValueFrom(this.api.listSupplierOptions()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listSupplierOptions()) }));
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
-    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()) }));
 
   protected readonly supplierOptions = computed(() => [
     { value: '', label: 'Seleccione proveedor' },
     ...(this.suppliersQuery.data() ?? []).map((s: SupplierOptionDto) => ({
       value: s.id,
-      label: s.razonSocial,
-    })),
+      label: s.razonSocial })),
   ]);
 
   protected readonly warehouseOptions = computed(() => [
     { value: '', label: 'Almacén destino' },
     ...(this.warehousesQuery.data() ?? []).map((w) => ({
       value: w.id,
-      label: `${w.nombre} · ${w.establishment.nombre}`,
-    })),
+      label: `${w.nombre} · ${w.establishment.nombre}` })),
   ]);
 
   protected readonly orderTotal = computed(() =>
@@ -175,9 +167,7 @@ export class OrdenesCompraComponent {
           items: this.lines().map((l) => ({
             productId: l.productId,
             quantity: l.quantity,
-            unitPrice: l.unitPrice,
-          })),
-        }),
+            unitPrice: l.unitPrice })) }),
       ),
     onSuccess: () => {
       this.notify.success('Orden de compra creada');
@@ -185,8 +175,7 @@ export class OrdenesCompraComponent {
       this.lines.set([]);
       void this.queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear la OC')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear la OC')) }));
 
   protected actionMutation = injectMutation(() => ({
     mutationFn: (payload: { id: string; action: 'approve' | 'send' | 'cancel' }) => {
@@ -200,6 +189,5 @@ export class OrdenesCompraComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       void this.queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar la OC')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar la OC')) }));
 }

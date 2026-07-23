@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -19,8 +20,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import type {
   DeliveryOrderDetailDto,
   DeliveryOrderStatus,
-  PosCatalogItemDto,
-} from '../../models/directory.models';
+  PosCatalogItemDto } from '../../models/directory.models';
 
 type OrderLine = { productId: string; nombre: string; quantity: number; precio: number };
 
@@ -29,22 +29,20 @@ const STATUS_LABELS: Record<DeliveryOrderStatus, string> = {
   PREPARANDO: 'Preparando',
   EN_CAMINO: 'En camino',
   ENTREGADO: 'Entregado',
-  CANCELADO: 'Cancelado',
-};
+  CANCELADO: 'Cancelado' };
 
 const NEXT_STATUS: Partial<Record<DeliveryOrderStatus, DeliveryOrderStatus>> = {
   RECIBIDO: 'PREPARANDO',
   PREPARANDO: 'EN_CAMINO',
-  EN_CAMINO: 'ENTREGADO',
-};
+  EN_CAMINO: 'ENTREGADO' };
 
 @Component({
   selector: 'app-ordenes-pedido',
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -56,8 +54,7 @@ const NEXT_STATUS: Partial<Record<DeliveryOrderStatus, DeliveryOrderStatus>> = {
     ModalComponent,
     PageStateComponent,
   ],
-  templateUrl: './ordenes-pedido.component.html',
-})
+  templateUrl: './ordenes-pedido.component.html' })
 export class OrdenesPedidoComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -105,31 +102,26 @@ export class OrdenesPedidoComponent {
           this.estadoFilter() || undefined,
           this.search(),
         ),
-      ),
-  }));
+      ) }));
 
   protected readonly detailQuery = injectQuery(() => ({
     queryKey: ['delivery-orders', 'detail', this.detailId()] as const,
     enabled: !!this.detailId(),
-    queryFn: () => firstValueFrom(this.api.getDeliveryOrder(this.detailId()!)),
-  }));
+    queryFn: () => firstValueFrom(this.api.getDeliveryOrder(this.detailId()!)) }));
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
-    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()) }));
 
   protected readonly usersQuery = injectQuery(() => ({
     queryKey: ['users', 'assign'] as const,
-    queryFn: () => firstValueFrom(this.api.listUsers({ page: 1, pageSize: 50 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listUsers({ page: 1, pageSize: 50 })) }));
 
   protected readonly warehouseOptions = computed(() => [
     { value: '', label: 'Almacén' },
     ...(this.warehousesQuery.data() ?? []).map((w) => ({
       value: w.id,
-      label: `${w.nombre} · ${w.establishment.nombre}`,
-    })),
+      label: `${w.nombre} · ${w.establishment.nombre}` })),
   ]);
 
   protected readonly userOptions = computed(() => [
@@ -208,8 +200,7 @@ export class OrdenesPedidoComponent {
           productId: item.id,
           nombre: item.nombre,
           quantity: 1,
-          precio: Number.parseFloat(item.precio),
-        },
+          precio: Number.parseFloat(item.precio) },
       ]);
     }
     this.productSearch.set('');
@@ -232,9 +223,7 @@ export class OrdenesPedidoComponent {
           items: this.lines().map((l) => ({
             productId: l.productId,
             quantity: l.quantity,
-            unitPrice: l.precio,
-          })),
-        }),
+            unitPrice: l.precio })) }),
       ),
     onSuccess: () => {
       this.notify.success('Pedido delivery creado');
@@ -242,8 +231,7 @@ export class OrdenesPedidoComponent {
       this.lines.set([]);
       void this.queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear el pedido')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear el pedido')) }));
 
   protected async advanceStatus(order: DeliveryOrderDetailDto) {
     const next = NEXT_STATUS[order.estado];
@@ -272,8 +260,7 @@ export class OrdenesPedidoComponent {
       await firstValueFrom(
         this.api.updateDeliveryOrderStatus(order.id, {
           estado: 'CANCELADO',
-          cancelReason: reason,
-        }),
+          cancelReason: reason }),
       );
       this.notify.success('Pedido cancelado');
       void this.queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
@@ -301,8 +288,7 @@ export class OrdenesPedidoComponent {
     try {
       await firstValueFrom(
         this.api.completeDeliverySale(order.id, {
-          payments: [{ metodo: 'EFECTIVO', monto: total }],
-        }),
+          payments: [{ metodo: 'EFECTIVO', monto: total }] }),
       );
       this.notify.success('Venta registrada y pedido entregado');
       void this.queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });

@@ -70,7 +70,7 @@
                 </td>
                 <td class="py-2 pr-4">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
                 <td class="py-2 pr-4">{{ row.assignedTo?.nombre ?? '—' }}</td>
-                <td class="py-2">{{ row.createdAt | date: 'short' }}</td>
+                <td class="py-2">{{ row.createdAt | appDate: 'short' }}</td>
               </tr>
             } @empty {
               <tr>

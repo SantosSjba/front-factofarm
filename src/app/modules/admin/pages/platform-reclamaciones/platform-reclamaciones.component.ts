@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -18,6 +19,7 @@ import { ComplaintDetailModalComponent } from './complaint-detail-modal/complain
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

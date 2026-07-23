@@ -101,6 +101,17 @@
                 (valueChange)="salePdfFormat.set($any($event))"
               />
             </app-form-field>
+            <app-form-field
+              label="Zona horaria"
+              helpText="Define el día comercial del local (dashboard, reportes, PLE/SUNAT y PDF). Por defecto America/Lima."
+            >
+              <app-form-select
+                [showPlaceholder]="false"
+                [options]="timeZoneOptions()"
+                [value]="timeZone()"
+                (valueChange)="timeZone.set('' + $event)"
+              />
+            </app-form-field>
           </div>
         </div>
 

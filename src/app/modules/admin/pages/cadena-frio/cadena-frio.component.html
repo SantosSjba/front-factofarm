@@ -76,7 +76,7 @@
           <tbody>
             @for (log of logsQuery.data() ?? []; track log.id) {
               <tr class="border-b border-gray-100 dark:border-gray-800">
-                <td class="py-2">{{ log.fecha | date: 'short' }}</td>
+                <td class="py-2">{{ log.fecha | appDate: 'short' }}</td>
                 <td class="py-2 font-medium">{{ log.temperaturaCelsius }}</td>
                 <td class="py-2">{{ log.user?.nombre ?? '—' }}</td>
                 <td class="py-2 text-gray-500">{{ log.observacion ?? '—' }}</td>

@@ -18,6 +18,7 @@ import { IconComponent } from '../../../../shared/components/ui/icon/icon.compon
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { ProductSerialStatus, SeriesListFiltersRequest, SeriesListItemDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-series',
@@ -41,6 +42,7 @@ export class SeriesComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private readonly locale = inject(LocaleService);
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
     { label: 'Productos' },
@@ -123,9 +125,7 @@ export class SeriesComponent {
   }
 
   protected formatDate(v: string): string {
-    const date = new Date(v);
-    if (Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleDateString('es-PE');
+    return this.locale.formatDate(v, { dateStyle: 'short' });
   }
 
   protected estadoLabel(estado: ProductSerialStatus): string {

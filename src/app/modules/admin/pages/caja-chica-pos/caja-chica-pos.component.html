@@ -44,7 +44,7 @@
       <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white">
         {{ summary()?.saldoActual ?? session()!.montoApertura | currency: 'PEN' : 'symbol' : '1.2-2' }}
       </p>
-      <p class="mt-1 text-xs text-gray-500">Apertura: {{ session()!.openedAt | date: 'short' }}</p>
+      <p class="mt-1 text-xs text-gray-500">Apertura: {{ session()!.openedAt | appDate: 'short' }}</p>
       <app-button variant="outline" className="mt-3" (btnClick)="loadHardwareFromSession()">
         Cargar config hardware
       </app-button>

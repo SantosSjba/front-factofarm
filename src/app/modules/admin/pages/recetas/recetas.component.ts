@@ -1,5 +1,6 @@
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -24,7 +25,7 @@ import { FilesApiService } from '../../../../core/services/files-api.service';
   imports: [
     QueryPageStatePipe,
     CommonModule,
-    DatePipe,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -34,8 +35,7 @@ import { FilesApiService } from '../../../../core/services/files-api.service';
     FormSelectComponent,
     ModalComponent,
   ],
-  templateUrl: './recetas.component.html',
-})
+  templateUrl: './recetas.component.html' })
 export class RecetasComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly filesApi = inject(FilesApiService);
@@ -61,21 +61,18 @@ export class RecetasComponent {
 
   protected readonly medicosQuery = injectQuery(() => ({
     queryKey: ['medicos', 'all'] as const,
-    queryFn: () => firstValueFrom(this.api.listMedicos({ pageSize: 100 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listMedicos({ pageSize: 100 })) }));
 
   protected readonly medicoOptions = computed(() => [
     { value: '', label: 'Médico (opcional)' },
     ...((this.medicosQuery.data()?.items ?? []).map((m) => ({
       value: m.id,
-      label: `${m.cmp} · ${m.nombres} ${m.apellidos}`,
-    }))),
+      label: `${m.cmp} · ${m.nombres} ${m.apellidos}` }))),
   ]);
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['prescriptions', this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.listPrescriptions({ page: this.page(), pageSize: 15 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listPrescriptions({ page: this.page(), pageSize: 15 })) }));
 
   protected createMutation = injectMutation(() => ({
     mutationFn: async () => {
@@ -87,9 +84,7 @@ export class RecetasComponent {
         imagenArchivoId: this.imagenArchivoId() || undefined,
         items: this.draftItems().map((i) => ({
           productId: i.productId,
-          cantidadPrescrita: String(i.cantidad),
-        })),
-      };
+          cantidadPrescrita: String(i.cantidad) })) };
       return firstValueFrom(this.api.createPrescription(body));
     },
     onSuccess: () => {
@@ -97,8 +92,7 @@ export class RecetasComponent {
       this.createOpen.set(false);
       void this.queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la receta')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la receta')) }));
 
   protected async searchCustomers() {
     const search = this.customerSearch().trim();

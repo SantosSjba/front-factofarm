@@ -11,6 +11,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-contabilidad-reporte-resumido',
@@ -61,11 +62,12 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   `,
 })
 export class ContabilidadReporteResumidoComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Contabilidad' }, { label: 'Reporte resumido' }];
-  protected readonly from = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10));
-  protected readonly to = signal(new Date().toISOString().slice(0, 10));
+  protected readonly from = signal(this.locale.monthStartYmd());
+  protected readonly to = signal(this.locale.todayYmd());
 
   protected readonly reportQuery = injectQuery(() => ({
     queryKey: ['cash-flow', 'contabilidad', this.from(), this.to()] as const,

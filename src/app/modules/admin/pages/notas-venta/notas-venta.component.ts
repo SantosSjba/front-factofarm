@@ -1,4 +1,5 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
@@ -16,6 +17,7 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 import type {
   SaleDetailDto,
   SaleDocumentType,
@@ -23,8 +25,7 @@ import type {
   SaleStatus,
   SunatDocumentStatus,
   PaymentMethod,
-  DataStorageMode,
-} from '../../models/directory.models';
+  DataStorageMode } from '../../models/directory.models';
 
 type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string };
 
@@ -34,8 +35,8 @@ type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; q
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -46,12 +47,12 @@ type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; q
     InputFieldComponent,
     LabelComponent,
   ],
-  templateUrl: './notas-venta.component.html',
-})
+  templateUrl: './notas-venta.component.html' })
 export class NotasVentaComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private readonly locale = inject(LocaleService);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Notas de venta' }];
   protected readonly page = signal(1);
@@ -66,8 +67,8 @@ export class NotasVentaComponent {
   protected readonly returnLines = signal<ReturnLineDraft[]>([]);
   protected readonly estado = signal<string>('');
   protected readonly documentType = signal<string>('');
-  protected readonly dateFrom = signal('');
-  protected readonly dateTo = signal('');
+  protected readonly dateFrom = signal(this.locale.monthStartYmd());
+  protected readonly dateTo = signal(this.locale.todayYmd());
   protected readonly paymentMetodo = signal<string>('');
   protected readonly paymentReferencia = signal('');
   protected readonly storage = signal<DataStorageMode>('hot');
@@ -134,29 +135,24 @@ export class NotasVentaComponent {
           to: this.dateTo() || undefined,
           paymentMetodo: (this.paymentMetodo() || undefined) as PaymentMethod | undefined,
           paymentReferencia: this.paymentReferencia().trim() || undefined,
-          storage: this.storage(),
-        }),
-      ),
-  }));
+          storage: this.storage() }),
+      ) }));
 
   protected readonly detailQuery = injectQuery(() => ({
     queryKey: ['sales', 'detail', this.detailId()] as const,
     enabled: !!this.detailId(),
-    queryFn: () => firstValueFrom(this.api.getSale(this.detailId()!)),
-  }));
+    queryFn: () => firstValueFrom(this.api.getSale(this.detailId()!)) }));
 
   protected readonly returnSaleQuery = injectQuery(() => ({
     queryKey: ['sales', 'return', this.returnSaleId()] as const,
     enabled: !!this.returnSaleId(),
-    queryFn: () => firstValueFrom(this.api.getSale(this.returnSaleId()!)),
-  }));
+    queryFn: () => firstValueFrom(this.api.getSale(this.returnSaleId()!)) }));
 
   protected readonly billingStatusQuery = injectQuery(() => ({
     queryKey: ['billing', 'sale-status', this.detailId()] as const,
     enabled: !!this.detailId(),
     queryFn: () => firstValueFrom(this.api.getSaleBillingStatus(this.detailId()!)),
-    refetchInterval: 3000,
-  }));
+    refetchInterval: 3000 }));
 
   protected readonly returnTotal = computed(() =>
     this.returnLines().reduce((acc, line) => {
@@ -181,8 +177,7 @@ export class NotasVentaComponent {
               producto: item.producto,
               maxQty,
               quantity: maxQty > 0 ? maxQty : 0,
-              lotCode: item.lotes[0]?.codigoLote ?? '',
-            };
+              lotCode: item.lotes[0]?.codigoLote ?? '' };
           })
           .filter((line) => line.maxQty > 0),
       );
@@ -196,14 +191,12 @@ export class NotasVentaComponent {
         .map((line) => ({
           saleItemId: line.saleItemId,
           quantity: line.quantity,
-          lotCode: line.lotCode.trim() || undefined,
-        }));
+          lotCode: line.lotCode.trim() || undefined }));
       if (items.length === 0) throw new Error('Indique al menos un ítem a devolver');
       return firstValueFrom(
         this.api.createSaleReturn(this.returnSaleId()!, {
           motivo: this.returnMotivo().trim(),
-          items,
-        }),
+          items }),
       );
     },
     onSuccess: (res) => {
@@ -218,8 +211,7 @@ export class NotasVentaComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['inventory'] });
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la devolución')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la devolución')) }));
 
   protected readonly debitMutation = injectMutation(() => ({
     mutationFn: () =>
@@ -227,8 +219,7 @@ export class NotasVentaComponent {
         this.api.createSaleDebitNote(this.debitSaleId()!, {
           motivo: this.debitMotivo().trim(),
           descripcion: this.debitDescripcion().trim(),
-          total: Number(this.debitTotal()),
-        }),
+          total: Number(this.debitTotal()) }),
       ),
     onSuccess: (res) => {
       this.notify.success(`${res.message}. ND electrónica en proceso.`);
@@ -236,8 +227,7 @@ export class NotasVentaComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la nota de débito')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la nota de débito')) }));
 
   protected readonly emitMutation = injectMutation(() => ({
     mutationFn: (saleId: string) => firstValueFrom(this.api.emitElectronicDocumentFromSale(saleId)),
@@ -246,8 +236,7 @@ export class NotasVentaComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir el CPE')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir el CPE')) }));
 
   protected readonly convertMutation = injectMutation(() => ({
     mutationFn: () =>
@@ -260,8 +249,7 @@ export class NotasVentaComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo migrar a boleta/factura')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo migrar a boleta/factura')) }));
 
   protected onFilterChange() {
     this.page.set(1);
@@ -301,8 +289,7 @@ export class NotasVentaComponent {
         window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       },
-      error: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo obtener el PDF')),
-    });
+      error: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo obtener el PDF')) });
   }
 
   protected canReturn(sale: SaleDetailDto | { canReturn?: boolean; storage?: string; fromColdStorage?: boolean; archivedAt?: string | null }): boolean {

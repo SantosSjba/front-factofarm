@@ -40,7 +40,7 @@
           <td class="px-3 py-2">
             <span class="rounded-full px-2 py-0.5 text-xs" [class]="statusClass(row.sunatStatus)">{{ row.sunatStatus }}</span>
           </td>
-          <td class="px-3 py-2">{{ (row.emittedAt ?? row.createdAt) | date: 'short' }}</td>
+          <td class="px-3 py-2">{{ (row.emittedAt ?? row.createdAt) | appDate: 'short' }}</td>
           <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
           <td class="px-3 py-2 text-right">
             <div class="flex flex-wrap items-center justify-end gap-1.5">

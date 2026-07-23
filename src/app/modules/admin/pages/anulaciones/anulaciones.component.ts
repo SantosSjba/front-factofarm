@@ -1,5 +1,5 @@
-﻿import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe'; import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -21,8 +21,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -31,8 +31,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     LabelComponent,
     ModalComponent,
   ],
-  templateUrl: './anulaciones.component.html',
-})
+  templateUrl: './anulaciones.component.html' })
 export class AnulacionesComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -47,8 +46,7 @@ export class AnulacionesComponent {
     queryFn: () =>
       firstValueFrom(
         this.api.listSales({ page: 1, pageSize: 50, estado: 'COMPLETADA' }),
-      ),
-  }));
+      ) }));
 
   protected readonly voidMutation = injectMutation(() => ({
     mutationFn: () => firstValueFrom(this.api.voidSale(this.voidTargetId()!, this.voidReason().trim())),
@@ -59,6 +57,5 @@ export class AnulacionesComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
       void this.queryClient.invalidateQueries({ queryKey: ['inventory'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo anular la venta')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo anular la venta')) }));
 }

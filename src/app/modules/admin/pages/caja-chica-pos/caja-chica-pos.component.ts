@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -23,8 +24,8 @@ import type { PaymentMethod, PosPrinterPaperWidth } from '../../models/directory
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -36,8 +37,7 @@ import type { PaymentMethod, PosPrinterPaperWidth } from '../../models/directory
     LabelComponent,
     PageStateComponent,
   ],
-  templateUrl: './caja-chica-pos.component.html',
-})
+  templateUrl: './caja-chica-pos.component.html' })
 export class CajaChicaPosComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -62,19 +62,16 @@ export class CajaChicaPosComponent {
 
   protected readonly registersQuery = injectQuery(() => ({
     queryKey: ['cash', 'registers'] as const,
-    queryFn: () => firstValueFrom(this.api.listCashRegisters()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listCashRegisters()) }));
 
   protected readonly sessionQuery = injectQuery(() => ({
     queryKey: ['cash', 'active-session'] as const,
-    queryFn: () => firstValueFrom(this.api.getActiveCashSession()),
-  }));
+    queryFn: () => firstValueFrom(this.api.getActiveCashSession()) }));
 
   protected readonly summaryQuery = injectQuery(() => ({
     queryKey: ['cash', 'summary', this.sessionQuery.data()?.id] as const,
     enabled: !!this.sessionQuery.data()?.id,
-    queryFn: () => firstValueFrom(this.api.getCashSessionSummary(this.sessionQuery.data()!.id)),
-  }));
+    queryFn: () => firstValueFrom(this.api.getCashSessionSummary(this.sessionQuery.data()!.id)) }));
 
   protected readonly registerOptions = computed(() => [
     { value: '', label: 'Seleccionar caja' },
@@ -126,30 +123,26 @@ export class CajaChicaPosComponent {
       firstValueFrom(
         this.api.openCashSession({
           cashRegisterId: this.cashRegisterId(),
-          montoApertura: this.montoApertura(),
-        }),
+          montoApertura: this.montoApertura() }),
       ),
     onSuccess: () => {
       this.notify.success('Caja abierta');
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo abrir la caja')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo abrir la caja')) }));
 
   protected readonly closeMutation = injectMutation(() => ({
     mutationFn: () =>
       firstValueFrom(
         this.api.closeCashSession(this.session()!.id, {
           montoCierreFisico: this.montoCierre(),
-          notasCierre: this.notasCierre().trim() || undefined,
-        }),
+          notasCierre: this.notasCierre().trim() || undefined }),
       ),
     onSuccess: (res) => {
       this.notify.success(`Caja cerrada. Diferencia: S/ ${res.diferenciaArqueo}`);
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo cerrar la caja')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo cerrar la caja')) }));
 
   protected readonly movementMutation = injectMutation(() => ({
     mutationFn: () =>
@@ -158,8 +151,7 @@ export class CajaChicaPosComponent {
           tipo: this.movTipo(),
           monto: this.movMonto(),
           metodoPago: 'EFECTIVO' as PaymentMethod,
-          comentario: this.movComentario().trim() || undefined,
-        }),
+          comentario: this.movComentario().trim() || undefined }),
       ),
     onSuccess: () => {
       this.notify.success('Movimiento registrado');
@@ -167,8 +159,7 @@ export class CajaChicaPosComponent {
       this.movComentario.set('');
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el movimiento')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el movimiento')) }));
 
   protected readonly hardwareMutation = injectMutation(() => ({
     mutationFn: () =>
@@ -179,13 +170,11 @@ export class CajaChicaPosComponent {
           openCashDrawerOnPrint: this.hardwareOpenDrawer(),
           barcodeWedgeEnabled: this.hardwareWedge(),
           customerDisplayEnabled: this.hardwareCustomerDisplay(),
-          escposPrinterName: this.hardwarePrinterName().trim() || undefined,
-        }),
+          escposPrinterName: this.hardwarePrinterName().trim() || undefined }),
       ),
     onSuccess: () => {
       this.notify.success('Hardware POS actualizado');
       void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar la configuración')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar la configuración')) }));
 }

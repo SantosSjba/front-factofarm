@@ -26,7 +26,7 @@
     <tbody>
       @for (row of listQuery.data()?.items ?? []; track row.id) {
         <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2">{{ row.createdAt | date: 'short' }}</td>
+          <td class="px-3 py-2">{{ row.createdAt | appDate: 'short' }}</td>
           <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
           <td class="px-3 py-2">{{ row.seller.nombre }}</td>
           <td class="px-3 py-2">{{ row.estado }}</td>

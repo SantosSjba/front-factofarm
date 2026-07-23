@@ -10,6 +10,7 @@ import { customerQueryKeys } from '../../../../core/query/customer-query.keys';
 import { establishmentQueryKeys } from '../../../../core/query/establishment-query.keys';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
@@ -197,6 +198,7 @@ export class ClientesComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private readonly locale = inject(LocaleService);
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
     { label: 'Clientes' },
@@ -1018,9 +1020,8 @@ export class ClientesComponent {
   }
 
   private currentMonth() {
-    const d = new Date();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    return `${m}/${d.getFullYear()}`;
+    const ym = this.locale.currentYearMonth();
+    return `${ym.slice(5, 7)}/${ym.slice(0, 4)}`;
   }
 
   protected closeBarcodeModal() {

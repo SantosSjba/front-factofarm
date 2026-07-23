@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
@@ -22,8 +23,8 @@ import type { AccountReceivableListItemDto } from '../../models/directory.models
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -32,8 +33,7 @@ import type { AccountReceivableListItemDto } from '../../models/directory.models
     InputFieldComponent,
     ModalComponent,
   ],
-  templateUrl: './cuentas-cobrar.component.html',
-})
+  templateUrl: './cuentas-cobrar.component.html' })
 export class CuentasCobrarComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -49,8 +49,7 @@ export class CuentasCobrarComponent {
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['accounts-receivable', this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.listAccountsReceivable({ page: this.page(), pageSize: 20 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listAccountsReceivable({ page: this.page(), pageSize: 20 })) }));
 
   protected openPay(ar: AccountReceivableListItemDto) {
     this.selectedAr.set(ar);
@@ -70,8 +69,7 @@ export class CuentasCobrarComponent {
         this.api.registerAccountReceivablePayment(ar.id, {
           amount: this.payAmount(),
           metodo: this.payMetodo().trim() || undefined,
-          referencia: this.payReferencia().trim() || undefined,
-        }),
+          referencia: this.payReferencia().trim() || undefined }),
       );
     },
     onSuccess: () => {
@@ -79,6 +77,5 @@ export class CuentasCobrarComponent {
       this.payModalOpen.set(false);
       void this.queryClient.invalidateQueries({ queryKey: ['accounts-receivable'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el cobro')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el cobro')) }));
 }

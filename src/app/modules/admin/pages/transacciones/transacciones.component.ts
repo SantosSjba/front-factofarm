@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -16,8 +17,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -47,7 +48,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
               @for (row of list.items; track row.id) {
                 <tr class="border-b border-gray-100">
                   <td class="py-2">{{ row.bankAccount.nombre }}</td>
-                  <td class="py-2">{{ row.movimientoAt | date: 'short' }}</td>
+                  <td class="py-2">{{ row.movimientoAt | appDate: 'short' }}</td>
                   <td class="py-2">{{ row.tipo }}</td>
                   <td class="py-2">{{ row.referencia ?? row.descripcion ?? '—' }}</td>
                   <td class="py-2 text-right">{{ row.monto | currency: 'PEN' }}</td>
@@ -64,8 +65,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         }
       </app-component-card>
     </app-page-state>
-  `,
-})
+  ` })
 export class TransaccionesComponent {
   private readonly api = inject(DirectoryApiService);
 
@@ -74,8 +74,7 @@ export class TransaccionesComponent {
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['bank-movements', 'transacciones', this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.listBankMovements({ page: this.page(), pageSize: 20 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listBankMovements({ page: this.page(), pageSize: 20 })) }));
 
   protected listError() {
     const err = this.listQuery.error();

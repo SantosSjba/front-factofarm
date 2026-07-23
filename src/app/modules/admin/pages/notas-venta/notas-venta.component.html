@@ -44,7 +44,7 @@
       <tbody>
         @for (row of listQuery.data()?.items ?? []; track row.id) {
           <tr class="border-b border-gray-100 dark:border-gray-800">
-            <td class="px-3 py-2">{{ row.createdAt | date: 'short' }}</td>
+            <td class="px-3 py-2">{{ row.createdAt | appDate: 'short' }}</td>
             <td class="px-3 py-2">
               {{ row.documentType }} {{ row.serie }}-{{ row.numero }}
               @if (isArchivedRow(row)) {
@@ -144,7 +144,7 @@
   @if (detailQuery.data(); as sale) {
     <div class="space-y-4 p-6">
       <h3 class="text-lg font-semibold">{{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
-      <p class="text-sm text-gray-500">{{ sale.createdAt | date: 'medium' }} · {{ sale.estado }}</p>
+      <p class="text-sm text-gray-500">{{ sale.createdAt | appDate: 'medium' }} · {{ sale.estado }}</p>
       @if (isArchivedRow(sale)) {
         <p class="text-sm text-slate-600 dark:text-slate-300">Registro archivado (cold storage) — consulta histórica.</p>
       }

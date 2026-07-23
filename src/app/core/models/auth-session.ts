@@ -13,6 +13,8 @@ export type AuthUser = {
   supportSession?: boolean;
   /** Logo del establecimiento activo (`/api/v1/files/:id`). */
   logoUrl?: string | null;
+  /** Zona IANA del establecimiento (default America/Lima). */
+  timeZone?: string;
 };
 
 export type LoginResponse = {

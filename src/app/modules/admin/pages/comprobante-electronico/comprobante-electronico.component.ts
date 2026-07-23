@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -24,9 +25,9 @@ import type { BillingProviderType, ElectronicDocumentDetailDto, SunatDocumentSta
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     RouterLink,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -36,8 +37,7 @@ import type { BillingProviderType, ElectronicDocumentDetailDto, SunatDocumentSta
     InputFieldComponent,
     ModalComponent,
   ],
-  templateUrl: './comprobante-electronico.component.html',
-})
+  templateUrl: './comprobante-electronico.component.html' })
 export class ComprobanteElectronicoComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -119,22 +119,18 @@ export class ComprobanteElectronicoComponent {
         this.api.listElectronicDocuments({
           page: this.page(),
           pageSize: 15,
-          sunatStatus: (this.estado() || undefined) as SunatDocumentStatus | undefined,
-        }),
+          sunatStatus: (this.estado() || undefined) as SunatDocumentStatus | undefined }),
       ),
-    refetchInterval: 10_000,
-  }));
+    refetchInterval: 10_000 }));
 
   protected readonly configQuery = injectQuery(() => ({
     queryKey: ['billing', 'config'] as const,
-    queryFn: () => firstValueFrom(this.api.getBillingConfig()),
-  }));
+    queryFn: () => firstValueFrom(this.api.getBillingConfig()) }));
 
   protected readonly detailQuery = injectQuery(() => ({
     queryKey: ['billing', 'document', this.detailId()] as const,
     queryFn: () => firstValueFrom(this.api.getElectronicDocument(this.detailId()!)),
-    enabled: !!this.detailId(),
-  }));
+    enabled: !!this.detailId() }));
 
   protected readonly billingCapabilities = computed(() => this.configQuery.data()?.capabilities);
 
@@ -145,8 +141,7 @@ export class ComprobanteElectronicoComponent {
     return this.specialTypeOptions.map((opt) => ({
       ...opt,
       disabled: blocked.has(opt.value),
-      label: blocked.has(opt.value) ? `${opt.label} (no disponible)` : opt.label,
-    }));
+      label: blocked.has(opt.value) ? `${opt.label} (no disponible)` : opt.label }));
   });
 
   protected specialDocumentBlockedReason(type: string): string | null {
@@ -225,16 +220,14 @@ export class ComprobanteElectronicoComponent {
           emitNotaVenta: this.emitNotaVenta(),
           applyDetraccion: this.applyDetraccion(),
           autoEmitGuiaOnTransfer: this.autoEmitGuia(),
-          modoSandbox: this.modoSandbox(),
-        }),
+          modoSandbox: this.modoSandbox() }),
       ),
     onSuccess: () => {
       this.notify.success('Configuración OSE guardada');
       this.configOpen.set(false);
       void this.queryClient.invalidateQueries({ queryKey: ['billing', 'config'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar')) }));
 
   protected retryMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.retryElectronicDocument(id)),
@@ -242,8 +235,7 @@ export class ComprobanteElectronicoComponent {
       this.notify.success('Reenvío programado');
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'Error al reenviar')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'Error al reenviar')) }));
 
   protected voidMutation = injectMutation(() => ({
     mutationFn: () =>
@@ -253,8 +245,7 @@ export class ComprobanteElectronicoComponent {
       this.voidReason.set('');
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo anular el comprobante')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo anular el comprobante')) }));
 
   protected refreshStatusMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.refreshElectronicDocumentStatus(id)),
@@ -262,8 +253,7 @@ export class ComprobanteElectronicoComponent {
       this.notify.success('Estado SUNAT actualizado');
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo consultar el estado')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo consultar el estado')) }));
 
   protected emitSpecialMutation = injectMutation(() => ({
     mutationFn: () => {
@@ -286,10 +276,8 @@ export class ComprobanteElectronicoComponent {
               precioUnitario: amount.toFixed(2),
               subtotalLinea: subtotal.toFixed(2),
               igvLinea: igv.toFixed(2),
-              totalLinea: amount.toFixed(2),
-            },
-          ],
-        }),
+              totalLinea: amount.toFixed(2) },
+          ] }),
       );
     },
     onSuccess: () => {
@@ -297,8 +285,7 @@ export class ComprobanteElectronicoComponent {
       this.specialOpen.set(false);
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir')) }));
 
   protected canVoid(doc: ElectronicDocumentDetailDto): boolean {
     const caps = this.billingCapabilities();

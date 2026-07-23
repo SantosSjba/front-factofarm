@@ -1,5 +1,6 @@
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -21,7 +22,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   imports: [
     QueryPageStatePipe,
     CommonModule,
-    DatePipe,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -30,8 +31,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     InputFieldComponent,
     LabelComponent,
   ],
-  templateUrl: './cadena-frio.component.html',
-})
+  templateUrl: './cadena-frio.component.html' })
 export class CadenaFrioComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -49,27 +49,23 @@ export class CadenaFrioComponent {
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
-    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()) }));
 
   protected readonly zonesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'zones', this.warehouseId()] as const,
     enabled: !!this.warehouseId(),
-    queryFn: () => firstValueFrom(this.api.listWarehouseZones(this.warehouseId())),
-  }));
+    queryFn: () => firstValueFrom(this.api.listWarehouseZones(this.warehouseId())) }));
 
   protected readonly logsQuery = injectQuery(() => ({
     queryKey: ['cold-chain', 'logs', this.zoneId()] as const,
     enabled: !!this.zoneId(),
-    queryFn: () => firstValueFrom(this.api.listColdChainTemperatureLogs(this.zoneId())),
-  }));
+    queryFn: () => firstValueFrom(this.api.listColdChainTemperatureLogs(this.zoneId())) }));
 
   protected readonly warehouseOptions = computed(() => [
     { value: '', label: 'Seleccionar almacén' },
     ...(this.warehousesQuery.data() ?? []).map((w) => ({
       value: w.id,
-      label: `${w.nombre} · ${w.establishment.nombre}`,
-    })),
+      label: `${w.nombre} · ${w.establishment.nombre}` })),
   ]);
 
   protected readonly coldZones = computed(() =>
@@ -87,8 +83,7 @@ export class CadenaFrioComponent {
         this.api.createColdChainTemperatureLog({
           warehouseZoneId: this.zoneId(),
           temperaturaCelsius: this.temperatura(),
-          observacion: this.observacion().trim() || undefined,
-        }),
+          observacion: this.observacion().trim() || undefined }),
       ),
     onSuccess: () => {
       this.notify.success('Temperatura registrada');
@@ -96,6 +91,5 @@ export class CadenaFrioComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['cold-chain'] });
       void this.queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar')) }));
 }

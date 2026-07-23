@@ -17,6 +17,7 @@ import { PageStateComponent } from '../../../../shared/components/common/page-st
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { AgreementType } from '../../models/directory.models';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-convenios-seguros',
@@ -115,6 +116,7 @@ import type { AgreementType } from '../../models/directory.models';
   `,
 })
 export class ConveniosSegurosComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
@@ -181,7 +183,7 @@ export class ConveniosSegurosComponent {
   }
 
   protected billing(id: string) {
-    const periodo = new Date().toISOString().slice(0, 7);
+    const periodo = this.locale.currentYearMonth();
     firstValueFrom(this.api.generateAgreementMonthlyBilling(id, periodo))
       .then((r) => this.notify.success(`Liquidación ${r.periodo}: S/ ${r.totalCobertura}`))
       .catch((err) => this.notify.error(httpErrorMessage(err, 'No se pudo liquidar')));

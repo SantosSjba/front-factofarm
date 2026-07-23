@@ -1,4 +1,5 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -18,8 +19,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -58,7 +59,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                     }
                   </td>
                   <td class="py-2">{{ row.bankAccount.nombre }}</td>
-                  <td class="py-2">{{ row.movimientoAt | date: 'short' }}</td>
+                  <td class="py-2">{{ row.movimientoAt | appDate: 'short' }}</td>
                   <td class="py-2">{{ row.tipo }}</td>
                   <td class="py-2">{{ row.monto | currency: 'PEN' }}</td>
                   <td class="py-2">{{ row.conciliado ? 'Conciliado' : 'Pendiente' }}</td>
@@ -70,8 +71,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         }
       </app-component-card>
     </app-page-state>
-  `,
-})
+  ` })
 export class ConciliacionBancariaComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -83,8 +83,7 @@ export class ConciliacionBancariaComponent {
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['bank-movements', this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.listBankMovements({ page: this.page(), pageSize: 20 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listBankMovements({ page: this.page(), pageSize: 20 })) }));
 
   protected listError() {
     const err = this.listQuery.error();
@@ -105,6 +104,5 @@ export class ConciliacionBancariaComponent {
       this.selectedIds.set([]);
       void this.queryClient.invalidateQueries({ queryKey: ['bank-movements'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo conciliar')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo conciliar')) }));
 }

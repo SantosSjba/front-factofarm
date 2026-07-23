@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -17,6 +18,7 @@ import { TenantLeadConvertModalComponent } from './tenant-lead-convert-modal/ten
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

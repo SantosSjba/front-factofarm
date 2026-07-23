@@ -51,7 +51,7 @@
         @for (row of complaintsQuery.data()?.items ?? []; track row.id) {
           <tr class="border-b border-gray-50 dark:border-white/[0.03]">
             <td class="px-5 py-4 font-medium text-gray-800 dark:text-white">{{ row.numeroRegistro }}</td>
-            <td class="px-5 py-4 text-sm">{{ row.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="px-5 py-4 text-sm">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
             <td class="px-5 py-4 text-sm">
               <div>{{ row.nombresApellidos }}</div>
               <div class="text-theme-xs text-gray-500">{{ row.documentoIdentidad }}</div>

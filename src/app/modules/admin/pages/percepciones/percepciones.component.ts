@@ -1,4 +1,3 @@
-﻿import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -12,18 +11,20 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { SunatWithholdingRateDto } from '../../models/directory.models';
+import { LocaleService } from '../../../../core/services/locale.service';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
 @Component({
   selector: 'app-percepciones',
   standalone: true,
   imports: [
+    AppDatePipe,
     BreadcrumbInlineComponent,
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
     FormSelectComponent,
     LabelComponent,
-    DatePipe,
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Facturación' }, { label: 'Percepciones' }]" />
@@ -77,7 +78,7 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
           <tbody>
             @for (row of recordRows; track row.id) {
               <tr class="border-b border-gray-100">
-                <td class="py-2 pr-4">{{ row.fechaOperacion | date: 'shortDate' }}</td>
+                <td class="py-2 pr-4">{{ row.fechaOperacion | appDate: 'shortDate' }}</td>
                 <td class="py-2 pr-4">{{ row.partyNombre }}</td>
                 <td class="py-2 pr-4">{{ row.partyDocNumber }}</td>
                 <td class="py-2 pr-4">
@@ -99,14 +100,14 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
         </table>
       </div>
     </app-component-card>
-  `,
-})
+  ` })
 export class PercepcionesComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
 
-  protected readonly period = signal(new Date().toISOString().slice(0, 7));
+  protected readonly period = signal(this.locale.currentYearMonth());
   protected readonly partyNombre = signal('');
   protected readonly partyDocType = signal('1');
   protected readonly partyDocNumber = signal('');
@@ -119,8 +120,7 @@ export class PercepcionesComponent {
 
   protected readonly billingConfigQuery = injectQuery(() => ({
     queryKey: ['billing', 'config'] as const,
-    queryFn: () => firstValueFrom(this.api.getBillingConfig()),
-  }));
+    queryFn: () => firstValueFrom(this.api.getBillingConfig()) }));
 
   protected readonly billingCapabilities = computed(() => this.billingConfigQuery.data()?.capabilities);
 
@@ -137,8 +137,7 @@ export class PercepcionesComponent {
 
   protected readonly ratesQuery = injectQuery(() => ({
     queryKey: ['compliance', 'sunat-rates', 'PERCEPCION'] as const,
-    queryFn: () => firstValueFrom(this.api.listSunatWithholdingRates('PERCEPCION')),
-  }));
+    queryFn: () => firstValueFrom(this.api.listSunatWithholdingRates('PERCEPCION')) }));
 
   protected readonly perceptionRates = computed(
     () => this.ratesQuery.data() ?? ([] as SunatWithholdingRateDto[]),
@@ -147,16 +146,14 @@ export class PercepcionesComponent {
   protected readonly regimenOptions = computed(() =>
     this.perceptionRates().map((rate) => ({
       value: rate.codigo,
-      label: `${rate.nombre} (${rate.tasa}%)`,
-    })),
+      label: `${rate.nombre} (${rate.tasa}%)` })),
   );
 
   protected readonly records = computed(() => this.recordsQuery.data() ?? []);
 
   protected readonly recordsQuery = injectQuery(() => ({
     queryKey: ['compliance', 'tax-withholding', 'PERCEPCION', this.period()] as const,
-    queryFn: () => firstValueFrom(this.api.listTaxWithholdingRecords('PERCEPCION', this.period())),
-  }));
+    queryFn: () => firstValueFrom(this.api.listTaxWithholdingRecords('PERCEPCION', this.period())) }));
 
   protected readonly createMutation = injectMutation(() => ({
     mutationFn: () =>
@@ -170,15 +167,13 @@ export class PercepcionesComponent {
           baseImponible: Number(this.baseImponible()),
           comprobanteModificadoTipo: '01',
           comprobanteModificadoSerie: this.refSerie().trim() || undefined,
-          comprobanteModificadoNumero: this.refNumero().trim() || undefined,
-        }),
+          comprobanteModificadoNumero: this.refNumero().trim() || undefined }),
       ),
     onSuccess: () => {
       this.notify.success('Percepción emitida');
       void this.queryClient.invalidateQueries({ queryKey: ['compliance', 'tax-withholding', 'PERCEPCION'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir percepción')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir percepción')) }));
 
   protected get perceptionRateRows(): SunatWithholdingRateDto[] {
     return this.perceptionRates();

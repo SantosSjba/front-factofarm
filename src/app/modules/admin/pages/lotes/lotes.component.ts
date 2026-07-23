@@ -1,4 +1,5 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -20,6 +21,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,

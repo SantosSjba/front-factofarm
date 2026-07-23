@@ -1,4 +1,5 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -14,6 +15,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import type { StaffLeaveStatusDto, StaffLeaveTypeDto, UserListItemDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -22,8 +24,8 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   standalone: true,
   imports: [
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -97,8 +99,8 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
               @for (row of data.items; track row.id) {
                 <tr class="border-t border-gray-100">
                   <td class="py-2">{{ row.user.nombre }}</td>
-                  <td>{{ row.checkInAt | date: 'short' }}</td>
-                  <td>{{ row.checkOutAt ? (row.checkOutAt | date: 'short') : '—' }}</td>
+                  <td>{{ row.checkInAt | appDate: 'short' }}</td>
+                  <td>{{ row.checkOutAt ? (row.checkOutAt | appDate: 'short') : '—' }}</td>
                 </tr>
               }
             </tbody>
@@ -172,7 +174,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                 <tr class="border-t border-gray-100">
                   <td class="py-2">{{ leave.user.nombre }}</td>
                   <td>{{ leave.tipo }}</td>
-                  <td>{{ leave.fromDate | date: 'shortDate' }} – {{ leave.toDate | date: 'shortDate' }}</td>
+                  <td>{{ leave.fromDate | appDate: 'shortDate' }} – {{ leave.toDate | appDate: 'shortDate' }}</td>
                   <td>{{ leave.estado }}</td>
                   <td>
                     @if (leave.estado === 'SOLICITADO') {
@@ -202,9 +204,9 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         }
       </app-page-state>
     </app-component-card>
-  `,
-})
+  ` })
 export class GestionPersonalComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
@@ -227,27 +229,24 @@ export class GestionPersonalComponent {
     Array.from({ length: 7 }, (_, dayOfWeek) => ({
       dayOfWeek,
       startTime: '09:00',
-      endTime: '18:00',
-    })),
+      endTime: '18:00' })),
   );
   protected readonly prodFrom = signal(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
+    this.locale.monthStartYmd(),
   );
-  protected readonly prodTo = signal(new Date().toISOString().slice(0, 10));
+  protected readonly prodTo = signal(this.locale.todayYmd());
   protected readonly leaveTipo = signal<StaffLeaveTypeDto>('VACACIONES');
   protected readonly leaveFrom = signal('');
   protected readonly leaveTo = signal('');
 
   protected readonly usersQuery = injectQuery(() => ({
     queryKey: ['staff', 'users'] as const,
-    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 200 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 200 })) }));
 
   protected readonly userOptions = computed(() =>
     (this.usersQuery.data()?.items ?? []).map((u: UserListItemDto) => ({
       value: u.id,
-      label: u.nombre,
-    })),
+      label: u.nombre })),
   );
 
   protected readonly attendanceQuery = injectQuery(() => ({
@@ -257,20 +256,16 @@ export class GestionPersonalComponent {
         this.api.listStaffAttendance({
           page: 1,
           pageSize: 20,
-          userId: this.selectedUserId() || undefined,
-        }),
-      ),
-  }));
+          userId: this.selectedUserId() || undefined }),
+      ) }));
 
   protected readonly productivityQuery = injectQuery(() => ({
     queryKey: ['staff', 'productivity', this.prodFrom(), this.prodTo()] as const,
-    queryFn: () => firstValueFrom(this.api.getStaffProductivityReport(this.prodFrom(), this.prodTo())),
-  }));
+    queryFn: () => firstValueFrom(this.api.getStaffProductivityReport(this.prodFrom(), this.prodTo())) }));
 
   protected readonly leavesQuery = injectQuery(() => ({
     queryKey: ['staff', 'leaves'] as const,
-    queryFn: () => firstValueFrom(this.api.listStaffLeaves()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listStaffLeaves()) }));
 
   protected dayLabel(dayOfWeek: number): string {
     return DAY_LABELS[dayOfWeek] ?? String(dayOfWeek);
@@ -300,8 +295,7 @@ export class GestionPersonalComponent {
           return {
             dayOfWeek,
             startTime: found?.startTime ?? '09:00',
-            endTime: found?.endTime ?? '18:00',
-          };
+            endTime: found?.endTime ?? '18:00' };
         }),
       );
     } catch {
@@ -336,8 +330,7 @@ export class GestionPersonalComponent {
       this.notify.success('Check-in registrado');
       void this.queryClient.invalidateQueries({ queryKey: ['staff', 'attendance'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar check-in')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar check-in')) }));
 
   private readonly checkOutMutation = injectMutation(() => ({
     mutationFn: (userId: string) => firstValueFrom(this.api.staffCheckOut(userId)),
@@ -345,8 +338,7 @@ export class GestionPersonalComponent {
       this.notify.success('Check-out registrado');
       void this.queryClient.invalidateQueries({ queryKey: ['staff', 'attendance'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar check-out')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar check-out')) }));
 
   protected checkIn() {
     const userId = this.selectedUserId();
@@ -391,8 +383,7 @@ export class GestionPersonalComponent {
       this.api.createStaffLeave(userId, {
         tipo: this.leaveTipo(),
         fromDate: this.leaveFrom(),
-        toDate: this.leaveTo(),
-      }),
+        toDate: this.leaveTo() }),
     )
       .then(() => {
         this.notify.success('Licencia registrada');

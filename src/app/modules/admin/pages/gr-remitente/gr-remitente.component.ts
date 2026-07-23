@@ -1,4 +1,5 @@
-﻿import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -18,7 +19,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   standalone: true,
   imports: [
     CommonModule,
-    DatePipe,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -51,7 +52,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                 <tr class="border-b border-gray-100">
                   <td class="py-2">
                     {{ row.fromWarehouse.nombre }} → {{ row.toWarehouse.nombre }}
-                    <div class="text-xs text-gray-500">{{ row.createdAt | date: 'short' }}</div>
+                    <div class="text-xs text-gray-500">{{ row.createdAt | appDate: 'short' }}</div>
                   </td>
                   <td class="py-2">{{ row.estado }}</td>
                   <td class="py-2">{{ row.guiaNumero || '—' }}</td>
@@ -77,8 +78,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         }
       </app-component-card>
     </app-page-state>
-  `,
-})
+  ` })
 export class GrRemitenteComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -89,8 +89,7 @@ export class GrRemitenteComponent {
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['inventory', 'transfers', 'gr-remitente', this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.listInventoryTransfers({ page: this.page(), pageSize: 15 })),
-  }));
+    queryFn: () => firstValueFrom(this.api.listInventoryTransfers({ page: this.page(), pageSize: 15 })) }));
 
   protected readonly emitGuiaMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.emitGuiaFromTransfer(id)),
@@ -99,8 +98,7 @@ export class GrRemitenteComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['inventory', 'transfers'] });
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la guía')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la guía')) }));
 
   protected listError() {
     const err = this.listQuery.error();

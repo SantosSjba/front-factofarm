@@ -11,6 +11,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-resumenes',
@@ -26,11 +27,12 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   templateUrl: './resumenes.component.html',
 })
 export class ResumenesComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Resúmenes' }];
-  protected readonly fecha = signal(new Date().toISOString().slice(0, 10));
+  protected readonly fecha = signal(this.locale.todayYmd());
   protected readonly lastResult = signal<{ id: string; message: string } | null>(null);
 
   protected readonly billingConfigQuery = injectQuery(() => ({

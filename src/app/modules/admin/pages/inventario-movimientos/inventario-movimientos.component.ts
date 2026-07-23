@@ -30,6 +30,7 @@ import type {
 } from '../../models/directory.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-inventario-movimientos',
@@ -56,6 +57,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 export class InventarioMovimientosComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
+  private readonly locale = inject(LocaleService);
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
@@ -627,9 +629,17 @@ export class InventarioMovimientosComponent {
   }
 
   private nowForDatetimeLocal() {
-    const date = new Date();
-    const tzOffsetMinutes = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - tzOffsetMinutes * 60_000);
-    return localDate.toISOString().slice(0, 16);
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: this.locale.timeZone(),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date());
+    const get = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((p) => p.type === type)?.value ?? '00';
+    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
   }
 }

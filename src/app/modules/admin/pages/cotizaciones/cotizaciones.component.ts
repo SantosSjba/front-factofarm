@@ -1,4 +1,5 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
@@ -27,8 +28,8 @@ type QuoteLine = { productId: string; nombre: string; quantity: number; precio: 
   imports: [
     QueryPageStatePipe,
     CommonModule,
+    AppDatePipe,
     CurrencyPipe,
-    DatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -40,8 +41,7 @@ type QuoteLine = { productId: string; nombre: string; quantity: number; precio: 
     InputFieldComponent,
     ModalComponent,
   ],
-  templateUrl: './cotizaciones.component.html',
-})
+  templateUrl: './cotizaciones.component.html' })
 export class CotizacionesComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -58,20 +58,17 @@ export class CotizacionesComponent {
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['quotations', this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.listQuotations(this.page(), 15)),
-  }));
+    queryFn: () => firstValueFrom(this.api.listQuotations(this.page(), 15)) }));
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
-    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listInventoryMovementWarehouses()) }));
 
   protected readonly warehouseOptions = computed(() => [
     { value: '', label: 'Almacén' },
     ...(this.warehousesQuery.data() ?? []).map((w) => ({
       value: w.id,
-      label: `${w.nombre} · ${w.establishment.nombre}`,
-    })),
+      label: `${w.nombre} · ${w.establishment.nombre}` })),
   ]);
 
   protected readonly quoteTotal = computed(() =>
@@ -111,8 +108,7 @@ export class CotizacionesComponent {
           productId: item.id,
           nombre: item.nombre,
           quantity: 1,
-          precio: Number.parseFloat(item.precio),
-        },
+          precio: Number.parseFloat(item.precio) },
       ]);
     }
     this.search.set('');
@@ -128,9 +124,7 @@ export class CotizacionesComponent {
           items: this.lines().map((l) => ({
             productId: l.productId,
             quantity: l.quantity,
-            unitPrice: l.precio,
-          })),
-        }),
+            unitPrice: l.precio })) }),
       ),
     onSuccess: () => {
       this.notify.success('Cotización creada');
@@ -139,8 +133,7 @@ export class CotizacionesComponent {
       this.comentario.set('');
       void this.queryClient.invalidateQueries({ queryKey: ['quotations'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear la cotización')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear la cotización')) }));
 
   protected readonly sendMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.sendQuotation(id)),
@@ -148,6 +141,5 @@ export class CotizacionesComponent {
       this.notify.success('Cotización marcada como enviada');
       void this.queryClient.invalidateQueries({ queryKey: ['quotations'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo enviar')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo enviar')) }));
 }

@@ -1,5 +1,6 @@
-﻿import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { CommonModule, DatePipe } from '@angular/common';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -14,12 +15,12 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 import type {
   AdverseEventItemDto,
   AdverseEventSeverity,
   CustomerItemDto,
-  ProductListItemDto,
-} from '../../models/directory.models';
+  ProductListItemDto } from '../../models/directory.models';
 
 type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos';
 
@@ -29,7 +30,7 @@ type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos
   imports: [
     QueryPageStatePipe,
     CommonModule,
-    DatePipe,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -38,12 +39,12 @@ type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos
     FormSelectComponent,
     ModalComponent,
   ],
-  templateUrl: './reporte-digemid.component.html',
-})
+  templateUrl: './reporte-digemid.component.html' })
 export class ReporteDigemidComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private readonly locale = inject(LocaleService);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [
     { label: 'Fármacos' },
@@ -51,8 +52,8 @@ export class ReporteDigemidComponent {
   ];
 
   protected readonly activeTab = signal<Tab>('farmacovigilancia');
-  protected readonly dateFrom = signal('');
-  protected readonly dateTo = signal('');
+  protected readonly dateFrom = signal(this.locale.monthStartYmd());
+  protected readonly dateTo = signal(this.locale.todayYmd());
   protected readonly profitGroupBy = signal<'product' | 'category' | 'laboratory'>('product');
   protected readonly salesGroupBy = signal<'seller' | 'warehouse' | 'hour' | 'day'>('seller');
 
@@ -93,8 +94,7 @@ export class ReporteDigemidComponent {
   protected readonly adverseQuery = injectQuery(() => ({
     queryKey: ['pharma', 'adverse-events'] as const,
     enabled: this.activeTab() === 'farmacovigilancia',
-    queryFn: () => firstValueFrom(this.api.listAdverseEvents()),
-  }));
+    queryFn: () => firstValueFrom(this.api.listAdverseEvents()) }));
 
   protected readonly shrinkageQuery = injectQuery(() => ({
     queryKey: ['pharma', 'shrinkage', this.dateFrom(), this.dateTo()] as const,
@@ -103,10 +103,8 @@ export class ReporteDigemidComponent {
       firstValueFrom(
         this.api.getPharmaShrinkageExpiry({
           from: this.dateFrom() || undefined,
-          to: this.dateTo() || undefined,
-        }),
-      ),
-  }));
+          to: this.dateTo() || undefined }),
+      ) }));
 
   protected readonly profitQuery = injectQuery(() => ({
     queryKey: ['pharma', 'profit', this.dateFrom(), this.dateTo(), this.profitGroupBy()] as const,
@@ -116,10 +114,8 @@ export class ReporteDigemidComponent {
         this.api.getPharmaProfitability({
           from: this.dateFrom() || undefined,
           to: this.dateTo() || undefined,
-          groupBy: this.profitGroupBy(),
-        }),
-      ),
-  }));
+          groupBy: this.profitGroupBy() }),
+      ) }));
 
   protected readonly salesQuery = injectQuery(() => ({
     queryKey: ['pharma', 'sales-analytics', this.dateFrom(), this.dateTo(), this.salesGroupBy()] as const,
@@ -129,10 +125,8 @@ export class ReporteDigemidComponent {
         this.api.getPharmaSalesAnalytics({
           from: this.dateFrom() || undefined,
           to: this.dateTo() || undefined,
-          groupBy: this.salesGroupBy(),
-        }),
-      ),
-  }));
+          groupBy: this.salesGroupBy() }),
+      ) }));
 
   protected readonly medicoQuery = injectQuery(() => ({
     queryKey: ['pharma', 'dispensation-medico', this.dateFrom(), this.dateTo()] as const,
@@ -141,10 +135,8 @@ export class ReporteDigemidComponent {
       firstValueFrom(
         this.api.getPharmaDispensationByMedico({
           from: this.dateFrom() || undefined,
-          to: this.dateTo() || undefined,
-        }),
-      ),
-  }));
+          to: this.dateTo() || undefined }),
+      ) }));
 
   protected readonly adverseRows = computed(() => this.adverseQuery.data() ?? []);
   protected readonly shrinkageData = computed(() => this.shrinkageQuery.data() as {
@@ -168,16 +160,14 @@ export class ReporteDigemidComponent {
           productId: this.productId(),
           customerId: this.customerId() || undefined,
           descripcion: this.descripcion().trim(),
-          severidad: this.severidad(),
-        }),
+          severidad: this.severidad() }),
       ),
     onSuccess: () => {
       this.notify.success('Evento adverso registrado');
       this.createOpen.set(false);
       void this.queryClient.invalidateQueries({ queryKey: ['pharma', 'adverse-events'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el evento')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el evento')) }));
 
   protected notifyMutation = injectMutation(() => ({
     mutationFn: () => {
@@ -186,8 +176,7 @@ export class ReporteDigemidComponent {
       return firstValueFrom(
         this.api.notifyDigemidAdverseEvent(target.id, {
           digemidReportNumber: this.digemidReportNumber().trim(),
-          medidasCorrectivas: this.medidasCorrectivas().trim() || undefined,
-        }),
+          medidasCorrectivas: this.medidasCorrectivas().trim() || undefined }),
       );
     },
     onSuccess: () => {
@@ -195,8 +184,7 @@ export class ReporteDigemidComponent {
       this.notifyOpen.set(false);
       void this.queryClient.invalidateQueries({ queryKey: ['pharma', 'adverse-events'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la notificación')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la notificación')) }));
 
   protected setTab(tab: Tab) {
     this.activeTab.set(tab);

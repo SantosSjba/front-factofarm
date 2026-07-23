@@ -34,7 +34,7 @@
       @for (row of listQuery.data()?.items ?? []; track row.id) {
         <tr class="border-b border-gray-100 dark:border-gray-800">
           <td class="px-3 py-2 font-medium">{{ row.numero ?? '—' }}</td>
-          <td class="px-3 py-2">{{ row.fechaEmision | date: 'shortDate' }}</td>
+          <td class="px-3 py-2">{{ row.fechaEmision | appDate: 'shortDate' }}</td>
           <td class="px-3 py-2">{{ row.supplier.razonSocial }}</td>
           <td class="px-3 py-2">{{ row.warehouse.nombre }}</td>
           <td class="px-3 py-2">
@@ -144,7 +144,7 @@
         <div class="text-sm">
           <p class="font-medium">Recepciones:</p>
           @for (gr of po.goodsReceipts; track gr.id) {
-            <p class="text-gray-600 dark:text-gray-400">{{ gr.numero }} · {{ gr.fechaRecepcion | date: 'short' }}</p>
+            <p class="text-gray-600 dark:text-gray-400">{{ gr.numero }} · {{ gr.fechaRecepcion | appDate: 'short' }}</p>
           }
         </div>
       }

@@ -1,4 +1,5 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -23,7 +24,7 @@ import type { PromotionType } from '../../models/directory.models';
   standalone: true,
   imports: [
     CommonModule,
-    DatePipe,
+    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -64,8 +65,8 @@ import type { PromotionType } from '../../models/directory.models';
                   <td class="py-2">{{ row.tipo }}</td>
                   <td class="py-2">{{ row.valor }}</td>
                   <td class="py-2 text-xs text-gray-500">
-                    {{ row.validFrom ? (row.validFrom | date: 'shortDate') : '—' }} —
-                    {{ row.validTo ? (row.validTo | date: 'shortDate') : '—' }}
+                    {{ row.validFrom ? (row.validFrom | appDate: 'shortDate') : '—' }} —
+                    {{ row.validTo ? (row.validTo | appDate: 'shortDate') : '—' }}
                   </td>
                   <td class="py-2">{{ row.activo ? 'Sí' : 'No' }}</td>
                   <td class="py-2">
@@ -113,8 +114,7 @@ import type { PromotionType } from '../../models/directory.models';
         </app-button>
       </div>
     </app-modal>
-  `,
-})
+  ` })
 export class PromocionesCampanasComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -140,8 +140,7 @@ export class PromocionesCampanasComponent {
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['promotions', this.page()] as const,
-    queryFn: () => firstValueFrom(this.api.listPromotions(this.page(), 15)),
-  }));
+    queryFn: () => firstValueFrom(this.api.listPromotions(this.page(), 15)) }));
 
   protected listError(): string | null {
     if (this.listQuery.isError()) {
@@ -157,16 +156,14 @@ export class PromocionesCampanasComponent {
           codigo: this.codigo().trim(),
           nombre: this.nombre().trim(),
           tipo: this.tipo(),
-          valor: this.valor(),
-        }),
+          valor: this.valor() }),
       ),
     onSuccess: () => {
       this.notify.success('Promoción creada');
       this.createOpen.set(false);
       void this.queryClient.invalidateQueries({ queryKey: ['promotions'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'Error al crear')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'Error al crear')) }));
 
   protected async remove(id: string) {
     try {

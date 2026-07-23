@@ -11,6 +11,7 @@ import { PageStateComponent } from '../../../../shared/components/common/page-st
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 
 @Component({
   selector: 'app-sire-compras',
@@ -49,10 +50,11 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   `,
 })
 export class SireComprasComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
 
-  protected readonly period = signal(new Date().toISOString().slice(0, 7));
+  protected readonly period = signal(this.locale.currentYearMonth());
   protected readonly exporting = signal(false);
 
   protected readonly summaryQuery = injectQuery(() => ({

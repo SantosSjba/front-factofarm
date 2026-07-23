@@ -1,4 +1,3 @@
-﻿import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -12,18 +11,20 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { SunatWithholdingRateDto } from '../../models/directory.models';
+import { LocaleService } from '../../../../core/services/locale.service';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
 @Component({
   selector: 'app-retenciones',
   standalone: true,
   imports: [
+    AppDatePipe,
     BreadcrumbInlineComponent,
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
     FormSelectComponent,
     LabelComponent,
-    DatePipe,
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Facturación' }, { label: 'Retenciones' }]" />
@@ -77,7 +78,7 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
           <tbody>
             @for (row of recordRows; track row.id) {
               <tr class="border-b border-gray-100">
-                <td class="py-2 pr-4">{{ row.fechaOperacion | date: 'shortDate' }}</td>
+                <td class="py-2 pr-4">{{ row.fechaOperacion | appDate: 'shortDate' }}</td>
                 <td class="py-2 pr-4">{{ row.partyNombre }}</td>
                 <td class="py-2 pr-4">{{ row.partyDocNumber }}</td>
                 <td class="py-2 pr-4">
@@ -120,7 +121,7 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
           <tbody>
             @for (row of detraccionRows; track row.id) {
               <tr class="border-b border-gray-100">
-                <td class="py-2 pr-4">{{ row.fechaOperacion | date: 'shortDate' }}</td>
+                <td class="py-2 pr-4">{{ row.fechaOperacion | appDate: 'shortDate' }}</td>
                 <td class="py-2 pr-4">{{ row.partyNombre }}</td>
                 <td class="py-2 pr-4">
                   {{ row.comprobanteModificadoSerie }}-{{ row.comprobanteModificadoNumero }}
@@ -133,14 +134,14 @@ import type { SunatWithholdingRateDto } from '../../models/directory.models';
         </table>
       </div>
     </app-component-card>
-  `,
-})
+  ` })
 export class RetencionesComponent {
+  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
 
-  protected readonly period = signal(new Date().toISOString().slice(0, 7));
+  protected readonly period = signal(this.locale.currentYearMonth());
   protected readonly partyNombre = signal('');
   protected readonly partyDocType = signal('6');
   protected readonly partyDocNumber = signal('');
@@ -153,8 +154,7 @@ export class RetencionesComponent {
 
   protected readonly billingConfigQuery = injectQuery(() => ({
     queryKey: ['billing', 'config'] as const,
-    queryFn: () => firstValueFrom(this.api.getBillingConfig()),
-  }));
+    queryFn: () => firstValueFrom(this.api.getBillingConfig()) }));
 
   protected readonly billingCapabilities = computed(() => this.billingConfigQuery.data()?.capabilities);
 
@@ -171,8 +171,7 @@ export class RetencionesComponent {
 
   protected readonly ratesQuery = injectQuery(() => ({
     queryKey: ['compliance', 'sunat-rates', 'RETENCION'] as const,
-    queryFn: () => firstValueFrom(this.api.listSunatWithholdingRates('RETENCION')),
-  }));
+    queryFn: () => firstValueFrom(this.api.listSunatWithholdingRates('RETENCION')) }));
 
   protected readonly retentionRates = computed(
     () => this.ratesQuery.data() ?? ([] as SunatWithholdingRateDto[]),
@@ -181,8 +180,7 @@ export class RetencionesComponent {
   protected readonly regimenOptions = computed(() =>
     this.retentionRates().map((rate) => ({
       value: rate.codigo,
-      label: `${rate.nombre} (${rate.tasa}%)`,
-    })),
+      label: `${rate.nombre} (${rate.tasa}%)` })),
   );
 
   protected readonly records = computed(() => this.recordsQuery.data() ?? []);
@@ -191,13 +189,11 @@ export class RetencionesComponent {
 
   protected readonly recordsQuery = injectQuery(() => ({
     queryKey: ['compliance', 'tax-withholding', 'RETENCION', this.period()] as const,
-    queryFn: () => firstValueFrom(this.api.listTaxWithholdingRecords('RETENCION', this.period())),
-  }));
+    queryFn: () => firstValueFrom(this.api.listTaxWithholdingRecords('RETENCION', this.period())) }));
 
   protected readonly detraccionesQuery = injectQuery(() => ({
     queryKey: ['compliance', 'tax-withholding', 'DETRACCION', this.period()] as const,
-    queryFn: () => firstValueFrom(this.api.listTaxWithholdingRecords('DETRACCION', this.period())),
-  }));
+    queryFn: () => firstValueFrom(this.api.listTaxWithholdingRecords('DETRACCION', this.period())) }));
 
   protected readonly createMutation = injectMutation(() => ({
     mutationFn: () =>
@@ -211,15 +207,13 @@ export class RetencionesComponent {
           baseImponible: Number(this.baseImponible()),
           comprobanteModificadoTipo: '01',
           comprobanteModificadoSerie: this.refSerie().trim() || undefined,
-          comprobanteModificadoNumero: this.refNumero().trim() || undefined,
-        }),
+          comprobanteModificadoNumero: this.refNumero().trim() || undefined }),
       ),
     onSuccess: () => {
       this.notify.success('Retención emitida');
       void this.queryClient.invalidateQueries({ queryKey: ['compliance', 'tax-withholding', 'RETENCION'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir retención')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir retención')) }));
 
   protected readonly syncMutation = injectMutation(() => ({
     mutationFn: () => firstValueFrom(this.api.syncDetracciones(this.period())),
@@ -231,8 +225,7 @@ export class RetencionesComponent {
       this.notify.success(`Sincronizadas ${res.synced} detracciones`);
       void this.queryClient.invalidateQueries({ queryKey: ['compliance', 'tax-withholding', 'DETRACCION'] });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo sincronizar detracciones')),
-  }));
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo sincronizar detracciones')) }));
 
   protected get retentionRateRows(): SunatWithholdingRateDto[] {
     return this.retentionRates();

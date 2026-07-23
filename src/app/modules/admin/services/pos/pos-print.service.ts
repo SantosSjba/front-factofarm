@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { LocaleService } from '../../../../core/services/locale.service';
 import type { CashRegisterHardwareDto, SaleDetailDto } from '../../models/directory.models';
 
 export type PosPrintConfig = Pick<
@@ -8,6 +9,8 @@ export type PosPrintConfig = Pick<
 
 @Injectable({ providedIn: 'root' })
 export class PosPrintService {
+  private readonly locale = inject(LocaleService);
+
   printTicket(sale: SaleDetailDto, config?: Partial<PosPrintConfig>) {
     const widthMm = config?.printerPaperWidth === 'MM_58' ? 58 : 80;
     const maxWidthPx = widthMm === 58 ? 220 : 300;
@@ -43,7 +46,7 @@ export class PosPrintService {
       ${drawerPulse}
       <h3 style="text-align:center;margin:0">FactoFarm</h3>
       <p style="text-align:center;margin:4px 0">${this.escape(sale.documentType)} ${sale.serie ?? ''}-${sale.numero ?? ''}</p>
-      <p style="font-size:10px">${new Date(sale.createdAt).toLocaleString('es-PE')}</p>
+      <p style="font-size:10px">${this.locale.formatDate(sale.createdAt, { dateStyle: 'short', timeStyle: 'short' })}</p>
       ${sale.customer ? `<p>Cliente: ${this.escape(sale.customer.nombre)}</p>` : ''}
       <table>${lines}</table>
       <div class="totals">

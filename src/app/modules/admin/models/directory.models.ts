@@ -185,6 +185,9 @@ export interface PharmacyProfileDto {
   logoUrl: string | null;
   salePdfFormat: SalePdfFormat;
   salePdfFormatOptions: SalePdfFormatOptionDto[];
+  /** Zona IANA del local (default America/Lima). */
+  timeZone: string;
+  timeZoneOptions: Array<{ value: string; label: string }>;
   rucEmisor: string | null;
   razonSocialEmisor: string | null;
   billingProvider: BillingProviderType;
@@ -226,6 +229,7 @@ export interface UpdatePharmacyProfileRequest {
   districtId?: string | null;
   logoArchivoId?: string | null;
   salePdfFormat?: SalePdfFormat;
+  timeZone?: string;
   numeroRegistroDigemid?: string | null;
 }
 

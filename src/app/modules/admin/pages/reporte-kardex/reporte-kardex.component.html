@@ -112,7 +112,7 @@
           @for (row of rows(); track row.id) {
             <tr>
               <td class="px-4 py-3 text-theme-sm">
-                {{ row.fecha | date: 'yyyy-MM-dd HH:mm' }}
+                {{ row.fecha | appDate: 'yyyy-MM-dd HH:mm' }}
                 @if (isArchivedRow(row)) {
                   <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Archivado</span>
                 }
