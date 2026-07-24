@@ -16,10 +16,12 @@
     </div>
   }
 
-  <div class="flex items-center gap-3 px-3 py-3 sm:gap-4 sm:px-4 lg:px-6 lg:py-3.5">
+  <div
+    class="relative flex w-full items-center gap-3 px-3 py-3 sm:gap-4 sm:px-4 lg:px-6 lg:py-3.5"
+  >
     <button
       type="button"
-      class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 xl:h-10 xl:w-10 xl:border xl:border-gray-200 dark:xl:border-gray-800"
+      class="relative z-10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 xl:border xl:border-gray-200 dark:xl:border-gray-800"
       [ngClass]="{ 'bg-gray-100 dark:bg-white/[0.03]': isMobileOpen$ | async }"
       (click)="handleToggle()"
       aria-label="Abrir o cerrar menú lateral"
@@ -31,7 +33,10 @@
       }
     </button>
 
-      <a routerLink="/" class="logo-dark-glow inline-flex shrink-0 items-center xl:hidden">
+    <a
+      routerLink="/"
+      class="logo-dark-glow absolute left-1/2 top-1/2 z-0 inline-flex -translate-x-1/2 -translate-y-1/2 items-center xl:hidden"
+    >
       <img
         [src]="branding.navLogoSrc()"
         [alt]="branding.brandAlt()"
@@ -93,7 +98,7 @@
     <button
       type="button"
       (click)="toggleApplicationMenu()"
-      class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 xl:hidden"
+      class="relative z-10 ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 xl:hidden"
       aria-label="Abrir menú de cuenta"
     >
       <app-icon name="lucide:ellipsis" width="22" height="22" />
