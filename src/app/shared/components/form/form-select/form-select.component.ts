@@ -3,7 +3,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { IconComponent } from '../../ui/icon/icon.component';
 
 const baseSelect =
-  'shadow-theme-xs h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent pl-4 pr-12 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 disabled:cursor-not-allowed disabled:opacity-50';
+  'shadow-theme-xs h-11 w-full appearance-none rounded-lg border bg-transparent pl-4 pr-12 py-2.5 text-sm focus:ring-3 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Select reutilizable con el estilo FactoFarm / TailAdmin. */
 @Component({
@@ -20,13 +20,18 @@ export class FormSelectComponent {
   @Input() placeholder = 'Seleccionar';
   @Input() showPlaceholder = true;
   @Input() disabled = false;
+  @Input() error = false;
+  @Input() hint = '';
   /** `{ value, label }` */
   @Input() options: { value: string; label: string }[] = [];
   @Input() className = '';
   @Output() valueChange = new EventEmitter<string>();
 
   protected get selectClass(): string {
-    return `${baseSelect} ${this.className}`.trim();
+    const border = this.error
+      ? 'border-error-500 text-gray-800 focus:border-error-300 focus:ring-error-500/20 dark:border-error-500 dark:text-white/90'
+      : 'border-gray-300 text-gray-800 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90';
+    return `${baseSelect} ${border} ${this.className}`.trim();
   }
 
   /** Texto del option vacío: @Input placeholder o label del primer option con value ''. */

@@ -91,6 +91,41 @@ function trimOrUndef(s: string): string | undefined {
 }
 
 const USER_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const CELULAR_REGEX = /^\+?\d{7,15}$/;
+
+function isValidDni(dni: string): boolean {
+  return /^\d{8}$/.test(dni.replace(/\D/g, ''));
+}
+
+function isValidCe(ce: string): boolean {
+  return /^[A-Za-z0-9]{9,12}$/.test(ce.trim());
+}
+
+function isValidPasaporte(value: string): boolean {
+  return /^[A-Za-z0-9]{6,12}$/.test(value.trim());
+}
+
+function isValidOtroDocumento(value: string): boolean {
+  return /^[A-Za-z0-9-]{1,20}$/.test(value.trim());
+}
+
+function identityDocumentNumberMessage(tipo: string): string {
+  if (tipo === 'DNI') return 'DNI debe tener 8 dígitos.';
+  if (tipo === 'CE') return 'CE debe tener 9 a 12 caracteres alfanuméricos.';
+  if (tipo === 'PASAPORTE') return 'Pasaporte debe tener 6 a 12 caracteres alfanuméricos.';
+  if (tipo === 'OTRO') return 'Número de documento no válido (alfanumérico / guiones, máx. 20).';
+  return 'Número de documento no válido para el tipo seleccionado.';
+}
+
+function isValidIdentityDocumentNumber(tipo: string, numero: string): boolean {
+  const value = numero.trim();
+  if (!value) return true;
+  if (tipo === 'DNI') return isValidDni(value);
+  if (tipo === 'CE') return isValidCe(value);
+  if (tipo === 'PASAPORTE') return isValidPasaporte(value);
+  if (tipo === 'OTRO') return isValidOtroDocumento(value);
+  return true;
+}
 
 const usuarioDatosSchema = yup.object({
   nombre: yup
@@ -118,7 +153,17 @@ const usuarioDatosSchema = yup.object({
 
 const usuarioPersonalesSchema = yup.object({
   tipoDoc: yup.string().oneOf(['', 'DNI', 'CE', 'PASAPORTE', 'OTRO']).optional(),
-  numeroDoc: yup.string().max(20, 'Número de documento no debe exceder 20 caracteres').optional(),
+  numeroDoc: yup
+    .string()
+    .max(20, 'Número de documento no debe exceder 20 caracteres')
+    .test('doc-format', function (value) {
+      const tipo = String(this.parent?.tipoDoc ?? '').trim();
+      const numero = String(value ?? '').trim();
+      if (!numero) return true;
+      if (!tipo) return true; // pairing se valida aparte
+      if (isValidIdentityDocumentNumber(tipo, numero)) return true;
+      return this.createError({ message: identityDocumentNumberMessage(tipo) });
+    }),
   nombres: yup.string().max(120, 'Nombres no debe exceder 120 caracteres').optional(),
   apellidos: yup.string().max(120, 'Apellidos no debe exceder 120 caracteres').optional(),
   fechaNac: yup.string().test(
@@ -128,17 +173,33 @@ const usuarioPersonalesSchema = yup.object({
   ),
   emailPersonal: yup
     .string()
+    .transform((v) => (typeof v === 'string' && !v.trim() ? undefined : v))
     .email('Correo personal no válido.')
     .max(150, 'Correo personal no debe exceder 150 caracteres')
     .optional(),
   direccion: yup.string().max(250, 'Dirección no debe exceder 250 caracteres').optional(),
-  celPersonal: yup.string().max(30, 'Celular personal no debe exceder 30 caracteres').optional(),
+  celPersonal: yup
+    .string()
+    .max(30, 'Celular personal no debe exceder 30 caracteres')
+    .test(
+      'cel-personal-format',
+      'Celular personal no válido (use dígitos, 7 a 15).',
+      (v) => !v?.trim() || CELULAR_REGEX.test(v.trim()),
+    ),
   emailCorp: yup
     .string()
+    .transform((v) => (typeof v === 'string' && !v.trim() ? undefined : v))
     .email('Correo corporativo no válido.')
     .max(150, 'Correo corporativo no debe exceder 150 caracteres')
     .optional(),
-  celCorp: yup.string().max(30, 'Celular corporativo no debe exceder 30 caracteres').optional(),
+  celCorp: yup
+    .string()
+    .max(30, 'Celular corporativo no debe exceder 30 caracteres')
+    .test(
+      'cel-corp-format',
+      'Celular corporativo no válido (use dígitos, 7 a 15).',
+      (v) => !v?.trim() || CELULAR_REGEX.test(v.trim()),
+    ),
   fechaContratacion: yup.string().test(
     'fechaContratacion-format',
     'Fecha de contratación inválida.',
@@ -244,6 +305,11 @@ export class UsuarioFormModalComponent {
   protected readonly fotoArchivoId = signal<string | null>(null);
   protected readonly fotoUploadError = signal<string | null>(null);
 
+  /** Errores inline por campo (validación live). */
+  protected readonly fieldErrors = signal<Record<string, string>>({});
+  protected readonly touched = signal<Record<string, boolean>>({});
+  protected readonly submitAttempted = signal(false);
+
   protected readonly createUserMutation = injectMutation(() => ({
     mutationFn: (body: CreateUserRequest) => firstValueFrom(this.api.createUser(body)),
     onSuccess: () => {
@@ -340,6 +406,9 @@ export class UsuarioFormModalComponent {
   }
 
   private applyUserToForm() {
+    this.fieldErrors.set({});
+    this.touched.set({});
+    this.submitAttempted.set(false);
     const user = this.editingUser();
     if (!user) {
       this.resetCamposUsuario();
@@ -366,13 +435,35 @@ export class UsuarioFormModalComponent {
     this.fechaContratacion.set(isoDateToInput(profile?.fechaContratacion));
     this.cargo.set(profile?.cargo ?? '');
     this.fotoArchivoId.set(profile?.fotoArchivoId ?? null);
-    this.fotoPreview.set(
-      profile?.fotoUrl ? this.filesApi.absoluteFileUrl(profile.fotoUrl) : null,
-    );
     this.fotoUploadError.set(null);
+    this.loadFotoPreview(profile?.fotoArchivoId ?? profile?.fotoUrl ?? null);
     this.selectedNavCodes.set(
       new Set((user.permissionCodes ?? []).filter((code) => code.startsWith('nav.'))),
     );
+  }
+
+  private revokeFotoPreview() {
+    const prev = this.fotoPreview();
+    if (prev?.startsWith('blob:')) {
+      URL.revokeObjectURL(prev);
+    }
+    this.fotoPreview.set(null);
+  }
+
+  /** Carga preview con Bearer vía blob (GET /files/:id no sirve en `<img>` sin Authorization). */
+  private loadFotoPreview(fileIdOrPath: string | null | undefined) {
+    this.revokeFotoPreview();
+    const ref = fileIdOrPath?.trim();
+    if (!ref) {
+      return;
+    }
+    this.filesApi.fetchObjectUrl(ref).subscribe({
+      next: (url) => this.fotoPreview.set(url),
+      error: () => {
+        this.fotoPreview.set(null);
+        this.fotoUploadError.set('No se pudo cargar la foto del usuario.');
+      },
+    });
   }
 
   protected setRoleFromSelect(v: string) {
@@ -382,6 +473,208 @@ export class UsuarioFormModalComponent {
     const template = this.roleTemplates().find((t) => t.role === match.value);
     if (template) {
       this.selectedNavCodes.set(new Set(template.navPermissionCodes));
+    }
+    this.onFieldChange('role', match.value);
+  }
+
+  protected showFieldError(key: string): boolean {
+    return !!(this.touched()[key] || this.submitAttempted()) && !!this.fieldErrors()[key];
+  }
+
+  protected fieldHint(key: string): string {
+    return this.showFieldError(key) ? this.fieldErrors()[key] ?? '' : '';
+  }
+
+  protected onFieldBlur(key: string) {
+    this.touched.update((t) => ({ ...t, [key]: true }));
+    void this.revalidateField(key);
+  }
+
+  protected onFieldChange(key: string, value: string) {
+    this.setFieldValue(key, value);
+    if (this.touched()[key] || this.submitAttempted()) {
+      void this.revalidateField(key);
+      if (key === 'password' || key === 'password2') {
+        void this.revalidateField(key === 'password' ? 'password2' : 'password');
+      }
+      if (key === 'tipoDoc' || key === 'numeroDoc') {
+        void this.revalidateField(key === 'tipoDoc' ? 'numeroDoc' : 'tipoDoc');
+      }
+    }
+  }
+
+  private setFieldValue(key: string, value: string) {
+    switch (key) {
+      case 'nombre':
+        this.nombre.set(value);
+        break;
+      case 'email':
+        this.email.set(value);
+        break;
+      case 'establecimientoId':
+        this.establecimientoId.set(value);
+        break;
+      case 'role':
+        this.role.set(value as UserRoleDto);
+        break;
+      case 'password':
+        this.password.set(value);
+        break;
+      case 'password2':
+        this.password2.set(value);
+        break;
+      case 'tipoDoc':
+        this.tipoDoc.set(value);
+        break;
+      case 'numeroDoc':
+        this.numeroDoc.set(value);
+        break;
+      case 'nombres':
+        this.nombres.set(value);
+        break;
+      case 'apellidos':
+        this.apellidos.set(value);
+        break;
+      case 'fechaNac':
+        this.fechaNac.set(value);
+        break;
+      case 'emailPersonal':
+        this.emailPersonal.set(value);
+        break;
+      case 'direccion':
+        this.direccion.set(value);
+        break;
+      case 'celPersonal':
+        this.celPersonal.set(value);
+        break;
+      case 'emailCorp':
+        this.emailCorp.set(value);
+        break;
+      case 'celCorp':
+        this.celCorp.set(value);
+        break;
+      case 'fechaContratacion':
+        this.fechaContratacion.set(value);
+        break;
+      case 'cargo':
+        this.cargo.set(value);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private datosSnapshot() {
+    return {
+      nombre: this.nombre(),
+      email: this.email(),
+      establecimientoId: this.establecimientoId(),
+      role: this.role(),
+      password: this.password(),
+      password2: this.password2(),
+    };
+  }
+
+  private personalesSnapshot() {
+    return {
+      tipoDoc: this.tipoDoc(),
+      numeroDoc: this.numeroDoc(),
+      nombres: this.nombres(),
+      apellidos: this.apellidos(),
+      fechaNac: this.fechaNac(),
+      emailPersonal: this.emailPersonal(),
+      direccion: this.direccion(),
+      celPersonal: this.celPersonal(),
+      emailCorp: this.emailCorp(),
+      celCorp: this.celCorp(),
+      fechaContratacion: this.fechaContratacion(),
+      cargo: this.cargo(),
+    };
+  }
+
+  private async revalidateField(key: string) {
+    const next = { ...this.fieldErrors() };
+    delete next[key];
+
+    const datosKeys = new Set([
+      'nombre',
+      'email',
+      'establecimientoId',
+      'role',
+      'password',
+      'password2',
+    ]);
+    const personalesKeys = new Set([
+      'tipoDoc',
+      'numeroDoc',
+      'nombres',
+      'apellidos',
+      'fechaNac',
+      'emailPersonal',
+      'direccion',
+      'celPersonal',
+      'emailCorp',
+      'celCorp',
+      'fechaContratacion',
+      'cargo',
+    ]);
+
+    try {
+      if (datosKeys.has(key) && key !== 'password' && key !== 'password2') {
+        await usuarioDatosSchema.validateAt(key, this.datosSnapshot());
+      } else if (personalesKeys.has(key)) {
+        await usuarioPersonalesSchema.validateAt(key, this.personalesSnapshot());
+      }
+    } catch (err) {
+      if (err instanceof yup.ValidationError && err.message) {
+        next[key] = err.message;
+      }
+    }
+
+    const pw = this.password();
+    const pw2 = this.password2();
+    if (key === 'password' || key === 'password2') {
+      delete next['password'];
+      delete next['password2'];
+      if (!this.isEditing()) {
+        if (!pw || pw.length < 8) {
+          next['password'] = 'La contraseña debe tener al menos 8 caracteres.';
+        }
+        if (pw !== pw2) {
+          next['password2'] = 'Las contraseñas no coinciden.';
+        }
+      } else if (pw || pw2) {
+        if (pw.length < 8) {
+          next['password'] = 'La contraseña debe tener al menos 8 caracteres.';
+        }
+        if (pw !== pw2) {
+          next['password2'] = 'Las contraseñas no coinciden.';
+        }
+      }
+    }
+
+    if (key === 'tipoDoc' || key === 'numeroDoc') {
+      delete next['tipoDoc'];
+      delete next['numeroDoc'];
+      const tipo = this.tipoDoc().trim();
+      const numero = this.numeroDoc().trim();
+      if (tipo && !numero) {
+        next['numeroDoc'] = 'Si selecciona tipo de documento, ingrese el número.';
+      } else if (numero && !tipo) {
+        next['tipoDoc'] = 'Seleccione el tipo de documento para el número ingresado.';
+      } else if (tipo && numero && !isValidIdentityDocumentNumber(tipo, numero)) {
+        next['numeroDoc'] = identityDocumentNumberMessage(tipo);
+      }
+    }
+
+    this.fieldErrors.set(next);
+  }
+
+  private applyYupFieldErrors(err: yup.ValidationError, into: Record<string, string>) {
+    for (const e of err.inner?.length ? err.inner : [err]) {
+      if (e.path && e.message && !into[e.path]) {
+        into[e.path] = e.message;
+      }
     }
   }
 
@@ -415,22 +708,18 @@ export class UsuarioFormModalComponent {
 
   protected onFotoFile(file: File) {
     this.fotoUploadError.set(null);
-    const prev = this.fotoPreview();
-    if (prev?.startsWith('blob:')) {
-      URL.revokeObjectURL(prev);
-    }
-    this.fotoPreview.set(null);
+    this.revokeFotoPreview();
     this.fotoArchivoId.set(null);
 
     this.filesApi.upload(file).subscribe({
       next: (res) => {
         this.fotoArchivoId.set(res.id);
-        this.fotoPreview.set(this.filesApi.absoluteFileUrl(res.url));
+        this.loadFotoPreview(res.id);
       },
       error: () => {
         this.fotoUploadError.set('No se pudo subir la imagen. ¿Tiene sesión iniciada?');
         this.fotoArchivoId.set(null);
-        this.fotoPreview.set(null);
+        this.revokeFotoPreview();
         this.notify.error('Error al subir la imagen');
       },
     });
@@ -438,10 +727,7 @@ export class UsuarioFormModalComponent {
 
   protected onClose(force = false) {
     if (!force && (this.isSaving() || this.isValidating())) return;
-    const p = this.fotoPreview();
-    if (p?.startsWith('blob:')) {
-      URL.revokeObjectURL(p);
-    }
+    this.revokeFotoPreview();
     this.fotoArchivoId.set(null);
     this.fotoUploadError.set(null);
     this.activeTab.set('datos');
@@ -468,16 +754,20 @@ export class UsuarioFormModalComponent {
     this.celCorp.set('');
     this.fechaContratacion.set('');
     this.cargo.set('');
-    this.fotoPreview.set(null);
+    this.revokeFotoPreview();
     this.fotoArchivoId.set(null);
     this.fotoUploadError.set(null);
     this.selectedNavCodes.set(new Set<string>());
+    this.fieldErrors.set({});
+    this.touched.set({});
+    this.submitAttempted.set(false);
   }
 
   protected readonly isValidating = signal(false);
 
   protected async onSave() {
     if (this.isSaving() || this.isValidating()) return;
+    this.submitAttempted.set(true);
     this.isValidating.set(true);
     let errors: string[];
     try {
@@ -486,7 +776,7 @@ export class UsuarioFormModalComponent {
       this.isValidating.set(false);
     }
     if (errors.length) {
-      this.notify.warning(errors.join('\n'));
+      this.notify.warning(errors.slice(0, 4).join('\n'));
       return;
     }
     if (this.isEditing()) {
@@ -505,22 +795,14 @@ export class UsuarioFormModalComponent {
 
   private async validate(): Promise<string[]> {
     const errors: string[] = [];
+    const fieldMap: Record<string, string> = {};
 
     try {
-      await usuarioDatosSchema.validate(
-        {
-          nombre: this.nombre(),
-          email: this.email(),
-          establecimientoId: this.establecimientoId(),
-          role: this.role(),
-          password: this.password(),
-          password2: this.password2(),
-        },
-        { abortEarly: false },
-      );
+      await usuarioDatosSchema.validate(this.datosSnapshot(), { abortEarly: false });
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         errors.push(...err.errors);
+        this.applyYupFieldErrors(err, fieldMap);
       }
     }
 
@@ -528,17 +810,25 @@ export class UsuarioFormModalComponent {
     const pw2 = this.password2();
     if (!this.isEditing()) {
       if (!pw || pw.length < 8) {
-        errors.push('La contraseña debe tener al menos 8 caracteres.');
+        const msg = 'La contraseña debe tener al menos 8 caracteres.';
+        errors.push(msg);
+        fieldMap['password'] = msg;
       }
       if (pw !== pw2) {
-        errors.push('Las contraseñas no coinciden.');
+        const msg = 'Las contraseñas no coinciden.';
+        errors.push(msg);
+        fieldMap['password2'] = msg;
       }
     } else if (pw || pw2) {
       if (pw.length < 8) {
-        errors.push('La contraseña debe tener al menos 8 caracteres.');
+        const msg = 'La contraseña debe tener al menos 8 caracteres.';
+        errors.push(msg);
+        fieldMap['password'] = msg;
       }
       if (pw !== pw2) {
-        errors.push('Las contraseñas no coinciden.');
+        const msg = 'Las contraseñas no coinciden.';
+        errors.push(msg);
+        fieldMap['password2'] = msg;
       }
     }
 
@@ -547,36 +837,33 @@ export class UsuarioFormModalComponent {
     }
 
     try {
-      await usuarioPersonalesSchema.validate(
-        {
-          tipoDoc: this.tipoDoc(),
-          numeroDoc: this.numeroDoc(),
-          nombres: this.nombres(),
-          apellidos: this.apellidos(),
-          fechaNac: this.fechaNac(),
-          emailPersonal: this.emailPersonal(),
-          direccion: this.direccion(),
-          celPersonal: this.celPersonal(),
-          emailCorp: this.emailCorp(),
-          celCorp: this.celCorp(),
-          fechaContratacion: this.fechaContratacion(),
-          cargo: this.cargo(),
-        },
-        { abortEarly: false },
-      );
+      await usuarioPersonalesSchema.validate(this.personalesSnapshot(), { abortEarly: false });
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         errors.push(...err.errors);
+        this.applyYupFieldErrors(err, fieldMap);
       }
     }
 
     if (this.tipoDoc().trim() && !this.numeroDoc().trim()) {
-      errors.push('Si selecciona tipo de documento, ingrese el número.');
-    }
-    if (this.numeroDoc().trim() && !this.tipoDoc().trim()) {
-      errors.push('Seleccione el tipo de documento para el número ingresado.');
+      const msg = 'Si selecciona tipo de documento, ingrese el número.';
+      errors.push(msg);
+      fieldMap['numeroDoc'] = msg;
+    } else if (this.numeroDoc().trim() && !this.tipoDoc().trim()) {
+      const msg = 'Seleccione el tipo de documento para el número ingresado.';
+      errors.push(msg);
+      fieldMap['tipoDoc'] = msg;
+    } else {
+      const tipo = this.tipoDoc().trim();
+      const numero = this.numeroDoc().trim();
+      if (tipo && numero && !isValidIdentityDocumentNumber(tipo, numero)) {
+        const msg = identityDocumentNumberMessage(tipo);
+        errors.push(msg);
+        fieldMap['numeroDoc'] = msg;
+      }
     }
 
+    this.fieldErrors.set(fieldMap);
     return [...new Set(errors.map((x) => x.trim()).filter(Boolean))];
   }
 

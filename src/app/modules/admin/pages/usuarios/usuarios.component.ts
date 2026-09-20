@@ -158,10 +158,6 @@ export class UsuariosComponent {
     this.currentPage.set(1);
   }
 
-  protected apiTokenCell(): string {
-    return '—';
-  }
-
   protected rowAction(user: UserListItemDto, action: string) {
     if (action === 'editar') {
       this.modalInitialTab.set('datos');

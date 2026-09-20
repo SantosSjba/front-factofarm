@@ -16,6 +16,8 @@
 <app-page-state
   [loading]="statsQuery.isPending()"
   [error]="statsErrorMessage()"
+  skeleton="kpi-grid"
+  [skeletonCount]="4"
   (retry)="statsQuery.refetch()"
 >
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
@@ -93,6 +95,8 @@
 <app-page-state
   [loading]="salesTrendQuery.isPending()"
   [error]="salesTrendErrorMessage()"
+  skeleton="chart"
+  [skeletonCount]="12"
   (retry)="salesTrendQuery.refetch()"
 >
   <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
@@ -150,6 +154,8 @@
   [error]="chainErrorMessage()"
   [empty]="!chainQuery.isPending() && !chainQuery.isError() && (chainQuery.data()?.establishments?.length ?? 0) === 0"
   emptyTitle="Sin sucursales activas"
+  skeleton="table"
+  [skeletonCount]="4"
   (retry)="chainQuery.refetch()"
 >
   <app-component-card className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">

@@ -68,7 +68,12 @@
               "buildTarget": "front-factofarm:build:production"
             },
             "development": {
-              "buildTarget": "front-factofarm:build:development"
+              "buildTarget": "front-factofarm:build:development",
+              "prebundle": {
+                "exclude": [
+                  "@tanstack/angular-query-experimental"
+                ]
+              }
             }
           },
           "defaultConfiguration": "development"

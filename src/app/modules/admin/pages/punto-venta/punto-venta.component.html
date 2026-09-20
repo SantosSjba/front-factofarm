@@ -3,6 +3,8 @@
     [loading]="warehousesQuery.isPending() || cashSessionQuery.isPending()"
     [error]="posBootstrapError()"
     [showRetry]="true"
+    skeleton="panel"
+    [skeletonCount]="4"
     (retry)="refetchPosBootstrap()"
   >
   @if (!isOnline() || offlinePending() > 0) {

@@ -24,7 +24,7 @@ import { DirectoryApiService } from '../../../services/directory-api.service';
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Panel farmacéutico</h1>
     </app-page-toolbar>
-    <app-page-state [loading]="query.isPending()" [error]="error()" (retry)="query.refetch()">
+    <app-page-state [loading]="query.isPending()" [error]="error()" skeleton="kpi-grid" [skeletonCount]="3" (retry)="query.refetch()">
       @if (query.data(); as d) {
         <div class="mt-4 grid gap-4 md:grid-cols-3">
           <app-component-card title="Recetas pendientes">

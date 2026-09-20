@@ -34,6 +34,8 @@
   [error]="listState.error"
   [empty]="listState.empty"
   emptyTitle="No hay establecimientos registrados"
+  skeleton="table"
+  [skeletonCount]="6"
   (retry)="refetchEstablishments()">
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">

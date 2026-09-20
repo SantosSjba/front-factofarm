@@ -15,196 +15,232 @@
     />
   </div>
 
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+  <div data-modal-body class="min-h-0 px-4 py-3 sm:px-6 sm:py-4">
     @if (activeTab() === 'datos') {
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-        <div>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+        <div (focusout)="onFieldBlur('nombre')">
           <app-label for="usuario-campo-1">Nombre</app-label>
           <app-input-field id="usuario-campo-1"
-            className="mt-2"
+            className="mt-1.5"
             placeholder="Nombre completo"
             [value]="nombre()"
-            (valueChange)="nombre.set($event + '')"
+            [error]="showFieldError('nombre')"
+            [hint]="fieldHint('nombre')"
+            (valueChange)="onFieldChange('nombre', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('email')">
           <app-label for="usuario-campo-2">Correo electrónico</app-label>
           <app-input-field id="usuario-campo-2"
             type="email"
-            className="mt-2"
+            className="mt-1.5"
             placeholder="correo@ejemplo.com"
             [value]="email()"
-            (valueChange)="email.set($event + '')"
+            [error]="showFieldError('email')"
+            [hint]="fieldHint('email')"
+            (valueChange)="onFieldChange('email', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('establecimientoId')">
           <app-label for="usuario-campo-3">Establecimiento</app-label>
           <app-form-select id="usuario-campo-3"
-            className="mt-2"
+            className="mt-1.5"
             [value]="establecimientoId()"
             [options]="establecimientoOptions()"
-            (valueChange)="establecimientoId.set($event)"
+            [error]="showFieldError('establecimientoId')"
+            [hint]="fieldHint('establecimientoId')"
+            (valueChange)="onFieldChange('establecimientoId', $event)"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('role')">
           <app-label for="usuario-campo-4">Perfil</app-label>
           <app-form-select id="usuario-campo-4"
-            className="mt-2"
+            className="mt-1.5"
             [value]="role()"
             [options]="roleOptions"
             [showPlaceholder]="false"
             placeholder=""
+            [error]="showFieldError('role')"
+            [hint]="fieldHint('role')"
             (valueChange)="setRoleFromSelect($event)"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('password')">
           <app-label for="usuario-campo-5">{{ passwordLabel() }}</app-label>
           <app-input-field id="usuario-campo-5"
             type="password"
-            className="mt-2"
+            className="mt-1.5"
             [placeholder]="passwordPlaceholder()"
             [value]="password()"
-            (valueChange)="password.set($event + '')"
+            [error]="showFieldError('password')"
+            [hint]="fieldHint('password')"
+            (valueChange)="onFieldChange('password', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('password2')">
           <app-label for="usuario-campo-6">Confirmar contraseña</app-label>
           <app-input-field id="usuario-campo-6"
             type="password"
-            className="mt-2"
+            className="mt-1.5"
             placeholder="••••••••"
             [value]="password2()"
-            (valueChange)="password2.set($event + '')"
+            [error]="showFieldError('password2')"
+            [hint]="fieldHint('password2')"
+            (valueChange)="onFieldChange('password2', $event + '')"
           />
         </div>
       </div>
     }
 
     @if (activeTab() === 'permisos') {
-      <div class="space-y-4">
+      <div class="space-y-3">
         <p class="text-theme-sm text-gray-500 dark:text-gray-400">
           Marque los módulos del menú lateral. Al guardar, el sistema asigna automáticamente los permisos
           técnicos del módulo (consultar, crear, editar y eliminar cuando aplique).
         </p>
-        @for (tree of menuTrees(); track tree.id) {
+        @if (menuTrees().length) {
           <app-permission-menu-tree
-            [tree]="tree"
+            [trees]="menuTrees()"
             [selectedCodes]="navCodesList()"
-            (parentToggle)="onPermissionParent(tree, $event)"
+            (parentToggle)="onPermissionParent($event.tree, $event.checked)"
             (childToggle)="onPermissionChild($event)"
           />
-        } @empty {
+        } @else {
           <p class="text-theme-sm text-gray-500">Cargando permisos del menú…</p>
         }
       </div>
     }
 
     @if (activeTab() === 'personales') {
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-        <div>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+        <div (focusout)="onFieldBlur('tipoDoc')">
           <app-label for="usuario-campo-7">Tipo Doc. Identidad</app-label>
           <app-form-select id="usuario-campo-7"
-            className="mt-2"
+            className="mt-1.5"
             [value]="tipoDoc()"
             [options]="tipoDocOptions"
-            (valueChange)="tipoDoc.set($event)"
+            [error]="showFieldError('tipoDoc')"
+            [hint]="fieldHint('tipoDoc')"
+            (valueChange)="onFieldChange('tipoDoc', $event)"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('numeroDoc')">
           <app-label for="usuario-campo-8">Número</app-label>
           <app-input-field id="usuario-campo-8"
-            className="mt-2"
+            className="mt-1.5"
             [value]="numeroDoc()"
-            (valueChange)="numeroDoc.set($event + '')"
+            [error]="showFieldError('numeroDoc')"
+            [hint]="fieldHint('numeroDoc')"
+            (valueChange)="onFieldChange('numeroDoc', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('nombres')">
           <app-label for="usuario-campo-9">Nombres</app-label>
           <app-input-field id="usuario-campo-9"
-            className="mt-2"
+            className="mt-1.5"
             [value]="nombres()"
-            (valueChange)="nombres.set($event + '')"
+            [error]="showFieldError('nombres')"
+            [hint]="fieldHint('nombres')"
+            (valueChange)="onFieldChange('nombres', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('apellidos')">
           <app-label for="usuario-campo-10">Apellidos</app-label>
           <app-input-field id="usuario-campo-10"
-            className="mt-2"
+            className="mt-1.5"
             [value]="apellidos()"
-            (valueChange)="apellidos.set($event + '')"
+            [error]="showFieldError('apellidos')"
+            [hint]="fieldHint('apellidos')"
+            (valueChange)="onFieldChange('apellidos', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('fechaNac')">
           <app-label for="usuario-campo-11">Fecha de nacimiento</app-label>
           <app-input-field id="usuario-campo-11"
             type="date"
-            className="mt-2"
+            className="mt-1.5"
             [value]="fechaNac()"
-            (valueChange)="fechaNac.set($event + '')"
+            [error]="showFieldError('fechaNac')"
+            [hint]="fieldHint('fechaNac')"
+            (valueChange)="onFieldChange('fechaNac', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('emailPersonal')">
           <app-label for="usuario-campo-12">Correo electrónico personal</app-label>
           <app-input-field id="usuario-campo-12"
             type="email"
-            className="mt-2"
+            className="mt-1.5"
             [value]="emailPersonal()"
-            (valueChange)="emailPersonal.set($event + '')"
+            [error]="showFieldError('emailPersonal')"
+            [hint]="fieldHint('emailPersonal')"
+            (valueChange)="onFieldChange('emailPersonal', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('celPersonal')">
           <app-label for="usuario-campo-13">Nº Celular personal</app-label>
           <app-input-field id="usuario-campo-13"
-            className="mt-2"
+            className="mt-1.5"
             [value]="celPersonal()"
-            (valueChange)="celPersonal.set($event + '')"
+            [error]="showFieldError('celPersonal')"
+            [hint]="fieldHint('celPersonal')"
+            (valueChange)="onFieldChange('celPersonal', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('direccion')">
           <app-label for="usuario-campo-14">Dirección</app-label>
           <app-input-field id="usuario-campo-14"
-            className="mt-2"
+            className="mt-1.5"
             [value]="direccion()"
-            (valueChange)="direccion.set($event + '')"
+            [error]="showFieldError('direccion')"
+            [hint]="fieldHint('direccion')"
+            (valueChange)="onFieldChange('direccion', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('emailCorp')">
           <app-label for="usuario-campo-15">Correo electrónico corporativo</app-label>
           <app-input-field id="usuario-campo-15"
             type="email"
-            className="mt-2"
+            className="mt-1.5"
             [value]="emailCorp()"
-            (valueChange)="emailCorp.set($event + '')"
+            [error]="showFieldError('emailCorp')"
+            [hint]="fieldHint('emailCorp')"
+            (valueChange)="onFieldChange('emailCorp', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('celCorp')">
           <app-label for="usuario-campo-16">Nº Celular corporativo</app-label>
           <app-input-field id="usuario-campo-16"
-            className="mt-2"
+            className="mt-1.5"
             [value]="celCorp()"
-            (valueChange)="celCorp.set($event + '')"
+            [error]="showFieldError('celCorp')"
+            [hint]="fieldHint('celCorp')"
+            (valueChange)="onFieldChange('celCorp', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('fechaContratacion')">
           <app-label for="usuario-campo-17">Fecha de contratación</app-label>
           <app-input-field id="usuario-campo-17"
             type="date"
-            className="mt-2"
+            className="mt-1.5"
             [value]="fechaContratacion()"
-            (valueChange)="fechaContratacion.set($event + '')"
+            [error]="showFieldError('fechaContratacion')"
+            [hint]="fieldHint('fechaContratacion')"
+            (valueChange)="onFieldChange('fechaContratacion', $event + '')"
           />
         </div>
-        <div>
+        <div (focusout)="onFieldBlur('cargo')">
           <app-label for="usuario-campo-18">Cargo</app-label>
           <app-input-field id="usuario-campo-18"
-            className="mt-2"
+            className="mt-1.5"
             [value]="cargo()"
-            (valueChange)="cargo.set($event + '')"
+            [error]="showFieldError('cargo')"
+            [hint]="fieldHint('cargo')"
+            (valueChange)="onFieldChange('cargo', $event + '')"
           />
         </div>
         <div class="md:col-span-2">
           <app-label>Foto</app-label>
-          <div class="mt-2">
+          <div class="mt-1.5">
             @if (fotoUploadError()) {
               <p class="text-theme-xs mb-2 text-red-600 dark:text-red-400">{{ fotoUploadError() }}</p>
             }
@@ -262,7 +298,7 @@
 
   <div
     data-modal-footer
-    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
+    class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-6 sm:py-3"
   >
     <app-button variant="outline" [disabled]="isSaving()" (btnClick)="onClose()">
       Cancelar

@@ -1,20 +1,32 @@
 import { Component, input, output } from '@angular/core';
+import {
+  SkeletonComponent,
+  type SkeletonVariant,
+} from '../../ui/skeleton/skeleton.component';
 import { SpinnerComponent } from '../../ui/spinner/spinner.component';
 
 @Component({
   selector: 'app-page-state',
   standalone: true,
-  imports: [SpinnerComponent],
+  imports: [SpinnerComponent, SkeletonComponent],
   template: `
     @if (loading()) {
-      <div
-        class="flex min-h-[12rem] flex-col items-center justify-center gap-3 text-sm text-gray-500"
-        role="status"
-        aria-live="polite"
-      >
-        <app-spinner size="lg" [label]="loadingLabel()" />
-        <span>{{ loadingLabel() }}</span>
-      </div>
+      @if (skeleton() === 'spinner') {
+        <div
+          class="flex min-h-[12rem] flex-col items-center justify-center gap-3 text-sm text-gray-500"
+          role="status"
+          aria-live="polite"
+        >
+          <app-spinner size="lg" [label]="loadingLabel()" />
+          <span>{{ loadingLabel() }}</span>
+        </div>
+      } @else {
+        <app-skeleton
+          [variant]="$any(skeleton())"
+          [count]="skeletonCount()"
+          [label]="loadingLabel()"
+        />
+      }
     } @else if (error()) {
       <div class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-900 dark:bg-rose-900/20" role="alert">
         <p class="font-medium text-rose-800 dark:text-rose-200">{{ errorTitle() }}</p>
@@ -50,5 +62,11 @@ export class PageStateComponent {
   readonly emptyTitle = input('Sin resultados');
   readonly emptyHint = input('');
   readonly showRetry = input(true);
+  /**
+   * Placeholder de carga. Default `table` (listados).
+   * Usar `kpi-grid` / `chart` / `panel` en dashboards; `spinner` para el legado.
+   */
+  readonly skeleton = input<SkeletonVariant | 'spinner'>('table');
+  readonly skeletonCount = input(5);
   readonly retry = output<void>();
 }

@@ -28,9 +28,12 @@ import { DirectoryApiService } from '../../../services/directory-api.service';
     <app-breadcrumb-inline [segments]="[{ label: 'Dashboard' }, { label: 'Cajero' }]" />
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Panel cajero</h1>
-      <a routerLink="/punto-venta"><app-button variant="primary">Ir al POS</app-button></a>
+      <div data-toolbar-actions class="flex flex-wrap gap-2">
+        <a routerLink="/caja-chica-pos"><app-button variant="outline">Ir a caja</app-button></a>
+        <a routerLink="/punto-venta"><app-button variant="primary">Ir al POS</app-button></a>
+      </div>
     </app-page-toolbar>
-    <app-page-state [loading]="query.isPending()" [error]="error()" (retry)="query.refetch()">
+    <app-page-state [loading]="query.isPending()" [error]="error()" skeleton="kpi-grid" [skeletonCount]="2" (retry)="query.refetch()">
       @if (query.data(); as d) {
         <div class="mt-4 grid gap-4 md:grid-cols-2">
           <app-component-card title="Mis ventas hoy">
@@ -41,6 +44,10 @@ import { DirectoryApiService } from '../../../services/directory-api.service';
             <p class="text-lg">{{ d.cajaAbierta ? 'Sesión abierta' : 'Sin caja abierta' }}</p>
             @if (d.sesionCaja; as s) {
               <p class="text-sm text-gray-500">Apertura: {{ s.montoApertura | currency: 'PEN' }}</p>
+            } @else {
+              <a routerLink="/caja-chica-pos" class="mt-2 inline-block text-sm font-medium text-brand-600 hover:underline">
+                Abrir caja →
+              </a>
             }
           </app-component-card>
         </div>

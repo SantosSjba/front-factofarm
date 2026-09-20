@@ -1,32 +1,81 @@
-@if (tree) {
-<div
-  class="dark:bg-white/[0.02] rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800"
->
-  <label class="flex cursor-pointer items-start gap-3">
-    <input
-      type="checkbox"
-      class="mt-1 size-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-      [checked]="allChildrenChecked()"
-      (change)="onParent($event)"
-    />
-    <span class="font-medium text-gray-800 dark:text-white/90">{{
-      tree.label ?? tree.code
-    }}</span>
-  </label>
-  <div class="mt-3 space-y-2 border-l border-gray-200 pl-6 dark:border-gray-700">
-    @for (c of tree.children; track c.id) {
-    <label class="flex cursor-pointer items-center gap-3">
-      <input
-        type="checkbox"
-        class="size-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-        [checked]="isChildChecked(c.code)"
-        (change)="onChild(c.code, $event)"
-      />
-      <span class="text-theme-sm text-gray-700 dark:text-gray-300">{{ c.label ?? c.code }}</span>
-    </label>
+@if (forest.length) {
+  <div
+    class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]"
+  >
+    @if (showFilter) {
+      <div class="border-b border-gray-100 px-3 py-2 dark:border-gray-800">
+        <input
+          type="search"
+          class="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          placeholder="Buscar módulo…"
+          [value]="filterQuery()"
+          (input)="onFilter($event)"
+          aria-label="Filtrar permisos del menú"
+        />
+      </div>
     }
+
+    <div class="custom-scrollbar max-h-[min(52vh,420px)] overflow-y-auto py-1">
+      @for (node of filteredForest(); track node.id) {
+        <div class="border-b border-gray-50 last:border-b-0 dark:border-white/[0.04]">
+          <div class="flex items-center gap-1.5 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-white/[0.04]">
+            <button
+              type="button"
+              class="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-white/[0.06] dark:hover:text-white/90"
+              [attr.aria-expanded]="isExpanded(node.id)"
+              [attr.aria-label]="(isExpanded(node.id) ? 'Contraer' : 'Expandir') + ' ' + (node.label ?? node.code)"
+              (click)="toggleExpand(node.id, $event)"
+            >
+              <app-icon
+                [name]="isExpanded(node.id) ? 'mdi:chevron-down' : 'mdi:chevron-right'"
+                width="18"
+                height="18"
+              />
+            </button>
+
+            <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 py-0.5">
+              <input
+                type="checkbox"
+                class="size-4 shrink-0 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                [checked]="allChildrenChecked(node)"
+                [indeterminate]="isPartial(node)"
+                (change)="onParent(node, $event)"
+              />
+              <span class="truncate text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ node.label ?? node.code }}
+              </span>
+            </label>
+          </div>
+
+          @if (isExpanded(node.id) && node.children.length) {
+            <ul class="relative ml-[1.65rem] border-l border-gray-200 pb-1 pl-3 dark:border-gray-700" role="group">
+              @for (c of node.children; track c.id) {
+                <li>
+                  <label
+                    class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                  >
+                    <input
+                      type="checkbox"
+                      class="size-4 shrink-0 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      [checked]="isChildChecked(c.code)"
+                      (change)="onChild(c.code, $event)"
+                    />
+                    <span class="text-theme-sm text-gray-700 dark:text-gray-300">
+                      {{ c.label ?? c.code }}
+                    </span>
+                  </label>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      } @empty {
+        <p class="px-4 py-6 text-center text-theme-sm text-gray-500">
+          Sin coincidencias para el filtro.
+        </p>
+      }
+    </div>
   </div>
-</div>
 } @else {
-<p class="text-theme-sm text-gray-500">No hay catálogo de permisos.</p>
+  <p class="text-theme-sm text-gray-500">No hay catálogo de permisos.</p>
 }

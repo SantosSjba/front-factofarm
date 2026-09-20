@@ -203,6 +203,34 @@ layer(base);
   @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
 }
 
+/* Skeleton shimmer (listas, paneles, KPIs) */
+.ff-skel {
+  @apply relative overflow-hidden bg-gray-200/80 dark:bg-white/10;
+}
+.ff-skel::after {
+  content: '';
+  @apply absolute inset-0 -translate-x-full animate-[ff-skel-shimmer_1.4s_ease-in-out_infinite];
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.45),
+    transparent
+  );
+}
+.dark .ff-skel::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.08),
+    transparent
+  );
+}
+@keyframes ff-skel-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 @utility menu-item-active {
   @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
 }
@@ -1143,5 +1171,30 @@ pre[class*="language-"].line-numbers {
   table.ff-table-is-cards tr.ff-table-empty-row td {
     display: block;
     text-align: center !important;
+  }
+
+  /* Usuarios list: denser card rows (QA-UI-10) */
+  table.ff-usuarios-list.ff-table-is-cards tbody {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  table.ff-usuarios-list.ff-table-is-cards tbody tr {
+    padding: 0.625rem 0.75rem;
+    gap: 0.1rem 0.5rem;
+  }
+
+  table.ff-usuarios-list.ff-table-is-cards td.ff-table-title {
+    font-size: 0.875rem;
+  }
+
+  table.ff-usuarios-list.ff-table-is-cards td.ff-table-field {
+    padding-top: 0.3rem;
+    margin-top: 0.2rem;
+    gap: 0.75rem;
+  }
+
+  table.ff-usuarios-list.ff-table-is-cards td.ff-table-field::before {
+    font-size: 0.6875rem;
   }
 }

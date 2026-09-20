@@ -117,15 +117,15 @@
           Controla qué secciones del menú puede usar este cliente. Al cambiar el plan puede marcar
           «Aplicar límites del plan» para restaurar el preset comercial.
         </p>
-        <div class="space-y-4">
-          @for (tree of tenantMenuTrees(); track tree.id) {
+        <div>
+          @if (tenantMenuTrees().length) {
             <app-permission-menu-tree
-              [tree]="tree"
+              [trees]="tenantMenuTrees()"
               [selectedCodes]="navCodesList()"
-              (parentToggle)="onPermissionParent(tree, $event)"
+              (parentToggle)="onPermissionParent($event.tree, $event.checked)"
               (childToggle)="onPermissionChild($event)"
             />
-          } @empty {
+          } @else {
             <p class="text-theme-sm text-gray-500">Cargando módulos…</p>
           }
         </div>

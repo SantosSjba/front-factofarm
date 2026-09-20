@@ -2,6 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { HelpHintComponent } from '../../ui/help-hint/help-hint.component';
+import type { SkeletonVariant } from '../../ui/skeleton/skeleton.component';
 import { PageStateComponent } from '../page-state/page-state.component';
 
 @Component({
@@ -30,5 +31,7 @@ export class ComponentCardComponent {
   @Input() emptyTitle = 'Sin resultados';
   @Input() emptyHint = '';
   @Input() showRetry = true;
+  @Input() skeleton: SkeletonVariant | 'spinner' = 'table';
+  @Input() skeletonCount = 6;
   @Output() retry = new EventEmitter<void>();
 }
