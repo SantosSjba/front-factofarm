@@ -12,15 +12,15 @@
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <app-table-dropdown>
       <div dropdown-button>
-        <button
-          type="button"
-          class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
-          (click)="noopAction()"
+        <app-button
+          size="sm"
+          variant="outline"
+          startIconName="mdi:download"
+          endIconName="mdi:chevron-down"
+          (btnClick)="noopAction()"
         >
-          <app-icon name="mdi:download" width="18" height="18" />
-          <span>Exportar</span>
-          <app-icon name="mdi:chevron-down" width="18" height="18" />
-        </button>
+          Exportar
+        </app-button>
       </div>
       <div dropdown-content>
         <button
@@ -35,14 +35,9 @@
     <ng-container *appHasPermission="'products.write'">
       <app-table-dropdown>
         <div dropdown-button>
-          <button
-            type="button"
-            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
-          >
-            <app-icon name="mdi:upload" width="18" height="18" />
-            <span>Importar</span>
-            <app-icon name="mdi:chevron-down" width="18" height="18" />
-          </button>
+          <app-button size="sm" variant="outline" startIconName="mdi:upload" endIconName="mdi:chevron-down">
+            Importar
+          </app-button>
         </div>
         <div dropdown-content>
           <button
@@ -160,23 +155,23 @@
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">ID</th>
+            <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">ID</th>
             @if (isVisible('codigoInterno')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Cód. Interno</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Cód. Interno</th>
             }
             @if (isVisible('unidad')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Unidad</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Unidad</th>
             }
             @if (isVisible('nombre')) {
               <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Nombre</th>
             }
             @if (isVisible('descripcion')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Descripción</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Descripción</th>
             }
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Historial</th>
+            <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Historial</th>
             <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Stock</th>
             @if (isVisible('stockMinimo')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Stock Mínimo</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Stock Mínimo</th>
             }
             @if (isVisible('totalStock')) {
               <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">T. Stock</th>
@@ -185,31 +180,31 @@
               <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">P. Unitario (Venta)</th>
             }
             @if (isVisible('tieneIgvVenta')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tiene Igv (Venta)</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Tiene Igv (Venta)</th>
             }
             @if (isVisible('codigoSunat')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Cód. SUNAT</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Cód. SUNAT</th>
             }
             @if (isVisible('precioCompra')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">P.Unitario (Compra)</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">P.Unitario (Compra)</th>
             }
             @if (isVisible('tieneIgvCompra')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tiene Igv (Compra)</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Tiene Igv (Compra)</th>
             }
             @if (isVisible('modelo')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Modelo</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Modelo</th>
             }
             @if (isVisible('marca')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Marca/Laboratorio</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Marca/Laboratorio</th>
             }
             @if (isVisible('registroSanitario')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Nº Sanitario</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Nº Sanitario</th>
             }
             @if (isVisible('digemid')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">DIGEMID</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">DIGEMID</th>
             }
             @if (isVisible('precioVentaConIgv')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">P. venta + IGV</th>
+              <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">P. venta + IGV</th>
             }
             <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
@@ -219,12 +214,12 @@
             <tr [class.bg-red-50/40]="!row.habilitado" [class.dark:bg-red-500/10]="!row.habilitado">
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
-              <td class="px-5 py-4 font-mono text-theme-xs text-gray-700 dark:text-gray-300">{{ row.id }}</td>
+              <td class="hidden px-5 py-4 font-mono text-theme-xs text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.id }}</td>
               @if (isVisible('codigoInterno')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoInterno || '—' }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.codigoInterno || '—' }}</td>
               }
               @if (isVisible('unidad')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.unit.codigo }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.unit.codigo }}</td>
               }
               @if (isVisible('nombre')) {
                 <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
@@ -241,9 +236,9 @@
                 </td>
               }
               @if (isVisible('descripcion')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.descripcion || '—' }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.descripcion || '—' }}</td>
               }
-              <td class="px-5 py-4">
+              <td class="hidden px-5 py-4 lg:table-cell">
                 <button
                   type="button"
                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
@@ -266,7 +261,7 @@
                 </button>
               </td>
               @if (isVisible('stockMinimo')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.stockMinimo }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.stockMinimo }}</td>
               }
               @if (isVisible('totalStock')) {
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.totalStock }}</td>
@@ -275,31 +270,31 @@
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ formatSalePrice(row) }}</td>
               }
               @if (isVisible('tieneIgvVenta')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ siNo(row.incluyeIgvVenta) }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ siNo(row.incluyeIgvVenta) }}</td>
               }
               @if (isVisible('codigoSunat')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoSunat || '—' }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.codigoSunat || '—' }}</td>
               }
               @if (isVisible('precioCompra')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ formatPurchasePrice(row) }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ formatPurchasePrice(row) }}</td>
               }
               @if (isVisible('tieneIgvCompra')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ siNo(row.incluyeIgvCompra) }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ siNo(row.incluyeIgvCompra) }}</td>
               }
               @if (isVisible('modelo')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.modelo || '—' }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.modelo || '—' }}</td>
               }
               @if (isVisible('marca')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ marcaLabel(row) }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ marcaLabel(row) }}</td>
               }
               @if (isVisible('registroSanitario')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.registroSanitario || '—' }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.registroSanitario || '—' }}</td>
               }
               @if (isVisible('digemid')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoMedicamentoDigemid || '—' }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.codigoMedicamentoDigemid || '—' }}</td>
               }
               @if (isVisible('precioVentaConIgv')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ precioVentaConIgvDisplay(row) }}</td>
+                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ precioVentaConIgvDisplay(row) }}</td>
               }
               <td class="px-5 py-4 text-end">
                 <div class="inline-flex justify-end">

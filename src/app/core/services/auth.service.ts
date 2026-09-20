@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, finalize, map, of, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { AuthUser, LoginResponse } from '../models/auth-session';
 import { LocaleService } from './locale.service';
@@ -16,6 +16,8 @@ export class AuthService {
   private readonly locale = inject(LocaleService);
 
   private readonly userSignal = signal<AuthUser | null>(this.readUserFromStorage());
+  /** Single in-flight refresh shared by concurrent 401s (F-LOG-05). */
+  private refreshInFlight: Observable<boolean> | null = null;
 
   constructor() {
     this.locale.setTimeZone(this.userSignal()?.timeZone);
@@ -100,18 +102,23 @@ export class AuthService {
   }
 
   refreshSession(): Observable<boolean> {
+    if (this.refreshInFlight) {
+      return this.refreshInFlight;
+    }
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
-      return new Observable((sub) => {
-        sub.next(false);
-        sub.complete();
-      });
+      return of(false);
     }
     const url = `${environment.apiBaseUrl}/auth/refresh`;
-    return this.http.post<LoginResponse>(url, { refreshToken }).pipe(
+    this.refreshInFlight = this.http.post<LoginResponse>(url, { refreshToken }).pipe(
       tap((res) => this.persistSession(res, this.isRememberEnabled())),
       map(() => true),
+      finalize(() => {
+        this.refreshInFlight = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
+    return this.refreshInFlight;
   }
 
   logout(): void {

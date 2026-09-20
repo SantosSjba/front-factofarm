@@ -69,7 +69,12 @@
         <app-form-field label="Comentario">
           <app-input-field [value]="movComentario()" (valueChange)="movComentario.set('' + $event)" placeholder="Opcional" />
         </app-form-field>
-        <app-button variant="primary" [disabled]="movMonto() <= 0" (btnClick)="movementMutation.mutate()">
+        <app-button
+          variant="primary"
+          [disabled]="movMonto() <= 0 || movementMutation.isPending()"
+          [loading]="movementMutation.isPending()"
+          (btnClick)="movementMutation.mutate()"
+        >
           Registrar
         </app-button>
       </app-form-stack>

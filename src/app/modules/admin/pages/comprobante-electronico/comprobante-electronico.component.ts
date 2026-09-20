@@ -258,8 +258,9 @@ export class ComprobanteElectronicoComponent {
   protected emitSpecialMutation = injectMutation(() => ({
     mutationFn: () => {
       const amount = Number(this.specialAmount());
-      const igv = Math.round(amount * 0.18 * 100) / 100;
-      const subtotal = Math.round((amount - igv) * 100) / 100;
+      // Precio con IGV incluido (misma extracción que POS): subtotal = amount / 1.18
+      const subtotal = Math.round((amount / 1.18) * 100) / 100;
+      const igv = Math.round((amount - subtotal) * 100) / 100;
       return firstValueFrom(
         this.api.emitSpecialElectronicDocument({
           documentType: this.specialType(),

@@ -8,7 +8,16 @@
     Envía el resumen diario de boletas aceptadas al OSE/SUNAT para el día seleccionado.
   </p>
   <div class="flex max-w-md flex-wrap items-end gap-3">
-    <app-input-field type="date" [value]="fecha()" (valueChange)="fecha.set('' + $event)" />
+    <div class="min-w-0 flex-1">
+      <app-label for="resumen-fecha">Fecha del resumen</app-label>
+      <app-input-field
+        id="resumen-fecha"
+        className="mt-1.5"
+        type="date"
+        [value]="fecha()"
+        (valueChange)="fecha.set('' + $event)"
+      />
+    </div>
     <app-button
       variant="primary"
       [disabled]="summaryMutation.isPending() || !canSendDailySummary()" [loading]="summaryMutation.isPending()"

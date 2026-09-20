@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -34,7 +34,6 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -57,6 +56,7 @@ export class MiFarmaciaComponent {
   private readonly auth = inject(AuthService);
   private readonly locale = inject(LocaleService);
   private readonly notify = inject(NotifyService);
+  private readonly router = inject(Router);
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
@@ -338,6 +338,10 @@ export class MiFarmaciaComponent {
   protected clearLogo() {
     this.logoArchivoId.set(null);
     this.logoPreview.set(null);
+  }
+
+  protected goToCpeBandeja() {
+    void this.router.navigateByUrl('/comprobante-electronico');
   }
 
   protected submit() {

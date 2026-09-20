@@ -979,7 +979,11 @@ pre[class*="language-"].line-numbers {
   }
 
   .ff-legal-prose table {
-    @apply mb-6 w-full overflow-hidden rounded-xl border border-gray-200 text-left text-sm dark:border-gray-800;
+    @apply mb-0 w-full min-w-[36rem] rounded-xl border border-gray-200 text-left text-sm dark:border-gray-800;
+  }
+
+  .ff-legal-prose .ff-legal-table-scroll {
+    @apply mb-6 max-w-full overflow-x-auto;
   }
 
   .ff-legal-prose thead {

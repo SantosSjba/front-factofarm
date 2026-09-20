@@ -109,9 +109,9 @@ const usuarioDatosSchema = yup.object({
     .trim()
     .required('Seleccione un establecimiento.'),
   role: yup
-    .mixed<'ADMINISTRADOR' | 'VENDEDOR'>()
-    .oneOf(['ADMINISTRADOR', 'VENDEDOR'])
-    .required(),
+    .mixed<UserRoleDto>()
+    .oneOf(ROLE_OPTIONS.map((o) => o.value) as UserRoleDto[])
+    .required('Seleccione un rol.'),
   password: yup.string().max(100, 'Contraseña no debe exceder 100 caracteres').optional(),
   password2: yup.string().max(100, 'Confirmación no debe exceder 100 caracteres').optional(),
 });

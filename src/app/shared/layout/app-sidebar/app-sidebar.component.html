@@ -70,6 +70,12 @@
                   class="menu-item group min-w-0 cursor-pointer"
                   [class.menu-item-active]="openSubmenu === 'main-' + i"
                   [class.menu-item-inactive]="openSubmenu !== 'main-' + i"
+                  [attr.aria-label]="
+                    (isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)
+                      ? null
+                      : nav.name
+                  "
+                  [attr.aria-expanded]="openSubmenu === 'main-' + i"
                   [ngClass]="{
                     'xl:justify-center': !(
                       (isExpanded$ | async) || (isHovered$ | async)
@@ -141,6 +147,7 @@
                             'menu-dropdown-item-inactive': !isSubItemActive(subItem),
                             'menu-dropdown-item-active': isSubItemActive(subItem)
                           }"
+                          [attr.aria-expanded]="isNestedSubmenuOpen('main-' + i, j)"
                           (click)="toggleNestedSubmenu('main-' + i, j)"
                         >
                           <span class="truncate">- {{ subItem.name }}</span>
@@ -223,6 +230,11 @@
                   routerLinkActive="menu-item-active"
                   class="menu-item group min-w-0"
                   [ngClass]="{ 'menu-item-inactive': !isActive(nav.path) }"
+                  [attr.aria-label]="
+                    (isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)
+                      ? null
+                      : nav.name
+                  "
                 >
                   <span
                     class="menu-item-icon-size"
@@ -267,7 +279,7 @@
                 (isHovered$ | async) ||
                 (isMobileOpen$ | async)
             ) {
-              Others
+              Otros
             } @else {
               <app-icon name="lucide:ellipsis" iconClass="size-6" />
             }
@@ -289,6 +301,12 @@
                     'xl:justify-start':
                       (isExpanded$ | async) || (isHovered$ | async)
                   }"
+                  [attr.aria-label]="
+                    (isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)
+                      ? null
+                      : nav.name
+                  "
+                  [attr.aria-expanded]="openSubmenu === 'others-' + i"
                 >
                   <span
                     class="menu-item-icon-size"
@@ -355,6 +373,7 @@
                             'menu-dropdown-item-inactive': !isSubItemActive(subItem),
                             'menu-dropdown-item-active': isSubItemActive(subItem)
                           }"
+                          [attr.aria-expanded]="isNestedSubmenuOpen('others-' + i, j)"
                           (click)="toggleNestedSubmenu('others-' + i, j)"
                         >
                           <span class="truncate">- {{ subItem.name }}</span>
@@ -437,6 +456,11 @@
                   routerLinkActive="menu-item-active"
                   class="menu-item group min-w-0"
                   [ngClass]="{ 'menu-item-inactive': !isActive(nav.path) }"
+                  [attr.aria-label]="
+                    (isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)
+                      ? null
+                      : nav.name
+                  "
                 >
                   <span
                     class="menu-item-icon-size"

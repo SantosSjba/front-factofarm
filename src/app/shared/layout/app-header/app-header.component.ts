@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, computed, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, inject } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -28,7 +28,7 @@ type SearchMenuOption = {
   ],
   templateUrl: './app-header.component.html',
 })
-export class AppHeaderComponent {
+export class AppHeaderComponent implements AfterViewInit, OnDestroy {
   private readonly auth = inject(AuthService);
   protected readonly branding = inject(TenantBrandingService);
 
@@ -51,12 +51,14 @@ export class AppHeaderComponent {
   }
 
   isApplicationMenuOpen = false;
+  isMobileSearchOpen = false;
   readonly isMobileOpen$;
   searchTerm = '';
   isSearchDropdownOpen = false;
   readonly searchOptions: SearchMenuOption[] = this.buildSearchOptions();
 
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('mobileSearchInput') mobileSearchInput?: ElementRef<HTMLInputElement>;
 
   constructor(
     public sidebarService: SidebarService,
@@ -77,6 +79,16 @@ export class AppHeaderComponent {
     this.isApplicationMenuOpen = !this.isApplicationMenuOpen;
   }
 
+  toggleMobileSearch() {
+    this.isMobileSearchOpen = !this.isMobileSearchOpen;
+    if (this.isMobileSearchOpen) {
+      this.isSearchDropdownOpen = true;
+      setTimeout(() => this.mobileSearchInput?.nativeElement.focus(), 0);
+    } else {
+      this.isSearchDropdownOpen = false;
+    }
+  }
+
   ngAfterViewInit() {
     document.addEventListener('keydown', this.handleKeyDown);
   }
@@ -88,6 +100,12 @@ export class AppHeaderComponent {
   handleKeyDown = (event: KeyboardEvent) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
       event.preventDefault();
+      if (window.innerWidth < 1024) {
+        this.isMobileSearchOpen = true;
+        this.isSearchDropdownOpen = true;
+        setTimeout(() => this.mobileSearchInput?.nativeElement.focus(), 0);
+        return;
+      }
       this.searchInput?.nativeElement.focus();
       this.isSearchDropdownOpen = true;
     }
@@ -122,6 +140,7 @@ export class AppHeaderComponent {
     this.router.navigateByUrl(path);
     this.searchTerm = '';
     this.isSearchDropdownOpen = false;
+    this.isMobileSearchOpen = false;
   }
 
   onSearchEnter() {

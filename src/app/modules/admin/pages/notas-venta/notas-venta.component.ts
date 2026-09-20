@@ -2,6 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -15,6 +16,8 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
+import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
@@ -46,6 +49,8 @@ type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; q
     ButtonComponent,
     InputFieldComponent,
     LabelComponent,
+    IconComponent,
+    TableDropdownComponent,
   ],
   templateUrl: './notas-venta.component.html' })
 export class NotasVentaComponent {
@@ -53,6 +58,8 @@ export class NotasVentaComponent {
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
   private readonly locale = inject(LocaleService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Notas de venta' }];
   protected readonly page = signal(1);
@@ -74,6 +81,7 @@ export class NotasVentaComponent {
   protected readonly storage = signal<DataStorageMode>('hot');
   protected readonly convertSaleId = signal<string | null>(null);
   protected readonly convertTarget = signal<'BOLETA' | 'FACTURA'>('BOLETA');
+  private filtersHydrated = false;
 
   protected readonly convertDocOptions = [
     { value: 'BOLETA', label: 'Boleta electrónica' },
@@ -165,6 +173,32 @@ export class NotasVentaComponent {
   );
 
   constructor() {
+    const q = this.route.snapshot.queryParamMap;
+    const from = q.get('dateFrom') ?? q.get('from');
+    const to = q.get('dateTo') ?? q.get('to');
+    const estado = q.get('estado');
+    if (from) this.dateFrom.set(from);
+    if (to) this.dateTo.set(to);
+    if (estado != null) this.estado.set(estado);
+    this.filtersHydrated = true;
+
+    effect(() => {
+      if (!this.filtersHydrated) return;
+      const dateFrom = this.dateFrom();
+      const dateTo = this.dateTo();
+      const estadoVal = this.estado();
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {
+          dateFrom: dateFrom || null,
+          dateTo: dateTo || null,
+          estado: estadoVal || null,
+        },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    });
+
     effect(() => {
       const sale = this.returnSaleQuery.data();
       if (!sale || this.returnLines().length > 0) return;

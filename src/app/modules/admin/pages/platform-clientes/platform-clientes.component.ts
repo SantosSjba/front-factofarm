@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
@@ -35,10 +37,12 @@ import { TenantEditModalComponent } from './tenant-edit-modal/tenant-edit-modal.
   ],
   templateUrl: './platform-clientes.component.html',
 })
-export class PlatformClientesComponent {
+export class PlatformClientesComponent implements OnInit {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly searchTerm = signal('');
   protected readonly statusFilter = signal('all');
@@ -68,6 +72,17 @@ export class PlatformClientesComponent {
   ];
 
   protected readonly planFormOptions = this.planOptions.filter((o) => o.value !== 'all');
+
+  ngOnInit(): void {
+    const allowed = new Set(this.statusOptions.map((o) => o.value));
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const status = params.get('status');
+      if (status && allowed.has(status) && this.statusFilter() !== status) {
+        this.statusFilter.set(status);
+        this.currentPage.set(1);
+      }
+    });
+  }
 
   protected readonly tenantsQuery = injectQuery(() => ({
     queryKey: [

@@ -28,7 +28,6 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type {
   CustomerItemDto,
-  PaymentMethod,
   PosCatalogItemDto,
   CreateSaleRequest,
   SaleBillingStatusDto,
@@ -42,6 +41,7 @@ import type {
   CreateSaleSubstitutionRequest,
   SunatDocumentStatus,
   SaleLineDiscountType,
+  PromotionListItemDto,
 } from '../../models/directory.models';
 import {
   createPaymentLine,
@@ -58,6 +58,7 @@ import { PosCustomerDisplayService } from '../../services/pos/pos-customer-displ
 type SaleMutationResult = SaleDetailDto | { offlineQueued: true; offlineLocalId: string };
 
 const IGV_RATE = 0.18;
+const POS_CART_KEY = 'factofarm-pos-cart-v1';
 
 type CartLine = {
   productId: string;
@@ -70,10 +71,28 @@ type CartLine = {
   manejaLotes: boolean;
   lotMode: SaleLotAllocationMode;
   manualLots: { lotCode: string; quantity: number }[];
+  /** Stock available when the line was added (fallback if catalog refreshes without the product). */
+  availableStock?: number;
   discountType?: SaleLineDiscountType | null;
   discountValue?: number | null;
   substitutedFromProductId?: string;
   substitutedFromNombre?: string;
+};
+
+type PersistedPosState = {
+  cart: CartLine[];
+  customerId: string;
+  customerLabel: string;
+  warehouseId: string;
+  documentType: SaleDocumentType;
+  serie: string;
+  promotionCode: string;
+  comentario: string;
+  prescriptionValidated: boolean;
+  prescriptionId: string;
+  prescriptionNote: string;
+  controlledApprovedById: string;
+  paymentLines?: PosPaymentLine[];
 };
 
 function lineGrossTotal(line: CartLine): number {
@@ -163,6 +182,8 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly prescriptionNote = signal('');
   protected readonly patientPrescriptions = signal<PrescriptionSummaryDto[]>([]);
   protected readonly promotionCode = signal('');
+  protected readonly promotionPreview = signal<PromotionListItemDto | null>(null);
+  protected readonly promotionValidating = signal(false);
   protected readonly comentario = signal('');
   protected readonly payModalOpen = signal(false);
   protected readonly lotModalProductId = signal<string | null>(null);
@@ -176,6 +197,8 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly interactionAlerts = signal<SaleInteractionAlertDto[]>([]);
   protected readonly interactionsAcknowledged = signal(false);
   protected readonly interactionsLoading = signal(false);
+  /** API de interacciones falló: bloquea cobro hasta reintento exitoso (F-LOG-03). */
+  protected readonly interactionCheckFailed = signal(false);
   protected readonly controlledApprovedById = signal('');
   protected readonly pharmaApprovers = signal<PharmaApproverDto[]>([]);
   protected readonly substituteModalProductId = signal<string | null>(null);
@@ -184,6 +207,8 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly isOnline = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
   protected readonly offlinePending = computed(() => this.offlineQueue.pendingCount());
   protected readonly catalogViewMode = signal<'table' | 'tiles'>('tiles');
+  /** Pestaña móvil Catálogo | Carrito (F-UX-01). */
+  protected readonly mobilePosTab = signal<'catalog' | 'cart'>('catalog');
   protected readonly discountTypeOptions = [
     { value: '', label: 'Sin descuento' },
     { value: 'PORCENTAJE', label: '% descuento' },
@@ -193,6 +218,9 @@ export class PuntoVentaComponent implements OnDestroy {
   private interactionTimer: ReturnType<typeof setTimeout> | null = null;
   private catalogLoadTimer: ReturnType<typeof setTimeout> | null = null;
   private sunatPollTimer: ReturnType<typeof setInterval> | null = null;
+  private promotionValidateTimer: ReturnType<typeof setTimeout> | null = null;
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+  private restoringPosState = false;
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,
@@ -229,13 +257,39 @@ export class PuntoVentaComponent implements OnDestroy {
     this.cart().reduce((acc, line) => acc + lineGrossTotal(line), 0),
   );
 
+  /** Descuento de promoción (misma lógica que API applyPromotion). */
+  protected readonly promoDiscount = computed(() => {
+    const promo = this.promotionPreview();
+    if (!promo) return 0;
+    const total = this.cartTotal();
+    const valor = Number(promo.valor) || 0;
+    switch (promo.tipo) {
+      case 'PORCENTAJE_VENTA':
+        return Math.round(((total * valor) / 100) * 100) / 100;
+      case 'CANTIDAD_MINIMA': {
+        const qty = this.cart().reduce((acc, line) => acc + line.quantity, 0);
+        if (promo.cantidadMinima != null && qty >= promo.cantidadMinima) {
+          return Math.round(valor * 100) / 100;
+        }
+        return 0;
+      }
+      default:
+        return 0;
+    }
+  });
+
+  /** Total a cobrar tras promoción (F-LOG-02). */
+  protected readonly payableTotal = computed(() =>
+    Math.max(0, Math.round((this.cartTotal() - this.promoDiscount()) * 100) / 100),
+  );
+
   protected readonly cartSubtotal = computed(() => this.cartTotal() / (1 + IGV_RATE));
   protected readonly cartIgv = computed(() => this.cartTotal() - this.cartSubtotal());
   protected readonly paymentPaidTotal = computed(() =>
     this.paymentLines().reduce((acc, line) => acc + (Number(line.monto) || 0), 0),
   );
   protected readonly paymentRemaining = computed(
-    () => Math.round((this.cartTotal() - this.paymentPaidTotal()) * 100) / 100,
+    () => Math.round((this.payableTotal() - this.paymentPaidTotal()) * 100) / 100,
   );
   protected readonly requiresRx = computed(() => this.cart().some((l) => l.necesitaRecetaMedica));
   protected readonly requiresControlled = computed(() => this.cart().some((l) => l.esControlado));
@@ -322,7 +376,7 @@ export class PuntoVentaComponent implements OnDestroy {
       customerName: this.customerLabel().trim() || null,
       subtotal: this.cartSubtotal(),
       igv: this.cartIgv(),
-      total: this.cartTotal(),
+      total: this.payableTotal(),
       lines: cart.map((l) => ({
         nombre: l.nombre,
         quantity: l.quantity,
@@ -403,6 +457,8 @@ export class PuntoVentaComponent implements OnDestroy {
   }
 
   constructor() {
+    this.restorePosState();
+
     this.posRealtime.connect({
       onStockUpdated: (payload) => {
         const wh = this.warehouseId();
@@ -432,8 +488,17 @@ export class PuntoVentaComponent implements OnDestroy {
       void this.runSearch();
     });
     void this.offlineQueue.refreshCount();
+    // F-PER-02: sincronizar cola offline al iniciar si ya hay red
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      void this.syncOfflineQueue();
+    }
     window.addEventListener('online', this.onOnline);
     window.addEventListener('offline', this.onOffline);
+
+    // F-PER-03: limpia snapshot stale de pantalla cliente si el carrito está vacío
+    if (!this.cart().length) {
+      this.customerDisplay.publish({ type: 'clear' });
+    }
 
     effect(() => {
       const warehouses = this.warehousesQuery.data();
@@ -477,7 +542,7 @@ export class PuntoVentaComponent implements OnDestroy {
     effect(() => {
       // Sync en vivo: carrito, totales, comprobante, cliente y modal de cobro.
       void this.cart();
-      void this.cartTotal();
+      void this.payableTotal();
       void this.cartSubtotal();
       void this.documentType();
       void this.serie();
@@ -487,6 +552,26 @@ export class PuntoVentaComponent implements OnDestroy {
       void this.cashSession()?.cashRegister?.customerDisplayEnabled;
       if (!this.shouldSyncCustomerDisplay()) return;
       this.publishCustomerDisplayCart();
+    });
+
+    // F-PER-01: persistir carrito / cliente / almacén / borrador de pago
+    effect(() => {
+      void this.cart();
+      void this.customerId();
+      void this.customerLabel();
+      void this.warehouseId();
+      void this.documentType();
+      void this.serie();
+      void this.promotionCode();
+      void this.comentario();
+      void this.prescriptionValidated();
+      void this.prescriptionId();
+      void this.prescriptionNote();
+      void this.controlledApprovedById();
+      void this.paymentLines();
+      if (this.restoringPosState) return;
+      if (this.persistTimer) clearTimeout(this.persistTimer);
+      this.persistTimer = setTimeout(() => this.persistPosState(), 200);
     });
 
     // Responde cuando la pantalla cliente pide el estado al abrirse.
@@ -502,23 +587,33 @@ export class PuntoVentaComponent implements OnDestroy {
       }
     });
 
-    effect(() => {
-      if (this.payModalOpen()) {
-        const total = Math.round(this.cartTotal() * 100) / 100;
-        this.paymentLines.set([createPaymentLine('EFECTIVO', total)]);
-      }
-    });
+    // F-LOG-06: no resetear líneas de pago en cada tick de total (solo al abrir modal)
 
     effect(() => {
       const cart = this.cart();
       if (this.interactionTimer) clearTimeout(this.interactionTimer);
       this.interactionsAcknowledged.set(false);
+      this.interactionCheckFailed.set(false);
       if (cart.length < 2) {
         this.interactionAlerts.set([]);
         return;
       }
       this.interactionTimer = setTimeout(() => {
         void this.refreshInteractions();
+      }, 400);
+    });
+
+    // Revalidar preview de promo si cambia el carrito o el código
+    effect(() => {
+      void this.cart();
+      const code = this.promotionCode().trim();
+      if (!code) {
+        this.promotionPreview.set(null);
+        return;
+      }
+      if (this.promotionValidateTimer) clearTimeout(this.promotionValidateTimer);
+      this.promotionValidateTimer = setTimeout(() => {
+        void this.refreshPromotionPreview();
       }, 400);
     });
   }
@@ -531,6 +626,8 @@ export class PuntoVentaComponent implements OnDestroy {
     window.removeEventListener('offline', this.onOffline);
     if (this.interactionTimer) clearTimeout(this.interactionTimer);
     if (this.catalogLoadTimer) clearTimeout(this.catalogLoadTimer);
+    if (this.promotionValidateTimer) clearTimeout(this.promotionValidateTimer);
+    if (this.persistTimer) clearTimeout(this.persistTimer);
     if (this.sunatPollTimer) clearInterval(this.sunatPollTimer);
   }
 
@@ -645,7 +742,11 @@ export class PuntoVentaComponent implements OnDestroy {
     }
     if (existing) {
       this.cart.update((lines) =>
-        lines.map((l) => (l.productId === item.id ? { ...l, quantity: nextQty } : l)),
+        lines.map((l) =>
+          l.productId === item.id
+            ? { ...l, quantity: nextQty, availableStock: stock }
+            : l,
+        ),
       );
     } else {
       this.cart.update((lines) => [
@@ -661,6 +762,7 @@ export class PuntoVentaComponent implements OnDestroy {
           manejaLotes: item.manejaLotes,
           lotMode: 'AUTO',
           manualLots: [],
+          availableStock: stock,
         },
       ]);
     }
@@ -698,9 +800,13 @@ export class PuntoVentaComponent implements OnDestroy {
     this.prescriptionNote.set('');
     this.controlledApprovedById.set('');
     this.promotionCode.set('');
+    this.promotionPreview.set(null);
     this.comentario.set('');
     this.interactionAlerts.set([]);
     this.interactionsAcknowledged.set(false);
+    this.interactionCheckFailed.set(false);
+    this.paymentLines.set([createPaymentLine()]);
+    this.clearPersistedPosState();
     // Si no estamos reteniendo el ticket de la venta recién hecha, limpia la pantalla cliente.
     if (!this.customerDisplaySaleHold && this.shouldSyncCustomerDisplay()) {
       this.customerDisplay.publish({ type: 'clear' });
@@ -719,7 +825,10 @@ export class PuntoVentaComponent implements OnDestroy {
 
   protected validateCartStock(showNotify = true): boolean {
     for (const line of this.cart()) {
-      const stock = this.stockForProduct(line.productId);
+      let stock = this.stockForProduct(line.productId);
+      if (stock === null && line.availableStock != null) {
+        stock = line.availableStock;
+      }
       if (stock === null) {
         if (showNotify) {
           this.notify.warning(`${line.nombre}: ya no tiene stock en este almacén`);
@@ -745,20 +854,30 @@ export class PuntoVentaComponent implements OnDestroy {
     const ids = this.cart().map((l) => l.productId);
     if (ids.length < 2) {
       this.interactionAlerts.set([]);
+      this.interactionCheckFailed.set(false);
       return;
     }
     this.interactionsLoading.set(true);
     try {
       const res = await firstValueFrom(this.api.checkSaleInteractions(ids));
       this.interactionAlerts.set(res.alerts);
+      this.interactionCheckFailed.set(false);
       if (res.hasAlerts && res.alerts.some((a) => a.severidad === 'GRAVE')) {
         this.notify.warning('Interacción medicamentosa grave detectada en el carrito');
       }
     } catch {
-      this.interactionAlerts.set([]);
+      // F-LOG-03: no limpiar alertas ni permitir cobro si falla la verificación
+      this.interactionCheckFailed.set(true);
+      this.notify.error(
+        'No se pudieron verificar las interacciones medicamentosas. Reintente antes de cobrar.',
+      );
     } finally {
       this.interactionsLoading.set(false);
     }
+  }
+
+  protected retryInteractionCheck() {
+    void this.refreshInteractions();
   }
 
   protected async openLotModal(productId: string) {
@@ -838,6 +957,16 @@ export class PuntoVentaComponent implements OnDestroy {
       this.notify.warning('Seleccione una receta o valide manualmente antes de cobrar');
       return;
     }
+    if (this.interactionCheckFailed()) {
+      this.notify.warning(
+        'Verifique las interacciones medicamentosas antes de cobrar (la última consulta falló).',
+      );
+      return;
+    }
+    if (this.interactionsLoading()) {
+      this.notify.warning('Espere a que termine la verificación de interacciones');
+      return;
+    }
     if (this.interactionAlerts().length > 0 && !this.interactionsAcknowledged()) {
       this.notify.warning('Confirme las alertas de interacción medicamentosa antes de cobrar');
       return;
@@ -845,7 +974,48 @@ export class PuntoVentaComponent implements OnDestroy {
     if (this.requiresControlled()) {
       void this.loadApprovers();
     }
+    await this.refreshPromotionPreview();
+    // F-LOG-06: inicializar pagos solo al abrir el modal
+    const total = Math.round(this.payableTotal() * 100) / 100;
+    this.paymentLines.set([createPaymentLine('EFECTIVO', total)]);
     this.payModalOpen.set(true);
+    this.mobilePosTab.set('cart');
+  }
+
+  protected onPromotionCodeChange(value: string) {
+    this.promotionCode.set(value);
+    this.promotionPreview.set(null);
+    if (this.promotionValidateTimer) clearTimeout(this.promotionValidateTimer);
+    this.promotionValidateTimer = setTimeout(() => {
+      void this.refreshPromotionPreview();
+    }, 350);
+  }
+
+  private async refreshPromotionPreview() {
+    const code = this.promotionCode().trim();
+    if (!code) {
+      this.promotionPreview.set(null);
+      return;
+    }
+    this.promotionValidating.set(true);
+    try {
+      const res = await firstValueFrom(this.api.validatePromotionCode(code));
+      if (res.valid && res.promotion) {
+        this.promotionPreview.set(res.promotion);
+      } else {
+        this.promotionPreview.set(null);
+        if (this.payModalOpen()) {
+          this.notify.warning(res.reason ?? 'Código de promoción no válido');
+        }
+      }
+    } catch {
+      this.promotionPreview.set(null);
+      if (this.payModalOpen()) {
+        this.notify.error('No se pudo validar el código de promoción');
+      }
+    } finally {
+      this.promotionValidating.set(false);
+    }
   }
 
   protected readonly requiresPaymentReference = paymentRequiresReference;
@@ -942,6 +1112,7 @@ export class PuntoVentaComponent implements OnDestroy {
               nombre: sub.nombre,
               codigoInterno: sub.codigoInterno,
               precio: price,
+              availableStock: stock,
               substitutedFromProductId: original!.substitutedFromProductId ?? originalId,
               substitutedFromNombre: original!.substitutedFromNombre ?? original!.nombre,
             }
@@ -996,7 +1167,14 @@ export class PuntoVentaComponent implements OnDestroy {
 
   protected readonly saleMutation = injectMutation(() => ({
     mutationFn: async (): Promise<SaleMutationResult> => {
-      const total = this.cartTotal();
+      const code = this.promotionCode().trim();
+      if (code && !this.promotionPreview()) {
+        await this.refreshPromotionPreview();
+        if (!this.promotionPreview()) {
+          throw new Error('Código de promoción no válido');
+        }
+      }
+      const total = this.payableTotal();
       const paid = this.paymentPaidTotal();
       if (Math.abs(paid - total) > 0.02) {
         throw new Error('La suma de los pagos debe coincidir con el total');
@@ -1011,6 +1189,9 @@ export class PuntoVentaComponent implements OnDestroy {
       }
       if (this.requiresControlled() && !this.controlledApprovedById()) {
         throw new Error('Seleccione el farmacéutico que autoriza la dispensación de controlados');
+      }
+      if (this.interactionCheckFailed()) {
+        throw new Error('Verifique las interacciones medicamentosas antes de confirmar');
       }
       const body = this.buildSaleRequest();
       try {
@@ -1088,7 +1269,7 @@ export class PuntoVentaComponent implements OnDestroy {
     return false;
   }
 
-  private async syncOfflineQueue() {
+  protected async syncOfflineQueue() {
     const pending = await this.offlineQueue.list();
     if (!pending.length) return;
     try {
@@ -1113,6 +1294,81 @@ export class PuntoVentaComponent implements OnDestroy {
       }
     } catch {
       /* reintento al siguiente evento online */
+      this.notify.warning('No se pudo sincronizar la cola offline. Intente de nuevo.');
+    }
+  }
+
+  private restorePosState() {
+    try {
+      const raw = sessionStorage.getItem(POS_CART_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw) as PersistedPosState;
+      this.restoringPosState = true;
+      if (Array.isArray(data.cart)) this.cart.set(data.cart);
+      if (typeof data.customerId === 'string') this.customerId.set(data.customerId);
+      if (typeof data.customerLabel === 'string') this.customerLabel.set(data.customerLabel);
+      if (typeof data.warehouseId === 'string' && data.warehouseId) {
+        this.warehouseId.set(data.warehouseId);
+      }
+      if (data.documentType) this.documentType.set(data.documentType);
+      if (typeof data.serie === 'string') this.serie.set(data.serie);
+      if (typeof data.promotionCode === 'string') this.promotionCode.set(data.promotionCode);
+      if (typeof data.comentario === 'string') this.comentario.set(data.comentario);
+      if (typeof data.prescriptionValidated === 'boolean') {
+        this.prescriptionValidated.set(data.prescriptionValidated);
+      }
+      if (typeof data.prescriptionId === 'string') this.prescriptionId.set(data.prescriptionId);
+      if (typeof data.prescriptionNote === 'string') this.prescriptionNote.set(data.prescriptionNote);
+      if (typeof data.controlledApprovedById === 'string') {
+        this.controlledApprovedById.set(data.controlledApprovedById);
+      }
+      if (Array.isArray(data.paymentLines) && data.paymentLines.length > 0) {
+        this.paymentLines.set(data.paymentLines);
+      }
+    } catch {
+      sessionStorage.removeItem(POS_CART_KEY);
+    } finally {
+      this.restoringPosState = false;
+    }
+  }
+
+  private persistPosState() {
+    try {
+      const payload: PersistedPosState = {
+        cart: this.cart(),
+        customerId: this.customerId(),
+        customerLabel: this.customerLabel(),
+        warehouseId: this.warehouseId(),
+        documentType: this.documentType(),
+        serie: this.serie(),
+        promotionCode: this.promotionCode(),
+        comentario: this.comentario(),
+        prescriptionValidated: this.prescriptionValidated(),
+        prescriptionId: this.prescriptionId(),
+        prescriptionNote: this.prescriptionNote(),
+        controlledApprovedById: this.controlledApprovedById(),
+        paymentLines: this.paymentLines(),
+      };
+      if (
+        !payload.cart.length &&
+        !payload.customerId &&
+        !payload.promotionCode &&
+        !payload.comentario
+      ) {
+        sessionStorage.removeItem(POS_CART_KEY);
+        return;
+      }
+      sessionStorage.setItem(POS_CART_KEY, JSON.stringify(payload));
+    } catch {
+      /* storage lleno o no disponible */
+    }
+  }
+
+  private clearPersistedPosState() {
+    try {
+      sessionStorage.removeItem(POS_CART_KEY);
+    } catch {
+      /* ignore */
     }
   }
 

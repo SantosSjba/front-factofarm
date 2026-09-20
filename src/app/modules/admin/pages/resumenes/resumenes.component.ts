@@ -9,6 +9,7 @@ import { ComponentCardComponent } from '../../../../shared/components/common/com
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
@@ -23,6 +24,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
+    LabelComponent,
   ],
   templateUrl: './resumenes.component.html',
 })

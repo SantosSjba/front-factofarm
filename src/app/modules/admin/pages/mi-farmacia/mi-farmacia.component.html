@@ -10,12 +10,14 @@
     Mi farmacia
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <a
-      routerLink="/comprobante-electronico"
-      class="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm text-gray-700 ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 dark:bg-white/5 dark:text-gray-200 dark:ring-white/15 dark:hover:bg-white/10"
+    <app-button
+      size="sm"
+      variant="outline"
+      startIconName="mdi:file-document-outline"
+      (btnClick)="goToCpeBandeja()"
     >
       Bandeja CPE
-    </a>
+    </app-button>
     <app-button
       size="sm"
       startIconName="mdi:content-save-outline"

@@ -125,6 +125,7 @@
       Método: <strong>{{ data.metodoAsignacion }}</strong>
       · Bloqueo vencidos: <strong>{{ data.blockExpiredProductSales ? 'Sí' : 'No' }}</strong>
     </p>
+    <div class="overflow-x-auto">
     <table class="min-w-full text-left">
       <thead class="border-b border-gray-100">
         <tr>
@@ -145,6 +146,7 @@
         }
       </tbody>
     </table>
+    </div>
     }
   </app-component-card>
 }

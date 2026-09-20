@@ -17,21 +17,23 @@ import type { DashboardSalesTrendDto } from '../../../models/directory.models';
   standalone: true,
   imports: [NgApexchartsModule],
   template: `
-  @if (series().length > 0) {
-    <apx-chart
-      [series]="series()"
-      [chart]="chart"
-      [colors]="colors"
-      [stroke]="stroke"
-      [dataLabels]="dataLabels"
-      [grid]="grid"
-      [tooltip]="tooltip"
-      [xaxis]="xaxis()"
-      [yaxis]="yaxis"
-    />
-  } @else {
-    <p class="py-8 text-center text-sm text-gray-500">Sin ventas en el periodo seleccionado.</p>
-  }
+  <div class="max-w-full overflow-x-auto">
+    @if (series().length > 0) {
+      <apx-chart
+        [series]="series()"
+        [chart]="chart"
+        [colors]="colors"
+        [stroke]="stroke"
+        [dataLabels]="dataLabels"
+        [grid]="grid"
+        [tooltip]="tooltip"
+        [xaxis]="xaxis()"
+        [yaxis]="yaxis"
+      />
+    } @else {
+      <p class="py-8 text-center text-sm text-gray-500">Sin ventas en el periodo seleccionado.</p>
+    }
+  </div>
   `,
 })
 export class DashboardSalesChartComponent {

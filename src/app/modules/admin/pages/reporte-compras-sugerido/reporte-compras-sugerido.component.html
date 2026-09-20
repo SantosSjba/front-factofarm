@@ -22,6 +22,7 @@
   [empty]="reportState.empty"
   emptyTitle="No hay productos bajo stock mínimo"
   (retry)="reportQuery.refetch()">
+  <div class="overflow-x-auto">
   <table class="w-full text-left text-sm">
     <thead class="border-b text-xs uppercase text-gray-500">
       <tr>
@@ -62,4 +63,5 @@
       }
     </tbody>
   </table>
+  </div>
 </app-component-card>

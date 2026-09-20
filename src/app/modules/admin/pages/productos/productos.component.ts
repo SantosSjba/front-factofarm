@@ -353,24 +353,51 @@ export class ProductosComponent {
     { key: 'precioVentaConIgv', label: 'P. venta total (cálculo IGV)' },
   ];
 
-  protected readonly visibleColumns = signal<Record<ColumnKey, boolean>>({
-    codigoInterno: true,
-    unidad: true,
-    nombre: true,
-    descripcion: true,
-    stockMinimo: false,
-    totalStock: true,
-    precioVenta: true,
-    tieneIgvVenta: true,
-    codigoSunat: false,
-    precioCompra: false,
-    tieneIgvCompra: false,
-    modelo: false,
-    marca: false,
-    registroSanitario: false,
-    digemid: false,
-    precioVentaConIgv: false,
-  });
+  protected readonly visibleColumns = signal<Record<ColumnKey, boolean>>(
+    ProductosComponent.defaultVisibleColumns(),
+  );
+
+  private static defaultVisibleColumns(): Record<ColumnKey, boolean> {
+    const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (mobile) {
+      return {
+        codigoInterno: false,
+        unidad: false,
+        nombre: true,
+        descripcion: false,
+        stockMinimo: false,
+        totalStock: true,
+        precioVenta: true,
+        tieneIgvVenta: false,
+        codigoSunat: false,
+        precioCompra: false,
+        tieneIgvCompra: false,
+        modelo: false,
+        marca: false,
+        registroSanitario: false,
+        digemid: false,
+        precioVentaConIgv: false,
+      };
+    }
+    return {
+      codigoInterno: true,
+      unidad: true,
+      nombre: true,
+      descripcion: true,
+      stockMinimo: false,
+      totalStock: true,
+      precioVenta: true,
+      tieneIgvVenta: true,
+      codigoSunat: false,
+      precioCompra: false,
+      tieneIgvCompra: false,
+      modelo: false,
+      marca: false,
+      registroSanitario: false,
+      digemid: false,
+      precioVentaConIgv: false,
+    };
+  }
 
   protected readonly formOpen = signal(false);
   protected readonly editLoading = signal(false);
@@ -618,18 +645,24 @@ export class ProductosComponent {
   );
 
   constructor() {
+    const stored = localStorage.getItem('productos.visible.columns');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Partial<Record<ColumnKey, boolean>>;
+        // En pantallas chicas, si no hay preferencia guardada ya aplicada, partimos de defaults
+        // móviles; si hay prefs, igual ocultamos columnas secundarias vía CSS (hidden lg:table-cell).
+        this.visibleColumns.set({ ...this.visibleColumns(), ...parsed });
+      } catch {
+        // ignore
+      }
+    } else if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      this.visibleColumns.set(ProductosComponent.defaultVisibleColumns());
+    }
+
     effect(() => {
       const key = 'productos.visible.columns';
       localStorage.setItem(key, JSON.stringify(this.visibleColumns()));
     });
-    const stored = localStorage.getItem('productos.visible.columns');
-    if (stored) {
-      try {
-        this.visibleColumns.set({ ...this.visibleColumns(), ...JSON.parse(stored) });
-      } catch {
-        // ignore
-      }
-    }
 
     effect(() => {
       if (!this.formOpen()) return;

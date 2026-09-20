@@ -40,7 +40,7 @@
           (change)="onFileChange($event)"
           class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-gray-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-100 dark:text-gray-300 dark:file:border-gray-600 dark:file:bg-gray-800 dark:file:text-gray-200"
         />
-        <span class="min-w-[220px] text-xs text-gray-500 dark:text-gray-400">
+        <span class="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400" [title]="selectedFile()?.name || ''">
           {{ selectedFile()?.name || 'Ningún archivo seleccionado' }}
         </span>
       </div>

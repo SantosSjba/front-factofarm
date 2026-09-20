@@ -22,6 +22,7 @@
   emptyTitle="No hay médicos registrados"
   emptyHint="Sin coincidencias para los filtros aplicados."
   (retry)="listQuery.refetch()">
+  <div class="overflow-x-auto">
   <table class="w-full text-left text-sm">
     <thead class="border-b text-xs uppercase text-gray-500">
       <tr>
@@ -65,6 +66,7 @@
       }
     </tbody>
   </table>
+  </div>
   @if (listQuery.data(); as data) {
     <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
   }
