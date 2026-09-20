@@ -20,11 +20,11 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'Farmacéutico titular' }]" />
-    <app-component-card title="Licencias farmacéuticas (CQP)" [loading]="listQuery.isPending()">
+    <app-component-card title="Licencias farmacéuticas (CQP)" [loading]="listQuery.isPending()" [error]="listQuery.isError() ? 'No se pudieron cargar las licencias' : null" (retry)="listQuery.refetch()">
       <div class="mb-6 grid gap-4 md:grid-cols-3">
-        <app-input-field placeholder="CQP" [value]="colegiatura()" (valueChange)="colegiatura.set($event + '')" />
-        <app-input-field placeholder="Nombre completo" [value]="fullName()" (valueChange)="fullName.set($event + '')" />
-        <app-input-field placeholder="Vigencia YYYY-MM-DD" [value]="vigencia()" (valueChange)="vigencia.set($event + '')" />
+        <app-input-field ariaLabel="Colegiatura CQP" placeholder="CQP" [value]="colegiatura()" (valueChange)="colegiatura.set($event + '')" />
+        <app-input-field ariaLabel="Nombre completo" placeholder="Nombre completo" [value]="fullName()" (valueChange)="fullName.set($event + '')" />
+        <app-input-field type="date" ariaLabel="Vigencia hasta" [value]="vigencia()" (valueChange)="vigencia.set($event + '')" />
       </div>
       <app-button [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="create()">Registrar licencia</app-button>
 
@@ -71,8 +71,8 @@ export class FarmaceuticoTitularComponent {
     mutationFn: () =>
       firstValueFrom(
         this.api.createPharmacistLicense({
-          colegiaturaCqp: this.colegiatura(),
-          fullName: this.fullName(),
+          colegiaturaCqp: this.colegiatura().trim(),
+          fullName: this.fullName().trim(),
           vigenciaHasta: this.vigencia() || undefined,
         }),
       ),
@@ -87,6 +87,7 @@ export class FarmaceuticoTitularComponent {
   }));
 
   protected create() {
+    if (this.createMutation.isPending()) return;
     if (!this.colegiatura().trim() || !this.fullName().trim()) {
       this.notify.warning('Complete CQP y nombre');
       return;

@@ -1,101 +1,134 @@
-<div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-  <div>
-    <div class="mb-5 sm:mb-8">
-      <h1 id="signin-title" class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-        FactoFarm · Iniciar sesión
-      </h1>
-      <p id="signin-hint" class="text-sm text-gray-500 dark:text-gray-400">
-        Sistema de farmacia: accede con tu correo y contraseña.
-      </p>
+<div class="w-full">
+  <div class="mb-7 sm:mb-8">
+    <p class="mb-1.5 text-xs font-semibold tracking-wide text-brand-600 uppercase dark:text-brand-400">
+      Acceso al panel
+    </p>
+    <h1
+      id="signin-title"
+      class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-[1.75rem]"
+    >
+      Iniciar sesión
+    </h1>
+    <p id="signin-hint" class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+      Usa el correo y contraseña que te asignó tu administrador.
+    </p>
+  </div>
+
+  <form
+    (ngSubmit)="onSignIn()"
+    (input)="clearErrorsOnEdit()"
+    class="space-y-5"
+    aria-labelledby="signin-title"
+    [attr.aria-busy]="isLoading || null"
+    novalidate
+  >
+    <div>
+      <app-label for="signin-email">
+        Correo electrónico <span class="text-error-500" aria-hidden="true">*</span>
+      </app-label>
+      <app-input-field
+        id="signin-email"
+        type="email"
+        placeholder="tu.correo@farmacia.com"
+        autocomplete="username"
+        [value]="email"
+        (valueChange)="onEmailChange($event)"
+        name="email"
+        className="h-12 text-[15px]"
+        [isRequired]="true"
+        [error]="!!fieldErrors.email || !!loginError"
+        [hint]="fieldErrors.email || undefined"
+        ariaDescribedBy="signin-hint signin-error"
+      />
     </div>
 
-    <form (ngSubmit)="onSignIn()" class="space-y-6" aria-labelledby="signin-title">
-      <div>
-        <app-label for="signin-email">Correo electrónico <span class="text-error-500">*</span></app-label>
-        <app-input-field
-          id="signin-email"
-          type="email"
-          placeholder="tu.correo@ejemplo.com"
-          autocomplete="email"
-          [value]="email"
-          (valueChange)="email = $event + ''"
-          name="email"
-          class="form-input"
-          [isRequired]="true"
-          [error]="!!loginError"
-          ariaDescribedBy="signin-hint signin-error"
-        />
-      </div>
-
-      <div>
-        <app-label for="signin-password">Contraseña <span class="text-error-500">*</span></app-label>
-        <div class="relative">
-          <app-input-field
-            id="signin-password"
-            [type]="showPassword ? 'text' : 'password'"
-            placeholder="Tu contraseña"
-            autocomplete="current-password"
-            [value]="password"
-            (valueChange)="password = $event + ''"
-            name="password"
-            class="form-input"
-            [isRequired]="true"
-            [error]="!!loginError"
-            ariaDescribedBy="signin-error"
-          />
-          <button
-            type="button"
-            class="absolute z-30 -translate-y-1/2 right-4 top-1/2"
-            [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-            [attr.aria-pressed]="showPassword"
-            (click)="togglePasswordVisibility()"
-          >
-            @if (showPassword) {
-              <app-icon name="mdi:eye-outline" iconClass="size-5 text-gray-500 dark:text-gray-400" />
-            } @else {
-              <app-icon name="mdi:eye-off-outline" iconClass="size-5 text-gray-500 dark:text-gray-400" />
-            }
-          </button>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <app-checkbox
-            [(checked)]="isChecked"
-            label="Mantener sesión iniciada"
-          />
-        </div>
-        <a routerLink="/auth/forgot-password" class="text-sm text-brand-500 hover:text-brand-600">
+    <div>
+      <div class="mb-1.5 flex items-center justify-between gap-3">
+        <app-label for="signin-password" className="mb-0">
+          Contraseña <span class="text-error-500" aria-hidden="true">*</span>
+        </app-label>
+        <a
+          routerLink="/auth/forgot-password"
+          class="shrink-0 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+        >
           ¿Olvidaste tu contraseña?
         </a>
       </div>
-
-      @if (loginError) {
-        <div
-          id="signin-error"
-          class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200"
-          role="alert"
-          aria-live="polite"
+      <div class="relative">
+        <app-input-field
+          id="signin-password"
+          [type]="showPassword ? 'text' : 'password'"
+          placeholder="Tu contraseña"
+          autocomplete="current-password"
+          [value]="password"
+          (valueChange)="onPasswordChange($event)"
+          name="password"
+          className="h-12 pr-12 text-[15px]"
+          [isRequired]="true"
+          [error]="!!fieldErrors.password || !!loginError"
+          [hint]="fieldErrors.password || undefined"
+          ariaDescribedBy="signin-error"
+        />
+        <button
+          type="button"
+          class="absolute top-1/2 right-3 z-30 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
+          [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          [attr.aria-pressed]="showPassword"
+          (click)="togglePasswordVisibility()"
         >
-          {{ loginError }}
-        </div>
-      }
-
-      <app-button
-        className="w-full"
-        size="sm"
-        [disabled]="isLoading" [loading]="isLoading"
-        (btnClick)="onSignIn()"
-      >
-        {{ isLoading ? 'Entrando…' : 'Iniciar sesión' }}
-      </app-button>
-    </form>
-
-    <div class="mt-5">
-      <p class="text-sm font-normal text-center text-gray-500 dark:text-gray-400 sm:text-start">
-        El acceso es solo por invitación del administrador.
-      </p>
+          @if (showPassword) {
+            <app-icon name="mdi:eye-outline" iconClass="size-5" />
+          } @else {
+            <app-icon name="mdi:eye-off-outline" iconClass="size-5" />
+          }
+        </button>
+      </div>
     </div>
+
+    <div class="flex items-center">
+      <app-checkbox [(checked)]="isChecked" label="Mantener sesión iniciada" />
+    </div>
+
+    @if (loginError) {
+      <div
+        id="signin-error"
+        class="flex gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200"
+        role="alert"
+        aria-live="assertive"
+      >
+        <app-icon
+          name="mdi:alert-circle-outline"
+          iconClass="mt-0.5 size-5 shrink-0 text-rose-600 dark:text-rose-300"
+        />
+        <div>
+          <p class="font-medium">No pudimos iniciar sesión</p>
+          <p class="mt-0.5 text-rose-700/90 dark:text-rose-200/90">{{ loginError }}</p>
+        </div>
+      </div>
+    }
+
+    <app-button
+      type="submit"
+      className="w-full !h-12 !text-[15px] !font-semibold"
+      size="md"
+      [disabled]="isLoading || !canSubmit"
+      [loading]="isLoading"
+    >
+      {{ isLoading ? 'Entrando…' : 'Iniciar sesión' }}
+    </app-button>
+  </form>
+
+  <div class="mt-8 border-t border-gray-200 pt-6 dark:border-gray-800">
+    <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+      El acceso es solo por invitación del administrador.
+    </p>
+    <p class="mt-3 text-center text-sm">
+      <a
+        routerLink="/"
+        class="font-medium text-gray-600 underline-offset-2 transition-colors hover:text-brand-600 hover:underline dark:text-gray-300 dark:hover:text-brand-400"
+      >
+        Volver al inicio
+      </a>
+    </p>
   </div>
 </div>

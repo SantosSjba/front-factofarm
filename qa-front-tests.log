@@ -1,0 +1,28 @@
+> Building...
+√ Building...
+Initial chunk files                                       | Names                                                  |  Raw size
+scripts.js                                                | scripts                                                | 831.44 kB | 
+styles.css                                                | styles                                                 | 208.78 kB | 
+spec-app-modules-admin-services-directory-api.service.js  | spec-app-modules-admin-services-directory-api.service  |  66.07 kB | 
+spec-app-shared-layout-app-sidebar-sidebar-permissions.js | spec-app-shared-layout-app-sidebar-sidebar-permissions |  16.16 kB | 
+spec-app-app.js                                           | spec-app-app                                           |  13.25 kB | 
+spec-app-core-services-auth.service.js                    | spec-app-core-services-auth.service                    |  12.78 kB | 
+chunk-QYQLSTZS.js                                         | -                                                      |   6.05 kB | 
+chunk-47DACP3I.js                                         | -                                                      |   1.50 kB | 
+init-testbed.js                                           | init-testbed                                           |   1.27 kB | 
+vitest-mock-patch.js                                      | vitest-mock-patch                                      | 974 bytes | 
+polyfills.js                                              | polyfills                                              | 121 bytes | 
+
+                                                          | Initial total                                          |   1.16 MB
+
+Application bundle generation complete. [2.793 seconds] - 2026-09-20T05:24:17.797Z
+
+
+ RUN  v4.1.11 C:/Users/bernu/OneDrive/Escritorio/PROYECTOS/FACTOSYS/SAASFACTOFARM/front-factofarm
+
+
+ Test Files  4 passed (4)
+      Tests  8 passed (8)
+   Start at  00:24:18
+   Duration  2.49s (transform 607ms, setup 2.16s, import 573ms, tests 262ms, environment 4.78s)
+

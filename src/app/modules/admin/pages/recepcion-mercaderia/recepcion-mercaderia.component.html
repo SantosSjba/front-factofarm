@@ -5,13 +5,13 @@
 
 @let ordersState = pendingOrdersQuery | queryPageState: (pendingOrdersQuery.data()?.length ?? 0);
 
-<app-component-card title="Orden de compra" className="mt-4"
+<app-component-card title="Orden de compra" className="mt-3"
   [loading]="ordersState.loading"
   [error]="ordersState.error"
   [empty]="ordersState.empty"
   emptyTitle="No hay órdenes pendientes de recepción"
   (retry)="pendingOrdersQuery.refetch()">
-  <div class="max-w-xl space-y-4">
+  <div class="max-w-3xl space-y-3">
     <app-form-select
       [options]="orderOptions()"
       [value]="selectedOrderId()"
@@ -20,15 +20,12 @@
     @if (detailQuery.isPending() && selectedOrderId()) {
       <p class="text-sm text-gray-500">Cargando detalle de la orden…</p>
     } @else if (detailQuery.isError() && selectedOrderId()) {
-      <div class="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+      <div class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
         {{ detailErrorMessage() }}
         <button type="button" class="ml-2 font-medium underline" (click)="detailQuery.refetch()">Reintentar</button>
       </div>
     } @else if (detailQuery.data(); as po) {
-      @if (receiptLines().length === 0) {
-        <app-button variant="primary" (btnClick)="initLines(po)">Cargar ítems pendientes</app-button>
-      }
-      <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+      <div class="rounded-lg border border-gray-200 p-2.5 text-sm dark:border-gray-700">
         <p><strong>{{ po.numero }}</strong> · {{ po.supplier.razonSocial }}</p>
         <p class="text-gray-500">Almacén: {{ po.warehouse.nombre }} · Total: {{ po.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
       </div>
@@ -37,37 +34,65 @@
 </app-component-card>
 
 @if (receiptLines().length > 0) {
-  <app-component-card title="Ítems a recibir" className="mt-4">
-    <div class="space-y-4">
+  <app-component-card title="Ítems a recibir" className="mt-3">
+    <div class="space-y-3">
       @for (line of receiptLines(); track line.purchaseOrderItemId) {
-        <div class="grid gap-4 rounded-lg border border-gray-200 p-4 md:grid-cols-5 dark:border-gray-700">
-          <div class="md:col-span-2">
-            <p class="font-medium">{{ line.producto }}</p>
+        <div
+          class="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 p-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] dark:border-gray-700 sm:p-3"
+        >
+          <div class="min-w-0 sm:col-span-2 lg:col-span-1">
+            <p class="truncate font-medium">{{ line.producto }}</p>
             <p class="text-xs text-gray-500">Pendiente: {{ line.pendiente }}</p>
           </div>
-          <app-input-field
-            type="number"
-            placeholder="Cantidad"
-            [value]="line.quantity"
-            (valueChange)="updateLine(line.purchaseOrderItemId, { quantity: parseNum($event) })"
-          />
+          <div>
+            <label class="mb-1 block text-xs text-gray-500">Cantidad</label>
+            <app-input-field
+              type="number"
+              placeholder="0"
+              [ariaLabel]="'Cantidad a recibir de ' + line.producto"
+              min="0"
+              [max]="'' + line.pendiente"
+              [step]="0.0001"
+              [value]="line.quantity"
+              (valueChange)="updateLine(line.purchaseOrderItemId, { quantity: parseNum($event) })"
+            />
+          </div>
           @if (line.manejaLotes) {
-            <app-input-field
-              placeholder="Código lote"
-              [value]="line.lotCode"
-              (valueChange)="updateLine(line.purchaseOrderItemId, { lotCode: '' + $event })"
-            />
-            <app-input-field
-              type="date"
-              placeholder="Vencimiento"
-              [value]="line.expirationDate"
-              (valueChange)="updateLine(line.purchaseOrderItemId, { expirationDate: '' + $event })"
-            />
+            <div>
+              <label class="mb-1 block text-xs text-gray-500">Lote</label>
+              <app-input-field
+                placeholder="Código lote"
+                [ariaLabel]="'Código de lote de ' + line.producto"
+                [value]="line.lotCode"
+                (valueChange)="updateLine(line.purchaseOrderItemId, { lotCode: '' + $event })"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs text-gray-500">Vencimiento</label>
+              <app-input-field
+                type="date"
+                placeholder="Vencimiento"
+                [ariaLabel]="'Fecha de vencimiento de ' + line.producto"
+                [value]="line.expirationDate"
+                (valueChange)="updateLine(line.purchaseOrderItemId, { expirationDate: '' + $event })"
+              />
+            </div>
+          } @else {
+            <div class="hidden text-xs text-gray-400 lg:block">—</div>
+            <div class="hidden text-xs text-gray-400 lg:block">—</div>
           }
         </div>
       }
-      <app-input-field [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
-      <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
+      <div class="grid gap-2 sm:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-xs text-gray-500">N° factura / guía</label>
+          <app-input-field ariaLabel="Número de factura o guía del proveedor" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs text-gray-500">Comentario</label>
+          <app-input-field ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
+        </div>
+      </div>
       <app-button variant="primary" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
         Confirmar recepción
       </app-button>

@@ -19,8 +19,8 @@
     @if (activeTab() === 'datos') {
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
         <div>
-          <app-label>Nombre</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-1">Nombre</app-label>
+          <app-input-field id="usuario-campo-1"
             className="mt-2"
             placeholder="Nombre completo"
             [value]="nombre()"
@@ -28,8 +28,8 @@
           />
         </div>
         <div>
-          <app-label>Correo electrónico</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-2">Correo electrónico</app-label>
+          <app-input-field id="usuario-campo-2"
             type="email"
             className="mt-2"
             placeholder="correo@ejemplo.com"
@@ -38,8 +38,8 @@
           />
         </div>
         <div>
-          <app-label>Establecimiento</app-label>
-          <app-form-select
+          <app-label for="usuario-campo-3">Establecimiento</app-label>
+          <app-form-select id="usuario-campo-3"
             className="mt-2"
             [value]="establecimientoId()"
             [options]="establecimientoOptions()"
@@ -47,8 +47,8 @@
           />
         </div>
         <div>
-          <app-label>Perfil</app-label>
-          <app-form-select
+          <app-label for="usuario-campo-4">Perfil</app-label>
+          <app-form-select id="usuario-campo-4"
             className="mt-2"
             [value]="role()"
             [options]="roleOptions"
@@ -58,8 +58,8 @@
           />
         </div>
         <div>
-          <app-label>{{ passwordLabel() }}</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-5">{{ passwordLabel() }}</app-label>
+          <app-input-field id="usuario-campo-5"
             type="password"
             className="mt-2"
             [placeholder]="passwordPlaceholder()"
@@ -68,8 +68,8 @@
           />
         </div>
         <div>
-          <app-label>Confirmar contraseña</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-6">Confirmar contraseña</app-label>
+          <app-input-field id="usuario-campo-6"
             type="password"
             className="mt-2"
             placeholder="••••••••"
@@ -102,8 +102,8 @@
     @if (activeTab() === 'personales') {
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
         <div>
-          <app-label>Tipo Doc. Identidad</app-label>
-          <app-form-select
+          <app-label for="usuario-campo-7">Tipo Doc. Identidad</app-label>
+          <app-form-select id="usuario-campo-7"
             className="mt-2"
             [value]="tipoDoc()"
             [options]="tipoDocOptions"
@@ -111,32 +111,32 @@
           />
         </div>
         <div>
-          <app-label>Número</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-8">Número</app-label>
+          <app-input-field id="usuario-campo-8"
             className="mt-2"
             [value]="numeroDoc()"
             (valueChange)="numeroDoc.set($event + '')"
           />
         </div>
         <div>
-          <app-label>Nombres</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-9">Nombres</app-label>
+          <app-input-field id="usuario-campo-9"
             className="mt-2"
             [value]="nombres()"
             (valueChange)="nombres.set($event + '')"
           />
         </div>
         <div>
-          <app-label>Apellidos</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-10">Apellidos</app-label>
+          <app-input-field id="usuario-campo-10"
             className="mt-2"
             [value]="apellidos()"
             (valueChange)="apellidos.set($event + '')"
           />
         </div>
         <div>
-          <app-label>Fecha de nacimiento</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-11">Fecha de nacimiento</app-label>
+          <app-input-field id="usuario-campo-11"
             type="date"
             className="mt-2"
             [value]="fechaNac()"
@@ -144,8 +144,8 @@
           />
         </div>
         <div>
-          <app-label>Correo electrónico personal</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-12">Correo electrónico personal</app-label>
+          <app-input-field id="usuario-campo-12"
             type="email"
             className="mt-2"
             [value]="emailPersonal()"
@@ -153,24 +153,24 @@
           />
         </div>
         <div>
-          <app-label>Nº Celular personal</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-13">Nº Celular personal</app-label>
+          <app-input-field id="usuario-campo-13"
             className="mt-2"
             [value]="celPersonal()"
             (valueChange)="celPersonal.set($event + '')"
           />
         </div>
         <div>
-          <app-label>Dirección</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-14">Dirección</app-label>
+          <app-input-field id="usuario-campo-14"
             className="mt-2"
             [value]="direccion()"
             (valueChange)="direccion.set($event + '')"
           />
         </div>
         <div>
-          <app-label>Correo electrónico corporativo</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-15">Correo electrónico corporativo</app-label>
+          <app-input-field id="usuario-campo-15"
             type="email"
             className="mt-2"
             [value]="emailCorp()"
@@ -178,16 +178,16 @@
           />
         </div>
         <div>
-          <app-label>Nº Celular corporativo</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-16">Nº Celular corporativo</app-label>
+          <app-input-field id="usuario-campo-16"
             className="mt-2"
             [value]="celCorp()"
             (valueChange)="celCorp.set($event + '')"
           />
         </div>
         <div>
-          <app-label>Fecha de contratación</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-17">Fecha de contratación</app-label>
+          <app-input-field id="usuario-campo-17"
             type="date"
             className="mt-2"
             [value]="fechaContratacion()"
@@ -195,8 +195,8 @@
           />
         </div>
         <div>
-          <app-label>Cargo</app-label>
-          <app-input-field
+          <app-label for="usuario-campo-18">Cargo</app-label>
+          <app-input-field id="usuario-campo-18"
             className="mt-2"
             [value]="cargo()"
             (valueChange)="cargo.set($event + '')"

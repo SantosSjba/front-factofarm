@@ -1,6 +1,6 @@
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { CommonModule, CurrencyPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -55,6 +55,18 @@ export class RecepcionMercaderiaComponent {
   protected readonly referenciaDoc = signal('');
   protected readonly comentario = signal('');
   protected readonly receiptLines = signal<ReceiptLine[]>([]);
+  private lastAutoInitOrderId = '';
+
+  constructor() {
+    effect(() => {
+      const orderId = this.selectedOrderId();
+      const po = this.detailQuery.data();
+      if (!orderId || !po || po.id !== orderId) return;
+      if (this.lastAutoInitOrderId === orderId) return;
+      this.lastAutoInitOrderId = orderId;
+      this.initLines(po);
+    });
+  }
 
   protected readonly pendingOrdersQuery = injectQuery(() => ({
     queryKey: ['purchase-orders', 'pending-receipt'] as const,
@@ -84,8 +96,11 @@ export class RecepcionMercaderiaComponent {
   }));
 
   protected onOrderChange(id: string) {
+    this.lastAutoInitOrderId = '';
     this.selectedOrderId.set(id);
     this.receiptLines.set([]);
+    this.referenciaDoc.set('');
+    this.comentario.set('');
   }
 
   protected initLines(po: PurchaseOrderDetailDto) {
@@ -109,6 +124,14 @@ export class RecepcionMercaderiaComponent {
 
   protected readonly receiveMutation = injectMutation(() => ({
     mutationFn: () => {
+      for (const line of this.receiptLines()) {
+        if (!Number.isFinite(line.quantity) || line.quantity < 0 || line.quantity > line.pendiente) {
+          throw new Error(`Cantidad inválida para ${line.producto}. Pendiente: ${line.pendiente}`);
+        }
+        if (line.quantity > 0 && line.manejaLotes && !line.lotCode.trim()) {
+          throw new Error(`Indique el lote de ${line.producto}`);
+        }
+      }
       const items = this.receiptLines()
         .filter((l) => l.quantity > 0)
         .map((l) => ({
@@ -130,8 +153,13 @@ export class RecepcionMercaderiaComponent {
       this.notify.success('Recepción registrada e inventario actualizado');
       this.selectedOrderId.set('');
       this.receiptLines.set([]);
+      this.referenciaDoc.set('');
+      this.comentario.set('');
       void this.queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       void this.queryClient.invalidateQueries({ queryKey: ['accounts-payable'] });
+      for (const key of ['purchase-order', 'inventory', 'inventory-movements', 'products', 'sales', 'dashboard']) {
+        void this.queryClient.invalidateQueries({ queryKey: [key] });
+      }
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la recepción')),
   }));

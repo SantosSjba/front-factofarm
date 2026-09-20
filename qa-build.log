@@ -1,0 +1,67 @@
+> Building...
+√ Building...
+Initial chunk files   | Names                                 |  Raw size | Estimated transfer size
+scripts-Q4B2KD6Y.js   | scripts                               | 618.05 kB |               138.73 kB
+chunk-6WW4SRFQ.js     | -                                     | 353.53 kB |                99.78 kB
+main-QNZFA6AY.js      | main                                  | 217.23 kB |                56.02 kB
+styles-SCSEU7LG.css   | styles                                | 173.65 kB |                21.06 kB
+chunk-6JXMCJRJ.js     | -                                     |  84.17 kB |                20.83 kB
+chunk-XXBTMGDJ.js     | -                                     |  40.59 kB |                 9.57 kB
+chunk-FWDDGV2P.js     | -                                     |  35.71 kB |                 9.65 kB
+polyfills-5CFQRCPP.js | polyfills                             |  34.59 kB |                11.33 kB
+chunk-G6KXVGYO.js     | -                                     |  18.58 kB |                 5.35 kB
+chunk-3TWNAHVF.js     | -                                     |  14.76 kB |                 4.54 kB
+chunk-EGTA5F3F.js     | -                                     |   3.53 kB |                 1.16 kB
+chunk-JAZDPWVR.js     | -                                     |   1.60 kB |               617 bytes
+chunk-NCEQPEJE.js     | -                                     |   1.37 kB |               585 bytes
+chunk-SBGEGURO.js     | -                                     | 720 bytes |               720 bytes
+chunk-FZDWS64Q.js     | -                                     | 566 bytes |               566 bytes
+
+                      | Initial total                         |   1.60 MB |               380.54 kB
+
+Lazy chunk files      | Names                                 |  Raw size | Estimated transfer size
+chunk-VMI6XJSN.js     | apexcharts-ssr-esm                    | 620.43 kB |               140.60 kB
+chunk-TVWDRCSR.js     | apexcharts-esm                        | 615.31 kB |               139.22 kB
+chunk-2AGEVU6N.js     | core-esm                              | 375.74 kB |                87.38 kB
+chunk-SMT4WX5Y.js     | punto-venta-component                 | 119.03 kB |                29.61 kB
+chunk-NUJCSPCW.js     | productos-component                   | 102.63 kB |                19.67 kB
+chunk-E3W2GCHB.js     | admin-routes                          |  90.30 kB |                18.61 kB
+chunk-6U57F335.js     | -                                     |  67.53 kB |                11.33 kB
+chunk-AVPWMILZ.js     | servicios-component                   |  60.71 kB |                12.70 kB
+chunk-27WPP4RA.js     | clientes-component                    |  57.52 kB |                12.28 kB
+chunk-QBLWYFCT.js     | -                                     |  44.74 kB |                 5.98 kB
+chunk-RBLE26JI.js     | -                                     |  41.67 kB |                12.03 kB
+chunk-47B5ZSKY.js     | landing-component                     |  40.63 kB |                10.01 kB
+chunk-ZKRHBAEB.js     | conjuntos-packs-promociones-component |  37.13 kB |                 8.51 kB
+chunk-AKLGTUQF.js     | inventario-movimientos-component      |  35.80 kB |                 7.42 kB
+chunk-K7OCBP5X.js     | usuarios-component                    |  33.99 kB |                 8.62 kB
+...and 121 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [14.679 seconds] - 2026-09-20T05:29:49.499Z
+
+▲ [WARNING] Module 'jsbarcode' used by 'src/app/modules/admin/pages/clientes/clientes.component.ts' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+▲ [WARNING] Module 'property-expr' used by 'node_modules/yup/index.esm.js' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+▲ [WARNING] Module 'tiny-case' used by 'node_modules/yup/index.esm.js' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+▲ [WARNING] Module 'toposort' used by 'node_modules/yup/index.esm.js' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+Output location: C:\Users\bernu\OneDrive\Escritorio\PROYECTOS\FACTOSYS\SAASFACTOFARM\front-factofarm\dist\front-factofarm
+

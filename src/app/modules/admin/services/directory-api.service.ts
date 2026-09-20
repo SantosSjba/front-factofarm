@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type {
   CreateCustomerRequest,
@@ -443,11 +444,11 @@ export class DirectoryApiService {
   }
 
   listEstablishmentsAll(filters?: Omit<EstablishmentListFiltersRequest, 'page' | 'pageSize'>) {
-    const params: Record<string, string> = {};
-    const search = filters?.search?.trim();
-    if (search) params['search'] = search;
-    if (filters?.hospital && filters.hospital !== 'all') params['hospital'] = filters.hospital;
-    return this.http.get<EstablishmentOptionDto[]>(`${this.base}/establishments`, { params });
+    return this.listEstablishmentsPaged({
+      ...filters,
+      page: 1,
+      pageSize: 100,
+    }).pipe(map((res) => res.items ?? []));
   }
 
   listEstablishmentsPaged(filters?: EstablishmentListFiltersRequest) {

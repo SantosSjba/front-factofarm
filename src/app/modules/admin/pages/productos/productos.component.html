@@ -1,6 +1,4 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
 <app-page-toolbar>
   <h1
@@ -83,7 +81,7 @@
   (clear)="clearFilters()"
 />
 
-<div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+<div class="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
   <app-form-select
     [value]="filterCategoryId()"
     [options]="categoryFilterOptions()"
@@ -124,16 +122,16 @@
   [empty]="listState.empty"
   emptyTitle="No hay productos registrados"
   (retry)="refetchRows()">
-  <div class="px-4 pt-4">
+  <div class="px-3 pt-3 sm:px-4">
     <div class="flex justify-end">
       <app-table-dropdown>
         <div dropdown-button>
           <button
             type="button"
-            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600"
+            class="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5"
           >
-            <span>Mostrar/Ocultar columnas</span>
-            <app-icon name="mdi:chevron-down" width="18" height="18" />
+            <span>Columnas</span>
+            <app-icon name="mdi:chevron-down" width="16" height="16" />
           </button>
         </div>
         <div dropdown-content>
@@ -223,11 +221,11 @@
               }
               @if (isVisible('nombre')) {
                 <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
-                  <div class="flex items-center gap-2">
-                    <span>{{ row.nombre }}</span>
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="min-w-0 truncate">{{ row.nombre }}</span>
                     @if (!row.habilitado) {
                       <span
-                        class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-500/20 dark:text-red-300"
+                        class="inline-flex shrink-0 items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-500/20 dark:text-red-300"
                       >
                         Inhabilitado
                       </span>

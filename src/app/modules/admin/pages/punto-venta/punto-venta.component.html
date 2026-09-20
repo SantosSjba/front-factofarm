@@ -1,4 +1,4 @@
-﻿<div class="flex min-h-[calc(100vh-6rem)] flex-col rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/40 md:min-h-[calc(100vh-8rem)]">
+﻿<div class="-mx-4 -mb-4 flex min-h-[calc(100vh-4.5rem)] flex-col border-y border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/40 sm:-mx-4 md:-mx-6 md:-mb-6 md:min-h-[calc(100vh-5.5rem)] md:border-x-0">
   <app-page-state
     [loading]="warehousesQuery.isPending() || cashSessionQuery.isPending()"
     [error]="posBootstrapError()"
@@ -6,7 +6,7 @@
     (retry)="refetchPosBootstrap()"
   >
   @if (!isOnline() || offlinePending() > 0) {
-    <div class="flex flex-wrap items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+    <div class="flex flex-wrap items-center gap-2 border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200 sm:px-4 sm:text-sm">
       <app-icon name="mdi:wifi-off" iconClass="size-4 shrink-0" />
       @if (!isOnline()) {
         <span>Modo offline — las ventas se guardan localmente.</span>
@@ -29,100 +29,125 @@
       }
     </div>
   }
-  <header class="flex flex-wrap items-end gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
-    <div class="w-full min-w-[180px] flex-1 sm:max-w-xs">
-      <app-label>
-        <span class="inline-flex items-center gap-1.5">
-          <app-icon name="mdi:warehouse" iconClass="size-3.5 text-gray-400" />
-          Almacén
-        </span>
-      </app-label>
-      <app-form-select
-        className="mt-1.5"
-        [options]="warehouseOptions()"
-        [value]="warehouseId()"
-        (valueChange)="warehouseId.set($event)"
-      />
+  <header class="flex flex-wrap items-end gap-2 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:gap-3 sm:px-4">
+    <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-1 sm:flex-wrap sm:items-end">
+      <div class="col-span-2 min-w-0 sm:max-w-xs sm:flex-1">
+        <app-label>
+          <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm">
+            <app-icon name="mdi:warehouse" iconClass="size-3.5 text-gray-400" />
+            Almacén
+          </span>
+        </app-label>
+        <app-form-select
+          className="mt-1"
+          [showPlaceholder]="false"
+          [options]="warehouseOptions()"
+          [value]="warehouseId()"
+          (valueChange)="warehouseId.set($event)"
+        />
+      </div>
+      <div class="min-w-0 sm:w-auto sm:max-w-[160px]">
+        <app-label>
+          <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm">
+            <app-icon name="mdi:file-document-outline" iconClass="size-3.5 text-gray-400" />
+            Comprobante
+            @if (!electronicInvoicingEnabled()) {
+              <app-help-hint
+                iconName="mdi:information-outline"
+                [iconSize]="16"
+                text="Sin OSE: solo nota de venta. Configure facturación en Mi farmacia para boleta/factura."
+              />
+            }
+          </span>
+        </app-label>
+        <app-form-select
+          className="mt-1"
+          [showPlaceholder]="false"
+          [options]="docOptions()"
+          [value]="documentType()"
+          (valueChange)="documentType.set($any($event))"
+        />
+      </div>
+      <div class="min-w-0 sm:w-auto sm:max-w-[120px]">
+        <app-label>
+          <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm">
+            <app-icon name="mdi:barcode" iconClass="size-3.5 text-gray-400" />
+            Serie
+          </span>
+        </app-label>
+        <app-input-field
+          className="mt-1"
+          placeholder="Opcional"
+          ariaLabel="Serie del comprobante (opcional)"
+          [value]="serie()"
+          (valueChange)="serie.set('' + $event)"
+        />
+      </div>
     </div>
-    <div class="w-full min-w-[140px] sm:w-auto sm:max-w-[180px]">
-      <app-label>
-        <span class="inline-flex items-center gap-1.5">
-          <app-icon name="mdi:file-document-outline" iconClass="size-3.5 text-gray-400" />
-          Comprobante
-          @if (!electronicInvoicingEnabled()) {
-            <app-help-hint
-              iconName="mdi:information-outline"
-              [iconSize]="16"
-              text="Sin OSE: solo nota de venta. Configure facturación en Mi farmacia para boleta/factura."
-            />
-          }
+    <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:pb-0.5">
+      <div class="text-xs text-gray-600 dark:text-gray-400">
+        @if (cashSession(); as session) {
+          <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+            <app-icon name="mdi:cash-register" iconClass="size-3.5" />
+            {{ session.cashRegister.nombre }}
+          </span>
+        } @else {
+          <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+            <app-icon name="mdi:alert-circle-outline" iconClass="size-3.5" />
+            Sin caja
+          </span>
+        }
+      </div>
+      <div class="hidden text-xs text-gray-500 lg:flex">
+        <span class="inline-flex flex-wrap items-center gap-1.5">
+          <app-icon name="mdi:keyboard-outline" iconClass="size-3.5" />
+          <kbd class="rounded border px-1.5 py-0.5">F1</kbd> buscar
+          <kbd class="rounded border px-1.5 py-0.5">F2</kbd> cobrar
+          <kbd class="rounded border px-1.5 py-0.5">F4</kbd> vaciar
         </span>
-      </app-label>
-      <app-form-select
-        className="mt-1.5"
-        [showPlaceholder]="false"
-        [options]="docOptions()"
-        [value]="documentType()"
-        (valueChange)="documentType.set($any($event))"
-      />
-    </div>
-    <div class="w-full min-w-[120px] sm:w-auto sm:max-w-[140px]">
-      <app-label>
-        <span class="inline-flex items-center gap-1.5">
-          <app-icon name="mdi:barcode" iconClass="size-3.5 text-gray-400" />
-          Serie
-        </span>
-      </app-label>
-      <app-input-field
-        className="mt-1.5"
-        placeholder="Opcional"
-        ariaLabel="Serie del comprobante (opcional)"
-        [value]="serie()"
-        (valueChange)="serie.set('' + $event)"
-      />
-    </div>
-    <div class="pb-1 text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
-      @if (cashSession(); as session) {
-        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-          <app-icon name="mdi:cash-register" iconClass="size-3.5" />
-          {{ session.cashRegister.nombre }}
-        </span>
-      } @else {
-        <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-          <app-icon name="mdi:alert-circle-outline" iconClass="size-3.5" />
-          Sin caja
-        </span>
-      }
-    </div>
-    <div class="hidden w-full text-xs text-gray-500 md:flex">
-      <span class="inline-flex flex-wrap items-center gap-1.5">
-        <app-icon name="mdi:keyboard-outline" iconClass="size-3.5" />
-        <kbd class="rounded border px-1.5 py-0.5">F1</kbd> buscar
-        <kbd class="rounded border px-1.5 py-0.5">F2</kbd> cobrar
-        <kbd class="rounded border px-1.5 py-0.5">F4</kbd> vaciar
-      </span>
-    </div>
-    <div class="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
-      <app-button
-        size="sm"
-        variant="outline"
-        startIconName="mdi:monitor-account"
-        (btnClick)="openCustomerDisplay()"
-      >
-        Pantalla cliente
-      </app-button>
-      <app-button
-        size="sm"
-        variant="outline"
-        [startIconName]="catalogViewMode() === 'tiles' ? 'mdi:table' : 'mdi:view-grid-outline'"
-        (btnClick)="toggleCatalogView()"
-      >
-        {{ catalogViewMode() === 'tiles' ? 'Vista tabla' : 'Vista tarjetas' }}
-      </app-button>
+      </div>
+      <div class="ml-auto flex flex-wrap gap-1.5">
+        <app-button
+          class="sm:hidden"
+          size="sm"
+          variant="outline"
+          startIconName="mdi:monitor-account"
+          [iconOnly]="true"
+          tooltip="Pantalla cliente"
+          (btnClick)="openCustomerDisplay()"
+        />
+        <app-button
+          class="hidden sm:inline-flex"
+          size="sm"
+          variant="outline"
+          startIconName="mdi:monitor-account"
+          (btnClick)="openCustomerDisplay()"
+        >
+          Pantalla cliente
+        </app-button>
+        <app-button
+          class="sm:hidden"
+          size="sm"
+          variant="outline"
+          [startIconName]="catalogViewMode() === 'tiles' ? 'mdi:table' : 'mdi:view-grid-outline'"
+          [iconOnly]="true"
+          [tooltip]="catalogViewMode() === 'tiles' ? 'Vista tabla' : 'Vista tarjetas'"
+          (btnClick)="toggleCatalogView()"
+        />
+        <app-button
+          class="hidden sm:inline-flex"
+          size="sm"
+          variant="outline"
+          [startIconName]="catalogViewMode() === 'tiles' ? 'mdi:table' : 'mdi:view-grid-outline'"
+          (btnClick)="toggleCatalogView()"
+        >
+          {{ catalogViewMode() === 'tiles' ? 'Vista tabla' : 'Vista tarjetas' }}
+        </app-button>
+      </div>
     </div>
   </header>
 
-  <div class="border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:px-4">
+  <div class="border-b border-gray-200 bg-white px-3 py-1.5 dark:border-gray-800 dark:bg-gray-900 sm:px-4 sm:py-2">
     @if (customerId()) {
       <div class="flex items-center gap-2 text-sm">
         <app-icon name="mdi:account-outline" iconClass="size-4 text-gray-400" />
@@ -137,12 +162,13 @@
       <div class="flex gap-2">
         <app-input-field
           class="flex-1"
-          placeholder="Buscar cliente (opcional)"
+          placeholder="Cliente (opcional)"
           ariaLabel="Buscar cliente por nombre o documento"
           [value]="customerSearch()"
           (valueChange)="customerSearch.set('' + $event)"
         />
-        <app-button size="sm" variant="outline" startIconName="mdi:account-search-outline" (btnClick)="searchCustomers()">
+        <app-button size="sm" variant="outline" startIconName="mdi:account-search-outline" class="sm:hidden" [iconOnly]="true" tooltip="Buscar cliente" (btnClick)="searchCustomers()" />
+        <app-button size="sm" variant="outline" startIconName="mdi:account-search-outline" class="hidden sm:inline-flex" (btnClick)="searchCustomers()">
           Buscar
         </app-button>
       </div>
@@ -286,10 +312,10 @@
 
   <div class="grid flex-1 gap-0 pb-20 md:grid-cols-5 md:pb-0">
     <section
-      class="border-b border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 md:col-span-3 md:block md:border-b-0 md:border-r md:p-4"
+      class="border-b border-gray-200 bg-white p-2.5 dark:border-gray-800 dark:bg-gray-900 md:col-span-3 md:block md:border-b-0 md:border-r md:p-3"
       [class.hidden]="mobilePosTab() === 'cart'"
     >
-      <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+      <div class="mb-1.5 hidden items-center gap-2 text-sm font-semibold text-gray-800 dark:text-white/90 md:flex">
         <app-icon name="mdi:pill" iconClass="size-4 text-brand-500" />
         Catálogo
       </div>
@@ -302,8 +328,8 @@
           <input
             #searchInput
             type="search"
-            class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            placeholder="Filtrar por código, nombre o barras…"
+            class="w-full rounded-lg border border-gray-300 bg-white py-1.5 pl-9 pr-3 text-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:py-2"
+            placeholder="Código, nombre o barras…"
             aria-label="Filtrar productos por código, nombre o barras"
             autocomplete="off"
             [value]="search()"
@@ -311,49 +337,50 @@
             (keydown.enter)="runSearch()"
           />
         </div>
-        <app-button variant="primary" startIconName="mdi:magnify" (btnClick)="runSearch()">Buscar</app-button>
+        <app-button class="sm:hidden" variant="primary" size="sm" startIconName="mdi:magnify" [iconOnly]="true" tooltip="Buscar" (btnClick)="runSearch()" />
+        <app-button class="hidden sm:inline-flex" variant="primary" size="sm" startIconName="mdi:magnify" (btnClick)="runSearch()">Buscar</app-button>
       </div>
 
-      <p class="mt-2 inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <p class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
         @if (catalogLoading()) {
           <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
           Cargando productos con stock…
         } @else if (catalog().length > 0) {
           <app-icon name="mdi:package-variant-closed" iconClass="size-3.5" />
-          {{ catalog().length }} producto(s) disponible(s) · escriba para filtrar
+          {{ catalog().length }} disponible(s)
         } @else if (warehouseId()) {
           <app-icon name="mdi:package-variant-remove" iconClass="size-3.5" />
-          No hay productos con stock en este almacén
+          Sin stock en este almacén
         } @else {
           <app-icon name="mdi:warehouse" iconClass="size-3.5" />
-          Seleccione un almacén para ver el catálogo
+          Seleccione un almacén
         }
       </p>
 
-      <div class="mt-3 max-h-[40vh] overflow-auto rounded-xl border border-gray-100 md:max-h-[50vh] dark:border-gray-800">
+      <div class="mt-2 max-h-[min(52vh,28rem)] overflow-auto rounded-lg border border-gray-100 md:max-h-[min(58vh,36rem)] dark:border-gray-800">
         @if (catalogViewMode() === 'tiles') {
-          <div class="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 xl:grid-cols-4">
+          <div class="grid grid-cols-2 gap-1.5 p-1.5 sm:grid-cols-3 sm:gap-2 sm:p-2 xl:grid-cols-4">
             @for (item of catalog(); track item.id) {
               <button
                 type="button"
-                class="flex flex-col rounded-xl border border-gray-200 bg-white p-2 text-left transition hover:border-brand-400 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                class="flex flex-col rounded-lg border border-gray-200 bg-white p-1.5 text-left transition hover:border-brand-400 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:p-2"
                 (click)="addToCart(item)"
               >
-                <div class="mb-2 flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+                <div class="mb-1.5 flex h-12 items-center justify-center overflow-hidden rounded-md bg-gray-100 sm:h-16 dark:bg-gray-800">
                   @if (productImageUrl(item.imagenArchivoId); as imgUrl) {
                     <img [src]="imgUrl" [alt]="item.nombre" class="h-full w-full object-contain" loading="lazy" />
                   } @else {
-                    <app-icon name="mdi:pill" iconClass="size-8 text-gray-300" />
+                    <app-icon name="mdi:pill" iconClass="size-6 text-gray-300 sm:size-7" />
                   }
                 </div>
-                <p class="line-clamp-2 min-h-[2.5rem] text-xs font-semibold text-gray-800 dark:text-white/90">{{ item.nombre }}</p>
-                <p class="mt-1 text-[11px] text-gray-500">{{ item.codigoInterno ?? item.codigoBarra ?? '—' }}</p>
-                <div class="mt-2 flex items-center justify-between gap-1">
+                <p class="line-clamp-2 min-h-[2rem] text-[11px] font-semibold leading-snug text-gray-800 dark:text-white/90 sm:min-h-[2.25rem] sm:text-xs">{{ item.nombre }}</p>
+                <p class="mt-0.5 truncate text-[10px] text-gray-500">{{ item.codigoInterno ?? item.codigoBarra ?? '—' }}</p>
+                <div class="mt-1.5 flex items-center justify-between gap-1">
                   <span class="text-sm font-bold text-brand-600">{{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-                  <span class="text-[11px] text-gray-500">Stock {{ item.stock }}</span>
+                  <span class="text-[10px] text-gray-500">{{ item.stock }}</span>
                 </div>
                 @if (item.necesitaRecetaMedica) {
-                  <span class="mt-1 text-[10px] font-medium text-rose-600">Requiere receta</span>
+                  <span class="mt-0.5 text-[10px] font-medium text-rose-600">Rx</span>
                 }
               </button>
             } @empty {
@@ -365,7 +392,7 @@
             }
           </div>
         } @else {
-        <table class="w-full text-left text-sm">
+        <table class="w-full text-left text-sm" data-table-cards="off">
           <thead class="sticky top-0 bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-800">
             <tr>
               <th class="px-2 py-2 sm:px-3">Producto</th>
@@ -421,11 +448,11 @@
     </section>
 
     <section
-      class="flex flex-col bg-white p-3 dark:bg-gray-900 md:col-span-2 md:flex md:p-4"
+      class="flex flex-col bg-white p-2.5 dark:bg-gray-900 md:col-span-2 md:flex md:p-3"
       [class.hidden]="mobilePosTab() === 'catalog'"
     >
-      <div class="mb-2 flex items-center justify-between">
-        <h2 class="inline-flex items-center gap-1.5 font-semibold text-gray-800 dark:text-white/90">
+      <div class="mb-1.5 flex items-center justify-between">
+        <h2 class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-800 dark:text-white/90 md:text-base">
           <app-icon name="mdi:cart-outline" iconClass="size-4 text-brand-500" />
           Carrito
           @if (cart().length > 0) {
@@ -446,12 +473,12 @@
         }
       </div>
 
-      <div class="flex-1 space-y-2 overflow-auto">
+      <div class="flex-1 space-y-1.5 overflow-auto">
         @for (line of cart(); track line.productId) {
-          <div class="rounded-xl border border-gray-100 p-2 dark:border-gray-800 sm:p-3">
+          <div class="rounded-lg border border-gray-100 p-2 dark:border-gray-800">
             <div class="flex justify-between gap-2">
               <div class="min-w-0 flex-1">
-                <p class="truncate font-medium text-sm">{{ line.nombre }}</p>
+                <p class="truncate text-sm font-medium">{{ line.nombre }}</p>
                 @if (line.substitutedFromNombre) {
                   <p class="inline-flex items-center gap-1 text-xs text-amber-700">
                     <app-icon name="mdi:swap-horizontal" iconClass="size-3.5" />
@@ -498,7 +525,7 @@
               <div class="flex items-center gap-1">
                 <button
                   type="button"
-                  class="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded border"
+                  class="inline-flex min-h-9 min-w-9 touch-manipulation items-center justify-center rounded border sm:min-h-8 sm:min-w-8"
                   (click)="updateQty(line.productId, -1)"
                   aria-label="Disminuir cantidad"
                 >
@@ -507,7 +534,7 @@
                 <span class="min-w-[1.5rem] text-center text-sm">{{ line.quantity }}</span>
                 <button
                   type="button"
-                  class="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded border"
+                  class="inline-flex min-h-9 min-w-9 touch-manipulation items-center justify-center rounded border sm:min-h-8 sm:min-w-8"
                   (click)="updateQty(line.productId, 1)"
                   aria-label="Aumentar cantidad"
                 >
@@ -586,23 +613,15 @@
         <div class="flex justify-between text-base font-bold text-gray-800 dark:text-white">
           <span>Total</span><span>{{ payableTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
         </div>
+        <!-- Un solo Cobrar: class en app-button no oculta (:host fuerza display). Sticky móvil cubre catálogo. -->
         <app-button
-          class="mt-2 hidden w-full md:block"
+          className="mt-2 w-full"
           variant="primary"
           startIconName="mdi:cash-register"
           [disabled]="cart().length === 0 || interactionCheckFailed()"
           (btnClick)="openPayModal()"
         >
           Cobrar (F2)
-        </app-button>
-        <app-button
-          class="mt-2 block w-full md:hidden"
-          variant="primary"
-          startIconName="mdi:cash-register"
-          [disabled]="cart().length === 0 || interactionCheckFailed()"
-          (btnClick)="openPayModal()"
-        >
-          Cobrar
         </app-button>
         @if (lastSale(); as sale) {
           <div class="mt-2 space-y-1 text-center text-xs text-emerald-600">
@@ -664,12 +683,12 @@
 </div>
 
 <app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-xl" ariaLabel="Cobrar venta">
-  <app-form-stack className="p-6">
-    <h3 class="inline-flex items-center gap-2 text-lg font-semibold">
+  <app-form-stack className="p-4 sm:p-6">
+    <h3 class="inline-flex items-center gap-2 text-base font-semibold sm:text-lg">
       <app-icon name="mdi:cash-multiple" iconClass="size-5 text-brand-500" />
       Cobrar venta
     </h3>
-    <div class="space-y-2 text-sm">
+    <div class="space-y-1.5 text-sm">
       <div class="flex justify-between"><span>Subtotal</span><span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between"><span>IGV</span><span>{{ cartIgv() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       @if (promoDiscount() > 0) {
@@ -678,7 +697,7 @@
           <span>−{{ promoDiscount() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
         </div>
       }
-      <div class="flex justify-between text-lg font-bold"><span>Total</span><span>{{ payableTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+      <div class="flex justify-between text-base font-bold sm:text-lg"><span>Total</span><span>{{ payableTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between text-xs" [class.text-rose-600]="paymentRemaining() !== 0" [class.text-emerald-600]="paymentRemaining() === 0">
         <span>Pagado / pendiente</span>
         <span>{{ paymentPaidTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }} · falta {{ paymentRemaining() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
@@ -718,7 +737,7 @@
       </div>
       <app-form-stack>
         @for (line of paymentLineRows; track line.localId) {
-          <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+          <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700 sm:p-4">
             <app-form-row>
               <app-form-field label="Medio de pago">
                 <app-form-select

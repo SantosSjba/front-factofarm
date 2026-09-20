@@ -3,8 +3,11 @@ import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-table',
-  imports:[CommonModule],
-  template: `<table [ngClass]="'min-w-full ' + className"><ng-content></ng-content></table>`,
+  imports: [CommonModule],
+  host: {
+    class: 'ff-table-host block',
+  },
+  template: `<table [ngClass]="'min-w-full ff-table-cards ' + className"><ng-content></ng-content></table>`,
 })
 export class TableComponent {
   @Input() className = '';

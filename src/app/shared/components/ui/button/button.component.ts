@@ -15,11 +15,27 @@ import { TooltipDirective } from '../../../directives/tooltip.directive';
       vertical-align: middle;
       line-height: 1;
     }
+    /* Permite ocultar con class="hidden" en el host (Tailwind pierde ante :host { display }). */
+    :host(.hidden) {
+      display: none !important;
+    }
+    @media (min-width: 640px) {
+      :host(.sm\\:hidden) {
+        display: none !important;
+      }
+    }
+    @media (max-width: 639px) {
+      :host(.sm\\:inline-flex) {
+        display: none !important;
+      }
+    }
   `,
 })
 export class ButtonComponent {
   @Input() size: 'sm' | 'md' = 'md';
   @Input() variant: 'primary' | 'outline' | 'danger' | 'ghost' = 'primary';
+  /** Native button type. Use `submit` inside forms so Enter triggers ngSubmit. */
+  @Input() type: 'button' | 'submit' | 'reset' = 'button';
   @Input() disabled = false;
   /** Muestra spinner y deshabilita el botón durante la acción. */
   @Input() loading = false;

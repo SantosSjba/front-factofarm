@@ -248,8 +248,8 @@ export class UsuarioFormModalComponent {
     mutationFn: (body: CreateUserRequest) => firstValueFrom(this.api.createUser(body)),
     onSuccess: () => {
       this.notify.success('Usuario creado correctamente');
-      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.list() });
-      this.onClose();
+      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
+      this.onClose(true);
     },
     onError: (err) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo crear el usuario'));
@@ -261,8 +261,8 @@ export class UsuarioFormModalComponent {
       firstValueFrom(this.api.updateUser(id, body)),
     onSuccess: () => {
       this.notify.success('Usuario actualizado correctamente');
-      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.list() });
-      this.onClose();
+      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
+      this.onClose(true);
     },
     onError: (err) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el usuario'));
@@ -317,9 +317,8 @@ export class UsuarioFormModalComponent {
             }
           }
           this.selectedNavCodes.set(next);
-        } else if (this.selectedNavCodes().size === 0) {
-          this.selectedNavCodes.set(allNavCodes);
         }
+        // Nuevo usuario: no marcar todo el árbol; plantilla de rol se aplica al cargar templates.
       },
       error: () => {
         this.menuTrees.set([]);
@@ -327,7 +326,15 @@ export class UsuarioFormModalComponent {
       },
     });
     this.api.getRoleTemplates().subscribe({
-      next: (templates) => this.roleTemplates.set(templates ?? []),
+      next: (templates) => {
+        this.roleTemplates.set(templates ?? []);
+        if (!this.editingUser() && this.selectedNavCodes().size === 0) {
+          const template = (templates ?? []).find((t) => t.role === this.role());
+          if (template) {
+            this.selectedNavCodes.set(new Set(template.navPermissionCodes));
+          }
+        }
+      },
       error: () => this.roleTemplates.set([]),
     });
   }
@@ -429,7 +436,8 @@ export class UsuarioFormModalComponent {
     });
   }
 
-  protected onClose() {
+  protected onClose(force = false) {
+    if (!force && (this.isSaving() || this.isValidating())) return;
     const p = this.fotoPreview();
     if (p?.startsWith('blob:')) {
       URL.revokeObjectURL(p);
@@ -466,8 +474,17 @@ export class UsuarioFormModalComponent {
     this.selectedNavCodes.set(new Set<string>());
   }
 
+  protected readonly isValidating = signal(false);
+
   protected async onSave() {
-    const errors = await this.validate();
+    if (this.isSaving() || this.isValidating()) return;
+    this.isValidating.set(true);
+    let errors: string[];
+    try {
+      errors = await this.validate();
+    } finally {
+      this.isValidating.set(false);
+    }
     if (errors.length) {
       this.notify.warning(errors.join('\n'));
       return;

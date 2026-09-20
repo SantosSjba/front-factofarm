@@ -1,30 +1,86 @@
-<div class="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
-  <div
-    class="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900 sm:p-0"
-  >
-    <ng-content></ng-content>
-    <div
-      class="items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid relative"
+<div class="relative min-h-dvh w-full overflow-x-hidden bg-gray-50 dark:bg-gray-950">
+  <div class="relative flex min-h-dvh w-full flex-col lg:flex-row">
+    <!-- Brand panel (desktop) / top strip (mobile) -->
+    <aside
+      class="relative flex w-full min-w-0 shrink-0 flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-950 via-[#003552] to-brand-900 px-5 py-4 text-white sm:px-6 sm:py-5 lg:w-[46%] lg:min-h-dvh lg:px-12 lg:py-10 xl:w-1/2"
+      aria-label="Marca FactoFarm"
     >
-      <div class="flex items-center justify-center z-1">
-        <!-- ===== Common Grid Shape Start ===== -->
+      <div
+        class="pointer-events-none absolute inset-0 opacity-40"
+        aria-hidden="true"
+      >
         <app-grid-shape />
-        <div class="flex flex-col items-center max-w-xs">
-          <a routerLink="/" class="logo-dark-glow logo-dark-glow--always mb-4 block">
-            <img
-              src="/images/logo/logo.png"
-              alt="FactoFarm"
-              class="h-auto w-full max-w-[280px] object-contain"
-            />
-          </a>
-          <p class="text-center text-gray-400 dark:text-white/60">
-            FactoFarm · Gestión de farmacia. Panel seguro para tu equipo.
-          </p>
+      </div>
+      <div
+        class="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-brand-500/20 blur-3xl lg:size-72"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="pointer-events-none absolute -bottom-20 -left-10 size-64 rounded-full bg-brand-400/10 blur-3xl"
+        aria-hidden="true"
+      ></div>
+
+      <div class="relative z-10 flex w-full items-center justify-between gap-3">
+        <a
+          routerLink="/"
+          class="inline-flex w-fit items-center rounded-xl bg-white px-3 py-2 shadow-sm outline-none ring-1 ring-white/20 transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-950"
+        >
+          <img
+            src="/images/logo/logo-nav.png"
+            alt="FactoFarm"
+            width="200"
+            height="48"
+            class="h-8 w-auto max-w-[140px] object-contain object-left sm:h-9 sm:max-w-[180px] lg:h-11 lg:max-w-[220px]"
+          />
+        </a>
+        <!-- Theme toggle en franja móvil (evita hueco vacío a la derecha) -->
+        <div class="lg:hidden">
+          <app-theme-toggle-two />
         </div>
       </div>
-    </div>
-    <div class="fixed z-50 bottom-6 right-6">
-      <app-theme-toggle-two />
-    </div>
+
+      <div class="relative z-10 hidden max-w-md flex-1 flex-col justify-center py-10 lg:flex">
+        <p class="mb-3 text-xs font-semibold tracking-[0.18em] text-brand-300 uppercase">
+          Sistema integral para tu botica
+        </p>
+        <h2 class="text-3xl font-semibold leading-tight tracking-tight text-white xl:text-4xl">
+          Controla ventas, stock y facturación en un solo panel.
+        </h2>
+        <p class="mt-4 text-base leading-relaxed text-white/70">
+          Acceso seguro para tu equipo. Solo cuentas invitadas por el administrador de la farmacia.
+        </p>
+        <ul class="mt-8 space-y-3 text-sm text-white/80">
+          <li class="flex items-start gap-2.5">
+            <span class="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-500/25 text-brand-300" aria-hidden="true">✓</span>
+            POS, lotes, compras y reportes listos para operar
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-500/25 text-brand-300" aria-hidden="true">✓</span>
+            Cumplimiento SUNAT y control de medicamentos
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-500/25 text-brand-300" aria-hidden="true">✓</span>
+            Multi-establecimiento con permisos por rol
+          </li>
+        </ul>
+      </div>
+
+      <p class="relative z-10 hidden text-xs text-white/45 lg:block">
+        © {{ year }} FactoFarm · FactoSys Perú
+      </p>
+    </aside>
+
+    <!-- Form column -->
+    <main
+      class="relative flex w-full min-w-0 flex-1 flex-col justify-center px-5 py-8 sm:px-8 lg:px-12 xl:px-16"
+    >
+      <div class="absolute top-4 right-4 z-20 hidden sm:top-6 sm:right-6 lg:block">
+        <app-theme-toggle-two />
+      </div>
+
+      <div class="mx-auto w-full max-w-[420px]">
+        <ng-content></ng-content>
+      </div>
+    </main>
   </div>
 </div>

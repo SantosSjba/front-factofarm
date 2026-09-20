@@ -102,7 +102,7 @@ export class UsuariosComponent {
     onSuccess: () => {
       this.notify.success('Usuario eliminado correctamente');
       this.closeDeleteConfirm();
-      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.list() });
+      void this.queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
     },
     onError: (err) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el usuario'));

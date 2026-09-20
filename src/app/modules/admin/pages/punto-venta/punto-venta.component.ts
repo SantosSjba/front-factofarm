@@ -13,6 +13,7 @@ import {
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
@@ -139,6 +140,7 @@ const DOC_OPTIONS_INTERNAL: { value: SaleDocumentType; label: string }[] = [
 })
 export class PuntoVentaComponent implements OnDestroy {
   private readonly api = inject(DirectoryApiService);
+  private readonly auth = inject(AuthService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
   private readonly posPrint = inject(PosPrintService);
@@ -245,13 +247,20 @@ export class PuntoVentaComponent implements OnDestroy {
     staleTime: 60_000,
   }));
 
-  protected readonly warehouseOptions = computed(() => [
-    { value: '', label: 'Almacén de venta' },
-    ...(this.warehousesQuery.data() ?? []).map((w) => ({
+  /** Almacenes del establecimiento activo (venta/caja no cruzan locales). */
+  protected readonly scopedWarehouses = computed(() => {
+    const estId = this.auth.user()?.establecimientoId;
+    const all = this.warehousesQuery.data() ?? [];
+    if (!estId) return all;
+    return all.filter((w) => w.establishment.id === estId);
+  });
+
+  protected readonly warehouseOptions = computed(() =>
+    this.scopedWarehouses().map((w) => ({
       value: w.id,
-      label: `${w.nombre} · ${w.establishment.nombre}`,
+      label: w.nombre,
     })),
-  ]);
+  );
 
   protected readonly cartTotal = computed(() =>
     this.cart().reduce((acc, line) => acc + lineGrossTotal(line), 0),
@@ -501,9 +510,16 @@ export class PuntoVentaComponent implements OnDestroy {
     }
 
     effect(() => {
-      const warehouses = this.warehousesQuery.data();
-      if (!warehouses?.length || this.warehouseId()) return;
+      const warehouses = this.scopedWarehouses();
+      if (!warehouses.length) return;
+      const current = this.warehouseId();
+      const stillValid = current && warehouses.some((w) => w.id === current);
+      if (stillValid) return;
       this.warehouseId.set(warehouses[0]!.id);
+      if (current) {
+        this.notify.info('Almacén ajustado al establecimiento de la sesión');
+        this.clearCart();
+      }
     });
 
     effect((onCleanup) => {

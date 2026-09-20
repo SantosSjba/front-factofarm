@@ -334,10 +334,8 @@ layer(base);
 }
 
 @layer utilities {
-  /* Contorno luminoso sobre el logo (respeta el alpha del PNG/SVG) */
-  .logo-dark-glow {
-    @apply inline-flex items-center;
-  }
+  /* Contorno luminoso sobre el logo (respeta el alpha del PNG/SVG).
+     No forzar display en .logo-dark-glow: pelea con utilities responsive. */
 
   /* En fondos ya oscuros (panel auth) siempre; en el resto solo con tema dark */
   .logo-dark-glow--always img,
@@ -1000,5 +998,150 @@ pre[class*="language-"].line-numbers {
 
   .ff-legal-prose tbody tr:last-child td {
     @apply border-b-0;
+  }
+
+  .ff-table-host {
+    min-width: 0;
+  }
+
+  .ff-table-host.ff-table-is-cards {
+    overflow: visible !important;
+  }
+
+  table.ff-table-is-cards {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  table.ff-table-is-cards thead {
+    display: none;
+  }
+
+  table.ff-table-is-cards tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  table.ff-table-is-cards tbody.divide-y > :not([hidden]) ~ :not([hidden]) {
+    border-top-width: 0;
+  }
+
+  table.ff-table-is-cards tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.15rem 0.75rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 0.75rem;
+    background: #fff;
+    box-shadow: var(--shadow-theme-xs);
+  }
+
+  .dark table.ff-table-is-cards tbody tr {
+    border-color: rgb(255 255 255 / 0.08);
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  table.ff-table-is-cards tbody td {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    text-align: left !important;
+    white-space: normal;
+  }
+
+  table.ff-table-is-cards td.ff-table-index {
+    display: none;
+  }
+
+  table.ff-table-is-cards td.ff-table-title {
+    grid-column: 1;
+    grid-row: 1;
+    padding-right: 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--color-gray-800);
+  }
+
+  table.ff-table-is-cards tbody tr:not(:has(.ff-table-actions)) td.ff-table-title {
+    grid-column: 1 / -1;
+  }
+
+  .dark table.ff-table-is-cards td.ff-table-title {
+    color: rgb(255 255 255 / 0.92);
+  }
+
+  table.ff-table-is-cards td.ff-table-title::before {
+    display: none;
+  }
+
+  table.ff-table-is-cards td.ff-table-actions {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    justify-self: end;
+  }
+
+  table.ff-table-is-cards td.ff-table-actions::before {
+    display: none;
+  }
+
+  table.ff-table-is-cards td.ff-table-actions > * {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.375rem;
+  }
+
+  table.ff-table-is-cards td.ff-table-field {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.45rem 0 0;
+    margin-top: 0.35rem;
+    border-top: 1px solid var(--color-gray-100);
+  }
+
+  .dark table.ff-table-is-cards td.ff-table-field {
+    border-top-color: rgb(255 255 255 / 0.06);
+  }
+
+  table.ff-table-is-cards td.ff-table-field::before {
+    content: attr(data-label);
+    flex: 0 1 42%;
+    max-width: 11rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--color-gray-500);
+  }
+
+  .dark table.ff-table-is-cards td.ff-table-field::before {
+    color: var(--color-gray-400);
+  }
+
+  table.ff-table-is-cards td.ff-table-field:not([data-label])::before,
+  table.ff-table-is-cards td.ff-table-field[data-label=""]::before {
+    display: none;
+  }
+
+  table.ff-table-is-cards tr.ff-table-empty-row {
+    display: block;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    box-shadow: none;
+  }
+
+  table.ff-table-is-cards tr.ff-table-empty-row td {
+    display: block;
+    text-align: center !important;
   }
 }

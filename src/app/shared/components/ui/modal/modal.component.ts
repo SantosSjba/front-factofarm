@@ -11,7 +11,9 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
+  inject,
 } from '@angular/core';
+import { BodyScrollLockService } from '../../../services/body-scroll-lock.service';
 
 /** Diálogo modal con altura limitada y scroll en el cuerpo; admite `data-modal-header|body|footer`. */
 @Component({
@@ -21,6 +23,7 @@ import {
   styles: ``,
 })
 export class ModalComponent implements OnInit, OnDestroy, OnChanges {
+  private readonly scrollLock = inject(BodyScrollLockService);
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
   /** Clases del panel (ancho, sombra, etc.). */
@@ -44,7 +47,7 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnDestroy() {
-    document.body.style.overflow = 'unset';
+    this.scrollLock.setLocked(this, false);
     this.previouslyFocused?.focus();
   }
 
@@ -61,7 +64,7 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private lockBody(open: boolean) {
-    document.body.style.overflow = open ? 'hidden' : 'unset';
+    this.scrollLock.setLocked(this, open);
   }
 
   onBackdropClick(_event: MouseEvent) {

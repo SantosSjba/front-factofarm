@@ -207,7 +207,7 @@ export class LandingComponent {
     {
       icon: 'mdi:calendar-clock',
       title: 'Vencimientos bajo control',
-      description: 'Bloqueo configurable de lotes vencidos y alertas antes del vencimiento.',
+      description: 'Bloqueo de venta de lotes vencidos y alertas antes del vencimiento.',
     },
     {
       icon: 'mdi:file-lock-outline',

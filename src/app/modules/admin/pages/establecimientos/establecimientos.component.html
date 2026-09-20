@@ -1,6 +1,4 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
 <app-page-toolbar>
   <h1
@@ -97,7 +95,7 @@
           } @empty {
             <tr>
               <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-                Sin coincidencias para los filtros aplicados.
+                No hay establecimientos registrados.
               </td>
             </tr>
           }
@@ -133,8 +131,8 @@
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="md:col-span-2">
-        <app-label>Descripción</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-1">Descripción</app-label>
+        <app-input-field id="establecimiento-campo-1"
           className="mt-2"
           placeholder="Oficina Principal"
           [value]="nombre()"
@@ -142,8 +140,8 @@
         />
       </div>
       <div>
-        <app-label>Código Domicilio Fiscal</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-2">Código Domicilio Fiscal</app-label>
+        <app-input-field id="establecimiento-campo-2"
           className="mt-2"
           placeholder="0000"
           [value]="codigo()"
@@ -151,8 +149,8 @@
         />
       </div>
       <div>
-        <app-label>País</app-label>
-        <app-form-select
+        <app-label for="establecimiento-campo-3">País</app-label>
+        <app-form-select id="establecimiento-campo-3"
           className="mt-2"
           [value]="pais()"
           [showPlaceholder]="false"
@@ -161,8 +159,8 @@
         />
       </div>
       <div>
-        <app-label>Departamento</app-label>
-        <app-form-select
+        <app-label for="establecimiento-campo-4">Departamento</app-label>
+        <app-form-select id="establecimiento-campo-4"
           className="mt-2"
           [value]="departmentId()"
           [options]="departmentOptions()"
@@ -170,8 +168,8 @@
         />
       </div>
       <div>
-        <app-label>Provincia</app-label>
-        <app-form-select
+        <app-label for="establecimiento-campo-5">Provincia</app-label>
+        <app-form-select id="establecimiento-campo-5"
           className="mt-2"
           [value]="provinceId()"
           [disabled]="!departmentId()"
@@ -180,8 +178,8 @@
         />
       </div>
       <div>
-        <app-label>Distrito</app-label>
-        <app-form-select
+        <app-label for="establecimiento-campo-6">Distrito</app-label>
+        <app-form-select id="establecimiento-campo-6"
           className="mt-2"
           [value]="districtId()"
           [disabled]="!provinceId()"
@@ -190,32 +188,32 @@
         />
       </div>
       <div class="md:col-span-2">
-        <app-label>Dirección Fiscal</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-7">Dirección Fiscal</app-label>
+        <app-input-field id="establecimiento-campo-7"
           className="mt-2"
           [value]="direccionFiscal()"
           (valueChange)="direccionFiscal.set($event + '')"
         />
       </div>
       <div class="md:col-span-2">
-        <app-label>Dirección Comercial</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-8">Dirección Comercial</app-label>
+        <app-input-field id="establecimiento-campo-8"
           className="mt-2"
           [value]="direccionComercial()"
           (valueChange)="direccionComercial.set($event + '')"
         />
       </div>
       <div>
-        <app-label>Teléfono</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-9">Teléfono</app-label>
+        <app-input-field id="establecimiento-campo-9"
           className="mt-2"
           [value]="telefono()"
           (valueChange)="telefono.set($event + '')"
         />
       </div>
       <div>
-        <app-label>Correo de contacto</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-10">Correo de contacto</app-label>
+        <app-input-field id="establecimiento-campo-10"
           type="email"
           className="mt-2"
           [value]="correoContacto()"
@@ -223,40 +221,40 @@
         />
       </div>
       <div>
-        <app-label>Dirección web</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-11">Dirección web</app-label>
+        <app-input-field id="establecimiento-campo-11"
           className="mt-2"
           [value]="direccionWeb()"
           (valueChange)="direccionWeb.set($event + '')"
         />
       </div>
       <div class="md:col-span-3">
-        <app-label>Información adicional (Microred/Hospital)</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-12">Información adicional (Microred/Hospital)</app-label>
+        <app-input-field id="establecimiento-campo-12"
           className="mt-2"
           [value]="informacionAdicional()"
           (valueChange)="informacionAdicional.set($event + '')"
         />
       </div>
       <div>
-        <app-label>URL Impresora</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-13">URL Impresora</app-label>
+        <app-input-field id="establecimiento-campo-13"
           className="mt-2"
           [value]="urlImpresora()"
           (valueChange)="urlImpresora.set($event + '')"
         />
       </div>
       <div>
-        <app-label>Nombre Impresora</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-14">Nombre Impresora</app-label>
+        <app-input-field id="establecimiento-campo-14"
           className="mt-2"
           [value]="nombreImpresora()"
           (valueChange)="nombreImpresora.set($event + '')"
         />
       </div>
       <div>
-        <app-label>Cliente por defecto</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-15">Cliente por defecto</app-label>
+        <app-input-field id="establecimiento-campo-15"
           className="mt-2"
           [value]="clienteDefault()"
           (valueChange)="clienteDefault.set($event + '')"
@@ -282,8 +280,8 @@
         </p>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <app-label>Número Yape</app-label>
-            <app-input-field
+            <app-label for="establecimiento-campo-16">Número Yape</app-label>
+            <app-input-field id="establecimiento-campo-16"
               className="mt-2"
               placeholder="9 dígitos, ej. 987654321"
               [value]="posYapeNumero()"
@@ -291,8 +289,8 @@
             />
           </div>
           <div>
-            <app-label>Número Plin</app-label>
-            <app-input-field
+            <app-label for="establecimiento-campo-17">Número Plin</app-label>
+            <app-input-field id="establecimiento-campo-17"
               className="mt-2"
               placeholder="9 dígitos, ej. 912345678"
               [value]="posPlinNumero()"
@@ -306,8 +304,8 @@
         <h4 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y BPA</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <app-label>Valorización de stock</app-label>
-            <app-form-select
+            <app-label for="establecimiento-campo-18">Valorización de stock</app-label>
+            <app-form-select id="establecimiento-campo-18"
               className="mt-2"
               [value]="inventoryValuationMethod()"
               [options]="valuationMethodOptions"
@@ -315,8 +313,8 @@
             />
           </div>
           <div>
-            <app-label>Asignación de lotes en ventas</app-label>
-            <app-form-select
+            <app-label for="establecimiento-campo-19">Asignación de lotes en ventas</app-label>
+            <app-form-select id="establecimiento-campo-19"
               className="mt-2"
               [value]="inventoryLotAllocationMethod()"
               [options]="lotAllocationOptions"
@@ -324,8 +322,8 @@
             />
           </div>
           <div>
-            <app-label>Umbral ajuste (2da autorización)</app-label>
-            <app-input-field
+            <app-label for="establecimiento-campo-20">Umbral ajuste (2da autorización)</app-label>
+            <app-input-field id="establecimiento-campo-20"
               className="mt-2"
               type="number"
               [value]="adjustmentQtyThreshold()"
@@ -333,11 +331,7 @@
             />
           </div>
           <div class="flex items-end">
-            <app-checkbox
-              label="Bloquear venta de lotes vencidos"
-              [checked]="blockExpiredProductSales()"
-              (checkedChange)="blockExpiredProductSales.set($event)"
-            />
+            <p class="text-sm text-gray-600 dark:text-gray-300">La venta de lotes vencidos está bloqueada de forma obligatoria.</p>
           </div>
         </div>
       </div>
@@ -456,7 +450,7 @@
             } @empty {
             <tr>
               <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-                Sin coincidencias para los filtros aplicados.
+                No hay series registradas para este establecimiento.
               </td>
             </tr>
           }
@@ -467,8 +461,8 @@
 
     <div class="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12">
       <div class="md:col-span-5">
-        <app-label>Tipo de documento</app-label>
-        <app-form-select
+        <app-label for="establecimiento-campo-21">Tipo de documento</app-label>
+        <app-form-select id="establecimiento-campo-21"
           className="mt-2"
           [value]="seriesDocumentType()"
           [options]="docTypeOptions()"
@@ -476,8 +470,8 @@
         />
       </div>
       <div class="md:col-span-3">
-        <app-label>Número</app-label>
-        <app-input-field
+        <app-label for="establecimiento-campo-22">Número</app-label>
+        <app-input-field id="establecimiento-campo-22"
           className="mt-2"
           placeholder="F001"
           [value]="seriesNumero()"

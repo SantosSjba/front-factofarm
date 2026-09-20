@@ -179,7 +179,7 @@ export class EstablecimientosComponent {
     onSuccess: () => {
       this.notify.success('Establecimiento creado correctamente');
       this.closeFormModal(true);
-      void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.list() });
+      void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.all });
     },
     onError: (err) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo crear el establecimiento'));
@@ -192,7 +192,7 @@ export class EstablecimientosComponent {
     onSuccess: () => {
       this.notify.success('Establecimiento actualizado correctamente');
       this.closeFormModal(true);
-      void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.list() });
+      void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.all });
     },
     onError: (err) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el establecimiento'));
@@ -204,7 +204,7 @@ export class EstablecimientosComponent {
     onSuccess: () => {
       this.notify.success('Establecimiento eliminado correctamente');
       this.closeDeleteConfirm();
-      void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.list() });
+      void this.queryClient.invalidateQueries({ queryKey: establishmentQueryKeys.all });
     },
     onError: (err) => {
       this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el establecimiento'));
@@ -303,7 +303,7 @@ export class EstablecimientosComponent {
         this.esHospital.set(current.esHospital ?? false);
         this.inventoryValuationMethod.set(current.inventoryValuationMethod ?? 'PEPS');
         this.inventoryLotAllocationMethod.set(current.inventoryLotAllocationMethod ?? 'FEFO');
-        this.blockExpiredProductSales.set(current.blockExpiredProductSales ?? true);
+        this.blockExpiredProductSales.set(true);
         this.adjustmentQtyThreshold.set(
           Number.parseFloat(current.adjustmentQtyThreshold ?? '50') || 50,
         );
@@ -369,7 +369,7 @@ export class EstablecimientosComponent {
       esHospital: this.esHospital(),
       inventoryValuationMethod: this.inventoryValuationMethod(),
       inventoryLotAllocationMethod: this.inventoryLotAllocationMethod(),
-      blockExpiredProductSales: this.blockExpiredProductSales(),
+      blockExpiredProductSales: true,
       adjustmentQtyThreshold: this.adjustmentQtyThreshold(),
       posYapeNumero: yapeDigits,
       posPlinNumero: plinDigits,

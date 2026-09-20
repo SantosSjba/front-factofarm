@@ -11,7 +11,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   imports: [BreadcrumbInlineComponent, ComponentCardComponent],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'LPDP / ARCO' }]" />
-    <app-component-card title="Matriz de tratamiento LPDP" [loading]="matrixQuery.isPending()">
+    <app-component-card title="Matriz de tratamiento LPDP" className="mt-4" [loading]="matrixQuery.isPending()" [error]="matrixQuery.isError() ? 'No se pudo cargar la matriz de tratamiento' : null" (retry)="matrixQuery.refetch()">
       @if (matrixQuery.data(); as matrix) {
         <p class="mb-4 text-sm text-gray-600">Versión {{ matrix.version }} · Cifrado salud: {{ matrix.encryptionEnabled ? 'activo' : 'no configurado' }}</p>
         <div class="overflow-x-auto">
@@ -39,7 +39,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
       }
     </app-component-card>
 
-    <app-component-card title="Solicitudes ARCO" [loading]="arcoQuery.isPending()">
+    <app-component-card title="Solicitudes ARCO" className="mt-4" [loading]="arcoQuery.isPending()" [error]="arcoQuery.isError() ? 'No se pudo cargar las solicitudes ARCO' : null" (retry)="arcoQuery.refetch()">
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
@@ -64,7 +64,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
       </div>
     </app-component-card>
 
-    <app-component-card title="Retención programada" [loading]="retentionQuery.isPending()">
+    <app-component-card title="Retención programada" className="mt-4" [loading]="retentionQuery.isPending()" [error]="retentionQuery.isError() ? 'No se pudo cargar la retención programada' : null" (retry)="retentionQuery.refetch()">
       @if (retentionQuery.data(); as retention) {
         <p class="mb-3 text-sm text-gray-600">{{ retention.policy }}</p>
         <ul class="space-y-2 text-sm">

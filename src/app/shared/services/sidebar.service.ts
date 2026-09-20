@@ -1,10 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { BodyScrollLockService } from './body-scroll-lock.service';
 import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SidebarService {
+  private readonly scrollLock = inject(BodyScrollLockService);
   private isExpandedSubject = new BehaviorSubject<boolean>(true);
   private isMobileOpenSubject = new BehaviorSubject<boolean>(false);
   private isHoveredSubject = new BehaviorSubject<boolean>(false);
@@ -22,11 +24,12 @@ export class SidebarService {
   }
 
   setMobileOpen(val: boolean) {
+    this.scrollLock.setLocked(this, val);
     this.isMobileOpenSubject.next(val);
   }
 
   toggleMobileOpen() {
-    this.isMobileOpenSubject.next(!this.isMobileOpenSubject.value);
+    this.setMobileOpen(!this.isMobileOpenSubject.value);
   }
 
   setHovered(val: boolean) {

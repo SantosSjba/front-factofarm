@@ -21,7 +21,7 @@
     <app-button
       size="sm"
       startIconName="mdi:content-save-outline"
-      [disabled]="saving() || profileQuery.isPending()" [loading]="profileQuery.isPending()"
+      [disabled]="saving() || !profileQuery.isSuccess()" [loading]="saving() || profileQuery.isPending()"
       (btnClick)="submit()"
     >
       {{ saving() ? 'Guardando…' : 'Guardar cambios' }}

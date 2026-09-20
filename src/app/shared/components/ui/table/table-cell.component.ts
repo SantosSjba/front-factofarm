@@ -6,16 +6,21 @@ import { Component, Input } from '@angular/core';
   imports: [CommonModule],
   template: `
     @if (isHeader) {
-    <ng-container>
       <th [ngClass]="className"><ng-content></ng-content></th>
-    </ng-container>
     } @else {
-    <td [ngClass]="className"><ng-content></ng-content></td>
+      <td
+        [ngClass]="className"
+        [attr.data-label]="label || null"
+        [attr.data-role]="role || null"
+      >
+        <ng-content></ng-content>
+      </td>
     }
   `,
-  styles: ``
 })
 export class TableCellComponent {
   @Input() isHeader = false;
   @Input() className = '';
+  @Input() label = '';
+  @Input() role: 'index' | 'title' | 'field' | 'actions' | '' = '';
 }

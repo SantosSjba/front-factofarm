@@ -41,7 +41,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     </app-page-toolbar>
 
     <div class="mt-4 flex flex-wrap items-end gap-3">
-      <div class="min-w-[220px]">
+      <div class="w-full sm:w-64">
         <app-form-select
           placeholder="Empleado"
           [options]="userOptions()"
@@ -59,10 +59,10 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
       <app-component-card title="Horario semanal" className="mt-4">
         <div class="space-y-2">
           @for (row of scheduleRows(); track row.dayOfWeek) {
-            <div class="flex flex-wrap items-center gap-2 py-1">
+            <div class="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 py-1">
               <span class="w-10 text-sm font-medium">{{ dayLabel(row.dayOfWeek) }}</span>
-              <app-input-field type="time" [value]="row.startTime" (valueChange)="updateScheduleRow(row.dayOfWeek, 'startTime', '' + $event)" />
-              <app-input-field type="time" [value]="row.endTime" (valueChange)="updateScheduleRow(row.dayOfWeek, 'endTime', '' + $event)" />
+              <app-input-field class="min-w-0" type="time" [ariaLabel]="dayLabel(row.dayOfWeek) + ' hora de entrada'" [value]="row.startTime" (valueChange)="updateScheduleRow(row.dayOfWeek, 'startTime', '' + $event)" />
+              <app-input-field class="min-w-0" type="time" [ariaLabel]="dayLabel(row.dayOfWeek) + ' hora de salida'" [value]="row.endTime" (valueChange)="updateScheduleRow(row.dayOfWeek, 'endTime', '' + $event)" />
             </div>
           }
         </div>
@@ -111,8 +111,8 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
     <app-component-card title="Productividad" className="mt-4">
       <div class="mb-3 flex flex-wrap gap-3">
-        <app-input-field type="date" [value]="prodFrom()" (valueChange)="prodFrom.set('' + $event)" />
-        <app-input-field type="date" [value]="prodTo()" (valueChange)="prodTo.set('' + $event)" />
+        <app-input-field type="date" ariaLabel="Productividad desde" [value]="prodFrom()" (valueChange)="prodFrom.set('' + $event)" />
+        <app-input-field type="date" ariaLabel="Productividad hasta" [value]="prodTo()" (valueChange)="prodTo.set('' + $event)" />
         <app-button variant="primary" (btnClick)="productivityQuery.refetch()">Consultar</app-button>
       </div>
       <app-page-state [loading]="productivityQuery.isPending()" [error]="productivityError()" (retry)="productivityQuery.refetch()">

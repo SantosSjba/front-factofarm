@@ -14,6 +14,7 @@ const baseSelect =
 })
 export class FormSelectComponent {
   @Input() id = '';
+  @Input() ariaLabel = '';
   @Input() name = '';
   @Input() value = '';
   @Input() placeholder = 'Seleccionar';

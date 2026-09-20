@@ -2,17 +2,16 @@
   <select
     [id]="id || null"
     [name]="name || null"
-    [attr.aria-label]="effectivePlaceholder"
+    [attr.aria-label]="ariaLabel || (id ? null : effectivePlaceholder)"
     [disabled]="disabled"
     [ngClass]="selectClass"
-    [value]="value"
     (change)="onChange($event)"
   >
     @if (showPlaceholder && effectivePlaceholder) {
-      <option value="">{{ effectivePlaceholder }}</option>
+      <option value="" [selected]="value === ''">{{ effectivePlaceholder }}</option>
     }
     @for (opt of renderedOptions; track opt.value) {
-      <option [value]="opt.value">{{ opt.label }}</option>
+      <option [value]="opt.value" [selected]="opt.value === value">{{ opt.label }}</option>
     }
   </select>
 

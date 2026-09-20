@@ -1,5 +1,12 @@
 /** Mapeo Permission.code → ruta del panel admin. */
 export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string }> = {
+  'nav.lpdp': { path: '/lpdp' },
+  'nav.farmaceutico_titular': { path: '/farmaceutico-titular' },
+  'nav.precios_regulados': { path: '/precios-regulados' },
+  'nav.ordenes_compra': { path: '/ordenes-compra' },
+  'nav.recepcion_mercaderia': { path: '/recepcion-mercaderia' },
+  'nav.reporte_compras_sugerido': { path: '/reporte-compras-sugerido' },
+  'nav.comparativo_precios': { path: '/comparativo-precios' },
   'nav.platform_dashboard': { path: '/platform/dashboard' },
   'nav.platform_clientes': { path: '/platform/clientes' },
   'nav.platform_leads': { path: '/platform/leads' },

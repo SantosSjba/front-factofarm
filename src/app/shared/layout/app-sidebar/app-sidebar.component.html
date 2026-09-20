@@ -1,5 +1,7 @@
 <aside
-  class="fixed top-0 left-0 z-50 flex h-screen flex-col overflow-hidden border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900"
+  id="app-sidebar"
+  aria-label="Navegación principal"
+  class="fixed top-0 left-0 z-50 flex h-dvh max-w-[calc(100vw-2rem)] flex-col overflow-hidden border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900"
   [ngClass]="{
     'w-[290px]':
       (isExpanded$ | async) || (isMobileOpen$ | async) || (isHovered$ | async),
@@ -10,11 +12,19 @@
     ),
     'translate-x-0': isMobileOpen$ | async,
     '-translate-x-full': !(isMobileOpen$ | async),
+    'invisible': !(isMobileOpen$ | async),
+    'xl:visible': true,
     'xl:translate-x-0': true
   }"
   (mouseenter)="onSidebarMouseEnter()"
   (mouseleave)="sidebarService.setHovered(false)"
 >
+  @if (isMobileOpen$ | async) {
+    <button type="button" aria-label="Cerrar menú lateral" (click)="sidebarService.setMobileOpen(false)"
+      class="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-lg hover:bg-gray-100 xl:hidden dark:hover:bg-gray-800">
+      <app-icon name="lucide:x" iconClass="size-5" />
+    </button>
+  }
   <div
     class="py-8 flex"
     [ngClass]="{
@@ -22,7 +32,7 @@
       'justify-start': (isExpanded$ | async) || (isHovered$ | async)
     }"
   >
-    <a routerLink="/" class="logo-dark-glow">
+    <a routerLink="/" class="logo-dark-glow inline-flex items-center">
       @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
       <img
         [src]="branding.navLogoSrc()"
@@ -124,6 +134,7 @@
                 <div
                   class="overflow-hidden transition-all duration-300"
                   [id]="'main-' + i"
+                  [attr.inert]="openSubmenu !== 'main-' + i ? '' : null"
                   [style.display]="
                     (isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async) 
                       ? 'block' 
