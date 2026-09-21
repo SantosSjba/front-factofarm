@@ -26,7 +26,7 @@
         @for (row of listQuery.data()?.items ?? []; track row.id) {
           <tr class="border-b border-gray-100 dark:border-gray-800">
             <td class="px-3 py-2">{{ row.createdAt | appDate: 'short' }}</td>
-            <td class="px-3 py-2">{{ row.documentType }} {{ row.serie }}-{{ row.numero }
+            <td class="px-3 py-2">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
             <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
             <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             <td class="px-3 py-2 text-right">
