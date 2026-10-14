@@ -121,6 +121,24 @@ export class AuthService {
     return this.refreshInFlight;
   }
 
+  loadProfile(): Observable<AuthUser> {
+    return this.http.get<AuthUser>(`${environment.apiBaseUrl}/auth/me`).pipe(tap(user => this.persistUser(user)));
+  }
+
+  updateProfile(body: { nombre: string; email: string }): Observable<AuthUser> {
+    return this.http.patch<AuthUser>(`${environment.apiBaseUrl}/auth/me`, body).pipe(tap(user => this.persistUser(user)));
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ ok: true }> {
+    return this.http.post<{ ok: true }>(`${environment.apiBaseUrl}/auth/change-password`, { currentPassword, newPassword });
+  }
+
+  private persistUser(user: AuthUser): void {
+    const store = this.isRememberEnabled() ? localStorage : sessionStorage;
+    store.setItem(USER_KEY, JSON.stringify(user));
+    this.userSignal.set(user);
+  }
+
   logout(): void {
     const refreshToken = this.getRefreshToken();
     if (refreshToken) {

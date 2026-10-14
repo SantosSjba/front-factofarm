@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, platformOnlyGuard, tenantDashboardGuard } from '../../core/guards/auth.guard';
+import { authGuard, platformAdminGuard, platformOnlyGuard, tenantDashboardGuard } from '../../core/guards/auth.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { AppLayoutComponent } from '../../shared/layout/app-layout/app-layout.component';
 import { ADMIN_ROUTE_PERMISSIONS as P } from './admin-route-permissions';
@@ -34,11 +34,22 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Dashboard',
       },
       {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
+        title: 'FactoFarm | Mi perfil',
+      },
+      {
         path: 'onboarding',
         ...guarded(P.dashboard),
         loadComponent: () =>
           import('./pages/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
         title: 'FactoFarm | Configuración inicial',
+      },
+      {
+        path: 'platform/settings',
+        canActivate: [platformAdminGuard],
+        loadComponent: () => import('./pages/platform-settings/platform-settings.component').then(m => m.PlatformSettingsComponent),
+        title: 'FactoFarm | Configuración de plataforma',
       },
       {
         path: 'platform/dashboard',

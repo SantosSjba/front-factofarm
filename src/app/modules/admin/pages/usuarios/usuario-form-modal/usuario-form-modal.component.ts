@@ -1,3 +1,4 @@
+import { passwordPolicyError } from '../../../../../core/utils/password-policy';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
@@ -637,15 +638,15 @@ export class UsuarioFormModalComponent {
       delete next['password'];
       delete next['password2'];
       if (!this.isEditing()) {
-        if (!pw || pw.length < 8) {
-          next['password'] = 'La contraseña debe tener al menos 8 caracteres.';
+        if (passwordPolicyError(pw)) {
+          next['password'] = passwordPolicyError(pw)!;
         }
         if (pw !== pw2) {
           next['password2'] = 'Las contraseñas no coinciden.';
         }
       } else if (pw || pw2) {
-        if (pw.length < 8) {
-          next['password'] = 'La contraseña debe tener al menos 8 caracteres.';
+        if (passwordPolicyError(pw)) {
+          next['password'] = passwordPolicyError(pw)!;
         }
         if (pw !== pw2) {
           next['password2'] = 'Las contraseñas no coinciden.';
@@ -809,8 +810,8 @@ export class UsuarioFormModalComponent {
     const pw = this.password();
     const pw2 = this.password2();
     if (!this.isEditing()) {
-      if (!pw || pw.length < 8) {
-        const msg = 'La contraseña debe tener al menos 8 caracteres.';
+      if (passwordPolicyError(pw)) {
+        const msg = passwordPolicyError(pw)!;
         errors.push(msg);
         fieldMap['password'] = msg;
       }
@@ -820,8 +821,8 @@ export class UsuarioFormModalComponent {
         fieldMap['password2'] = msg;
       }
     } else if (pw || pw2) {
-      if (pw.length < 8) {
-        const msg = 'La contraseña debe tener al menos 8 caracteres.';
+      if (passwordPolicyError(pw)) {
+        const msg = passwordPolicyError(pw)!;
         errors.push(msg);
         fieldMap['password'] = msg;
       }

@@ -1,3 +1,4 @@
+import { passwordPolicyError } from '../../../../core/utils/password-policy';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthPageLayoutComponent } from '../../../../shared/layout/auth-page-layout/auth-page-layout.component';
@@ -45,8 +46,9 @@ export class ResetPasswordComponent implements OnInit {
     const p2 = this.password2();
     if (!t || this.isLoading()) return;
 
-    if (p1.length < 8) {
-      this.notify.warning('La contraseña debe tener al menos 8 caracteres.');
+    const policyError = passwordPolicyError(p1);
+    if (policyError) {
+      this.notify.warning(policyError);
       return;
     }
     if (p1 !== p2) {

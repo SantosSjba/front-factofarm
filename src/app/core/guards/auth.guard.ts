@@ -38,6 +38,12 @@ export const platformOnlyGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   if (!auth.isPlatformAdmin()) return true;
   const url = state.url;
-  if (url.startsWith('/platform')) return true;
+  if (url.startsWith('/platform') || url.split('?')[0] === '/profile') return true;
   return router.createUrlTree(['/platform/dashboard']);
+};
+
+/** Configuración global reservada al operador de plataforma. */
+export const platformAdminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.isPlatformAdmin() || inject(Router).createUrlTree([auth.defaultHomePath()]);
 };

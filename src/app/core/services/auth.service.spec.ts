@@ -98,4 +98,22 @@ describe('AuthService', () => {
     expect(fresh.hasPermission('users.read')).toBe(true);
     expect(fresh.hasPermission('users.write')).toBe(false);
   });
+  it('actualizar perfil refresca el usuario sin perder los tokens', () => {
+    sessionStorage.setItem('ff_access_token', 'existing-token');
+    service.updateProfile({ nombre: 'Nombre actualizado', email: 'new@example.com' }).subscribe();
+    const req = http.expectOne(`${environment.apiBaseUrl}/auth/me`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ id: 'u', nombre: 'Nombre actualizado', email: 'new@example.com', role: 'CAJERO', permissionCodes: [] });
+    expect(service.user()?.nombre).toBe('Nombre actualizado');
+    expect(service.getAccessToken()).toBe('existing-token');
+    expect(JSON.parse(sessionStorage.getItem('ff_user')!).email).toBe('new@example.com');
+  });
+
+  it('cambio de contraseña envía los campos del contrato backend', () => {
+    service.changePassword('Old123!', 'New123!').subscribe();
+    const req = http.expectOne(`${environment.apiBaseUrl}/auth/change-password`);
+    expect(req.request.body).toEqual({ currentPassword: 'Old123!', newPassword: 'New123!' });
+    req.flush({ ok: true });
+  });
+
 });

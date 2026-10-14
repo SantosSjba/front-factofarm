@@ -22,6 +22,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     name: 'Plataforma',
     subItems: [
       { name: 'Dashboard', path: '/platform/dashboard', permissionCode: 'nav.platform_dashboard' },
+      { name: 'Configuración', path: '/platform/settings', permissionCode: 'nav.platform_dashboard' },
       { name: 'Clientes SaaS', path: '/platform/clientes', permissionCode: 'nav.platform_clientes' },
       { name: 'Leads comerciales', path: '/platform/leads', permissionCode: 'nav.platform_leads' },
       { name: 'Libro de reclamaciones', path: '/platform/reclamaciones', permissionCode: 'nav.platform_reclamaciones' },

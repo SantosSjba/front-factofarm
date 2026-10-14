@@ -1,3 +1,4 @@
+import { passwordPolicyError } from '../../../../../core/utils/password-policy';
 import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { injectMutation, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -99,6 +100,8 @@ export class TenantProvisionModalComponent {
       this.notify.warning('Complete establecimiento, admin y contraseña');
       return;
     }
+    const policyError = passwordPolicyError(this.adminPassword());
+    if (policyError) { this.notify.warning(policyError); return; }
     this.provisionMutation.mutate(row.id);
   }
 
