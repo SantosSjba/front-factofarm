@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../../services/theme.service';
 import { IconComponent } from '../../ui/icon/icon.component';
@@ -10,9 +10,11 @@ import { IconComponent } from '../../ui/icon/icon.component';
   styles: ``,
 })
 export class ThemeToggleTwoComponent {
+  private readonly themeService = inject(ThemeService);
+
   readonly theme$;
 
-  constructor(private readonly themeService: ThemeService) {
+  constructor() {
     this.theme$ = this.themeService.theme$;
   }
 

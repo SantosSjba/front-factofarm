@@ -127,7 +127,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="importOpen()" (close)="closeImportModal()" className="w-full max-w-6xl shadow-theme-lg">
+<app-modal [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-6xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ importTitle() }}</h3>
   </div>
@@ -167,7 +167,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="outboundOpen()" (close)="closeOutboundModal()" className="w-full max-w-6xl shadow-theme-lg">
+<app-modal [isOpen]="outboundOpen()" (closed)="closeOutboundModal()" className="w-full max-w-6xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Salida de producto del almacén</h3>
   </div>
@@ -294,7 +294,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="inboundOpen()" (close)="closeInboundModal()" className="w-full max-w-6xl shadow-theme-lg">
+<app-modal [isOpen]="inboundOpen()" (closed)="closeInboundModal()" className="w-full max-w-6xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ingreso de producto al almacén</h3>
   </div>
@@ -432,7 +432,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="adjustmentOpen()" (close)="closeAdjustmentModal()" className="w-full max-w-3xl shadow-theme-lg">
+<app-modal [isOpen]="adjustmentOpen()" (closed)="closeAdjustmentModal()" className="w-full max-w-3xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajuste de stock</h3>
   </div>
@@ -505,7 +505,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="pendingOpen()" (close)="closePendingAdjustmentsModal()" className="w-full max-w-5xl shadow-theme-lg">
+<app-modal [isOpen]="pendingOpen()" (closed)="closePendingAdjustmentsModal()" className="w-full max-w-5xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajustes pendientes de aprobación</h3>
   </div>

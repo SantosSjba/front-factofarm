@@ -1,6 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { A11yModule } from '@angular/cdk/a11y';
-import { Component, HostListener, ElementRef, QueryList, ViewChildren, ChangeDetectorRef, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  ElementRef,
+  QueryList,
+  ViewChildren,
+  ChangeDetectorRef,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { IconComponent } from '../../components/ui/icon/icon.component';
@@ -15,6 +24,10 @@ import { NavItem, NavSubItem } from './sidebar-menu.config';
   templateUrl: './app-sidebar.component.html',
 })
 export class AppSidebarComponent implements OnInit, OnDestroy {
+  sidebarService = inject(SidebarService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   private readonly host = inject(ElementRef<HTMLElement>);
   private mobileOpen = false;
   private previousFocus: HTMLElement | null = null;
@@ -36,47 +49,45 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
 
   private subscription: Subscription = new Subscription();
 
-  constructor(
-    public sidebarService: SidebarService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {
+  constructor() {
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
     this.isHovered$ = this.sidebarService.isHovered$;
   }
 
   ngOnInit() {
-    this.subscription.add(this.isMobileOpen$.subscribe(open => {
-      if (open === this.mobileOpen) return;
-      this.mobileOpen = open;
-      clearTimeout(this.focusTimer);
-      if (open) {
-        this.previousFocus = document.activeElement as HTMLElement | null;
-        this.focusTimer = setTimeout(() => this.focusableItems()[0]?.focus(), 0);
-      } else {
-        this.previousFocus?.focus();
-        this.previousFocus = null;
-      }
-    }));
+    this.subscription.add(
+      this.isMobileOpen$.subscribe((open) => {
+        if (open === this.mobileOpen) return;
+        this.mobileOpen = open;
+        clearTimeout(this.focusTimer);
+        if (open) {
+          this.previousFocus = document.activeElement as HTMLElement | null;
+          this.focusTimer = setTimeout(() => this.focusableItems()[0]?.focus(), 0);
+        } else {
+          this.previousFocus?.focus();
+          this.previousFocus = null;
+        }
+      }),
+    );
     this.subscription.add(
       this.sidebarMenu.getNavItems$().subscribe((items) => {
         this.navItems = items;
-        this.setActiveMenuFromRoute(this.router.url);
+        this.setActiveMenuFromRoute();
         this.cdr.detectChanges();
       }),
     );
 
     this.subscription.add(
-      this.router.events.subscribe(event => {
+      this.router.events.subscribe((event) => {
         if (event instanceof NavigationEnd) {
           this.sidebarService.setMobileOpen(false);
-          this.setActiveMenuFromRoute(this.router.url);
+          this.setActiveMenuFromRoute();
         }
-      })
+      }),
     );
 
-    this.setActiveMenuFromRoute(this.router.url);
+    this.setActiveMenuFromRoute();
   }
 
   ngOnDestroy() {
@@ -105,7 +116,10 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     const last = items[items.length - 1];
     if (!first) return;
     const active = document.activeElement;
-    if (!this.host.nativeElement.contains(active) || (event.shiftKey ? active === first : active === last)) {
+    if (
+      !this.host.nativeElement.contains(active) ||
+      (event.shiftKey ? active === first : active === last)
+    ) {
       event.preventDefault();
       (event.shiftKey ? last : first).focus();
     }
@@ -146,20 +160,22 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   }
 
   onSidebarMouseEnter() {
-    this.isExpanded$.subscribe(expanded => {
-      if (!expanded) {
-        this.sidebarService.setHovered(true);
-      }
-    }).unsubscribe();
+    this.isExpanded$
+      .subscribe((expanded) => {
+        if (!expanded) {
+          this.sidebarService.setHovered(true);
+        }
+      })
+      .unsubscribe();
   }
 
-  private setActiveMenuFromRoute(currentUrl: string) {
+  private setActiveMenuFromRoute() {
     const menuGroups = [
       { items: this.navItems, prefix: 'main' },
       { items: this.othersItems, prefix: 'others' },
     ];
 
-    menuGroups.forEach(group => {
+    menuGroups.forEach((group) => {
       group.items.forEach((nav, i) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem, subIndex) => {
@@ -198,10 +214,12 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   }
 
   onSubmenuClick() {
-    this.isMobileOpen$.subscribe(isMobile => {
-      if (isMobile) {
-        this.sidebarService.setMobileOpen(false);
-      }
-    }).unsubscribe();
+    this.isMobileOpen$
+      .subscribe((isMobile) => {
+        if (isMobile) {
+          this.sidebarService.setMobileOpen(false);
+        }
+      })
+      .unsubscribe();
   }
 }

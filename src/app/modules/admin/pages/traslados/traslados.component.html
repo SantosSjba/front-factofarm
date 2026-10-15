@@ -110,7 +110,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="createOpen()" (close)="closeCreateModal()" className="w-full max-w-4xl shadow-theme-lg">
+<app-modal [isOpen]="createOpen()" (closed)="closeCreateModal()" className="w-full max-w-4xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva transferencia</h3>
   </div>

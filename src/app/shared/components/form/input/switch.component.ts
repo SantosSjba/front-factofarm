@@ -7,7 +7,7 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
     CommonModule
   ],
   template: `
-   <label
+   <button type="button" role="switch" [attr.aria-checked]="isChecked" [disabled]="disabled"
       class="flex cursor-pointer select-none items-center gap-3 text-sm font-medium"
       [ngClass]="disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-400'"
       (click)="handleToggle()"
@@ -27,10 +27,10 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
         ></div>
       </div>
       {{ label }}
-    </label>
+    </button>
   `
 })
-export class SwitchComponent {
+export class SwitchComponent implements OnInit {
 
   @Input() label!: string;
   @Input() defaultChecked: boolean = false;

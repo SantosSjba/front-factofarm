@@ -83,7 +83,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         <app-pagination class="mt-4" [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
       }
     </app-component-card>
-    <app-modal [isOpen]="modalOpen()" (close)="modalOpen.set(false)" className="w-full max-w-lg">
+    <app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold">{{ editing() ? 'Editar conductor' : 'Nuevo conductor' }}</h3>
         <app-form-select [options]="carrierOptions()" [value]="carrierId()" (valueChange)="carrierId.set('' + $event)" />

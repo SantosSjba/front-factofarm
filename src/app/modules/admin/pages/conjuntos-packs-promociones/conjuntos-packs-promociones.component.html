@@ -197,7 +197,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="importOpen()" (close)="closeImportModal()" className="w-full max-w-5xl shadow-theme-lg">
+<app-modal [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-5xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       Importar {{ importModeLabel(importMode()) }}
@@ -233,7 +233,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="confirmOpen()" (close)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
+<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Confirmar eliminación</h3>
   </div>
@@ -248,7 +248,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="addProductOpen()" (close)="closeAddProductModal()" className="w-full max-w-4xl shadow-theme-lg">
+<app-modal [isOpen]="addProductOpen()" (closed)="closeAddProductModal()" className="w-full max-w-4xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Agregar Producto</h3>
   </div>
@@ -282,7 +282,7 @@
 
 <app-modal
   [isOpen]="formOpen()"
-  (close)="closeFormModal()"
+  (closed)="closeFormModal()"
   className="w-full max-w-7xl shadow-theme-lg"
   maxHeightClass="max-h-[min(95dvh,920px)]"
   bodyClass="custom-scrollbar"

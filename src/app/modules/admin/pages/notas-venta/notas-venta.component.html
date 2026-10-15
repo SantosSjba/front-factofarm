@@ -228,7 +228,7 @@
   }
 </app-component-card>
 
-<app-modal [isOpen]="!!detailId()" (close)="closeDetail()" className="w-full max-w-2xl" ariaLabel="Detalle de venta">
+<app-modal [isOpen]="!!detailId()" (closed)="closeDetail()" className="w-full max-w-2xl" ariaLabel="Detalle de venta">
   @if (detailQuery.isPending()) {
     <div class="p-6 text-sm text-gray-500 dark:text-gray-400">Cargando detalle…</div>
   } @else if (detailQuery.isError()) {
@@ -331,7 +331,7 @@
   }
 </app-modal>
 
-<app-modal [isOpen]="!!convertSaleId()" (close)="closeConvert()" className="w-full max-w-md">
+<app-modal [isOpen]="!!convertSaleId()" (closed)="closeConvert()" className="w-full max-w-md">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Migrar nota de venta</h3>
     <p class="text-sm text-gray-500">
@@ -361,7 +361,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="!!returnSaleId()" (close)="closeReturn()" className="w-full max-w-2xl">
+<app-modal [isOpen]="!!returnSaleId()" (closed)="closeReturn()" className="w-full max-w-2xl">
   @if (returnSaleQuery.data(); as sale) {
     <div class="space-y-4 p-6">
       <h3 class="text-lg font-semibold">Devolución · {{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
@@ -418,7 +418,7 @@
   }
 </app-modal>
 
-<app-modal [isOpen]="!!debitSaleId()" (close)="closeDebit()" className="w-full max-w-lg">
+<app-modal [isOpen]="!!debitSaleId()" (closed)="closeDebit()" className="w-full max-w-lg">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Nota de débito electrónica</h3>
     <p class="text-sm text-gray-500">

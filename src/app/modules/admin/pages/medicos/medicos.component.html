@@ -72,7 +72,7 @@
   }
 </app-component-card>
 
-<app-modal [isOpen]="modalOpen()" (close)="modalOpen.set(false)" className="w-full max-w-lg">
+<app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
   <div class="space-y-3 p-6">
     <h3 class="text-lg font-semibold">{{ editing() ? 'Editar médico' : 'Nuevo médico' }}</h3>
     <app-input-field [value]="cmp()" (valueChange)="cmp.set('' + $event)" placeholder="CMP" [disabled]="!!editing()" />

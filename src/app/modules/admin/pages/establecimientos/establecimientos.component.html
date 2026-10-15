@@ -116,7 +116,7 @@
 
 <app-modal
   [isOpen]="modalOpen()"
-  (close)="closeFormModal()"
+  (closed)="closeFormModal()"
   className="w-full max-w-5xl shadow-theme-lg"
   maxHeightClass="max-h-[min(90dvh,880px)]"
   bodyClass="custom-scrollbar"
@@ -355,7 +355,7 @@
 
 <app-modal
   [isOpen]="deleteConfirmOpen()"
-  (close)="closeDeleteConfirm()"
+  (closed)="closeDeleteConfirm()"
   className="w-full max-w-lg shadow-theme-lg"
 >
   <div
@@ -394,7 +394,7 @@
 
 <app-modal
   [isOpen]="seriesModalOpen()"
-  (close)="closeSeriesModal()"
+  (closed)="closeSeriesModal()"
   className="w-full max-w-6xl shadow-theme-lg"
   maxHeightClass="max-h-[min(90dvh,900px)]"
   bodyClass="custom-scrollbar"

@@ -90,6 +90,9 @@ const QUICK_LINKS: QuickLink[] = [
   templateUrl: './app-header.component.html',
 })
 export class AppHeaderComponent implements AfterViewInit, OnDestroy {
+  sidebarService = inject(SidebarService);
+  private readonly router = inject(Router);
+
   private readonly auth = inject(AuthService);
   protected readonly branding = inject(TenantBrandingService);
 
@@ -150,10 +153,7 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
   @ViewChild('mobileSearchInput') mobileSearchInput?: ElementRef<HTMLInputElement>;
 
-  constructor(
-    public sidebarService: SidebarService,
-    private readonly router: Router,
-  ) {
+  constructor() {
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
     this.isMobileOpen = toSignal(this.sidebarService.isMobileOpen$, { initialValue: false });
   }
@@ -238,9 +238,7 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
     const query = this.searchTerm.trim().toLowerCase();
     if (!query) return this.searchOptions.slice(0, 10);
     return this.searchOptions
-      .filter((option) =>
-        `${option.section} ${option.name}`.toLowerCase().includes(query),
-      )
+      .filter((option) => `${option.section} ${option.name}`.toLowerCase().includes(query))
       .slice(0, 12);
   }
 

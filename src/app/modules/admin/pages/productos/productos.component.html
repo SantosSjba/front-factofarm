@@ -416,7 +416,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="historyOpen()" (close)="closeHistoryModal()" className="w-full max-w-6xl shadow-theme-lg">
+<app-modal [isOpen]="historyOpen()" (closed)="closeHistoryModal()" className="w-full max-w-6xl shadow-theme-lg">
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
       title="Historial"
@@ -595,7 +595,7 @@
     <app-button variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
   </div>
 </app-modal>
-<app-modal [isOpen]="importOpen()" (close)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
+<app-modal [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       Importar: {{ importModeLabel(importMode()) }}
@@ -642,7 +642,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="confirmOpen()" (close)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
+<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ confirmActionTitle() }}</h3>
   </div>
@@ -660,7 +660,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="barcodeOpen()" (close)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
+<app-modal [isOpen]="barcodeOpen()" (closed)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
   </div>
@@ -689,7 +689,7 @@
 
 <app-modal
   [isOpen]="formOpen()"
-  (close)="closeFormModal()"
+  (closed)="closeFormModal()"
   className="w-full max-w-6xl shadow-theme-lg"
   maxHeightClass="max-h-[min(95dvh,920px)]"
   bodyClass="custom-scrollbar"

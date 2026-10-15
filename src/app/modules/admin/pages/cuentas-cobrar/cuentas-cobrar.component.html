@@ -60,7 +60,7 @@
   }
 </app-component-card>
 
-<app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-md">
+<app-modal [isOpen]="payModalOpen()" (closed)="payModalOpen.set(false)" className="w-full max-w-md">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Registrar cobro</h3>
     @if (selectedAr(); as ar) {

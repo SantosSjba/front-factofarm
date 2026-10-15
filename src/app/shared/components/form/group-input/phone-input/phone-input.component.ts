@@ -14,7 +14,7 @@ export interface CountryCode {
   templateUrl: './phone-input.component.html',
   styles: ``
 })
-export class PhoneInputComponent {
+export class PhoneInputComponent implements OnInit {
 
   @Input() countries: CountryCode[] = [];
   @Input() placeholder: string = '+1 (555) 000-0000';

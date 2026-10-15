@@ -10,9 +10,9 @@ export class FaqItemTwoComponent {
   @Input({ required: true }) title!: string;
   @Input({ required: true }) content!: string;
   @Input() isOpen = false;
-  @Output() toggle = new EventEmitter<void>();
+  @Output() toggled = new EventEmitter<void>();
 
   onToggle() {
-    this.toggle.emit();
+    this.toggled.emit();
   }
 }

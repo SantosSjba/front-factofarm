@@ -64,7 +64,7 @@
   }
 </app-component-card>
 
-<app-modal [isOpen]="createOpen()" (close)="createOpen.set(false)" className="w-full max-w-2xl">
+<app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Nueva orden de compra</h3>
     <app-form-select [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
@@ -107,7 +107,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="!!detailId()" (close)="closeDetail()" className="w-full max-w-3xl">
+<app-modal [isOpen]="!!detailId()" (closed)="closeDetail()" className="w-full max-w-3xl">
   @if (detailQuery.data(); as po) {
     <div class="space-y-4 p-6">
       <div class="flex flex-wrap items-start justify-between gap-2">

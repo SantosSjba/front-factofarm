@@ -113,7 +113,7 @@
 
 <app-modal
   [isOpen]="modalOpen()"
-  (close)="closeFormModal()"
+  (closed)="closeFormModal()"
   className="w-full max-w-3xl shadow-theme-lg"
 >
   <div
@@ -159,7 +159,7 @@
 
 <app-modal
   [isOpen]="deleteConfirmOpen()"
-  (close)="closeDeleteConfirm()"
+  (closed)="closeDeleteConfirm()"
   className="w-full max-w-lg shadow-theme-lg"
 >
   <div

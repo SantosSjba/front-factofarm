@@ -11,8 +11,8 @@
       (isHovered$ | async)
     ),
     'translate-x-0': isMobileOpen$ | async,
-    '-translate-x-full': !(isMobileOpen$ | async),
-    'invisible': !(isMobileOpen$ | async),
+    '-translate-x-full': (isMobileOpen$ | async) !== true,
+    'invisible': (isMobileOpen$ | async) !== true,
     'xl:visible': true,
     'xl:translate-x-0': true
   }"

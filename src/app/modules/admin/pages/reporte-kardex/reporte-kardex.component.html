@@ -11,13 +11,14 @@
 <app-component-card title="Filtros" className="mb-4">
   <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
     <div>
-      <label class="text-theme-sm text-gray-600">Producto</label>
       @if (selectedProductId()) {
+        <span class="text-theme-sm text-gray-600">Producto</span>
         <p class="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ selectedProductLabel() }}</p>
       } @else {
+        <label for="kardex-product" class="text-theme-sm text-gray-600">Producto</label>
         <div class="mt-1 flex gap-2">
           <input
-            type="text"
+            id="kardex-product" type="text"
             class="w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
             placeholder="Buscar producto"
             [value]="productSearch()"
@@ -43,8 +44,8 @@
       }
     </div>
     <div>
-      <label class="text-theme-sm text-gray-600">Almacén (opcional)</label>
-      <app-form-select
+      <label for="reporte-kardex-1" class="text-theme-sm text-gray-600">Almacén (opcional)</label>
+      <app-form-select id="reporte-kardex-1"
         className="mt-1"
         placeholder="Todos"
         [options]="warehouseOptions()"
@@ -53,8 +54,8 @@
       />
     </div>
     <div>
-      <label class="text-theme-sm text-gray-600">Almacenamiento</label>
-      <app-form-select
+      <label for="reporte-kardex-2" class="text-theme-sm text-gray-600">Almacenamiento</label>
+      <app-form-select id="reporte-kardex-2"
         className="mt-1"
         [options]="storageOptions"
         [value]="storage()"
@@ -62,8 +63,8 @@
       />
     </div>
     <div>
-      <label class="text-theme-sm text-gray-600">Desde</label>
-      <input
+      <label for="reporte-kardex-3" class="text-theme-sm text-gray-600">Desde</label>
+      <input id="reporte-kardex-3"
         type="date"
         class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
         [value]="dateFrom()"
@@ -71,8 +72,8 @@
       />
     </div>
     <div>
-      <label class="text-theme-sm text-gray-600">Hasta</label>
-      <input
+      <label for="reporte-kardex-4" class="text-theme-sm text-gray-600">Hasta</label>
+      <input id="reporte-kardex-4"
         type="date"
         class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
         [value]="dateTo()"

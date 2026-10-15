@@ -30,8 +30,8 @@
 
 <div class="mb-4 grid gap-4 sm:grid-cols-2">
   <div>
-    <label class="text-theme-sm text-gray-600 dark:text-gray-400">Almacén</label>
-    <app-form-select
+    <label for="lotes-1" class="text-theme-sm text-gray-600 dark:text-gray-400">Almacén</label>
+    <app-form-select id="lotes-1"
       class="mt-1 block"
       [options]="warehouseOptions()"
       [value]="warehouseId()"
@@ -39,8 +39,8 @@
     />
   </div>
   <div>
-    <label class="text-theme-sm text-gray-600 dark:text-gray-400">Vencimiento</label>
-    <app-form-select
+    <label for="lotes-2" class="text-theme-sm text-gray-600 dark:text-gray-400">Vencimiento</label>
+    <app-form-select id="lotes-2"
       className="mt-1"
       [showPlaceholder]="false"
       [options]="expiryOptions"

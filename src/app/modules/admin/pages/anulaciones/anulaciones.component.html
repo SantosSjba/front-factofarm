@@ -50,7 +50,7 @@
   </div>
 </app-component-card>
 
-<app-modal [isOpen]="!!voidTargetId()" (close)="voidTargetId.set(null)" className="w-full max-w-md">
+<app-modal [isOpen]="!!voidTargetId()" (closed)="voidTargetId.set(null)" className="w-full max-w-md">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Anular venta</h3>
     <div>

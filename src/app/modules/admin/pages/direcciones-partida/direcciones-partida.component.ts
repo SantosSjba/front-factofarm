@@ -80,7 +80,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         <app-pagination class="mt-4" [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
       }
     </app-component-card>
-    <app-modal [isOpen]="modalOpen()" (close)="modalOpen.set(false)" className="w-full max-w-lg">
+    <app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold">{{ editing() ? 'Editar dirección' : 'Nueva dirección' }}</h3>
         @if (!editing()) { <app-input-field [value]="codigo()" (valueChange)="codigo.set('' + $event)" placeholder="Código" /> }

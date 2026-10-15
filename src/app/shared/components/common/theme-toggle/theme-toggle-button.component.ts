@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ThemeService } from '../../../services/theme.service';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../ui/icon/icon.component';
@@ -10,10 +10,11 @@ import { IconComponent } from '../../ui/icon/icon.component';
   imports: [CommonModule, IconComponent],
 })
 export class ThemeToggleButtonComponent {
-  
+  private themeService = inject(ThemeService);
+
   theme$;
 
-  constructor(private themeService: ThemeService) {
+  constructor() {
     this.theme$ = this.themeService.theme$;
   }
 

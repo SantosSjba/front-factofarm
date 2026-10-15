@@ -25,7 +25,7 @@ import { BodyScrollLockService } from '../../../services/body-scroll-lock.servic
 export class ModalComponent implements OnInit, OnDestroy, OnChanges {
   private readonly scrollLock = inject(BodyScrollLockService);
   @Input() isOpen = false;
-  @Output() close = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<void>();
   /** Clases del panel (ancho, sombra, etc.). */
   @Input() className = '';
   /** Clases del área scrollable (p. ej. padding). Vacío por defecto para no romper modales legacy con `className` en el panel. */
@@ -67,9 +67,9 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
     this.scrollLock.setLocked(this, open);
   }
 
-  onBackdropClick(_event: MouseEvent) {
+  onBackdropClick() {
     if (!this.isFullscreen && this.closeOnBackdrop) {
-      this.close.emit();
+      this.closed.emit();
     }
   }
 
@@ -80,7 +80,7 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.isOpen) {
-      this.close.emit();
+      this.closed.emit();
     }
   }
 

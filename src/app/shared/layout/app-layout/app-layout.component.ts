@@ -12,16 +12,12 @@ import { NotifyService } from '../../../core/services/notify.service';
 
 @Component({
   selector: 'app-layout',
-  imports: [
-    CommonModule,
-    RouterModule,
-    AppHeaderComponent,
-    AppSidebarComponent,
-    BackdropComponent,
-  ],
+  imports: [CommonModule, RouterModule, AppHeaderComponent, AppSidebarComponent, BackdropComponent],
   templateUrl: './app-layout.component.html',
 })
 export class AppLayoutComponent implements OnInit {
+  sidebarService = inject(SidebarService);
+
   private readonly auth = inject(AuthService);
   private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
@@ -30,7 +26,7 @@ export class AppLayoutComponent implements OnInit {
   readonly isHovered$;
   readonly isMobileOpen$;
 
-  constructor(public sidebarService: SidebarService) {
+  constructor() {
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isHovered$ = this.sidebarService.isHovered$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
@@ -48,7 +44,9 @@ export class AppLayoutComponent implements OnInit {
             void this.router.navigateByUrl('/auth/signin');
             return;
           }
-          this.notify.warning('No se pudo actualizar tu sesión. Algunas opciones pueden estar desactualizadas.');
+          this.notify.warning(
+            'No se pudo actualizar tu sesión. Algunas opciones pueden estar desactualizadas.',
+          );
         },
       });
     }

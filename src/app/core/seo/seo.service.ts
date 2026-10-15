@@ -129,7 +129,8 @@ export class SeoService {
           '@context': 'https://schema.org',
           '@graph': data.map((item) => {
             const { ['@context']: _ctx, ...rest } = item;
-            return rest;
+            void _ctx;
+      return rest;
           }),
         }
       : data;

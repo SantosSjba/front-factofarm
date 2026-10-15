@@ -92,7 +92,7 @@
 </app-page-state>
 
 @if (detailId()) {
-  <app-modal [isOpen]="true" (close)="closeDetail()" className="w-full max-w-2xl">
+  <app-modal [isOpen]="true" (closed)="closeDetail()" className="w-full max-w-2xl">
     <h3 class="mb-4 text-lg font-semibold">
       {{ detail() ? 'Pedido ' + detail()!.numero : 'Detalle pedido' }}
     </h3>
@@ -169,7 +169,7 @@
   </app-modal>
 }
 
-<app-modal [isOpen]="createOpen()" (close)="createOpen.set(false)" className="w-full max-w-2xl">
+<app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
   <h3 class="mb-4 text-lg font-semibold">Nuevo pedido delivery</h3>
   <div class="grid gap-3 sm:grid-cols-2">
     <div class="sm:col-span-2">

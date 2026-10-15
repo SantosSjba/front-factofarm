@@ -14,13 +14,21 @@ export interface Option {
   templateUrl: './multi-select.component.html',
   styles: ``
 })
-export class MultiSelectComponent {
+export class MultiSelectComponent implements OnInit {
 
   @Input() label: string = '';
   @Input() options: Option[] = [];
   @Input() defaultSelected: string[] = [];
   @Input() disabled: boolean = false;
   @Output() selectionChange = new EventEmitter<string[]>();
+
+  readonly labelId = 'multi-select-' + crypto.randomUUID();
+
+  onTriggerKey(event: Event): void {
+    if (event.target !== event.currentTarget) return;
+    event.preventDefault();
+    this.toggleDropdown();
+  }
 
   selectedOptions: string[] = [];
   isOpen = false;
@@ -34,6 +42,7 @@ export class MultiSelectComponent {
   }
 
   handleSelect(optionValue: string) {
+    if (this.disabled) return;
     if (this.selectedOptions.includes(optionValue)) {
       this.selectedOptions = this.selectedOptions.filter(v => v !== optionValue);
     } else {
@@ -43,6 +52,7 @@ export class MultiSelectComponent {
   }
 
   removeOption(value: string) {
+    if (this.disabled) return;
     this.selectedOptions = this.selectedOptions.filter(opt => opt !== value);
     this.selectionChange.emit(this.selectedOptions);
   }

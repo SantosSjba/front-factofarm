@@ -684,7 +684,7 @@
   </app-page-state>
 </div>
 
-<app-modal [isOpen]="payModalOpen()" (close)="payModalOpen.set(false)" className="w-full max-w-xl" ariaLabel="Cobrar venta">
+<app-modal [isOpen]="payModalOpen()" (closed)="payModalOpen.set(false)" className="w-full max-w-xl" ariaLabel="Cobrar venta">
   <app-form-stack className="p-4 sm:p-6">
     <h3 class="inline-flex items-center gap-2 text-base font-semibold sm:text-lg">
       <app-icon name="mdi:cash-multiple" iconClass="size-5 text-brand-500" />
@@ -819,7 +819,7 @@
   </app-form-stack>
 </app-modal>
 
-<app-modal [isOpen]="!!lotModalProductId()" (close)="closeLotModal()" className="w-full max-w-lg" ariaLabel="Selección de lotes">
+<app-modal [isOpen]="!!lotModalProductId()" (closed)="closeLotModal()" className="w-full max-w-lg" ariaLabel="Selección de lotes">
   @if (lotModalLine(); as line) {
     <div class="space-y-3 p-6">
       <h3 class="inline-flex items-center gap-2 font-semibold">
@@ -863,7 +863,7 @@
   }
 </app-modal>
 
-<app-modal [isOpen]="!!substituteModalProductId()" (close)="closeSubstituteModal()" className="w-full max-w-lg" ariaLabel="Sustitutos genéricos o bioequivalentes">
+<app-modal [isOpen]="!!substituteModalProductId()" (closed)="closeSubstituteModal()" className="w-full max-w-lg" ariaLabel="Sustitutos genéricos o bioequivalentes">
   <div class="space-y-3 p-6">
     <h3 class="inline-flex items-center gap-2 font-semibold">
       <app-icon name="mdi:molecule" iconClass="size-5 text-brand-500" />

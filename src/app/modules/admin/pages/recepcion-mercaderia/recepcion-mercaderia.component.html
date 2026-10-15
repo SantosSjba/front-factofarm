@@ -45,8 +45,8 @@
             <p class="text-xs text-gray-500">Pendiente: {{ line.pendiente }}</p>
           </div>
           <div>
-            <label class="mb-1 block text-xs text-gray-500">Cantidad</label>
-            <app-input-field
+            <label [for]="'recepcion-mercaderia-1-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Cantidad</label>
+            <app-input-field [id]="'recepcion-mercaderia-1-' + line.purchaseOrderItemId"
               type="number"
               placeholder="0"
               [ariaLabel]="'Cantidad a recibir de ' + line.producto"
@@ -59,8 +59,8 @@
           </div>
           @if (line.manejaLotes) {
             <div>
-              <label class="mb-1 block text-xs text-gray-500">Lote</label>
-              <app-input-field
+              <label [for]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Lote</label>
+              <app-input-field [id]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId"
                 placeholder="Código lote"
                 [ariaLabel]="'Código de lote de ' + line.producto"
                 [value]="line.lotCode"
@@ -68,8 +68,8 @@
               />
             </div>
             <div>
-              <label class="mb-1 block text-xs text-gray-500">Vencimiento</label>
-              <app-input-field
+              <label [for]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Vencimiento</label>
+              <app-input-field [id]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId"
                 type="date"
                 placeholder="Vencimiento"
                 [ariaLabel]="'Fecha de vencimiento de ' + line.producto"
@@ -85,12 +85,12 @@
       }
       <div class="grid gap-2 sm:grid-cols-2">
         <div>
-          <label class="mb-1 block text-xs text-gray-500">N° factura / guía</label>
-          <app-input-field ariaLabel="Número de factura o guía del proveedor" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
+          <label for="recepcion-mercaderia-4" class="mb-1 block text-xs text-gray-500">N° factura / guía</label>
+          <app-input-field id="recepcion-mercaderia-4" ariaLabel="Número de factura o guía del proveedor" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
         </div>
         <div>
-          <label class="mb-1 block text-xs text-gray-500">Comentario</label>
-          <app-input-field ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
+          <label for="recepcion-mercaderia-5" class="mb-1 block text-xs text-gray-500">Comentario</label>
+          <app-input-field id="recepcion-mercaderia-5" ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
         </div>
       </div>
       <app-button variant="primary" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">

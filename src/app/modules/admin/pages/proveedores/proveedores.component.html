@@ -146,7 +146,7 @@
 
 <app-modal
   [isOpen]="modalOpen()"
-  (close)="closeFormModal()"
+  (closed)="closeFormModal()"
   className="w-full max-w-3xl shadow-theme-lg"
 >
   <div
@@ -276,7 +276,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="purchaseHistoryOpen()" (close)="closePurchaseHistoryModal()" className="w-full max-w-2xl shadow-theme-lg">
+<app-modal [isOpen]="purchaseHistoryOpen()" (closed)="closePurchaseHistoryModal()" className="w-full max-w-2xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       Historial de compras — {{ purchaseHistorySupplier()?.razonSocial }}
@@ -296,7 +296,7 @@
 
 <app-modal
   [isOpen]="deleteConfirmOpen()"
-  (close)="closeDeleteConfirm()"
+  (closed)="closeDeleteConfirm()"
   className="w-full max-w-lg shadow-theme-lg"
 >
   <div
@@ -331,7 +331,7 @@
 
 <app-modal
   [isOpen]="productsModalOpen()"
-  (close)="closeProductsModal()"
+  (closed)="closeProductsModal()"
   className="w-full max-w-4xl shadow-theme-lg"
 >
   <div

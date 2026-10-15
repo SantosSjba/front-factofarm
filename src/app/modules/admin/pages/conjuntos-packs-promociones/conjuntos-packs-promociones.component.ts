@@ -30,7 +30,6 @@ import type {
   CompoundProductListItemDto,
   ProductImportResultDto,
   CreateCompoundProductRequest,
-  ProductListItemDto,
 } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
