@@ -8,6 +8,8 @@ export type NavSubItem = {
 };
 
 export type NavItem = {
+  /** Clave estable del grupo (el nombre puede venir renombrado desde la API). Usada por los recorridos guiados. */
+  key?: string;
   name: string;
   icon: string;
   path?: string;
@@ -19,6 +21,7 @@ export type NavItem = {
 export const MAIN_NAV_ITEMS: NavItem[] = [
   {
     icon: 'lucide:building-2',
+    key: 'plataforma',
     name: 'Plataforma',
     subItems: [
       { name: 'Dashboard', path: '/platform/dashboard', permissionCode: 'nav.platform_dashboard' },
@@ -36,6 +39,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:layout-dashboard',
+    key: 'dashboard',
     name: 'Dashboard',
     subItems: [
       { name: 'Mi panel', path: '/dashboard', permissionCode: 'nav.dashboard_admin' },
@@ -43,6 +47,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:users',
+    key: 'usuarios',
     name: 'Usuarios/Establecimientos',
     subItems: [
       { name: 'Usuarios', path: '/usuarios', permissionCode: 'nav.usuarios' },
@@ -60,6 +65,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:users-round',
+    key: 'clientes',
     name: 'Clientes',
     subItems: [
       { name: 'Clientes', path: '/clientes', permissionCode: 'nav.clientes_list' },
@@ -68,6 +74,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:package-search',
+    key: 'productos',
     name: 'Productos/Servicios',
     subItems: [
       { name: 'Productos', path: '/productos', permissionCode: 'nav.productos' },
@@ -104,6 +111,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:clipboard-list',
+    key: 'compras',
     name: 'Compras',
     subItems: [
       { name: 'Proveedores', path: '/proveedores', permissionCode: 'nav.proveedores' },
@@ -115,6 +123,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:shopping-cart',
+    key: 'ventas',
     name: 'Ventas y caja',
     subItems: [
       { name: 'Punto de venta', path: '/punto-venta', permissionCode: 'nav.punto_venta' },
@@ -139,6 +148,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:boxes',
+    key: 'inventario',
     name: 'Inventario',
     subItems: [
       {
@@ -174,6 +184,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:file-check-2',
+    key: 'comprobantes-avanzados',
     name: 'Comprobantes Avanzados',
     subItems: [
       { name: 'Retenciones', path: '/retenciones', permissionCode: 'nav.retenciones' },
@@ -183,6 +194,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:truck',
+    key: 'guias-remision',
     name: 'Guias de remision',
     subItems: [
       { name: 'G.R. Remitente', path: '/gr-remitente', permissionCode: 'nav.gr_remitente' },
@@ -203,11 +215,13 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:chart-no-axes-column',
+    key: 'reportes',
     name: 'Reportes',
     subItems: [{ name: 'Reportes', path: '/reportes', permissionCode: 'nav.reportes_panel' }],
   },
   {
     icon: 'lucide:calculator',
+    key: 'contabilidad',
     name: 'Contabilidad',
     subItems: [
       {
@@ -242,6 +256,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:wallet',
+    key: 'finanzas',
     name: 'Finanzas',
     subItems: [
       {
@@ -269,6 +284,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     icon: 'lucide:pill',
+    key: 'farmacos',
     name: 'Farmacos',
     subItems: [
       { name: 'Reporte Digemid', path: '/reporte-digemid', permissionCode: 'nav.reporte_digemid' },

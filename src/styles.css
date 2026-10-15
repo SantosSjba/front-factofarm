@@ -3,6 +3,7 @@ layer(base);
 
 @import "tailwindcss";
 @import "swiper/css/bundle";
+@import "driver.js/dist/driver.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -1198,3 +1199,129 @@ pre[class*="language-"].line-numbers {
     font-size: 0.6875rem;
   }
 }
+
+/* ── Recorridos guiados (driver.js) ─────────────────────────────── */
+.driver-popover.ff-tour {
+  font-family: var(--font-outfit);
+  max-width: 360px;
+  border-radius: 16px;
+  border: 1px solid var(--color-gray-200);
+  background: #fff;
+  color: var(--color-gray-700);
+  padding: 20px;
+  box-shadow: 0 20px 40px -12px rgb(16 24 40 / 0.25);
+}
+.driver-popover.ff-tour .driver-popover-title {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  padding-right: 20px;
+}
+.driver-popover.ff-tour .driver-popover-description {
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-gray-600);
+}
+.driver-popover.ff-tour kbd {
+  border-radius: 4px;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-gray-50);
+  padding: 0 4px;
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+.driver-popover.ff-tour .driver-popover-footer {
+  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.driver-popover.ff-tour .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+.driver-popover.ff-tour .driver-popover-navigation-btns {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.driver-popover.ff-tour .driver-popover-footer button,
+.driver-popover.ff-tour .ff-tour-action {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-shadow: none;
+  line-height: 1.25rem;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin: 0;
+  border: 1px solid var(--color-gray-300);
+  background: #fff;
+  color: var(--color-gray-700);
+}
+.driver-popover.ff-tour .driver-popover-footer button:hover {
+  background: var(--color-gray-50);
+}
+.driver-popover.ff-tour .driver-popover-footer .driver-popover-next-btn,
+.driver-popover.ff-tour .ff-tour-action {
+  border-color: var(--color-brand-500);
+  background: var(--color-brand-500);
+  color: #fff;
+}
+.driver-popover.ff-tour .driver-popover-footer .driver-popover-next-btn:hover,
+.driver-popover.ff-tour .ff-tour-action:hover {
+  background: var(--color-brand-600);
+}
+.driver-popover.ff-tour .ff-tour-action {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+/* Si hay acción extra, "Siguiente/Finalizar" pasa a secundario para destacar la acción. */
+.driver-popover.ff-tour.ff-tour-has-action .driver-popover-footer .driver-popover-next-btn {
+  border-color: var(--color-gray-300);
+  background: #fff;
+  color: var(--color-gray-700);
+}
+.driver-popover.ff-tour .driver-popover-close-btn {
+  color: var(--color-gray-400);
+}
+.driver-popover.ff-tour .driver-popover-close-btn:hover {
+  color: var(--color-gray-700);
+}
+.driver-popover.ff-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: #fff; }
+.driver-popover.ff-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: #fff; }
+.driver-popover.ff-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: #fff; }
+.driver-popover.ff-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: #fff; }
+
+.dark .driver-popover.ff-tour {
+  border-color: var(--color-gray-800);
+  background: var(--color-gray-dark);
+  color: var(--color-gray-300);
+}
+.dark .driver-popover.ff-tour .driver-popover-title { color: rgb(255 255 255 / 0.9); }
+.dark .driver-popover.ff-tour .driver-popover-description { color: var(--color-gray-400); }
+.dark .driver-popover.ff-tour kbd {
+  border-color: var(--color-gray-700);
+  background: rgb(255 255 255 / 0.05);
+}
+.dark .driver-popover.ff-tour .driver-popover-footer button,
+.dark .driver-popover.ff-tour.ff-tour-has-action .driver-popover-footer .driver-popover-next-btn {
+  border-color: var(--color-gray-700);
+  background: transparent;
+  color: var(--color-gray-300);
+}
+.dark .driver-popover.ff-tour .driver-popover-footer button:hover { background: rgb(255 255 255 / 0.05); }
+.dark .driver-popover.ff-tour .driver-popover-footer .driver-popover-next-btn,
+.dark .driver-popover.ff-tour .ff-tour-action {
+  border-color: var(--color-brand-500);
+  background: var(--color-brand-500);
+  color: #fff;
+}
+.dark .driver-popover.ff-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: var(--color-gray-dark); }
+.dark .driver-popover.ff-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: var(--color-gray-dark); }
+.dark .driver-popover.ff-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--color-gray-dark); }
+.dark .driver-popover.ff-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--color-gray-dark); }

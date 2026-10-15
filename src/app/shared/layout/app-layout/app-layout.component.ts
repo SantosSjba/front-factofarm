@@ -9,6 +9,7 @@ import { RouterModule } from '@angular/router';
 import { AppHeaderComponent } from '../app-header/app-header.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotifyService } from '../../../core/services/notify.service';
+import { TourService } from '../../../core/tour/tour.service';
 
 @Component({
   selector: 'app-layout',
@@ -21,6 +22,7 @@ export class AppLayoutComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
+  private readonly tour = inject(TourService);
 
   readonly isExpanded$;
   readonly isHovered$;
@@ -36,6 +38,8 @@ export class AppLayoutComponent implements OnInit {
     // Sincroniza logoUrl y permisos del cliente (sesión en storage puede estar desactualizada).
     if (this.auth.isAuthenticated()) {
       this.auth.loadMe().subscribe({
+        // Tutorial de bienvenida la primera vez (con permisos ya actualizados).
+        next: () => this.tour.maybeAutoStart(),
         error: (err: unknown) => {
           const status = err instanceof HttpErrorResponse ? err.status : 0;
           if (status === 401) {

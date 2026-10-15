@@ -22,6 +22,7 @@
       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 xl:border xl:border-gray-200 dark:xl:border-gray-800"
       [ngClass]="isMobileOpen() ? 'bg-gray-100 dark:bg-white/[0.03]' : ''"
       (click)="handleToggle()"
+      data-tour="sidebar-toggle"
       aria-label="Abrir o cerrar menú lateral"
       aria-controls="app-sidebar"
       [attr.aria-expanded]="isDesktopSidebar() ? (sidebarService.isExpanded$ | async) : isMobileOpen()"
@@ -50,6 +51,7 @@
     @if (quickLinks().length > 0) {
       <nav
         class="hidden min-w-0 items-center gap-1 overflow-x-auto px-0.5 py-0.5 no-scrollbar sm:flex"
+        data-tour="quick-links"
         aria-label="Accesos directos"
       >
         @for (link of quickLinks(); track link.path; let i = $index) {
@@ -72,7 +74,7 @@
     }
 
     <div class="mx-1 hidden min-w-0 flex-1 md:block">
-      <form class="relative w-full max-w-sm xl:max-w-md" (submit)="$event.preventDefault()">
+      <form class="relative w-full max-w-sm xl:max-w-md" data-tour="search" (submit)="$event.preventDefault()">
         <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
           <app-icon
             name="lucide:search"
@@ -137,14 +139,15 @@
         <span
           class="hidden max-w-[9rem] truncate rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200 xl:inline"
           [attr.title]="tenant"
+          data-tour="tenant"
         >
           {{ tenant }}
         </span>
       }
 
-      <app-theme-toggle-button />
-      <app-notification-dropdown />
-      <app-user-dropdown />
+      <app-theme-toggle-button class="inline-flex" data-tour="theme" />
+      <app-notification-dropdown class="inline-flex" data-tour="notifications" />
+      <app-user-dropdown class="inline-flex" data-tour="user-menu" />
     </div>
   </div>
 

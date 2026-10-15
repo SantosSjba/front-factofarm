@@ -9,6 +9,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { TourService } from '../../../../core/tour/tour.service';
 
 type OnboardingStep = {
   id: string;
@@ -35,9 +36,14 @@ type OnboardingStep = {
     </app-page-toolbar>
 
     <app-component-card className="mt-4" title="Asistente de primera configuración">
-      <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Complete estos pasos para operar el POS con validez fiscal y control de inventario.
-      </p>
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Complete estos pasos para operar el POS con validez fiscal y control de inventario.
+        </p>
+        <app-button size="sm" variant="outline" (btnClick)="tour.start('bienvenida')">
+          Ver tutorial de bienvenida
+        </app-button>
+      </div>
       <ol class="space-y-4">
         @for (step of steps(); track step.id; let i = $index) {
           <li
@@ -77,6 +83,7 @@ type OnboardingStep = {
 export class OnboardingComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly auth = inject(AuthService);
+  protected readonly tour = inject(TourService);
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [
     { label: 'Dashboard' },
