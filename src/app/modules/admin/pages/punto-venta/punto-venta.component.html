@@ -77,10 +77,11 @@
             Serie
           </span>
         </app-label>
-        <app-input-field
+        <app-form-select
           className="mt-1"
-          placeholder="Opcional"
-          ariaLabel="Serie del comprobante (opcional)"
+          ariaLabel="Serie del comprobante"
+          [showPlaceholder]="false"
+          [options]="seriesOptions()"
           [value]="serie()"
           (valueChange)="serie.set('' + $event)"
         />

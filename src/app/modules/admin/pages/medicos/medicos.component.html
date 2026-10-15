@@ -40,22 +40,24 @@
           <td class="px-3 py-2">{{ row.especialidad ?? '—' }}</td>
           <td class="px-3 py-2 text-right">
             <div class="flex flex-wrap items-center justify-end gap-1.5">
-              <app-button
-                size="sm"
-                variant="outline"
-                [iconOnly]="true"
-                startIconName="mdi:pencil-outline"
-                tooltip="Editar"
-                (btnClick)="openEdit(row)"
-              />
-              <app-button
-                size="sm"
-                variant="danger"
-                [iconOnly]="true"
-                startIconName="mdi:trash-can-outline"
-                tooltip="Eliminar"
-                (btnClick)="deleteMutation.mutate(row.id)"
-              />
+              @if (canManageGlobal) {
+                <app-button
+                  size="sm"
+                  variant="outline"
+                  [iconOnly]="true"
+                  startIconName="mdi:pencil-outline"
+                  tooltip="Editar"
+                  (btnClick)="openEdit(row)"
+                />
+                <app-button
+                  size="sm"
+                  variant="danger"
+                  [iconOnly]="true"
+                  startIconName="mdi:trash-can-outline"
+                  tooltip="Eliminar"
+                  (btnClick)="deleteMutation.mutate(row.id)"
+                />
+              }
             </div>
           </td>
         </tr>

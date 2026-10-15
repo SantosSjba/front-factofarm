@@ -9,6 +9,15 @@ const TOKEN_KEY = 'ff_access_token';
 const REFRESH_KEY = 'ff_refresh_token';
 const USER_KEY = 'ff_user';
 const REMEMBER_KEY = 'ff_remember';
+/** Catálogos globales (sin tenant) que solo el operador de plataforma administra. */
+const GLOBAL_CATALOG_WRITE_CODES = new Set([
+  'laboratories.write',
+  'medicos.write',
+  'active-principles.write',
+  'admin-routes.write',
+  'pharma-forms.write',
+  'units.write',
+]);
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -56,6 +65,7 @@ export class AuthService {
     if (user.role === 'SUPER_ADMIN') {
       return (
         code.startsWith('nav.platform') ||
+        GLOBAL_CATALOG_WRITE_CODES.has(code) ||
         code.startsWith('tenants.') ||
         code.startsWith('complaints.')
       );

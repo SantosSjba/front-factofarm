@@ -26,6 +26,12 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       { name: 'Clientes SaaS', path: '/platform/clientes', permissionCode: 'nav.platform_clientes' },
       { name: 'Leads comerciales', path: '/platform/leads', permissionCode: 'nav.platform_leads' },
       { name: 'Libro de reclamaciones', path: '/platform/reclamaciones', permissionCode: 'nav.platform_reclamaciones' },
+      { name: 'Catálogo: Laboratorios', path: '/platform/catalogos/laboratorios', permissionCode: 'nav.platform_dashboard' },
+      { name: 'Catálogo: Médicos', path: '/platform/catalogos/medicos', permissionCode: 'nav.platform_dashboard' },
+      { name: 'Catálogo: Principios activos', path: '/platform/catalogos/principios-activos', permissionCode: 'nav.platform_dashboard' },
+      { name: 'Catálogo: Formas farmacéuticas', path: '/platform/catalogos/formas-farmaceuticas', permissionCode: 'nav.platform_dashboard' },
+      { name: 'Catálogo: Vías de administración', path: '/platform/catalogos/vias-administracion', permissionCode: 'nav.platform_dashboard' },
+      { name: 'Catálogo: Unidades', path: '/platform/catalogos/unidades', permissionCode: 'nav.platform_dashboard' },
     ],
   },
   {

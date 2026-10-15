@@ -177,6 +177,7 @@ import type {
   SaleLotAllocationPreviewDto,
   DispatchSaleStockRequest,
   PosCatalogItemDto,
+  SaleDocumentType,
   PosSubstituteItemDto,
   PharmaApproverDto,
   ControlledLedgerEntryDto,
@@ -1600,6 +1601,11 @@ export class DirectoryApiService {
   /** PDF OSE si existe; si no, PDF generado en backend (nota de venta, etc.). */
   downloadSalePdf(id: string) {
     return this.http.get(`${this.base}/sales/${id}/pdf`, { responseType: 'blob' });
+  }
+
+  /** Series válidas del establecimiento por tipo de comprobante (C2: no texto libre). */
+  getPosSeries() {
+    return this.http.get<Record<SaleDocumentType, string[]>>(`${this.base}/sales/pos-series`);
   }
 
   getPosCatalog(warehouseId: string, search?: string) {

@@ -5,6 +5,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { AuthService } from '../../../../core/services/auth.service';
 import { activePrincipleQueryKeys } from '../../../../core/query/active-principle-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
@@ -44,6 +45,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   templateUrl: './principios-activos.component.html',
 })
 export class PrincipiosActivosComponent {
+  /** Catálogo global: solo el operador de plataforma edita o elimina. */
+  protected readonly canManageGlobal = inject(AuthService).isPlatformAdmin();
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();

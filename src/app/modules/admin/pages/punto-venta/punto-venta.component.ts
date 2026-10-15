@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
   ElementRef,
 } from '@angular/core';
@@ -240,6 +241,20 @@ export class PuntoVentaComponent implements OnDestroy {
     queryFn: () => firstValueFrom(this.api.getPosPaymentSettings()),
     staleTime: 5 * 60_000,
   }));
+
+  protected readonly posSeriesQuery = injectQuery(() => ({
+    queryKey: ['sales', 'pos-series'] as const,
+    queryFn: () => firstValueFrom(this.api.getPosSeries()),
+    staleTime: 5 * 60_000,
+  }));
+
+  /** Series registradas para el comprobante elegido; el backend rechaza cualquier otra. */
+  protected readonly seriesOptions = computed(() =>
+    (this.posSeriesQuery.data()?.[this.documentType()] ?? []).map((numero) => ({
+      value: numero,
+      label: numero,
+    })),
+  );
 
   protected readonly pharmacyProfileQuery = injectQuery(() => ({
     queryKey: ['pharmacy-profile'] as const,
@@ -553,6 +568,13 @@ export class PuntoVentaComponent implements OnDestroy {
       if (!enabled && this.documentType() !== 'NOTA_VENTA') {
         this.documentType.set('NOTA_VENTA');
       }
+    });
+
+    effect(() => {
+      const options = this.seriesOptions();
+      if (!options.length) return;
+      const current = untracked(() => this.serie());
+      if (!options.some((o) => o.value === current)) this.serie.set(options[0].value);
     });
 
     effect(() => {

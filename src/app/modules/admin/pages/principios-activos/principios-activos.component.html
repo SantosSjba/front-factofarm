@@ -65,7 +65,7 @@
                 {{ row.createdAt | appDate: 'yyyy-MM-dd HH:mm:ss' }}</td>
               <td class="px-5 py-4 text-end">
                 <div class="flex flex-wrap justify-end gap-1.5">
-                  <ng-container *appHasPermission="'active-principles.write'">
+                  @if (canManageGlobal) {
                     <app-button
                       size="sm"
                       variant="outline"
@@ -83,7 +83,7 @@
                       [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()"
                       (btnClick)="openDeleteConfirm(row)"
                     />
-                  </ng-container>
+                  }
                 </div>
               </td>
             </tr>

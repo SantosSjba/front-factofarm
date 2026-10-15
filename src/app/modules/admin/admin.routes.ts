@@ -51,6 +51,55 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./pages/platform-settings/platform-settings.component').then(m => m.PlatformSettingsComponent),
         title: 'FactoFarm | Configuración de plataforma',
       },
+      // Catálogos globales: las farmacias solo crean; el operador edita/elimina.
+      {
+        path: 'platform/catalogos/laboratorios',
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./pages/laboratorios/laboratorios.component').then((m) => m.LaboratoriosComponent),
+        title: 'FactoFarm | Catálogo de laboratorios',
+      },
+      {
+        path: 'platform/catalogos/medicos',
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./pages/medicos/medicos.component').then((m) => m.MedicosComponent),
+        title: 'FactoFarm | Catálogo de médicos',
+      },
+      {
+        path: 'platform/catalogos/principios-activos',
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./pages/principios-activos/principios-activos.component').then(
+            (m) => m.PrincipiosActivosComponent,
+          ),
+        title: 'FactoFarm | Catálogo de principios activos',
+      },
+      {
+        path: 'platform/catalogos/formas-farmaceuticas',
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./pages/formas-farmaceuticas/formas-farmaceuticas.component').then(
+            (m) => m.FormasFarmaceuticasComponent,
+          ),
+        title: 'FactoFarm | Catálogo de formas farmacéuticas',
+      },
+      {
+        path: 'platform/catalogos/vias-administracion',
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./pages/vias-administracion/vias-administracion.component').then(
+            (m) => m.ViasAdministracionComponent,
+          ),
+        title: 'FactoFarm | Catálogo de vías de administración',
+      },
+      {
+        path: 'platform/catalogos/unidades',
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./pages/unidades/unidades.component').then((m) => m.UnidadesComponent),
+        title: 'FactoFarm | Catálogo de unidades',
+      },
       {
         path: 'platform/dashboard',
         ...guarded(P.platformDashboard),
