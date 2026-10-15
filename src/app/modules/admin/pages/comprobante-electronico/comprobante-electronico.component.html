@@ -39,7 +39,7 @@
           <td class="px-3 py-2 font-medium">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
           <td class="px-3 py-2">{{ row.customerNombre ?? '—' }}</td>
           <td class="px-3 py-2">
-            <span class="rounded-full px-2 py-0.5 text-xs" [class]="statusClass(row.sunatStatus)">{{ row.sunatStatus }}</span>
+            <app-status-badge [status]="row.sunatStatus" />
           </td>
           <td class="px-3 py-2">{{ (row.emittedAt ?? row.createdAt) | appDate: 'short' }}</td>
           <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
@@ -79,9 +79,8 @@
   }
 </app-component-card>
 
-<app-modal [isOpen]="configOpen()" (closed)="configOpen.set(false)" className="w-full max-w-lg">
-  <div class="space-y-4 p-6">
-    <h3 class="text-lg font-semibold">Configuración OSE / SUNAT</h3>
+<app-modal title="Configuración OSE / SUNAT" [isOpen]="configOpen()" (closed)="configOpen.set(false)" className="w-full max-w-lg">
+  <div class="space-y-4">
     <p class="text-xs text-gray-500">
       Preferible en
       <a routerLink="/mi-farmacia" class="text-brand-600 underline">Mi farmacia</a>.
@@ -156,7 +155,7 @@
             </p>
           }
         </div>
-        <span class="rounded-full px-2 py-0.5 text-xs" [class]="statusClass(doc.sunatStatus)">{{ doc.sunatStatus }}</span>
+        <app-status-badge [status]="doc.sunatStatus" />
       </div>
       <div class="flex flex-wrap gap-2">
         @if (doc.pdfArchivoId) {
@@ -204,12 +203,11 @@
   }
 </app-modal>
 
-<app-modal [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-lg">
-  <div class="space-y-4 p-6">
-    <h3 class="text-lg font-semibold">Emitir comprobante especial</h3>
+<app-modal title="Emitir comprobante especial" [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-lg">
+  <div class="space-y-4">
     <app-form-select [options]="filteredSpecialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
     @if (specialDocumentBlockedReason(specialType()); as reason) {
-      <p class="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">{{ reason }}</p>
+      <p class="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">{{ reason }}</p>
     }
     <app-input-field [value]="specialCustomer()" (valueChange)="specialCustomer.set('' + $event)" placeholder="Razón social / nombre" />
     <div class="grid grid-cols-2 gap-2">

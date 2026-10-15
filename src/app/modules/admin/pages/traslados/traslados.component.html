@@ -32,7 +32,7 @@
   (retry)="transfersQuery.refetch()">
   <div class="overflow-x-auto">
     <table class="min-w-full text-left">
-      <thead class="border-b border-gray-100">
+      <thead class="border-b border-gray-100 dark:border-gray-800">
         <tr>
           <th class="px-4 py-3 text-theme-xs text-gray-500">Origen → Destino</th>
           <th class="px-4 py-3 text-theme-xs text-gray-500">Estado</th>
@@ -173,7 +173,7 @@
           <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
-          <div class="mb-2 max-h-40 overflow-auto rounded border border-gray-100">
+          <div class="mb-2 max-h-40 overflow-auto rounded border border-gray-100 dark:border-gray-800">
             @for (product of productOptions(); track product.id) {
               <button
                 type="button"
@@ -213,7 +213,7 @@
     @if (draftItems().length > 0) {
       <table class="min-w-full text-left text-theme-sm">
         <thead>
-          <tr class="border-b border-gray-100">
+          <tr class="border-b border-gray-100 dark:border-gray-800">
             <th class="py-2 text-theme-xs text-gray-500">Producto</th>
             <th class="py-2 text-theme-xs text-gray-500">Lote</th>
             <th class="py-2 text-theme-xs text-gray-500">Cant.</th>

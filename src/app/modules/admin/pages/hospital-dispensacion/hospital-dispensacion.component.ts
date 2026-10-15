@@ -45,7 +45,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
             </thead>
             <tbody>
               @for (row of list.items; track row.id) {
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-2">{{ row.hospitalArea.nombre }} ({{ row.hospitalArea.tipo }})</td>
                   <td class="py-2">{{ row.estado }}</td>
                   <td class="py-2">{{ row.solicitadoPor.nombre }}</td>

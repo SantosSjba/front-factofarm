@@ -55,7 +55,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
             </thead>
             <tbody>
               @for (row of list.items; track row.id) {
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-2">{{ row.fecha | appDate: 'short' }}</td>
                   <td class="py-2">{{ row.tipo }}</td>
                   <td class="py-2">{{ row.descripcion }}</td>

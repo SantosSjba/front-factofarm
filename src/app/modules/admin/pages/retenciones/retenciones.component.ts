@@ -77,7 +77,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
           </thead>
           <tbody>
             @for (row of recordRows; track row.id) {
-              <tr class="border-b border-gray-100">
+              <tr class="border-b border-gray-100 dark:border-gray-800">
                 <td class="py-2 pr-4">{{ row.fechaOperacion | appDate: 'shortDate' }}</td>
                 <td class="py-2 pr-4">{{ row.partyNombre }}</td>
                 <td class="py-2 pr-4">{{ row.partyDocNumber }}</td>
@@ -120,7 +120,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
           </thead>
           <tbody>
             @for (row of detraccionRows; track row.id) {
-              <tr class="border-b border-gray-100">
+              <tr class="border-b border-gray-100 dark:border-gray-800">
                 <td class="py-2 pr-4">{{ row.fechaOperacion | appDate: 'shortDate' }}</td>
                 <td class="py-2 pr-4">{{ row.partyNombre }}</td>
                 <td class="py-2 pr-4">

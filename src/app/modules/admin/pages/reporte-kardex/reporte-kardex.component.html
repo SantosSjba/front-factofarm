@@ -12,10 +12,10 @@
   <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
     <div>
       @if (selectedProductId()) {
-        <span class="text-theme-sm text-gray-600">Producto</span>
+        <span class="text-theme-sm text-gray-600 dark:text-gray-400">Producto</span>
         <p class="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ selectedProductLabel() }}</p>
       } @else {
-        <label for="kardex-product" class="text-theme-sm text-gray-600">Producto</label>
+        <label for="kardex-product" class="text-theme-sm text-gray-600 dark:text-gray-400">Producto</label>
         <div class="mt-1 flex gap-2">
           <input
             id="kardex-product" type="text"
@@ -44,7 +44,7 @@
       }
     </div>
     <div>
-      <label for="reporte-kardex-1" class="text-theme-sm text-gray-600">Almacén (opcional)</label>
+      <label for="reporte-kardex-1" class="text-theme-sm text-gray-600 dark:text-gray-400">Almacén (opcional)</label>
       <app-form-select id="reporte-kardex-1"
         className="mt-1"
         placeholder="Todos"
@@ -54,7 +54,7 @@
       />
     </div>
     <div>
-      <label for="reporte-kardex-2" class="text-theme-sm text-gray-600">Almacenamiento</label>
+      <label for="reporte-kardex-2" class="text-theme-sm text-gray-600 dark:text-gray-400">Almacenamiento</label>
       <app-form-select id="reporte-kardex-2"
         className="mt-1"
         [options]="storageOptions"
@@ -63,7 +63,7 @@
       />
     </div>
     <div>
-      <label for="reporte-kardex-3" class="text-theme-sm text-gray-600">Desde</label>
+      <label for="reporte-kardex-3" class="text-theme-sm text-gray-600 dark:text-gray-400">Desde</label>
       <input id="reporte-kardex-3"
         type="date"
         class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
@@ -72,7 +72,7 @@
       />
     </div>
     <div>
-      <label for="reporte-kardex-4" class="text-theme-sm text-gray-600">Hasta</label>
+      <label for="reporte-kardex-4" class="text-theme-sm text-gray-600 dark:text-gray-400">Hasta</label>
       <input id="reporte-kardex-4"
         type="date"
         class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-700 dark:bg-gray-900"
@@ -99,7 +99,7 @@
     (retry)="kardexQuery.refetch()">
     <div class="overflow-x-auto">
       <table class="min-w-full text-left">
-        <thead class="border-b border-gray-100">
+        <thead class="border-b border-gray-100 dark:border-gray-800">
           <tr>
             <th class="px-4 py-3 text-theme-xs text-gray-500">Fecha</th>
             <th class="px-4 py-3 text-theme-xs text-gray-500">Tipo</th>

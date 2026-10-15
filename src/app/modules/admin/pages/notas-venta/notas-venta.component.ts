@@ -26,16 +26,17 @@ import type {
   SaleDocumentType,
   SaleListItemDto,
   SaleStatus,
-  SunatDocumentStatus,
   PaymentMethod,
   DataStorageMode } from '../../models/directory.models';
 
 type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string };
 
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 @Component({
   selector: 'app-notas-venta',
   standalone: true,
   imports: [
+    StatusBadgeComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,
@@ -409,11 +410,4 @@ export class NotasVentaComponent {
     this.returnMutation.mutate();
   }
 
-  protected sunatStatusClass(status: SunatDocumentStatus): string {
-    if (status === 'ACEPTADO') return 'bg-emerald-100 text-emerald-800';
-    if (status === 'RECHAZADO') return 'bg-red-100 text-red-800';
-    if (status === 'PENDIENTE' || status === 'ENVIANDO') return 'bg-amber-100 text-amber-800';
-    if (status === 'CONTINGENCIA') return 'bg-purple-100 text-purple-800';
-    return 'bg-gray-100 text-gray-800';
-  }
 }

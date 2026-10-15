@@ -30,7 +30,7 @@
           </thead>
           <tbody>
             @for (row of cieQuery.data() ?? []; track row.id) {
-              <tr class="border-b border-gray-100">
+              <tr class="border-b border-gray-100 dark:border-gray-800">
                 <td class="py-2 pr-4 font-mono">{{ row.codigo }}</td>
                 <td class="py-2">{{ row.descripcion }}</td>
               </tr>

@@ -50,7 +50,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         <thead class="border-b text-xs uppercase text-gray-500"><tr><th class="px-3 py-2">Documento</th><th class="px-3 py-2">Nombre</th><th class="px-3 py-2">Transportista</th><th class="px-3 py-2">Licencia</th><th class="px-3 py-2"></th></tr></thead>
         <tbody>
           @for (row of rows(); track row.id) {
-            <tr class="border-b border-gray-100">
+            <tr class="border-b border-gray-100 dark:border-gray-800">
               <td class="px-3 py-2">{{ row.numeroDocumento }}</td>
               <td class="px-3 py-2">{{ row.nombres }} {{ row.apellidos }}</td>
               <td class="px-3 py-2">{{ row.carrier?.razonSocial ?? '—' }}</td>

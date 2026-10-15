@@ -118,7 +118,7 @@ import {
         <div class="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-gray-500">
           <app-icon name="mdi:cart-outline" iconClass="size-14 text-gray-600" />
           <p>Esperando venta…</p>
-          <p class="text-xs text-gray-600">El carrito se mostrará en tiempo real</p>
+          <p class="text-xs text-gray-600 dark:text-gray-400">El carrito se mostrará en tiempo real</p>
         </div>
       }
     </div>

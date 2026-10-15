@@ -62,7 +62,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
             </thead>
             <tbody>
               @for (row of r.methods; track row.metodo) {
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-2">{{ row.metodo }}</td>
                   <td class="py-2 text-right">{{ row.ingresos | currency: 'PEN' }}</td>
                   <td class="py-2 text-right">{{ row.egresos | currency: 'PEN' }}</td>

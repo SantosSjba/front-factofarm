@@ -64,9 +64,7 @@
                   <span class="text-gray-500">{{ row.clienteTelefono }}</span>
                 </td>
                 <td class="py-2 pr-4">
-                  <span class="rounded-full px-2 py-0.5 text-xs {{ statusClass(row.estado) }}">
-                    {{ statusLabels[row.estado] }}
-                  </span>
+                  <app-status-badge [status]="row.estado" [label]="statusLabels[row.estado]" />
                 </td>
                 <td class="py-2 pr-4">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
                 <td class="py-2 pr-4">{{ row.assignedTo?.nombre ?? '—' }}</td>
@@ -92,24 +90,19 @@
 </app-page-state>
 
 @if (detailId()) {
-  <app-modal [isOpen]="true" (closed)="closeDetail()" className="w-full max-w-2xl">
-    <h3 class="mb-4 text-lg font-semibold">
-      {{ detail() ? 'Pedido ' + detail()!.numero : 'Detalle pedido' }}
-    </h3>
+  <app-modal [isOpen]="true" (closed)="closeDetail()" [title]="detail() ? 'Pedido ' + detail()!.numero : 'Detalle pedido'" className="w-full max-w-2xl">
     @if (detailQuery.isPending()) {
       <p class="text-sm text-gray-500">Cargando…</p>
     } @else if (detail(); as order) {
     <div class="space-y-4 text-sm">
       <div class="flex flex-wrap gap-2">
-        <span class="rounded-full px-2 py-0.5 {{ statusClass(order.estado) }}">
-          {{ statusLabels[order.estado] }}
-        </span>
+        <app-status-badge [status]="order.estado" [label]="statusLabels[order.estado]" />
         <span class="text-gray-500">{{ order.canal }}</span>
       </div>
       <p><strong>Cliente:</strong> {{ order.clienteNombre }} · {{ order.clienteTelefono }}</p>
       <p><strong>Dirección:</strong> {{ order.direccionEntrega }}</p>
       @if (order.referenciaDireccion) {
-        <p class="text-gray-600">Ref: {{ order.referenciaDireccion }}</p>
+        <p class="text-gray-600 dark:text-gray-400">Ref: {{ order.referenciaDireccion }}</p>
       }
       <ul class="divide-y divide-gray-100 dark:divide-gray-800">
         @for (item of order.items; track item.id) {
@@ -153,14 +146,14 @@
       }
 
       @if (order.sale) {
-        <p class="text-emerald-700">Venta: {{ order.sale.serie }}-{{ order.sale.numero }}</p>
+        <p class="text-emerald-700 dark:text-emerald-400">Venta: {{ order.sale.serie }}-{{ order.sale.numero }}</p>
       }
 
       @if (order.notifications.length) {
         <div>
           <h4 class="mb-2 font-semibold">Notificaciones</h4>
           @for (n of order.notifications; track n.id) {
-            <div class="text-xs text-gray-600">{{ n.channel }} · {{ n.templateKey }} · {{ n.destino }}</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400">{{ n.channel }} · {{ n.templateKey }} · {{ n.destino }}</div>
           }
         </div>
       }
@@ -169,8 +162,7 @@
   </app-modal>
 }
 
-<app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
-  <h3 class="mb-4 text-lg font-semibold">Nuevo pedido delivery</h3>
+<app-modal title="Nuevo pedido delivery" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
   <div class="grid gap-3 sm:grid-cols-2">
     <div class="sm:col-span-2">
       <app-label>Almacén</app-label>

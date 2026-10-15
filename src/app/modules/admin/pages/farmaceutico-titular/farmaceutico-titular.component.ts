@@ -40,7 +40,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
           </thead>
           <tbody>
             @for (row of listQuery.data() ?? []; track row.id) {
-              <tr class="border-b border-gray-100">
+              <tr class="border-b border-gray-100 dark:border-gray-800">
                 <td class="py-2 pr-4">{{ row.colegiaturaCqp }}</td>
                 <td class="py-2 pr-4">{{ row.fullName }}</td>
                 <td class="py-2 pr-4">{{ row.vigenciaHasta ?? '—' }}</td>

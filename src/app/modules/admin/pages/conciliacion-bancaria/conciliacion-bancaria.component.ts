@@ -52,7 +52,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
             </thead>
             <tbody>
               @for (row of list.items; track row.id) {
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-2">
                     @if (!row.conciliado) {
                       <input type="checkbox" [checked]="selectedIds().includes(row.id)" (change)="toggle(row.id)" />

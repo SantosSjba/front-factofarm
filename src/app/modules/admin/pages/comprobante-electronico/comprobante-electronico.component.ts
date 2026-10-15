@@ -19,10 +19,12 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { BillingProviderType, ElectronicDocumentDetailDto, SunatDocumentStatus } from '../../models/directory.models';
 
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 @Component({
   selector: 'app-comprobante-electronico',
   standalone: true,
   imports: [
+    StatusBadgeComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,
@@ -198,13 +200,6 @@ export class ComprobanteElectronicoComponent {
     this.voidReason.set('');
   }
 
-  protected statusClass(status: SunatDocumentStatus): string {
-    if (status === 'ACEPTADO') return 'bg-emerald-100 text-emerald-800';
-    if (status === 'RECHAZADO') return 'bg-red-100 text-red-800';
-    if (status === 'PENDIENTE' || status === 'ENVIANDO') return 'bg-amber-100 text-amber-800';
-    if (status === 'CONTINGENCIA') return 'bg-purple-100 text-purple-800';
-    return 'bg-gray-100 text-gray-800';
-  }
 
   protected readonly saveConfigMutation = injectMutation(() => ({
     mutationFn: () =>

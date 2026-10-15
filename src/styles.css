@@ -196,7 +196,62 @@ layer(base);
     cursor: pointer;
   }
   body {
-    @apply relative font-normal font-outfit z-1 bg-gray-50 overflow-x-hidden;
+    @apply relative font-normal font-outfit z-1 bg-gray-50 overflow-x-hidden text-gray-700;
+  }
+
+  /*
+    Tema oscuro por defecto: cualquier texto, borde o control nativo sin clase
+    explícita hereda colores legibles. Las utilities (capa posterior) siguen
+    ganando, así que esto solo cubre elementos "desnudos".
+  */
+  html.dark {
+    color-scheme: dark;
+  }
+  .dark body {
+    @apply bg-gray-900 text-gray-300;
+  }
+  .dark *,
+  .dark ::after,
+  .dark ::before,
+  .dark ::backdrop {
+    border-color: var(--color-gray-800);
+  }
+  .dark :is(h1, h2, h3, h4, h5, h6) {
+    color: rgb(255 255 255 / 0.9);
+  }
+  .dark option,
+  .dark optgroup {
+    @apply bg-gray-900 text-gray-200;
+  }
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    @apply text-gray-500;
+  }
+
+  /*
+    Los hosts de campos de formulario son custom elements (inline por defecto):
+    sin esto, `space-y-*` no separa los campos y quedan pegados.
+  */
+  :where(
+    app-input-field,
+    app-text-area,
+    app-form-select,
+    app-select,
+    app-multi-select,
+    app-date-picker,
+    app-time-picker,
+    app-form-field,
+    app-phone-input
+  ) {
+    display: block;
+  }
+
+  /* Tablas: cabeceras consistentes en ambos temas */
+  thead th {
+    @apply font-medium text-gray-500;
+  }
+  .dark thead th {
+    @apply text-gray-400;
   }
 }
 
@@ -1137,6 +1192,8 @@ pre[class*="language-"].line-numbers {
     padding: 0.45rem 0 0;
     margin-top: 0.35rem;
     border-top: 1px solid var(--color-gray-100);
+    text-align: right !important;
+    overflow-wrap: anywhere;
   }
 
   .dark table.ff-table-is-cards td.ff-table-field {

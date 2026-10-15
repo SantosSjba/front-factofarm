@@ -14,6 +14,8 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
+import { TabStripComponent, type TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import type {
@@ -38,6 +40,8 @@ type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos
     InputFieldComponent,
     FormSelectComponent,
     ModalComponent,
+    TextAreaComponent,
+    TabStripComponent,
   ],
   templateUrl: './reporte-digemid.component.html' })
 export class ReporteDigemidComponent {
@@ -52,6 +56,13 @@ export class ReporteDigemidComponent {
   ];
 
   protected readonly activeTab = signal<Tab>('farmacovigilancia');
+  protected readonly tabs: TabStripItem[] = [
+    { id: 'farmacovigilancia', label: 'Farmacovigilancia' },
+    { id: 'mermas', label: 'Mermas y vencimientos' },
+    { id: 'rentabilidad', label: 'Rentabilidad' },
+    { id: 'ventas', label: 'Ventas' },
+    { id: 'medicos', label: 'Dispensación médico' },
+  ];
   protected readonly dateFrom = signal(this.locale.monthStartYmd());
   protected readonly dateTo = signal(this.locale.todayYmd());
   protected readonly profitGroupBy = signal<'product' | 'category' | 'laboratory'>('product');

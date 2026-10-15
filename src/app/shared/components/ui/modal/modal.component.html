@@ -12,7 +12,7 @@
     #dialogPanel
     role="dialog"
     aria-modal="true"
-    [attr.aria-label]="ariaLabel"
+    [attr.aria-label]="title || ariaLabel"
     tabindex="-1"
     [ngClass]="panelClasses()"
   >
@@ -41,11 +41,19 @@
     </button>
     }
 
+    @if (title) {
+    <div class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+      <h3 class="pr-12 text-lg font-semibold text-gray-800 dark:text-white/90 sm:text-xl">{{ title }}</h3>
+      @if (description) {
+      <p class="mt-1 pr-12 text-sm text-gray-500 dark:text-gray-400">{{ description }}</p>
+      }
+    </div>
+    }
     <ng-content select="[data-modal-header]"></ng-content>
 
     <div
       class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
-      [ngClass]="bodyClass || null"
+      [ngClass]="bodyClass || (title ? 'px-4 py-4 sm:px-6 sm:py-5' : null)"
     >
       <ng-content select="[data-modal-body]"></ng-content>
       <ng-content></ng-content>

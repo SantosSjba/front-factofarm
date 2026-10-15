@@ -93,8 +93,7 @@ import type { PromotionType } from '../../models/directory.models';
         }
       </app-component-card>
     </app-page-state>
-    <app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
-      <h3 class="mb-4 text-lg font-semibold">Nueva promoción</h3>
+    <app-modal title="Nueva promoción" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
       <div class="grid gap-3">
         <div>
           <app-label>Código cupón</app-label>

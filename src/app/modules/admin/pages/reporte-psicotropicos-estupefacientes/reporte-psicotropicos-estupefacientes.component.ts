@@ -17,10 +17,12 @@ import { LocaleService } from '../../../../core/services/locale.service';
 
 type Tab = 'ledger' | 'monthly';
 
+import { TabStripComponent, type TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 @Component({
   selector: 'app-reporte-psicotropicos-estupefacientes',
   standalone: true,
   imports: [
+    TabStripComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,
@@ -43,6 +45,10 @@ export class ReportePsicotropicosEstupefacientesComponent {
   ];
 
   protected readonly activeTab = signal<Tab>('ledger');
+  protected readonly tabs: TabStripItem[] = [
+    { id: 'ledger', label: 'Libro diario' },
+    { id: 'monthly', label: 'Resumen mensual' },
+  ];
   protected readonly dateFrom = signal('');
   protected readonly dateTo = signal('');
   protected readonly reportYear = signal(Number(this.currentYm.slice(0, 4)));

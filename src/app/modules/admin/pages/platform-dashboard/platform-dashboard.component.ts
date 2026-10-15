@@ -99,9 +99,9 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                       {{ row.nombre }}
                       <span class="block text-theme-xs text-gray-400">{{ row.slug }}</span>
                     </td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600">{{ row.plan }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600">{{ row.status }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600">
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ row.plan }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ row.status }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                       {{ locale.formatDate(row.createdAt) }}
                     </td>
                   </tr>

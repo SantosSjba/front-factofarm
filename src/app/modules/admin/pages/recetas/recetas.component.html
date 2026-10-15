@@ -51,14 +51,14 @@
       <app-button size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
     </div>
     @for (c of customerOptions(); track c.id) {
-      <button type="button" class="block w-full rounded border px-3 py-2 text-left text-sm hover:bg-gray-50" (click)="selectCustomer(c)">
+      <button type="button" class="block w-full rounded border px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCustomer(c)">
         {{ c.nombre }} · {{ c.numeroDocumento }}
       </button>
     }
     <app-form-select [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
     <app-input-field [value]="diagnostico()" (valueChange)="diagnostico.set('' + $event)" placeholder="Diagnóstico" />
     <div class="rounded border border-dashed p-3">
-      <p class="mb-2 text-sm font-medium text-gray-700">Receta escaneada / digital (opcional)</p>
+      <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Receta escaneada / digital (opcional)</p>
       <input type="file" accept="image/*" capture="environment" class="text-sm" (change)="onImageSelected($event)" />
       @if (uploadingImage()) {
         <p class="mt-2 text-xs text-gray-500">Subiendo imagen…</p>
@@ -73,7 +73,7 @@
         <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
       </div>
       @for (p of productOptions(); track p.id) {
-        <button type="button" class="block w-full px-2 py-1 text-left text-sm hover:bg-gray-50" (click)="addItem(p)">{{ p.nombre }}</button>
+        <button type="button" class="block w-full px-2 py-1 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="addItem(p)">{{ p.nombre }}</button>
       }
       <ul class="mt-2 text-sm">
         @for (item of draftItems(); track item.productId) {

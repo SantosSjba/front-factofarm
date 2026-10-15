@@ -13,7 +13,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'LPDP / ARCO' }]" />
     <app-component-card title="Matriz de tratamiento LPDP" className="mt-4" [loading]="matrixQuery.isPending()" [error]="matrixQuery.isError() ? 'No se pudo cargar la matriz de tratamiento' : null" (retry)="matrixQuery.refetch()">
       @if (matrixQuery.data(); as matrix) {
-        <p class="mb-4 text-sm text-gray-600">Versión {{ matrix.version }} · Cifrado salud: {{ matrix.encryptionEnabled ? 'activo' : 'no configurado' }}</p>
+        <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Versión {{ matrix.version }} · Cifrado salud: {{ matrix.encryptionEnabled ? 'activo' : 'no configurado' }}</p>
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead>
@@ -26,7 +26,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
             </thead>
             <tbody>
               @for (row of matrix.rows; track row.proceso) {
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-2 pr-4 font-medium">{{ row.proceso }}</td>
                   <td class="py-2 pr-4">{{ row.finalidad }}</td>
                   <td class="py-2 pr-4">{{ row.baseLegal }}</td>
@@ -52,7 +52,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
           </thead>
           <tbody>
             @for (row of arcoQuery.data() ?? []; track row.id) {
-              <tr class="border-b border-gray-100">
+              <tr class="border-b border-gray-100 dark:border-gray-800">
                 <td class="py-2 pr-4">{{ row.customer?.nombre }} ({{ row.customer?.numeroDocumento }})</td>
                 <td class="py-2 pr-4">{{ row.requestType }}</td>
                 <td class="py-2 pr-4">{{ row.status }}</td>
@@ -66,7 +66,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 
     <app-component-card title="Retención programada" className="mt-4" [loading]="retentionQuery.isPending()" [error]="retentionQuery.isError() ? 'No se pudo cargar la retención programada' : null" (retry)="retentionQuery.refetch()">
       @if (retentionQuery.data(); as retention) {
-        <p class="mb-3 text-sm text-gray-600">{{ retention.policy }}</p>
+        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">{{ retention.policy }}</p>
         <ul class="space-y-2 text-sm">
           @for (c of retention.candidates; track c.id) {
             <li>{{ c.nombre }} · {{ c.numeroDocumento }} · actualizado {{ c.updatedAt }}</li>

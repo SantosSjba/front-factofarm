@@ -119,6 +119,7 @@ const DOC_OPTIONS_INTERNAL: { value: SaleDocumentType; label: string }[] = [
   { value: 'NOTA_VENTA', label: 'Nota de venta' },
 ];
 
+import { statusToneClasses } from '../../../../shared/components/ui/badge/status-badge.component';
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
@@ -1411,11 +1412,7 @@ export class PuntoVentaComponent implements OnDestroy {
   }
 
   protected sunatStatusClass(status: SunatDocumentStatus): string {
-    if (status === 'ACEPTADO') return 'bg-emerald-100 text-emerald-800';
-    if (status === 'RECHAZADO') return 'bg-red-100 text-red-800';
-    if (status === 'PENDIENTE' || status === 'ENVIANDO') return 'bg-amber-100 text-amber-800';
-    if (status === 'CONTINGENCIA') return 'bg-purple-100 text-purple-800';
-    return 'bg-gray-100 text-gray-800';
+    return statusToneClasses(status);
   }
 
   private pollSunatStatus(saleId: string) {

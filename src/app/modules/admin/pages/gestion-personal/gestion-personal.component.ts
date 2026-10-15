@@ -97,7 +97,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
             </thead>
             <tbody>
               @for (row of data.items; track row.id) {
-                <tr class="border-t border-gray-100">
+                <tr class="border-t border-gray-100 dark:border-gray-800">
                   <td class="py-2">{{ row.user.nombre }}</td>
                   <td>{{ row.checkInAt | appDate: 'short' }}</td>
                   <td>{{ row.checkOutAt ? (row.checkOutAt | appDate: 'short') : '—' }}</td>
@@ -129,7 +129,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
             </thead>
             <tbody>
               @for (emp of report.employees; track emp.userId) {
-                <tr class="border-t border-gray-100">
+                <tr class="border-t border-gray-100 dark:border-gray-800">
                   <td class="py-2">{{ emp.nombre }}</td>
                   <td>{{ emp.ventasCount }}</td>
                   <td>{{ emp.ventasTotal | currency: 'PEN' }}</td>
@@ -171,7 +171,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
             </thead>
             <tbody>
               @for (leave of leaves; track leave.id) {
-                <tr class="border-t border-gray-100">
+                <tr class="border-t border-gray-100 dark:border-gray-800">
                   <td class="py-2">{{ leave.user.nombre }}</td>
                   <td>{{ leave.tipo }}</td>
                   <td>{{ leave.fromDate | appDate: 'shortDate' }} – {{ leave.toDate | appDate: 'shortDate' }}</td>

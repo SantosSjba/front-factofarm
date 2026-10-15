@@ -3,17 +3,7 @@
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Reporte DIGEMID</h1>
 </app-page-toolbar>
 
-<div class="mb-4 flex flex-wrap gap-2">
-  @for (tab of [
-    { id: 'farmacovigilancia', label: 'Farmacovigilancia' },
-    { id: 'mermas', label: 'Mermas y vencimientos' },
-    { id: 'rentabilidad', label: 'Rentabilidad' },
-    { id: 'ventas', label: 'Ventas' },
-    { id: 'medicos', label: 'Dispensación médico' }
-  ]; track tab.id) {
-    <button type="button" class="rounded-lg px-3 py-2 text-sm font-medium" [class.bg-brand-500]="activeTab() === tab.id" [class.text-white]="activeTab() === tab.id" [class.bg-gray-100]="activeTab() !== tab.id" (click)="setTab($any(tab.id))">{{ tab.label }}</button>
-  }
-</div>
+<app-tab-strip class="mb-4 block" [tabs]="tabs" [activeId]="activeTab()" (tabChange)="setTab($any($event))" />
 
 @if (activeTab() !== 'farmacovigilancia') {
   <div class="mb-4 flex flex-wrap gap-3">
@@ -50,7 +40,7 @@
         </thead>
         <tbody>
           @for (row of adverseRows(); track row.id) {
-            <tr class="border-b border-gray-100">
+            <tr class="border-b border-gray-100 dark:border-gray-800">
               <td class="py-2 pr-3">{{ row.fecha | appDate: 'dd/MM/yyyy' }}</td>
               <td class="py-2 pr-3">{{ row.product.nombre }}</td>
               <td class="py-2 pr-3">{{ row.severidad }}</td>
@@ -85,7 +75,7 @@
     [empty]="shrinkageState.empty"
     emptyTitle="Sin mermas ni vencimientos en el periodo"
     (retry)="shrinkageQuery.refetch()">
-    <p class="mb-4 text-sm text-gray-600">Total mermas: S/ {{ shrinkageData()?.totales?.['mermasValorizado'] ?? '0.00' }} · Vencimientos: S/ {{ shrinkageData()?.totales?.['vencimientosValorizado'] ?? '0.00' }}</p>
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Total mermas: S/ {{ shrinkageData()?.totales?.['mermasValorizado'] ?? '0.00' }} · Vencimientos: S/ {{ shrinkageData()?.totales?.['vencimientosValorizado'] ?? '0.00' }}</p>
     <h3 class="mb-2 font-medium">Mermas (ajustes negativos)</h3>
     <div class="mb-6 overflow-x-auto">
       <table class="min-w-full text-sm">
@@ -155,11 +145,11 @@
 <app-modal [isOpen]="createOpen()" title="Registrar evento adverso" (closed)="createOpen.set(false)">
   <div class="space-y-3">
     <app-input-field label="Buscar producto" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" (keydown.enter)="searchProducts()" />
-    @if (productOptions().length) { <ul class="rounded border text-sm">@for (p of productOptions(); track p.id) { <li><button type="button" class="cursor-pointer px-3 py-2 hover:bg-gray-50" (click)="selectProduct(p)">{{ p.nombre }}</button></li> }</ul> }
+    @if (productOptions().length) { <ul class="max-h-48 overflow-auto rounded-lg border border-gray-200 text-sm dark:border-gray-800">@for (p of productOptions(); track p.id) { <li><button type="button" class="block w-full cursor-pointer px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectProduct(p)">{{ p.nombre }}</button></li> }</ul> }
     <app-input-field label="Buscar paciente (opcional)" [value]="customerSearch()" (valueChange)="customerSearch.set('' + $event)" (keydown.enter)="searchCustomers()" />
-    @if (customerOptions().length) { <ul class="rounded border text-sm">@for (c of customerOptions(); track c.id) { <li><button type="button" class="cursor-pointer px-3 py-2 hover:bg-gray-50" (click)="selectCustomer(c)">{{ c.nombre }}</button></li> }</ul> }
+    @if (customerOptions().length) { <ul class="max-h-48 overflow-auto rounded-lg border border-gray-200 text-sm dark:border-gray-800">@for (c of customerOptions(); track c.id) { <li><button type="button" class="block w-full cursor-pointer px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCustomer(c)">{{ c.nombre }}</button></li> }</ul> }
     <app-form-select label="Severidad" [value]="severidad()" [options]="severityOptions" (valueChange)="severidad.set($any($event))" />
-    <textarea class="w-full rounded-lg border px-3 py-2 text-sm" rows="4" placeholder="Descripción del evento adverso" [value]="descripcion()" (input)="descripcion.set($any($event.target).value)"></textarea>
+    <app-text-area [rows]="4" placeholder="Descripción del evento adverso" [value]="descripcion()" (valueChange)="descripcion.set($event)" />
     <app-button [disabled]="!productId() || !descripcion().trim() || createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
   </div>
 </app-modal>
@@ -167,7 +157,7 @@
 <app-modal [isOpen]="notifyOpen()" title="Notificación DIGEMID" (closed)="notifyOpen.set(false)">
   <div class="space-y-3">
     <app-input-field label="N° reporte DIGEMID" [value]="digemidReportNumber()" (valueChange)="digemidReportNumber.set('' + $event)" />
-    <textarea class="w-full rounded-lg border px-3 py-2 text-sm" rows="3" placeholder="Medidas correctivas" [value]="medidasCorrectivas()" (input)="medidasCorrectivas.set($any($event.target).value)"></textarea>
+    <app-text-area [rows]="3" placeholder="Medidas correctivas" [value]="medidasCorrectivas()" (valueChange)="medidasCorrectivas.set($event)" />
     <app-button [disabled]="!digemidReportNumber().trim() || notifyMutation.isPending()" [loading]="notifyMutation.isPending()" (btnClick)="notifyMutation.mutate()">Registrar notificación</app-button>
   </div>
 </app-modal>

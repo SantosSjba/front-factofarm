@@ -1,7 +1,7 @@
 <aside
   id="app-sidebar"
   aria-label="Navegación principal"
-  class="fixed top-0 left-0 z-50 flex h-dvh max-w-[calc(100vw-2rem)] flex-col overflow-hidden border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900"
+  class="fixed top-0 left-0 z-50 flex h-dvh max-w-[calc(100vw-2rem)] flex-col overflow-hidden border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 dark:text-white/90"
   [ngClass]="{
     'w-[290px]':
       (isExpanded$ | async) || (isMobileOpen$ | async) || (isHovered$ | async),

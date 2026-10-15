@@ -20,7 +20,7 @@
     @if (detailQuery.isPending() && selectedOrderId()) {
       <p class="text-sm text-gray-500">Cargando detalle de la orden…</p>
     } @else if (detailQuery.isError() && selectedOrderId()) {
-      <div class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+      <div class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
         {{ detailErrorMessage() }}
         <button type="button" class="ml-2 font-medium underline" (click)="detailQuery.refetch()">Reintentar</button>
       </div>

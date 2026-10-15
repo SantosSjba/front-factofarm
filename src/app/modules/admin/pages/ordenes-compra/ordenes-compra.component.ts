@@ -23,10 +23,12 @@ import type {
 
 type OrderLine = { productId: string; nombre: string; quantity: number; unitPrice?: number };
 
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 @Component({
   selector: 'app-ordenes-compra',
   standalone: true,
   imports: [
+    StatusBadgeComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

@@ -91,9 +91,8 @@ import { LocaleService } from '../../../../core/services/locale.service';
       </app-component-card>
     </app-page-state>
 
-    <app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
-      <div class="space-y-4 p-6">
-        <h3 class="text-lg font-semibold">Nuevo convenio</h3>
+    <app-modal title="Nuevo convenio" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
+      <div class="space-y-4">
         <div>
           <app-label>Código</app-label>
           <app-input-field [value]="formCodigo()" (valueChange)="formCodigo.set('' + $event)" />

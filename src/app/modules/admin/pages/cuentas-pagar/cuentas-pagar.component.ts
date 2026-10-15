@@ -17,10 +17,12 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { AccountPayableListItemDto } from '../../models/directory.models';
 
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 @Component({
   selector: 'app-cuentas-pagar',
   standalone: true,
   imports: [
+    StatusBadgeComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

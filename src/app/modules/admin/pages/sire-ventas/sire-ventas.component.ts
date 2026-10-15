@@ -52,7 +52,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
               <thead><tr class="border-b text-gray-500"><th class="py-2 text-left">Tipo</th><th class="py-2 text-right">Cantidad</th><th class="py-2 text-right">Total</th></tr></thead>
               <tbody>
                 @for (row of s.comprobantesElectronicos; track row.tipo) {
-                  <tr class="border-b border-gray-100"><td class="py-2">{{ row.tipo }}</td><td class="py-2 text-right">{{ row.count }}</td><td class="py-2 text-right">{{ row.total | currency: 'PEN' }}</td></tr>
+                  <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2">{{ row.tipo }}</td><td class="py-2 text-right">{{ row.count }}</td><td class="py-2 text-right">{{ row.total | currency: 'PEN' }}</td></tr>
                 }
               </tbody>
             </table>

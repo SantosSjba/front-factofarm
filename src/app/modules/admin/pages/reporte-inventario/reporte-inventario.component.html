@@ -41,7 +41,7 @@
     (retry)="valuationQuery.refetch()">
     <div class="overflow-x-auto">
       <table class="min-w-full text-left">
-        <thead class="border-b border-gray-100">
+        <thead class="border-b border-gray-100 dark:border-gray-800">
           <tr>
             <th class="px-4 py-3 text-theme-xs text-gray-500">Producto</th>
             <th class="px-4 py-3 text-theme-xs text-gray-500">Almacén</th>
@@ -71,7 +71,7 @@
         </tbody>
       </table>
     </div>
-    <p class="border-t border-gray-100 px-4 py-3 text-theme-sm font-medium">
+    <p class="border-t border-gray-100 px-4 py-3 text-theme-sm font-medium dark:border-gray-800">
       Total página: {{ formatMoney(valorTotalPagina()) }}
     </p>
   </app-component-card>
@@ -131,7 +131,7 @@
       @if (countProductOptions().length > 0) {
         <div class="mb-4 max-h-32 overflow-auto rounded border">
           @for (p of countProductOptions(); track p.id) {
-            <button type="button" class="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50" (click)="selectCountProduct(p)">
+            <button type="button" class="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCountProduct(p)">
               {{ p.nombre }}
             </button>
           }
@@ -173,7 +173,7 @@
     emptyTitle="Sin conteos registrados"
     (retry)="countsQuery.refetch()">
     <table class="min-w-full text-left">
-      <thead class="border-b border-gray-100">
+      <thead class="border-b border-gray-100 dark:border-gray-800">
         <tr>
           <th class="px-4 py-3 text-theme-xs text-gray-500">Fecha</th>
           <th class="px-4 py-3 text-theme-xs text-gray-500">Almacén</th>

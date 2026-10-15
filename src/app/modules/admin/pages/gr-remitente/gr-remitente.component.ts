@@ -49,7 +49,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
             </thead>
             <tbody>
               @for (row of list.items; track row.id) {
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-2">
                     {{ row.fromWarehouse.nombre }} → {{ row.toWarehouse.nombre }}
                     <div class="text-xs text-gray-500">{{ row.createdAt | appDate: 'short' }}</div>

@@ -36,10 +36,12 @@ const NEXT_STATUS: Partial<Record<DeliveryOrderStatus, DeliveryOrderStatus>> = {
   PREPARANDO: 'EN_CAMINO',
   EN_CAMINO: 'ENTREGADO' };
 
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 @Component({
   selector: 'app-ordenes-pedido',
   standalone: true,
   imports: [
+    StatusBadgeComponent,
     CommonModule,
     AppDatePipe,
     CurrencyPipe,
@@ -299,11 +301,4 @@ export class OrdenesPedidoComponent {
     }
   }
 
-  protected statusClass(estado: DeliveryOrderStatus): string {
-    if (estado === 'ENTREGADO') return 'bg-emerald-100 text-emerald-800';
-    if (estado === 'CANCELADO') return 'bg-red-100 text-red-800';
-    if (estado === 'EN_CAMINO') return 'bg-sky-100 text-sky-800';
-    if (estado === 'PREPARANDO') return 'bg-amber-100 text-amber-800';
-    return 'bg-gray-100 text-gray-800';
-  }
 }

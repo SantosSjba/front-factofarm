@@ -37,6 +37,10 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
   @Input() showCloseButton = true;
   @Input() isFullscreen = false;
   @Input() ariaLabel = 'Diálogo';
+  /** Título visible con la cabecera estándar. Omitir si el modal proyecta su propio `[data-modal-header]`. */
+  @Input() title = '';
+  /** Subtítulo opcional bajo el título. */
+  @Input() description = '';
 
   @ViewChild('dialogPanel') private dialogPanel?: ElementRef<HTMLElement>;
 

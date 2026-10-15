@@ -751,7 +751,7 @@
               />
               <button
                 type="button"
-                class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-white/5"
                 [disabled]="codigoLookupLoading()"
                 (click)="buscarCodigoManual()"
                 title="Buscar"
@@ -760,11 +760,11 @@
               </button>
             </div>
             @if (codigoSuggestions().length > 0) {
-              <div class="absolute left-0 right-0 z-20 mt-1 max-h-72 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+              <div class="absolute left-0 right-0 z-20 mt-1 max-h-72 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:bg-gray-900 dark:border-gray-800">
                 @for (row of codigoSuggestions(); track row.id) {
                   <button
                     type="button"
-                    class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-800 dark:hover:bg-white/5"
                     (click)="onCodigoSuggestionSelect(row)"
                   >
                     {{ codigoSuggestionCode(row) }} - {{ row.nombre }}
@@ -772,7 +772,7 @@
                 }
               </div>
             } @else if (codigoLookupDone() && !codigoLookupLoading() && (form().codigoBusqueda ?? '').trim().length >= 2) {
-              <div class="absolute left-0 right-0 z-20 mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-lg">
+              <div class="absolute left-0 right-0 z-20 mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-lg dark:bg-gray-900 dark:border-gray-800">
                 No se encontraron coincidencias para ese código.
               </div>
             }
@@ -1165,7 +1165,7 @@
               @if (form().imagenArchivoId) {
                 <button
                   type="button"
-                  class="inline-flex h-10 items-center rounded-lg border border-error-300 px-3 text-xs font-medium text-error-700 hover:bg-error-50"
+                  class="inline-flex h-10 items-center rounded-lg border border-error-300 px-3 text-xs font-medium text-error-700 hover:bg-error-50 dark:text-error-400 dark:border-error-500/30 dark:hover:bg-error-500/10"
                   (click)="clearProductImage()"
                 >
                   Quitar imagen

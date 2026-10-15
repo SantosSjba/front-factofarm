@@ -48,7 +48,7 @@
           <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
-          <div class="mt-2 max-h-40 overflow-auto rounded border border-gray-100">
+          <div class="mt-2 max-h-40 overflow-auto rounded border border-gray-100 dark:border-gray-800">
             @for (p of productOptions(); track p.id) {
               <button
                 type="button"
@@ -121,13 +121,13 @@
     emptyTitle="Sin lotes asignables"
     (retry)="previewQuery.refetch()">
     @if (preview(); as data) {
-    <p class="border-b border-gray-100 px-4 py-3 text-theme-sm text-gray-600 dark:border-gray-800">
+    <p class="border-b border-gray-100 px-4 py-3 text-theme-sm text-gray-600 dark:border-gray-800 dark:text-gray-400">
       Método: <strong>{{ data.metodoAsignacion }}</strong>
       · Bloqueo vencidos: <strong>{{ data.blockExpiredProductSales ? 'Sí' : 'No' }}</strong>
     </p>
     <div class="overflow-x-auto">
     <table class="min-w-full text-left">
-      <thead class="border-b border-gray-100">
+      <thead class="border-b border-gray-100 dark:border-gray-800">
         <tr>
           <th class="px-4 py-3 text-theme-xs text-gray-500">Lote</th>
           <th class="px-4 py-3 text-theme-xs text-gray-500">Cantidad</th>

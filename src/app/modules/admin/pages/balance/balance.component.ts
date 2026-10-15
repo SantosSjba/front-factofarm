@@ -49,7 +49,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
             <thead><tr class="border-b text-gray-500"><th class="py-2">Producto</th><th class="py-2">Margen</th></tr></thead>
             <tbody>
               @for (p of m.topProducts; track p.productId) {
-                <tr class="border-b border-gray-100"><td class="py-2">{{ p.nombre }}</td><td class="py-2">{{ p.margen | currency: 'PEN' }}</td></tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2">{{ p.nombre }}</td><td class="py-2">{{ p.margen | currency: 'PEN' }}</td></tr>
               }
             </tbody>
           </table>

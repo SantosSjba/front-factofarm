@@ -73,14 +73,9 @@
             </td>
             <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
             <td class="px-3 py-2">{{ row.seller?.nombre ?? '—' }}</td>
-            <td class="px-3 py-2"><span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{{ row.estado }}</span></td>
+            <td class="px-3 py-2"><app-status-badge [status]="row.estado" /></td>
             <td class="px-3 py-2">
-              <span
-                class="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                [class]="row.sunatStatus ? sunatStatusClass(row.sunatStatus) : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'"
-              >
-                {{ sunatLabel(row) }}
-              </span>
+              <app-status-badge [status]="row.sunatStatus" [label]="sunatLabel(row)" />
             </td>
             <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             <td class="px-3 py-2 text-right">
@@ -246,7 +241,7 @@
       @if (billingStatusQuery.data(); as sunat) {
         <p class="text-sm">
           Estado SUNAT:
-          <span class="rounded-full px-2 py-0.5 text-xs" [class]="sunatStatusClass(sunat.sunatStatus)">{{ sunat.sunatStatus }}</span>
+          <app-status-badge [status]="sunat.sunatStatus" />
           @if (sunat.sunatDescripcion) {
             <span class="ml-1 text-gray-500">· {{ sunat.sunatDescripcion }}</span>
           }
@@ -331,9 +326,8 @@
   }
 </app-modal>
 
-<app-modal [isOpen]="!!convertSaleId()" (closed)="closeConvert()" className="w-full max-w-md">
-  <div class="space-y-4 p-6">
-    <h3 class="text-lg font-semibold">Migrar nota de venta</h3>
+<app-modal title="Migrar nota de venta" [isOpen]="!!convertSaleId()" (closed)="closeConvert()" className="w-full max-w-md">
+  <div class="space-y-4">
     <p class="text-sm text-gray-500">
       Se reasignará serie/número de boleta o factura y se encolará la emisión a SUNAT (requiere OSE configurado).
       Para factura el cliente debe tener RUC.
@@ -418,9 +412,8 @@
   }
 </app-modal>
 
-<app-modal [isOpen]="!!debitSaleId()" (closed)="closeDebit()" className="w-full max-w-lg">
-  <div class="space-y-4 p-6">
-    <h3 class="text-lg font-semibold">Nota de débito electrónica</h3>
+<app-modal title="Nota de débito electrónica" [isOpen]="!!debitSaleId()" (closed)="closeDebit()" className="w-full max-w-lg">
+  <div class="space-y-4">
     <p class="text-sm text-gray-500">
       Cargo adicional sobre comprobante ya emitido (intereses, ajuste de valor, etc.). Requiere CPE original aceptado.
     </p>
