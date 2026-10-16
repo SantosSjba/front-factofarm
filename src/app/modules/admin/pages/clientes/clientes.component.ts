@@ -639,6 +639,9 @@ export class ClientesComponent {
       addresses: [mainAddress, ...this.extraAddresses()],
     };
     const id = this.editing()?.id;
+    // Los puntos sólo se mueven con ventas/canjes: reenviar el valor cargado en el formulario
+    // pisaba los puntos ganados mientras el modal estaba abierto.
+    if (id) delete payload.puntosAcumulados;
     if (!id) {
       payload.lpdpConsentAccepted = this.lpdpConsentAccepted();
       payload.lpdpConsentVersion = '2026-06-11';

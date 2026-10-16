@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
+import { AuthFilePipe } from '../../../pipes/auth-file.pipe';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 /** Botón cuadrado con vista previa; emite el archivo elegido (la URL blob la gestiona el padre). */
 @Component({
   selector: 'app-image-square-picker',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AuthFilePipe],
   templateUrl: './image-square-picker.component.html',
 })
 export class ImageSquarePickerComponent {

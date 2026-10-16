@@ -59,7 +59,7 @@
         }
       </app-option-list>
     }
-    <app-form-field label="Médico">
+    <app-form-field label="Médico prescriptor" required>
       <app-form-select [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
     </app-form-field>
     <app-form-field label="Diagnóstico">
@@ -71,8 +71,8 @@
       @if (uploadingImage()) {
         <p class="mt-2 text-xs text-gray-500">Subiendo imagen…</p>
       }
-      @if (imagenPreviewUrl()) {
-        <img [src]="imagenPreviewUrl()" alt="Vista previa receta" class="mt-2 max-h-40 rounded border object-contain" />
+      @if (imagenPreviewUrl() | authFile | async; as src) {
+        <img [src]="src" alt="Vista previa receta" class="mt-2 max-h-40 rounded border object-contain" />
       }
     </div>
     <div class="rounded border p-3">

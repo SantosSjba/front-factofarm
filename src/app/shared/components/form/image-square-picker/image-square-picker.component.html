@@ -6,8 +6,10 @@
       (click)="inp.click()"
       [attr.aria-label]="ariaLabel"
     >
-      @if (previewUrl) {
-        <img [src]="previewUrl" alt="" class="h-full w-full rounded-[10px] object-cover" />
+      @if (previewUrl | authFile | async; as src) {
+        <img [src]="src" alt="" class="h-full w-full rounded-[10px] object-cover" />
+      } @else if (previewUrl) {
+        <span class="size-5 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
       } @else {
         +
       }

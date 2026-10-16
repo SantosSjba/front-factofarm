@@ -747,8 +747,20 @@
           />
         </div>
         <div>
-          <app-label>Stock Inicial</app-label>
-          <app-input-field min="0" className="mt-2" type="number" [value]="stockInicial()" (valueChange)="stockInicial.set(+$event)" />
+          @if (editingProductId()) {
+            <!-- El stock se mueve sólo con ingresos, ajustes o traslados (kardex). -->
+            <app-label>Stock actual (todos los almacenes)</app-label>
+            <app-input-field
+              className="mt-2"
+              type="number"
+              [value]="stockInicial()"
+              [disabled]="true"
+              hint="Se modifica con ingresos, ajustes o traslados de inventario."
+            />
+          } @else {
+            <app-label>Stock Inicial</app-label>
+            <app-input-field min="0" className="mt-2" type="number" [value]="stockInicial()" (valueChange)="stockInicial.set(+$event)" />
+          }
         </div>
         <div>
           <app-label>Stock Mínimo</app-label>

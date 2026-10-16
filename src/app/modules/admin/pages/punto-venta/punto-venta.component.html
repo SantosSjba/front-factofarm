@@ -338,7 +338,7 @@
                 (click)="addToCart(item)"
               >
                 <div class="mb-1.5 flex h-12 items-center justify-center overflow-hidden rounded-md bg-gray-100 sm:h-16 dark:bg-gray-800">
-                  @if (productImageUrl(item.imagenArchivoId); as imgUrl) {
+                  @if (productImageUrl(item.imagenArchivoId) | authFile | async; as imgUrl) {
                     <img [src]="imgUrl" [alt]="item.nombre" class="h-full w-full object-contain" loading="lazy" />
                   } @else {
                     <app-icon name="mdi:pill" iconClass="size-6 text-gray-300 sm:size-7" />

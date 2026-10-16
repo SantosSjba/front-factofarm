@@ -1,4 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { switchMap } from 'rxjs';
 import { AuthService } from './auth.service';
 import { FilesApiService } from './files-api.service';
 
@@ -18,15 +20,21 @@ export class TenantBrandingService {
     return this.files.absoluteFileUrl(path);
   });
 
+  /** `GET /files/:id` exige Bearer: el logo se descarga y se sirve como `blob:`. */
+  private readonly tenantLogoSrc = toSignal(
+    toObservable(this.tenantLogoUrl).pipe(switchMap((url) => this.files.displayUrl(url))),
+    { initialValue: null },
+  );
+
   /** Logo ancho (sidebar expandido / header móvil). */
-  readonly navLogoSrc = computed(() => this.tenantLogoUrl() ?? DEFAULT_NAV_LOGO);
+  readonly navLogoSrc = computed(() => this.tenantLogoSrc() ?? DEFAULT_NAV_LOGO);
 
   /** Logo compacto (sidebar colapsado). */
-  readonly iconLogoSrc = computed(() => this.tenantLogoUrl() ?? DEFAULT_ICON_LOGO);
+  readonly iconLogoSrc = computed(() => this.tenantLogoSrc() ?? DEFAULT_ICON_LOGO);
 
   readonly brandAlt = computed(
     () => this.auth.user()?.tenantNombre?.trim() || 'FactoFarm',
   );
 
-  readonly usesTenantLogo = computed(() => !!this.tenantLogoUrl());
+  readonly usesTenantLogo = computed(() => !!this.tenantLogoSrc());
 }

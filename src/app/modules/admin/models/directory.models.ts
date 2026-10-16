@@ -785,22 +785,23 @@ export interface SupplierListFiltersRequest {
 
 export type SupplierListResponseDto = PaginatedResponseDto<SupplierItemDto>;
 
+/** En edición, `null` limpia el campo; `undefined` lo deja como está. */
 export interface CreateSupplierRequest {
   razonSocial: string;
-  nombreComercial?: string;
+  nombreComercial?: string | null;
   tipoDocumento: CustomerDocumentTypeDto;
   numeroDocumento: string;
-  departmentId?: string;
-  provinceId?: string;
-  districtId?: string;
-  direccion?: string;
-  telefono?: string;
-  correoElectronico?: string;
-  contactoNombre?: string;
-  contactoTelefono?: string;
+  departmentId?: string | null;
+  provinceId?: string | null;
+  districtId?: string | null;
+  direccion?: string | null;
+  telefono?: string | null;
+  correoElectronico?: string | null;
+  contactoNombre?: string | null;
+  contactoTelefono?: string | null;
   diasCredito?: number;
-  condicionesPago?: string;
-  observaciones?: string;
+  condicionesPago?: string | null;
+  observaciones?: string | null;
   habilitado?: boolean;
 }
 
@@ -1374,6 +1375,14 @@ export interface ServiceListItemDto {
   brandId: string | null;
   productLocationId: string | null;
   habilitado: boolean;
+  generico: boolean;
+  necesitaRecetaMedica: boolean;
+  incluyeIscVenta: boolean;
+  incluyeIscCompra: boolean;
+  sujetoDetraccion: boolean;
+  sePuedeCanjearPorPuntos: boolean;
+  imagenArchivoId: string | null;
+  attributes: { attributeTypeId: string; descripcion: string }[];
   unit: ServiceCatalogUnitDto;
   currency: ServiceCatalogCurrencyDto;
   totalStock: string;

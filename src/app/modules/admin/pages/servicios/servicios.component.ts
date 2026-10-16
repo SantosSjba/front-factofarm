@@ -536,10 +536,24 @@ export class ServiciosComponent {
       productLocationId: row.productLocationId ?? undefined,
       unitId: row.unit.id,
       currencyId: row.currency.id,
-      incluyeIscVenta: !!(row.tipoSistemaIscId || row.porcentajeIsc),
-      incluyeIscCompra: false,
-      sePuedeCanjearPorPuntos: !!row.numeroPuntos,
+      // Se cargan todos los flags e imagen: el API guarda lo que recibe, y un valor no cargado
+      // aquí se borraba en silencio al editar cualquier otro campo.
+      generico: row.generico,
+      necesitaRecetaMedica: row.necesitaRecetaMedica,
+      incluyeIscVenta: row.incluyeIscVenta,
+      incluyeIscCompra: row.incluyeIscCompra,
+      sujetoDetraccion: row.sujetoDetraccion,
+      sePuedeCanjearPorPuntos: row.sePuedeCanjearPorPuntos,
+      imagenArchivoId: row.imagenArchivoId ?? undefined,
     }));
+    this.serviceImagePreview.set(row.imagenArchivoId);
+    this.attributeRows.set(
+      (row.attributes ?? []).map((a) => ({
+        uid: crypto.randomUUID(),
+        attributeTypeId: a.attributeTypeId,
+        descripcion: a.descripcion,
+      })),
+    );
   }
 
   protected openHistoryModal(row: ServiceListItemDto) {
@@ -957,7 +971,8 @@ export class ServiciosComponent {
       tipoSistemaIscId: f.incluyeIscVenta || f.incluyeIscCompra ? f.tipoSistemaIscId : undefined,
       porcentajeIsc: f.incluyeIscVenta || f.incluyeIscCompra ? porcentajeIscValue : undefined,
       numeroPuntos: f.sePuedeCanjearPorPuntos ? numeroPuntosValue : undefined,
-      attributes: attributes.length ? attributes : undefined,
+      // Al editar se envía siempre (aunque vacía) para que quitar el último atributo también se guarde.
+      attributes: editingId || attributes.length ? attributes : undefined,
       purchaseTaxAffectationId: f.purchaseTaxAffectationId || f.saleTaxAffectationId,
     };
 

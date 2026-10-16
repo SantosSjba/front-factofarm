@@ -1,4 +1,5 @@
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { AuthFilePipe } from '../../../../shared/pipes/auth-file.pipe';
 import { CommonModule } from '@angular/common';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -27,6 +28,7 @@ import { FileInputComponent } from '../../../../shared/components/form/input/fil
   selector: 'app-recetas',
   standalone: true,
   imports: [
+    AuthFilePipe,
     FileInputComponent,
     OptionItemComponent,
     OptionListComponent,
@@ -72,7 +74,7 @@ export class RecetasComponent {
     queryFn: () => firstValueFrom(this.api.listMedicos({ pageSize: 100 })) }));
 
   protected readonly medicoOptions = computed(() => [
-    { value: '', label: 'Médico (opcional)' },
+    { value: '', label: 'Seleccione el médico' },
     ...((this.medicosQuery.data()?.items ?? []).map((m) => ({
       value: m.id,
       label: `${m.cmp} · ${m.nombres} ${m.apellidos}` }))),
@@ -105,6 +107,10 @@ export class RecetasComponent {
   protected submitCreate() {
     if (!this.customerId()) {
       this.notify.warning('Busque y seleccione al paciente.');
+      return;
+    }
+    if (!this.medicoId()) {
+      this.notify.warning('Seleccione el médico prescriptor (DIGEMID exige su nombre y CMP en la receta).');
       return;
     }
     if (this.draftItems().length === 0) {

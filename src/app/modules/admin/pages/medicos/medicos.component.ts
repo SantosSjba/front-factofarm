@@ -108,12 +108,13 @@ export class MedicosComponent {
 
   protected saveMutation = injectMutation(() => ({
     mutationFn: () => {
+      const edit = this.editing();
       const body = {
         nombres: this.nombres().trim(),
         apellidos: this.apellidos().trim(),
-        especialidad: this.especialidad().trim() || undefined,
+        // Al editar se envía '' para que el API limpie la especialidad (undefined la ignoraba).
+        especialidad: this.especialidad().trim() || (edit ? '' : undefined),
       };
-      const edit = this.editing();
       // El CMP no se edita: UpdateMedicoDto no lo admite.
       return edit
         ? firstValueFrom(this.api.updateMedico(edit.id, body))

@@ -212,7 +212,9 @@ export class NotasVentaComponent {
               producto: item.producto,
               maxQty,
               quantity: maxQty > 0 ? maxQty : 0,
-              lotCode: item.lotes[0]?.codigoLote ?? '' };
+              // Con varios lotes vendidos se deja vacío: el API reparte la devolución entre los
+              // lotes originales. Antes se forzaba el primero y se reponía todo en ese lote.
+              lotCode: item.lotes.length === 1 ? item.lotes[0].codigoLote : '' };
           })
           .filter((line) => line.maxQty > 0),
       );

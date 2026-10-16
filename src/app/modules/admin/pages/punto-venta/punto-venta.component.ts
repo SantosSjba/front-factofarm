@@ -1,4 +1,5 @@
 ﻿import { CommonModule, CurrencyPipe } from '@angular/common';
+import { AuthFilePipe } from '../../../../shared/pipes/auth-file.pipe';
 import {
   Component,
   HostListener,
@@ -128,6 +129,7 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
   selector: 'app-punto-venta',
   standalone: true,
   imports: [
+    AuthFilePipe,
     CheckboxComponent,
     TabStripComponent,
     OptionItemComponent,

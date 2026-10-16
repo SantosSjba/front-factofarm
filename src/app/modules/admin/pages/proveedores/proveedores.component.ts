@@ -354,21 +354,24 @@ export class ProveedoresComponent {
       return null;
     }
     const dias = Number.parseInt(this.diasCredito(), 10);
+    // Al editar, un campo vaciado se envía como null para que el API lo limpie; con undefined
+    // el API lo ignoraba y el valor anterior nunca se borraba.
+    const empty = this.editing() ? null : undefined;
     return {
       razonSocial,
-      nombreComercial: this.nombreComercial().trim() || undefined,
+      nombreComercial: this.nombreComercial().trim() || empty,
       tipoDocumento: this.tipoDocumento(),
       numeroDocumento,
-      telefono: this.telefono().trim() || undefined,
-      correoElectronico: this.correoElectronico().trim() || undefined,
-      contactoNombre: this.contactoNombre().trim() || undefined,
+      telefono: this.telefono().trim() || empty,
+      correoElectronico: this.correoElectronico().trim() || empty,
+      contactoNombre: this.contactoNombre().trim() || empty,
       diasCredito: Number.isFinite(dias) ? dias : 0,
-      departmentId: this.departmentId() || undefined,
-      provinceId: this.provinceId() || undefined,
-      districtId: this.districtId() || undefined,
-      direccion: this.direccion().trim() || undefined,
-      condicionesPago: this.condicionesPago().trim() || undefined,
-      observaciones: this.observaciones().trim() || undefined,
+      departmentId: this.departmentId() || empty,
+      provinceId: this.provinceId() || empty,
+      districtId: this.districtId() || empty,
+      direccion: this.direccion().trim() || empty,
+      condicionesPago: this.condicionesPago().trim() || empty,
+      observaciones: this.observaciones().trim() || empty,
       habilitado: this.habilitado(),
     };
   }

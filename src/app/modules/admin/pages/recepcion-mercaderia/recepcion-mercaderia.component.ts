@@ -133,14 +133,17 @@ export class RecepcionMercaderiaComponent {
         if (line.quantity > 0 && line.manejaLotes && !line.lotCode.trim()) {
           throw new Error(`Indique el lote de ${line.producto}`);
         }
+        if (line.quantity > 0 && line.manejaLotes && !line.expirationDate) {
+          throw new Error(`Indique la fecha de vencimiento del lote de ${line.producto}`);
+        }
       }
       const items = this.receiptLines()
         .filter((l) => l.quantity > 0)
         .map((l) => ({
           purchaseOrderItemId: l.purchaseOrderItemId,
           quantity: l.quantity,
-          lotCode: l.lotCode.trim() || undefined,
-          expirationDate: l.expirationDate || undefined,
+          lotCode: l.manejaLotes ? l.lotCode.trim() || undefined : undefined,
+          expirationDate: l.manejaLotes ? l.expirationDate || undefined : undefined,
         }));
       if (items.length === 0) throw new Error('Indique cantidades a recibir');
       return firstValueFrom(

@@ -69,7 +69,7 @@
               />
             </div>
             <div>
-              <app-label [for]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId">Vencimiento</app-label>
+              <app-label [for]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId" required>Vencimiento</app-label>
               <app-input-field [id]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId"
                 type="date"
                 placeholder="Vencimiento"

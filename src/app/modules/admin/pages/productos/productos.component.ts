@@ -963,13 +963,11 @@ export class ProductosComponent {
 
     if (detail.defaultWarehouseId) {
       this.defaultWarehouseId.set(detail.defaultWarehouseId);
-      const defaultStock = detail.warehouseStocks.find(
-        (s) => s.warehouseId === detail.defaultWarehouseId,
-      );
-      if (defaultStock) {
-        this.stockInicial.set(defaultStock.cantidad);
-      }
     }
+    // Sólo lectura al editar: stock total del producto en todos sus almacenes.
+    this.stockInicial.set(
+      detail.warehouseStocks.reduce((sum, s) => sum + Number(s.cantidad || 0), 0),
+    );
 
     const precioInputs: Record<string, string> = {};
     for (const wp of detail.warehousePrices) {
@@ -1686,7 +1684,8 @@ export class ProductosComponent {
       this.activeTab.set('general');
       return;
     }
-    if (dw && si > 0) {
+    // El stock inicial sólo existe al crear; al editar se gestiona por kardex (ingresos/ajustes/traslados).
+    if (!this.editingProductId() && dw && si > 0) {
       warehouseStocks.push({ warehouseId: dw, cantidad: si });
     }
 
@@ -1769,11 +1768,12 @@ export class ProductosComponent {
       tipoSistemaIscId: f.incluyeIscVenta || f.incluyeIscCompra ? f.tipoSistemaIscId : undefined,
       porcentajeIsc: f.incluyeIscVenta || f.incluyeIscCompra ? porcentajeIscValue : undefined,
       numeroPuntos: f.sePuedeCanjearPorPuntos ? numeroPuntosValue : undefined,
-      defaultWarehouseId: editingId && warehouseStocks.length === 0 ? undefined : dw || undefined,
-      warehousePrices: warehousePrices.length ? warehousePrices : undefined,
-      warehouseStocks: warehouseStocks.length ? warehouseStocks : undefined,
-      presentations: presentations.length ? presentations : undefined,
-      attributes: attributes.length ? attributes : undefined,
+      defaultWarehouseId: dw || undefined,
+      warehouseStocks: !editingId && warehouseStocks.length ? warehouseStocks : undefined,
+      // Al editar se envían siempre (aunque vacías) para que quitar la última fila también se guarde.
+      warehousePrices: editingId || warehousePrices.length ? warehousePrices : undefined,
+      presentations: editingId || presentations.length ? presentations : undefined,
+      attributes: editingId || attributes.length ? attributes : undefined,
       purchaseTaxAffectationId: f.purchaseTaxAffectationId || f.saleTaxAffectationId,
     };
 

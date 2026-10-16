@@ -654,6 +654,8 @@ export class ConjuntosPacksPromocionesComponent {
       brandId: detail.brandId ?? undefined,
       imagenArchivoId: detail.imagenArchivoId ?? undefined,
     }));
+    // El picker resuelve el id con el pipe authFile (la imagen requiere token).
+    this.imagePreview.set(detail.imagenArchivoId ?? null);
     this.detailRows.set(
       detail.items.map((x) => ({
         uid: crypto.randomUUID(),
