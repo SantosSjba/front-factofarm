@@ -26,9 +26,9 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
         <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
       </div>
       <div class="flex flex-wrap gap-3">
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="export('contasis')">Contasis</app-button>
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="export('siscont')">SISCONT</app-button>
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="export('excel')">Excel (CSV)</app-button>
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="export('contasis')">Contasis</app-button>
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="export('siscont')">SISCONT</app-button>
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="export('excel')">Excel (CSV)</app-button>
       </div>
       <p class="mt-4 text-sm text-gray-500">
         Exporta ventas y compras del periodo en formato tabular para importar en su sistema contable.

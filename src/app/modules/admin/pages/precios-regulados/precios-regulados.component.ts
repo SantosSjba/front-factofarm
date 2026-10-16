@@ -38,7 +38,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
         <app-form-field label="Precio máximo (S/)" required>
           <app-input-field type="number" min="0" [value]="precio()" (valueChange)="precio.set($event + '')" />
         </app-form-field>
-        <app-button class="mt-6" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="save()">Guardar</app-button>
+        <app-button startIconName="mdi:content-save-outline" class="mt-6" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="save()">Guardar</app-button>
       </div>
 
       <div class="overflow-x-auto">

@@ -42,7 +42,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
         <app-form-field label="Periodo">
           <app-input-field type="month" placeholder="YYYY-MM" ariaLabel="Periodo YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
         </app-form-field>
-        <app-button variant="outline" (btnClick)="recordsQuery.refetch()">Actualizar</app-button>
+        <app-button startIconName="mdi:content-save-outline" variant="outline" (btnClick)="recordsQuery.refetch()">Actualizar</app-button>
       </div>
 
       <div class="mb-6 grid gap-4 md:grid-cols-3">
@@ -81,7 +81,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
             {{ blocked }}
           </p>
         }
-        <app-button class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" [loading]="createMutation.isPending()" (btnClick)="emitRetention()">
+        <app-button startIconName="mdi:send-outline" class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" [loading]="createMutation.isPending()" (btnClick)="emitRetention()">
           Emitir retención
         </app-button>
       </div>
@@ -127,7 +127,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 
     <app-component-card class="mt-6" title="Detracciones" [loading]="detraccionesQuery.isPending()">
       <div class="mb-4 flex flex-wrap gap-3">
-        <app-button variant="outline" [disabled]="syncMutation.isPending()" [loading]="syncMutation.isPending()" (btnClick)="syncDetracciones()">
+        <app-button startIconName="mdi:sync" variant="outline" [disabled]="syncMutation.isPending()" [loading]="syncMutation.isPending()" (btnClick)="syncDetracciones()">
           Sincronizar desde facturas
         </app-button>
       </div>

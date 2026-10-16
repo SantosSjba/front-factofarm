@@ -38,7 +38,7 @@ import { userRoleLabel } from '../../../../core/utils/user-role-label.util';
           @if (auth.user()?.supportSession) {
             <p class="text-sm text-amber-700 dark:text-amber-400">La sesión de soporte no permite cambiar datos del operador.</p>
           }
-          <app-button type="submit" [disabled]="busy() || !!auth.user()?.supportSession" [loading]="busy()">
+          <app-button startIconName="mdi:content-save-outline" type="submit" [disabled]="busy() || !!auth.user()?.supportSession" [loading]="busy()">
             Guardar perfil
           </app-button>
         </form>
@@ -49,7 +49,7 @@ import { userRoleLabel } from '../../../../core/utils/user-role-label.util';
             <app-input-field id="profile-current-password" name="currentPassword" type="password" label="Contraseña actual" [isRequired]="true" autocomplete="current-password" [value]="currentPassword" (valueChange)="currentPassword = '' + $event" />
             <app-input-field id="profile-new-password" name="newPassword" type="password" label="Nueva contraseña" [isRequired]="true" [maxLength]="128" autocomplete="new-password" hint="Incluye mayúscula, minúscula, número y carácter especial." [value]="newPassword" (valueChange)="newPassword = '' + $event" />
             <app-input-field id="profile-confirm-password" name="confirmPassword" type="password" label="Confirmar contraseña" [isRequired]="true" [maxLength]="128" autocomplete="new-password" [value]="confirmPassword" (valueChange)="confirmPassword = '' + $event" />
-            <app-button type="submit" [disabled]="loading() || busy()" [loading]="busy()">
+            <app-button startIconName="mdi:lock-reset" type="submit" [disabled]="loading() || busy()" [loading]="busy()">
               Cambiar contraseña
             </app-button>
           </form>

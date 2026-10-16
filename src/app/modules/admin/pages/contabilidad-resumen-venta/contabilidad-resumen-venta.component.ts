@@ -31,11 +31,13 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Resumen de venta</h1>
     </app-page-toolbar>
-    <div class="mt-4 flex flex-wrap gap-3">
-      <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
-      <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
-      <app-button variant="primary" (btnClick)="marginQuery.refetch()">Consultar</app-button>
-    </div>
+    <app-component-card title="Filtros" className="mt-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
+        <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
+        <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="marginQuery.refetch()">Consultar</app-button>
+      </div>
+    </app-component-card>
     <app-page-state [loading]="marginQuery.isPending()" [error]="marginError()" (retry)="marginQuery.refetch()">
       @if (marginQuery.data(); as m) {
         <div class="mt-4 grid gap-4 md:grid-cols-4">

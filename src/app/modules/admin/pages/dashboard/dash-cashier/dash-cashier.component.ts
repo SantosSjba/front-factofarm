@@ -29,8 +29,8 @@ import { DirectoryApiService } from '../../../services/directory-api.service';
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Panel cajero</h1>
       <div data-toolbar-actions class="flex flex-wrap gap-2">
-        <a routerLink="/caja-chica-pos"><app-button variant="outline">Ir a caja</app-button></a>
-        <a routerLink="/punto-venta"><app-button variant="primary">Ir al POS</app-button></a>
+        <a routerLink="/caja-chica-pos"><app-button startIconName="mdi:cash-register" variant="outline">Ir a caja</app-button></a>
+        <a routerLink="/punto-venta"><app-button startIconName="mdi:point-of-sale" variant="primary">Ir al POS</app-button></a>
       </div>
     </app-page-toolbar>
     <app-page-state [loading]="query.isPending()" [error]="error()" skeleton="kpi-grid" [skeletonCount]="2" (retry)="query.refetch()">

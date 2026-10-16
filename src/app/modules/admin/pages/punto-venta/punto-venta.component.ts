@@ -198,6 +198,8 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly prescriptionValidated = signal(false);
   protected readonly prescriptionId = signal('');
   protected readonly prescriptionNote = signal('');
+  /** Tipo de documento del cliente elegido ('' si se desconoce, p. ej. al restaurar un borrador). */
+  protected readonly customerDocType = signal<string>('');
   protected readonly patientPrescriptions = signal<PrescriptionSummaryDto[]>([]);
   protected readonly promotionCode = signal('');
   protected readonly promotionPreview = signal<PromotionListItemDto | null>(null);
@@ -764,6 +766,7 @@ export class PuntoVentaComponent implements OnDestroy {
   protected selectCustomer(c: CustomerItemDto) {
     this.customerId.set(c.id);
     this.customerLabel.set(c.nombre);
+    this.customerDocType.set(c.tipoDocumento);
     this.customerOptions.set([]);
     this.customerSearch.set('');
     this.prescriptionId.set('');
@@ -788,6 +791,7 @@ export class PuntoVentaComponent implements OnDestroy {
   protected clearCustomer() {
     this.customerId.set('');
     this.customerLabel.set('');
+    this.customerDocType.set('');
   }
 
   protected addToCart(item: PosCatalogItemDto) {
@@ -1263,6 +1267,21 @@ export class PuntoVentaComponent implements OnDestroy {
         if (paymentRequiresReference(line.metodo) && !line.referencia.trim()) {
           throw new Error(`Ingrese el código de operación para ${line.metodo}`);
         }
+      }
+      // Reglas SUNAT/crédito: el API también las valida; aquí se avisa antes de cobrar.
+      const docType = this.documentType();
+      const knownDoc = this.customerDocType();
+      if (docType === 'FACTURA' && (!this.customerId() || (knownDoc && knownDoc !== 'RUC'))) {
+        throw new Error('La factura requiere un cliente con RUC. Seleccione el cliente o emita boleta.');
+      }
+      if (docType === 'BOLETA' && total > 700 && (!this.customerId() || knownDoc === 'DOC_SIN_RUC')) {
+        throw new Error('Las boletas mayores a S/ 700.00 deben identificar al cliente (DNI, CE o pasaporte).');
+      }
+      if (this.paymentLines().some((l) => l.metodo === 'CREDITO') && (!this.customerId() || knownDoc === 'DOC_SIN_RUC')) {
+        throw new Error('La venta a crédito requiere un cliente identificado.');
+      }
+      if (this.requiresRx() && !this.prescriptionId() && this.prescriptionValidated() && this.prescriptionNote().trim().length < 3) {
+        throw new Error('Indique la referencia de la receta validada manualmente (N° de receta, médico o CMP).');
       }
       if (this.requiresControlled() && !this.controlledApprovedById()) {
         throw new Error('Seleccione el farmacéutico que autoriza la dispensación de controlados');

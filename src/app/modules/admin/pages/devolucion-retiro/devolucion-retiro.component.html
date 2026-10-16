@@ -45,7 +45,7 @@
             (valueChange)="productSearch.set('' + $event)"
             placeholder="Buscar por nombre o código"
           />
-          <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
+          <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
           <app-option-list class="mt-2">
@@ -69,7 +69,7 @@
       <app-input-field [maxLength]="500" [value]="comment()" (valueChange)="comment.set('' + $event)" />
     </div>
     <div class="md:col-span-2">
-      <app-button variant="primary" [disabled]="dispatchMutation.isPending()" [loading]="dispatchMutation.isPending()" (btnClick)="submit()">
+      <app-button startIconName="mdi:content-save-outline" variant="primary" [disabled]="dispatchMutation.isPending()" [loading]="dispatchMutation.isPending()" (btnClick)="submit()">
         Registrar salida
       </app-button>
     </div>

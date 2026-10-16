@@ -39,7 +39,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Convenios y seguros</h1>
-      <app-button variant="primary" (btnClick)="createOpen.set(true)">Nuevo convenio</app-button>
+      <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nuevo convenio</app-button>
     </app-page-toolbar>
     <app-page-state [loading]="listQuery.isPending()" [error]="listError()" (retry)="listQuery.refetch()">
       <app-component-card className="mt-4">
@@ -109,7 +109,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
           <app-label>Cobertura %</app-label>
           <app-input-field min="0" max="100" type="number" [value]="formCobertura()" (valueChange)="formCobertura.set(parseNum($event))" />
         </div>
-        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">Guardar</app-button>
+        <app-button startIconName="mdi:content-save-outline" variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">Guardar</app-button>
       </div>
     </app-modal>
   `,

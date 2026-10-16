@@ -3072,6 +3072,7 @@ export interface CashFlowReportDto {
     comprasCount: number;
     pagosProveedores: string;
     pagosProveedoresCount: number;
+    devoluciones: string;
   };
   caja: { movimientosTotal: string; movimientosCount: number };
   flujoNeto: string;

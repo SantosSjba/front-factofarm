@@ -30,9 +30,9 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
         <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
       </div>
       <div class="flex flex-wrap gap-3">
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportPle('14.1')">PLE 14.1 Ventas</app-button>
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportPle('8.1')">PLE 8.1 Compras</app-button>
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportPle('13.1')">PLE 13.1 Inventario</app-button>
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle('14.1')">PLE 14.1 Ventas</app-button>
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle('8.1')">PLE 8.1 Compras</app-button>
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle('13.1')">PLE 13.1 Inventario</app-button>
       </div>
       <p class="mt-4 text-sm text-gray-500">Formato tabular TXT para carga/revisión contable. Valide contra el PLE oficial SUNAT antes de presentar.</p>
     </app-component-card>
@@ -42,10 +42,10 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
         <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
       </div>
       <div class="flex flex-wrap gap-3">
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportSunatBook('sales')">
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportSunatBook('sales')">
           Libro de ventas (Excel)
         </app-button>
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportSunatBook('inventory')">
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportSunatBook('inventory')">
           Registro de inventarios (Excel)
         </app-button>
       </div>

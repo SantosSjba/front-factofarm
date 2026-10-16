@@ -31,9 +31,9 @@ const STORAGE_KEY = 'factofarm.onboarding.dismissed';
         </ol>
         <div class="mt-4 flex flex-wrap gap-2">
           <a routerLink="/onboarding">
-            <app-button size="sm" variant="primary">Abrir asistente</app-button>
+            <app-button startIconName="mdi:help-circle-outline" size="sm" variant="primary">Abrir asistente</app-button>
           </a>
-          <app-button size="sm" variant="outline" (btnClick)="dismiss()">Entendido, ocultar guía</app-button>
+          <app-button startIconName="mdi:check" size="sm" variant="outline" (btnClick)="dismiss()">Entendido, ocultar guía</app-button>
         </div>
       </div>
     }

@@ -1,7 +1,7 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Médicos prescriptores</h1>
-  <app-button *appHasPermission="'medicos.write'" size="sm" (btnClick)="openCreate()">Nuevo médico</app-button>
+  <app-button startIconName="mdi:plus" *appHasPermission="'medicos.write'" size="sm" (btnClick)="openCreate()">Nuevo médico</app-button>
 </app-page-toolbar>
 
 <app-component-card title="Filtros" className="mt-4">
@@ -89,7 +89,7 @@
     <app-form-field label="Especialidad">
       <app-input-field [value]="especialidad()" (valueChange)="especialidad.set('' + $event)" [maxLength]="120" />
     </app-form-field>
-    <app-button variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+    <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
   </div>
 </app-modal>
 

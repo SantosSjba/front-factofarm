@@ -34,7 +34,7 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Conciliación bancaria</h1>
-      <app-button variant="primary" [disabled]="!selectedIds().length || reconcileMutation.isPending()" [loading]="reconcileMutation.isPending()" (btnClick)="reconcileMutation.mutate()">
+      <app-button startIconName="mdi:check-decagram-outline" variant="primary" [disabled]="!selectedIds().length || reconcileMutation.isPending()" [loading]="reconcileMutation.isPending()" (btnClick)="reconcileMutation.mutate()">
         Conciliar seleccionados
       </app-button>
     </app-page-toolbar>

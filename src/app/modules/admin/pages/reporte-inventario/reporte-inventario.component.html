@@ -9,13 +9,13 @@
 </app-page-toolbar>
 
 <div class="mb-4 flex flex-wrap gap-2">
-  <app-button size="sm" [variant]="activeTab() === 'valorizacion' ? 'primary' : 'outline'" (btnClick)="setTab('valorizacion')">
+  <app-button startIconName="mdi:cash-multiple" size="sm" [variant]="activeTab() === 'valorizacion' ? 'primary' : 'outline'" (btnClick)="setTab('valorizacion')">
     Valorización
   </app-button>
-  <app-button size="sm" [variant]="activeTab() === 'conteo' ? 'primary' : 'outline'" (btnClick)="setTab('conteo')">
+  <app-button startIconName="mdi:clipboard-list-outline" size="sm" [variant]="activeTab() === 'conteo' ? 'primary' : 'outline'" (btnClick)="setTab('conteo')">
     Conteo físico
   </app-button>
-  <app-button size="sm" [variant]="activeTab() === 'zonas' ? 'primary' : 'outline'" (btnClick)="setTab('zonas')">
+  <app-button startIconName="mdi:snowflake-thermometer" size="sm" [variant]="activeTab() === 'zonas' ? 'primary' : 'outline'" (btnClick)="setTab('zonas')">
     Zonas BPA
   </app-button>
 </div>
@@ -103,7 +103,7 @@
       <app-input-field className="mt-2" [value]="countComment()" (valueChange)="countComment.set($event + '')" />
     </div>
     <div class="md:col-span-3">
-      <app-button size="sm" (btnClick)="startCount()">Iniciar conteo físico</app-button>
+      <app-button startIconName="mdi:clipboard-list-outline" size="sm" (btnClick)="startCount()">Iniciar conteo físico</app-button>
     </div>
   </div>
 
@@ -118,14 +118,14 @@
               [value]="countProductSearch()"
               (valueChange)="countProductSearch.set($event + '')"
             />
-            <app-button size="sm" variant="outline" (btnClick)="searchCountProducts()">Buscar</app-button>
+            <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchCountProducts()">Buscar</app-button>
           </div>
         } @else {
           <p class="md:col-span-2 text-theme-sm text-brand-600">{{ countProductLabel() }}</p>
         }
         <app-input-field placeholder="Lote" [value]="countLotCode()" (valueChange)="countLotCode.set($event + '')" />
         <app-input-field type="number" placeholder="Cant. contada" [value]="countQty()" (valueChange)="countQty.set(+$event || 0)" />
-        <app-button size="sm" (btnClick)="addCountLine()">Registrar línea</app-button>
+        <app-button startIconName="mdi:content-save-outline" size="sm" (btnClick)="addCountLine()">Registrar línea</app-button>
       </div>
 
       @if (countProductOptions().length > 0) {
@@ -159,7 +159,7 @@
         </tbody>
       </table>
       <div class="mt-4">
-        <app-button (btnClick)="finalizeCount()">Finalizar y generar ajustes</app-button>
+        <app-button startIconName="mdi:flag-checkered" (btnClick)="finalizeCount()">Finalizar y generar ajustes</app-button>
       </div>
     </app-component-card>
   }
@@ -236,7 +236,7 @@
       />
     </div>
     <div class="md:col-span-3">
-      <app-button size="sm" (btnClick)="createZone()">Agregar zona</app-button>
+      <app-button startIconName="mdi:snowflake-thermometer" size="sm" (btnClick)="createZone()">Agregar zona</app-button>
     </div>
   </div>
 

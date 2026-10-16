@@ -34,8 +34,8 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-component-card className="mt-4" title="Periodo">
       <div class="flex flex-wrap items-end gap-3">
         <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
-        <app-button variant="primary" (btnClick)="summaryQuery.refetch()">Consultar</app-button>
-        <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportPle()">Exportar PLE 14.1</app-button>
+        <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="summaryQuery.refetch()">Consultar</app-button>
+        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle()">Exportar PLE 14.1</app-button>
       </div>
     </app-component-card>
     <app-page-state [loading]="summaryQuery.isPending()" [error]="summaryError()" (retry)="summaryQuery.refetch()">

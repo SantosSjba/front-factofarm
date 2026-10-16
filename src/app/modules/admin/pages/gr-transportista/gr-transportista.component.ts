@@ -109,7 +109,7 @@ function paginatedItems<T>(data: PaginatedResponseDto<T> | T[] | undefined): T[]
             {{ blocked }}
           </p>
         }
-        <app-button
+        <app-button startIconName="mdi:truck-delivery-outline"
           variant="primary"
           [disabled]="emitMutation.isPending() || !canEmitSpecialDocument()" [loading]="emitMutation.isPending()"
           (btnClick)="emitMutation.mutate()"

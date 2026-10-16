@@ -7,7 +7,7 @@
     Inventario
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <app-button size="sm" variant="outline" (btnClick)="openPendingAdjustmentsModal()">
+    <app-button startIconName="mdi:clipboard-clock-outline" size="sm" variant="outline" (btnClick)="openPendingAdjustmentsModal()">
       <span>Ajustes pendientes</span>
     </app-button>
     <app-table-dropdown>
@@ -136,10 +136,10 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="importPending()" (btnClick)="closeImportModal()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="importPending()" (btnClick)="closeImportModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="importPending()" [loading]="importPending()" (btnClick)="processImport()">
+    <app-button startIconName="mdi:play-circle-outline" [disabled]="importPending()" [loading]="importPending()" (btnClick)="processImport()">
       {{ importPending() ? 'Procesando...' : 'Procesar' }}
     </app-button>
   </div>
@@ -248,10 +248,10 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="outboundPending()" (btnClick)="closeOutboundModal()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="outboundPending()" (btnClick)="closeOutboundModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="outboundPending()" [loading]="outboundPending()" (btnClick)="processOutbound()">
+    <app-button startIconName="mdi:check" [disabled]="outboundPending()" [loading]="outboundPending()" (btnClick)="processOutbound()">
       {{ outboundPending() ? 'Procesando...' : 'Aceptar' }}
     </app-button>
   </div>
@@ -371,10 +371,10 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="inboundPending()" (btnClick)="closeInboundModal()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="inboundPending()" (btnClick)="closeInboundModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="inboundPending()" [loading]="inboundPending()" (btnClick)="processInbound()">
+    <app-button startIconName="mdi:check" [disabled]="inboundPending()" [loading]="inboundPending()" (btnClick)="processInbound()">
       {{ inboundPending() ? 'Procesando...' : 'Aceptar' }}
     </app-button>
   </div>
@@ -438,10 +438,10 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="adjustmentPending()" (btnClick)="closeAdjustmentModal()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="adjustmentPending()" (btnClick)="closeAdjustmentModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="adjustmentPending()" [loading]="adjustmentPending()" (btnClick)="processAdjustment()">
+    <app-button startIconName="mdi:content-save-outline" [disabled]="adjustmentPending()" [loading]="adjustmentPending()" (btnClick)="processAdjustment()">
       {{ adjustmentPending() ? 'Procesando...' : 'Registrar ajuste' }}
     </app-button>
   </div>
@@ -502,6 +502,6 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closePendingAdjustmentsModal()">Cerrar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closePendingAdjustmentsModal()">Cerrar</app-button>
   </div>
 </app-modal>

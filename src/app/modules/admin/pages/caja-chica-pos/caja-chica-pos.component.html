@@ -27,7 +27,7 @@
         <app-input-field min="0" className="mt-1.5" type="number" [value]="montoApertura()" (valueChange)="montoApertura.set(+$event)" />
       </div>
       <div class="sm:col-span-2">
-        <app-button
+        <app-button startIconName="mdi:cash-register"
           variant="primary"
           [disabled]="!cashRegisterId() || openMutation.isPending()" [loading]="openMutation.isPending()"
           (btnClick)="submitOpen()"
@@ -45,7 +45,7 @@
         {{ summary()?.saldoActual ?? session()!.montoApertura | currency: 'PEN' : 'symbol' : '1.2-2' }}
       </p>
       <p class="mt-1 text-xs text-gray-500">Apertura: {{ session()!.openedAt | appDate: 'short' }}</p>
-      <app-button variant="outline" size="sm" className="mt-2.5" (btnClick)="loadHardwareFromSession()">
+      <app-button startIconName="mdi:cog-outline" variant="outline" size="sm" className="mt-2.5" (btnClick)="loadHardwareFromSession()">
         Cargar config hardware
       </app-button>
     </app-component-card>
@@ -66,10 +66,10 @@
         <app-form-field label="Monto (S/)" required>
           <app-input-field min="0" type="number" [value]="movMonto()" (valueChange)="movMonto.set(+$event)" placeholder="0.00" />
         </app-form-field>
-        <app-form-field label="Comentario">
-          <app-input-field [maxLength]="500" [value]="movComentario()" (valueChange)="movComentario.set('' + $event)" placeholder="Opcional" />
+        <app-form-field label="Motivo" required>
+          <app-input-field [maxLength]="500" [value]="movComentario()" (valueChange)="movComentario.set('' + $event)" placeholder="Ej. pago de movilidad, sencillo para cambio" />
         </app-form-field>
-        <app-button
+        <app-button startIconName="mdi:content-save-outline"
           variant="primary"
           [disabled]="movMonto() <= 0 || movementMutation.isPending()"
           [loading]="movementMutation.isPending()"
@@ -86,9 +86,9 @@
           <app-input-field min="0" type="number" [value]="montoCierre()" (valueChange)="montoCierre.set(+$event)" placeholder="0.00" />
         </app-form-field>
         <app-form-field label="Notas">
-          <app-input-field [maxLength]="500" [value]="notasCierre()" (valueChange)="notasCierre.set('' + $event)" placeholder="Opcional" />
+          <app-input-field [maxLength]="500" [value]="notasCierre()" (valueChange)="notasCierre.set('' + $event)" placeholder="Obligatorio si el arqueo tiene diferencia" />
         </app-form-field>
-        <app-button variant="outline" [disabled]="closeMutation.isPending()" [loading]="closeMutation.isPending()" (btnClick)="submitClose()">Cerrar caja</app-button>
+        <app-button startIconName="mdi:cash-lock" variant="outline" [disabled]="closeMutation.isPending()" [loading]="closeMutation.isPending()" (btnClick)="submitClose()">Cerrar caja</app-button>
       </app-form-stack>
     </app-component-card>
   </div>
@@ -117,7 +117,7 @@
         <app-checkbox [checked]="hardwareCustomerDisplay()" label="Pantalla cliente" (checkedChange)="hardwareCustomerDisplay.set($event)" />
       </div>
       <div class="lg:col-span-2">
-        <app-button variant="primary" [disabled]="hardwareMutation.isPending()" [loading]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">
+        <app-button startIconName="mdi:cog-outline" variant="primary" [disabled]="hardwareMutation.isPending()" [loading]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">
           Guardar hardware
         </app-button>
         <p class="mt-2 text-xs text-gray-500">

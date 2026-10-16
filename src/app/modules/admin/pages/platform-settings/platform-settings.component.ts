@@ -75,7 +75,7 @@ type Setting = {
           }}</p>
         </div>
       }
-      <app-button
+      <app-button startIconName="mdi:content-save-outline"
         type="submit"
         [disabled]="loading() || saving() || !settings().length"
         [loading]="saving()"

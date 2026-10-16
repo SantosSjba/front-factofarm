@@ -31,11 +31,13 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Ingresos y egresos por medio de pago</h1>
     </app-page-toolbar>
-    <div class="mt-4 flex flex-wrap gap-3">
-      <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
-      <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
-      <app-button variant="primary" (btnClick)="reportQuery.refetch()">Consultar</app-button>
-    </div>
+    <app-component-card title="Filtros" className="mt-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
+        <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
+        <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="reportQuery.refetch()">Consultar</app-button>
+      </div>
+    </app-component-card>
     <app-page-state [loading]="reportQuery.isPending()" [error]="reportError()" (retry)="reportQuery.refetch()">
       @if (reportQuery.data(); as r) {
         <div class="mt-4 grid gap-4 md:grid-cols-3">

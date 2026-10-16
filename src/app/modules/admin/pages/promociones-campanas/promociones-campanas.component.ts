@@ -40,7 +40,7 @@ import type { PromotionType } from '../../models/directory.models';
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Promociones y cupones</h1>
-      <app-button variant="primary" (btnClick)="createOpen.set(true)">Nueva campaña</app-button>
+      <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nueva campaña</app-button>
     </app-page-toolbar>
     <app-page-state [loading]="listQuery.isPending()" [error]="listError()" (retry)="listQuery.refetch()">
       <app-component-card className="mt-4">
@@ -111,7 +111,7 @@ import type { PromotionType } from '../../models/directory.models';
           <app-label required>Valor (% o monto según tipo)</app-label>
           <app-input-field min="0" type="number" [value]="valor()" (valueChange)="valor.set(+$event)" />
         </div>
-        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">
+        <app-button startIconName="mdi:content-save-outline" variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">
           Guardar
         </app-button>
       </div>

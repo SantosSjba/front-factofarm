@@ -94,7 +94,7 @@
           <app-input-field id="recepcion-mercaderia-5" [maxLength]="500" ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
         </div>
       </div>
-      <app-button variant="primary" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
+      <app-button startIconName="mdi:check" variant="primary" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
         Confirmar recepción
       </app-button>
     </div>

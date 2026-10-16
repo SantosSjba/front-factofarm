@@ -22,8 +22,8 @@
     emptyTitle="Sin eventos registrados"
     (retry)="adverseQuery.refetch()">
     <div class="mb-4 flex flex-wrap gap-2">
-      <app-button (btnClick)="openCreate()">Registrar evento</app-button>
-      <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportFarmacovigilancia()">Exportar Excel DIGEMID</app-button>
+      <app-button startIconName="mdi:content-save-outline" (btnClick)="openCreate()">Registrar evento</app-button>
+      <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportFarmacovigilancia()">Exportar Excel DIGEMID</app-button>
     </div>
 
     <div class="overflow-x-auto">
@@ -154,7 +154,7 @@
 }</app-option-list> }
     <app-form-select label="Severidad" [value]="severidad()" [options]="severityOptions" (valueChange)="severidad.set($any($event))" />
     <app-text-area label="Descripción del evento adverso" [required]="true" [maxLength]="2000" [rows]="4" placeholder="Describa el evento observado" [value]="descripcion()" (valueChange)="descripcion.set($event)" />
-    <app-button [disabled]="!productId() || !descripcion().trim() || createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
+    <app-button startIconName="mdi:content-save-outline" [disabled]="!productId() || !descripcion().trim() || createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
   </div>
 </app-modal>
 
@@ -162,6 +162,6 @@
   <div class="space-y-3">
     <app-input-field label="N° reporte DIGEMID" [isRequired]="true" [maxLength]="40" [value]="digemidReportNumber()" (valueChange)="digemidReportNumber.set('' + $event)" />
     <app-text-area label="Medidas correctivas" [maxLength]="2000" [rows]="3" [value]="medidasCorrectivas()" (valueChange)="medidasCorrectivas.set($event)" />
-    <app-button [disabled]="!digemidReportNumber().trim() || notifyMutation.isPending()" [loading]="notifyMutation.isPending()" (btnClick)="notifyMutation.mutate()">Registrar notificación</app-button>
+    <app-button startIconName="mdi:content-save-outline" [disabled]="!digemidReportNumber().trim() || notifyMutation.isPending()" [loading]="notifyMutation.isPending()" (btnClick)="notifyMutation.mutate()">Registrar notificación</app-button>
   </div>
 </app-modal>

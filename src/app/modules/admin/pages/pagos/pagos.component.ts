@@ -35,11 +35,13 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Pagos y cobros</h1>
     </app-page-toolbar>
-    <div class="mt-4 flex flex-wrap gap-3">
-      <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
-      <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
-      <app-button variant="primary" (btnClick)="page.set(1); listQuery.refetch()">Filtrar</app-button>
-    </div>
+    <app-component-card title="Filtros" className="mt-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
+        <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
+        <app-button startIconName="mdi:filter-outline" variant="primary" (btnClick)="page.set(1); listQuery.refetch()">Filtrar</app-button>
+      </div>
+    </app-component-card>
     <app-page-state [loading]="listQuery.isPending()" [error]="listError()" (retry)="listQuery.refetch()">
       <app-component-card className="mt-4">
         @if (listQuery.data(); as list) {

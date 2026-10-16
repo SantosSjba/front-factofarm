@@ -178,10 +178,10 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="closeImportModal()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="importMutation.isPending()" (btnClick)="closeImportModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="importMutation.isPending()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
+    <app-button startIconName="mdi:play-circle-outline" [disabled]="importMutation.isPending()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
       {{ importMutation.isPending() ? 'Procesando...' : 'Procesar' }}
     </app-button>
   </div>
@@ -195,8 +195,8 @@
     ¿Desea eliminar el producto compuesto "{{ deleteTarget()?.nombre }}"?
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
-    <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
-    <app-button [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
     </app-button>
   </div>
@@ -229,8 +229,8 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
-    <app-button variant="outline" (btnClick)="closeAddProductModal()">Cerrar</app-button>
-    <app-button (btnClick)="addDetailProduct()">Agregar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeAddProductModal()">Cerrar</app-button>
+    <app-button startIconName="mdi:plus" (btnClick)="addDetailProduct()">Agregar</app-button>
   </div>
 </app-modal>
 
@@ -376,7 +376,7 @@
             <app-form-select className="mt-2" [value]="form().categoryId ?? ''" [options]="categoryOptions()" (valueChange)="updateForm('categoryId', $event || undefined)" />
             <div class="mt-2 flex gap-2">
               <app-input-field className="flex-1" [value]="newCategoryName()" placeholder="Nueva categoría" [maxLength]="120" (valueChange)="newCategoryName.set($event + '')" />
-              <app-button
+              <app-button startIconName="mdi:plus"
                 size="sm"
                 [disabled]="creatingCategory()"
                 [loading]="creatingCategory()"
@@ -391,7 +391,7 @@
             <app-form-select className="mt-2" [value]="form().brandId ?? ''" [options]="brandOptions()" (valueChange)="updateForm('brandId', $event || undefined)" />
             <div class="mt-2 flex gap-2">
               <app-input-field className="flex-1" [value]="newBrandName()" placeholder="Nueva marca" [maxLength]="120" (valueChange)="newBrandName.set($event + '')" />
-              <app-button
+              <app-button startIconName="mdi:plus"
                 size="sm"
                 [disabled]="creatingBrand()"
                 [loading]="creatingBrand()"
@@ -406,8 +406,8 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
-    <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button size="sm" [disabled]="createMutation.isPending() || updateMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitForm()">
+    <app-button startIconName="mdi:close" size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline" size="sm" [disabled]="createMutation.isPending() || updateMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitForm()">
       {{
         createMutation.isPending() || updateMutation.isPending()
           ? (editingId() ? 'Actualizando...' : 'Guardando...')

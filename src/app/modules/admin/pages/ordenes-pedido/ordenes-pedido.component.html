@@ -3,7 +3,7 @@
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">
     Órdenes de pedido (delivery)
   </h1>
-  <app-button variant="primary" (btnClick)="createOpen.set(true)">Nuevo pedido</app-button>
+  <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nuevo pedido</app-button>
 </app-page-toolbar>
 
 <div class="mb-4 rounded-xl border border-blue-light-200 bg-blue-light-50/80 p-4 text-sm text-gray-700 dark:border-blue-light-500/30 dark:bg-blue-light-500/10 dark:text-gray-200">
@@ -35,7 +35,7 @@
         [value]="search()"
         (valueChange)="search.set('' + $event)"
       />
-      <app-button variant="outline" (btnClick)="page.set(1); listQuery.refetch()">Buscar</app-button>
+      <app-button startIconName="mdi:magnify" variant="outline" (btnClick)="page.set(1); listQuery.refetch()">Buscar</app-button>
     </div>
 
     @if (listQuery.data(); as list) {
@@ -119,11 +119,11 @@
       @if (!order.saleId && order.estado !== 'CANCELADO' && order.estado !== 'ENTREGADO') {
         <div class="flex flex-wrap gap-2">
           @if (nextStatus(); as next) {
-            <app-button variant="primary" (btnClick)="advanceStatus(order)">
-              → {{ statusLabels[next] }}
+            <app-button variant="primary" endIconName="mdi:arrow-right" (btnClick)="advanceStatus(order)">
+              {{ statusLabels[next] }}
             </app-button>
           }
-          <app-button variant="outline" (btnClick)="completeSale(order)">Cobrar y entregar</app-button>
+          <app-button startIconName="mdi:cash-check" variant="outline" (btnClick)="completeSale(order)">Cobrar y entregar</app-button>
         </div>
         <div class="ff-form-row">
           <app-form-select
@@ -131,7 +131,7 @@
             [value]="assignUserId()"
             (valueChange)="assignUserId.set($event)"
           />
-          <app-button variant="outline" (btnClick)="assignOrder(order)">Asignar repartidor</app-button>
+          <app-button startIconName="mdi:moped-outline" variant="outline" (btnClick)="assignOrder(order)">Asignar repartidor</app-button>
         </div>
       }
 
@@ -139,7 +139,7 @@
         <div>
           <app-label required>Motivo cancelación</app-label>
           <app-input-field [maxLength]="500" [value]="cancelReason()" (valueChange)="cancelReason.set('' + $event)" />
-          <app-button variant="outline" className="mt-2" (btnClick)="cancelOrder(order)">
+          <app-button startIconName="mdi:cancel" variant="outline" className="mt-2" (btnClick)="cancelOrder(order)">
             Cancelar pedido
           </app-button>
         </div>
@@ -207,7 +207,7 @@
         [value]="productSearch()"
         (valueChange)="productSearch.set('' + $event)"
       />
-      <app-button variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
+      <app-button startIconName="mdi:magnify" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
     <app-option-list class="sm:col-span-2" ariaLabel="Productos disponibles">
       @if (!warehouseId()) {
@@ -234,7 +234,7 @@
       </p>
     }
     <div class="sm:col-span-2">
-      <app-button
+      <app-button startIconName="mdi:plus"
         variant="primary"
         [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()"
         (btnClick)="submitCreate()"

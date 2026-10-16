@@ -40,7 +40,7 @@ type OnboardingStep = {
         <p class="text-sm text-gray-600 dark:text-gray-400">
           Complete estos pasos para operar el POS con validez fiscal y control de inventario.
         </p>
-        <app-button size="sm" variant="outline" (btnClick)="tour.start('bienvenida')">
+        <app-button startIconName="mdi:help-circle-outline" size="sm" variant="outline" (btnClick)="tour.start('bienvenida')">
           Ver tutorial de bienvenida
         </app-button>
       </div>
@@ -65,7 +65,7 @@ type OnboardingStep = {
               <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ step.description }}</p>
             </div>
             <a [routerLink]="step.route">
-              <app-button size="sm" [variant]="step.done ? 'outline' : 'primary'">
+              <app-button startIconName="mdi:cog-outline" size="sm" [variant]="step.done ? 'outline' : 'primary'">
                 {{ step.done ? 'Revisar' : 'Configurar' }}
               </app-button>
             </a>

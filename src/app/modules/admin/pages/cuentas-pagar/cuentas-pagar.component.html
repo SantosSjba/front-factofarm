@@ -69,12 +69,15 @@
     <app-form-field label="Monto (S/)" required>
       <app-input-field type="number" min="0" [value]="payAmount()" (valueChange)="payAmount.set(parseNum($event))" placeholder="0.00" />
     </app-form-field>
-    <app-form-field label="Método">
-      <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Transferencia, efectivo, cheque…" [maxLength]="40" />
+    <app-form-field label="Medio de pago" required>
+      <app-form-select [options]="payMethodOptions" [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" />
     </app-form-field>
-    <app-form-field label="Referencia / N° operación">
+    @if (payMetodo() === 'EFECTIVO') {
+      <p class="text-xs text-gray-500">El efectivo se registra en su caja abierta.</p>
+    }
+    <app-form-field label="Referencia / N° operación" [required]="payMetodo() !== 'EFECTIVO'">
       <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" [maxLength]="60" />
     </app-form-field>
-    <app-button variant="primary" [disabled]="payMutation.isPending()" [loading]="payMutation.isPending()" (btnClick)="submitPay()">Confirmar pago</app-button>
+    <app-button startIconName="mdi:cash-check" variant="primary" [disabled]="payMutation.isPending()" [loading]="payMutation.isPending()" (btnClick)="submitPay()">Confirmar pago</app-button>
   </div>
 </app-modal>

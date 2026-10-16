@@ -45,7 +45,7 @@
             [value]="productSearch()"
             (valueChange)="productSearch.set($event + '')"
           />
-          <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
+          <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
           <app-option-list class="mt-2">
@@ -84,7 +84,7 @@
       <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
         <app-input-field placeholder="Código lote *" [maxLength]="120" [value]="manualLotCode()" (valueChange)="manualLotCode.set($event + '')" />
         <app-input-field type="number" min="0" placeholder="Cantidad *" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event || 0)" />
-        <app-button size="sm" variant="outline" (btnClick)="addManualLine()">Agregar lote</app-button>
+        <app-button startIconName="mdi:plus" size="sm" variant="outline" (btnClick)="addManualLine()">Agregar lote</app-button>
       </div>
       @if (manualLines().length > 0) {
         <ul class="mt-3 space-y-1 text-theme-sm">
@@ -141,7 +141,7 @@
 }
 
 <div *appHasPermission="'inventory.write'">
-  <app-button [disabled]="dispatchMutation.isPending()" [loading]="dispatchMutation.isPending()" (btnClick)="dispatch()">
+  <app-button startIconName="mdi:send-outline" [disabled]="dispatchMutation.isPending()" [loading]="dispatchMutation.isPending()" (btnClick)="dispatch()">
     {{ dispatchMutation.isPending() ? 'Despachando…' : 'Registrar salida de venta' }}
   </app-button>
 </div>

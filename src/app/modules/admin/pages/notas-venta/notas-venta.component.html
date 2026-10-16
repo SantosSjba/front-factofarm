@@ -170,7 +170,7 @@
   } @else if (detailQuery.isError()) {
     <div class="space-y-3 p-6">
       <p class="text-sm text-rose-600 dark:text-rose-400">No se pudo cargar el detalle de la venta.</p>
-      <app-button variant="outline" size="sm" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
+      <app-button startIconName="mdi:refresh" variant="outline" size="sm" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
     </div>
   } @else if (detailQuery.data(); as sale) {
     <div class="space-y-4 p-6">
@@ -257,10 +257,10 @@
           </app-button>
         }
         @if (canReturn(sale)) {
-          <app-button variant="outline" (btnClick)="openReturn(sale.id); closeDetail()">Devolver productos</app-button>
+          <app-button startIconName="mdi:keyboard-return" variant="outline" (btnClick)="openReturn(sale.id); closeDetail()">Devolver productos</app-button>
         }
         @if (canDebit(sale)) {
-          <app-button variant="outline" (btnClick)="openDebit(sale.id); closeDetail()">Nota de débito</app-button>
+          <app-button startIconName="mdi:file-document-plus-outline" variant="outline" (btnClick)="openDebit(sale.id); closeDetail()">Nota de débito</app-button>
         }
       </div>
     </div>
@@ -284,8 +284,8 @@
       />
     </div>
     <div class="flex justify-end gap-2">
-      <app-button variant="outline" (btnClick)="closeConvert()">Cancelar</app-button>
-      <app-button
+      <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeConvert()">Cancelar</app-button>
+      <app-button startIconName="mdi:swap-horizontal"
         variant="primary"
         [disabled]="convertMutation.isPending()" [loading]="convertMutation.isPending()"
         (btnClick)="convertMutation.mutate()"
@@ -330,8 +330,8 @@
       <div class="flex items-center justify-between border-t pt-4">
         <span class="font-semibold">Total a devolver: {{ returnTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
         <div class="flex gap-2">
-          <app-button variant="outline" (btnClick)="closeReturn()">Cancelar</app-button>
-          <app-button variant="primary" [disabled]="returnMutation.isPending()" [loading]="returnMutation.isPending()" (btnClick)="submitReturn()">
+          <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeReturn()">Cancelar</app-button>
+          <app-button startIconName="mdi:keyboard-return" variant="primary" [disabled]="returnMutation.isPending()" [loading]="returnMutation.isPending()" (btnClick)="submitReturn()">
             Confirmar devolución
           </app-button>
         </div>
@@ -358,8 +358,8 @@
       <app-input-field min="0.01" type="number" [value]="debitTotal()" (valueChange)="debitTotal.set('' + $event)" placeholder="0.00" />
     </div>
     <div class="flex justify-end gap-2 border-t pt-4">
-      <app-button variant="outline" (btnClick)="closeDebit()">Cancelar</app-button>
-      <app-button variant="primary" [disabled]="debitMutation.isPending()" [loading]="debitMutation.isPending()" (btnClick)="submitDebit()">
+      <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeDebit()">Cancelar</app-button>
+      <app-button startIconName="mdi:file-document-plus-outline" variant="primary" [disabled]="debitMutation.isPending()" [loading]="debitMutation.isPending()" (btnClick)="submitDebit()">
         Emitir ND
       </app-button>
     </div>

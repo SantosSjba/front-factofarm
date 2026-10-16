@@ -2,8 +2,8 @@
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Comprobantes electrónicos</h1>
   <div class="flex gap-2">
-    <app-button variant="outline" (btnClick)="openSpecialModal()">Comprobante especial</app-button>
-    <app-button variant="outline" (btnClick)="openConfig()">Configuración OSE</app-button>
+    <app-button startIconName="mdi:file-document-edit-outline" variant="outline" (btnClick)="openSpecialModal()">Comprobante especial</app-button>
+    <app-button startIconName="mdi:cog-outline" variant="outline" (btnClick)="openConfig()">Configuración OSE</app-button>
   </div>
 </app-page-toolbar>
 
@@ -138,7 +138,7 @@
     <app-checkbox [checked]="emitNotaVenta()" label="Emitir nota de venta electrónica (donde aplique)" (checkedChange)="emitNotaVenta.set($event)" />
     <app-checkbox [checked]="applyDetraccion()" label="Aplicar detracción en facturas ≥ S/ 700" (checkedChange)="applyDetraccion.set($event)" />
     <app-checkbox [checked]="autoEmitGuia()" label="Emitir guía de remisión al despachar traslado" (checkedChange)="autoEmitGuia.set($event)" />
-    <app-button variant="primary" [disabled]="saveConfigMutation.isPending()" [loading]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
+    <app-button startIconName="mdi:content-save-outline" variant="primary" [disabled]="saveConfigMutation.isPending()" [loading]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
   </div>
 </app-modal>
 
@@ -159,17 +159,17 @@
       </div>
       <div class="flex flex-wrap gap-2">
         @if (doc.pdfArchivoId) {
-          <app-button size="sm" variant="outline" (btnClick)="download(doc, 'pdf')">PDF</app-button>
+          <app-button startIconName="mdi:file-pdf-box" size="sm" variant="outline" (btnClick)="download(doc, 'pdf')">PDF</app-button>
         }
         @if (doc.xmlArchivoId) {
-          <app-button size="sm" variant="outline" (btnClick)="download(doc, 'xml')">XML</app-button>
+          <app-button startIconName="mdi:file-code-outline" size="sm" variant="outline" (btnClick)="download(doc, 'xml')">XML</app-button>
         }
         @if (doc.cdrArchivoId) {
-          <app-button size="sm" variant="outline" (btnClick)="download(doc, 'cdr')">CDR</app-button>
+          <app-button startIconName="mdi:file-check-outline" size="sm" variant="outline" (btnClick)="download(doc, 'cdr')">CDR</app-button>
         }
-        <app-button size="sm" variant="outline" (btnClick)="refreshStatusMutation.mutate(doc.id)">Consultar SUNAT</app-button>
+        <app-button startIconName="mdi:cloud-search-outline" size="sm" variant="outline" (btnClick)="refreshStatusMutation.mutate(doc.id)">Consultar SUNAT</app-button>
         @if (canVoid(doc)) {
-          <app-button size="sm" variant="outline" (btnClick)="voidMutation.mutate()" [disabled]="!voidReason().trim() || voidMutation.isPending()" [loading]="voidMutation.isPending()">
+          <app-button startIconName="mdi:cancel" size="sm" variant="outline" (btnClick)="voidMutation.mutate()" [disabled]="!voidReason().trim() || voidMutation.isPending()" [loading]="voidMutation.isPending()">
             Comunicación de baja
           </app-button>
         }
@@ -230,7 +230,7 @@
     <app-form-field label="Monto total (inc. IGV)" required>
       <app-input-field type="number" min="0.01" [value]="specialAmount()" (valueChange)="specialAmount.set('' + $event)" placeholder="0.00" />
     </app-form-field>
-    <app-button
+    <app-button startIconName="mdi:send-outline"
       variant="primary"
       (btnClick)="submitSpecial()"
       [disabled]="emitSpecialMutation.isPending() || !!specialDocumentBlockedReason(specialType())" [loading]="emitSpecialMutation.isPending()"

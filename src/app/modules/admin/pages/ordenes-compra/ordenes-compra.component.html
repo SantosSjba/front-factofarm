@@ -1,7 +1,7 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Órdenes de compra</h1>
-  <app-button variant="primary" (btnClick)="createOpen.set(true)">Nueva OC</app-button>
+  <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nueva OC</app-button>
 </app-page-toolbar>
 
 <app-component-card title="Filtros" className="mt-4">
@@ -78,7 +78,7 @@
     </div>
     <div class="flex flex-col gap-2 sm:flex-row">
       <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />
-      <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
+      <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
     <app-option-list>
       @if (catalog().length === 0) {
@@ -109,8 +109,11 @@
       <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" [maxLength]="500" />
     </app-form-field>
     <div class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
-      <span class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-      <app-button
+      <div>
+        <span class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+        <p class="text-xs text-gray-500">Estimado con los precios ingresados; el IGV se calcula según cada producto al crear la OC.</p>
+      </div>
+      <app-button startIconName="mdi:plus"
         variant="primary"
         [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()"
         (btnClick)="submitCreate()"
@@ -163,11 +166,11 @@
       }
       <div class="flex flex-wrap gap-2">
         @if (po.estado === 'BORRADOR') {
-          <app-button variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'approve' })">Aprobar</app-button>
-          <app-button variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'cancel' })">Anular</app-button>
+          <app-button startIconName="mdi:check-decagram-outline" variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'approve' })">Aprobar</app-button>
+          <app-button startIconName="mdi:cancel" variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'cancel' })">Anular</app-button>
         }
         @if (po.estado === 'APROBADA') {
-          <app-button variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'send' })">Enviar</app-button>
+          <app-button startIconName="mdi:send-outline" variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'send' })">Enviar</app-button>
         }
       </div>
     </div>

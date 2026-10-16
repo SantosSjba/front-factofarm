@@ -35,10 +35,10 @@
   </div>
 
   <div class="mt-8 flex justify-end gap-2">
-    <app-button variant="outline" [disabled]="uploadMutation.isPending()" (btnClick)="clearFile()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="uploadMutation.isPending()" (btnClick)="clearFile()">
       Cancelar
     </app-button>
-    <app-button [disabled]="!canUpload()" (btnClick)="submitUpload()">
+    <app-button startIconName="mdi:upload" [disabled]="!canUpload()" (btnClick)="submitUpload()">
       {{ uploadMutation.isPending() ? 'Subiendo…' : 'Subir' }}
     </app-button>
   </div>

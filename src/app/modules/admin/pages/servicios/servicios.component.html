@@ -256,7 +256,7 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
   </div>
 </app-modal>
 
@@ -268,8 +268,8 @@
     {{ confirmActionMessage() }}
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
-    <app-button
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:check"
       [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()"
       (btnClick)="confirmServiceAction()"
     >
@@ -294,12 +294,12 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
     <app-button variant="outline" (btnClick)="printBarcode()">
       <app-icon name="mdi:printer-outline" width="16" height="16" />
       <span>Imprimir</span>
     </app-button>
-    <app-button [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+    <app-button startIconName="mdi:content-save-outline" [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -616,7 +616,7 @@
               placeholder="Nueva categoría" [maxLength]="120"
               (valueChange)="newCategoryName.set($event + '')"
             />
-            <app-button
+            <app-button startIconName="mdi:plus"
               size="sm"
               [disabled]="creatingCategory() || categoriesQuery.isPending()"
               [loading]="creatingCategory()"
@@ -642,7 +642,7 @@
               placeholder="Nueva marca" [maxLength]="120"
               (valueChange)="newBrandName.set($event + '')"
             />
-            <app-button
+            <app-button startIconName="mdi:plus"
               size="sm"
               [disabled]="creatingBrand() || brandsQuery.isPending()"
               [loading]="creatingBrand()"
@@ -668,7 +668,7 @@
               placeholder="Nueva ubicación" [maxLength]="120"
               (valueChange)="newLocationName.set($event + '')"
             />
-            <app-button
+            <app-button startIconName="mdi:plus"
               size="sm"
               [disabled]="creatingLocation() || locationsQuery.isPending()"
               [loading]="creatingLocation()"
@@ -713,8 +713,8 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
-    <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button
+    <app-button startIconName="mdi:close" size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline"
       size="sm"
       [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading()"
       [loading]="saveMutation.isPending() || updateMutation.isPending()"

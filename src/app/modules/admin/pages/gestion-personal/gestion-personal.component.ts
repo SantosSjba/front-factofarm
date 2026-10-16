@@ -52,8 +52,8 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         />
       </app-form-field>
       @if (selectedUserId()) {
-        <app-button variant="outline" (btnClick)="checkIn()">Check-in</app-button>
-        <app-button variant="outline" (btnClick)="checkOut()">Check-out</app-button>
+        <app-button startIconName="mdi:login-variant" variant="outline" (btnClick)="checkIn()">Check-in</app-button>
+        <app-button startIconName="mdi:logout-variant" variant="outline" (btnClick)="checkOut()">Check-out</app-button>
       }
     </div>
 
@@ -69,7 +69,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
           }
         </div>
         <div class="mt-3">
-          <app-button variant="primary" (btnClick)="saveSchedule()">Guardar horario</app-button>
+          <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="saveSchedule()">Guardar horario</app-button>
         </div>
       </app-component-card>
 
@@ -85,7 +85,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
               (valueChange)="setCommissionPercent($event)"
             />
           </app-form-field>
-          <app-button variant="primary" (btnClick)="saveCommission()">Guardar comisión</app-button>
+          <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="saveCommission()">Guardar comisión</app-button>
         </div>
       </app-component-card>
     }
@@ -116,14 +116,14 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     </app-component-card>
 
     <app-component-card title="Productividad" className="mt-4">
-      <div class="mb-3 flex flex-wrap gap-3">
+      <div class="mb-3 flex flex-wrap items-end gap-3">
         <app-form-field label="Desde" required>
           <app-input-field type="date" ariaLabel="Productividad desde" [value]="prodFrom()" (valueChange)="prodFrom.set('' + $event)" />
         </app-form-field>
         <app-form-field label="Hasta" required>
           <app-input-field type="date" ariaLabel="Productividad hasta" [value]="prodTo()" (valueChange)="prodTo.set('' + $event)" />
         </app-form-field>
-        <app-button variant="primary" (btnClick)="consultProductivity()">Consultar</app-button>
+        <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="consultProductivity()">Consultar</app-button>
       </div>
       <app-page-state [loading]="productivityQuery.isPending()" [error]="productivityError()" (retry)="productivityQuery.refetch()">
         @if (productivityQuery.data(); as report) {
@@ -170,7 +170,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
           <app-form-field label="Hasta" required>
             <app-input-field type="date" ariaLabel="Licencia hasta" [value]="leaveTo()" (valueChange)="leaveTo.set('' + $event)" />
           </app-form-field>
-          <app-button variant="primary" (btnClick)="createLeave()">Solicitar</app-button>
+          <app-button startIconName="mdi:send-outline" variant="primary" (btnClick)="createLeave()">Solicitar</app-button>
         </div>
       }
       <app-page-state [loading]="leavesQuery.isPending()" [error]="leavesError()" (retry)="leavesQuery.refetch()">

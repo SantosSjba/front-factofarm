@@ -58,8 +58,8 @@
       <app-input-field [value]="voidReason()" (valueChange)="voidReason.set('' + $event)" [maxLength]="500" />
     </div>
     <div class="flex justify-end gap-2">
-      <app-button variant="outline" (btnClick)="voidTargetId.set(null)">Cancelar</app-button>
-      <app-button
+      <app-button startIconName="mdi:close" variant="outline" (btnClick)="voidTargetId.set(null)">Cancelar</app-button>
+      <app-button startIconName="mdi:check"
         variant="primary"
         [disabled]="!voidReason().trim() || voidMutation.isPending()" [loading]="voidMutation.isPending()"
         (btnClick)="voidMutation.mutate()"

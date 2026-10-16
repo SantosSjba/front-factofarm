@@ -43,7 +43,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     <app-breadcrumb-inline [segments]="[{ label: 'Guías' }, { label: 'Conductores' }]" />
     <app-page-toolbar>
       <h1 data-toolbar-title class="text-title-sm font-semibold">Conductores</h1>
-      <app-button *appHasPermission="'shipping.write'" size="sm" (btnClick)="openCreate()">Nuevo conductor</app-button>
+      <app-button startIconName="mdi:plus" *appHasPermission="'shipping.write'" size="sm" (btnClick)="openCreate()">Nuevo conductor</app-button>
     </app-page-toolbar>
     <app-component-card title="Filtros" className="mt-4">
       <app-list-filters [searchValue]="search()" searchPlaceholder="Buscar por nombre o documento" [showSelect]="false" (searchValueChange)="search.set($event); page.set(1)" />
@@ -110,7 +110,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
         <app-form-field label="Teléfono">
           <app-input-field [value]="telefono()" (valueChange)="telefono.set('' + $event)" [maxLength]="40" inputMode="tel" />
         </app-form-field>
-        <app-button variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+        <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
       </div>
     </app-modal>
     <app-confirm-dialog

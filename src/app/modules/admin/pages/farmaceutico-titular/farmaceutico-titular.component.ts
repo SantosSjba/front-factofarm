@@ -39,7 +39,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
           <app-input-field type="date" ariaLabel="Vigencia hasta" [value]="vigencia()" (valueChange)="vigencia.set($event + '')" />
         </app-form-field>
       </div>
-      <app-button [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="create()">Registrar licencia</app-button>
+      <app-button startIconName="mdi:content-save-outline" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="create()">Registrar licencia</app-button>
 
       <div class="mt-6 overflow-x-auto">
         <table class="min-w-full text-sm">

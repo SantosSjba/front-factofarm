@@ -12,8 +12,8 @@ import { ButtonComponent } from '../../ui/button/button.component';
           <h3 class="text-lg font-semibold text-gray-800 dark:text-white">{{ title() }}</h3>
           <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{ message() }}</p>
           <div class="mt-6 flex justify-end gap-2">
-            <app-button variant="outline" (btnClick)="cancelled.emit()">{{ cancelLabel() }}</app-button>
-            <app-button variant="primary" (btnClick)="confirmed.emit()">{{ confirmLabel() }}</app-button>
+            <app-button startIconName="mdi:close" variant="outline" (btnClick)="cancelled.emit()">{{ cancelLabel() }}</app-button>
+            <app-button startIconName="mdi:check" variant="primary" (btnClick)="confirmed.emit()">{{ confirmLabel() }}</app-button>
           </div>
         </div>
       </div>

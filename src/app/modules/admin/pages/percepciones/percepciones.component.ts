@@ -42,7 +42,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
         <app-form-field label="Periodo">
           <app-input-field type="month" placeholder="YYYY-MM" ariaLabel="Periodo YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
         </app-form-field>
-        <app-button variant="outline" (btnClick)="recordsQuery.refetch()">Actualizar</app-button>
+        <app-button startIconName="mdi:content-save-outline" variant="outline" (btnClick)="recordsQuery.refetch()">Actualizar</app-button>
       </div>
 
       <div class="mb-6 grid gap-4 md:grid-cols-3">
@@ -81,7 +81,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
             {{ blocked }}
           </p>
         }
-        <app-button class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" [loading]="createMutation.isPending()" (btnClick)="emitPerception()">
+        <app-button startIconName="mdi:send-outline" class="mt-6" [disabled]="createMutation.isPending() || !canEmitSpecialDocument()" [loading]="createMutation.isPending()" (btnClick)="emitPerception()">
           Emitir percepción
         </app-button>
       </div>

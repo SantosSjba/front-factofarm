@@ -515,6 +515,10 @@
             />
           }
           <app-checkbox [checked]="prescriptionValidated()" label="Receta validada manualmente" (checkedChange)="prescriptionValidated.set($event)" />
+          @if (prescriptionValidated() && !prescriptionId()) {
+            <app-label required>Referencia de la receta</app-label>
+            <app-input-field placeholder="N° de receta, médico o CMP" [maxLength]="300" [value]="prescriptionNote()" (valueChange)="prescriptionNote.set('' + $event)" />
+          }
         </div>
       }
 
@@ -764,7 +768,7 @@
         <div class="flex flex-col gap-2 sm:flex-row">
           <app-input-field placeholder="Código lote *" [maxLength]="120" [value]="manualLotCode()" (valueChange)="manualLotCode.set('' + $event)" />
           <app-input-field type="number" min="0" placeholder="Cantidad *" ariaLabel="Cantidad del lote" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event)" />
-          <app-button size="sm" (btnClick)="addManualLot()">+</app-button>
+          <app-button startIconName="mdi:plus" size="sm" (btnClick)="addManualLot()">+</app-button>
         </div>
       }
       @if (lotPreviewLoading()) {
@@ -774,7 +778,7 @@
           <div class="text-sm">{{ row.codigoLote }} × {{ row.cantidad }}</div>
         }
       }
-      <app-button variant="primary" (btnClick)="closeLotModal()">Listo</app-button>
+      <app-button startIconName="mdi:check" variant="primary" (btnClick)="closeLotModal()">Listo</app-button>
     </div>
   }
 </app-modal>

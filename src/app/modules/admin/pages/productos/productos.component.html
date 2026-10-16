@@ -468,7 +468,7 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
   </div>
 </app-modal>
 <app-modal [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
@@ -484,7 +484,7 @@
     <app-button variant="link" className="mt-3" (btnClick)="downloadImportTemplate()">Descargar plantilla</app-button>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
       <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
-      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
+      <app-button startIconName="mdi:eye-outline" variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
         {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
       </app-button>
     </div>
@@ -503,10 +503,10 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">
       Cancelar
     </app-button>
-    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
+    <app-button startIconName="mdi:play-circle-outline" [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
       {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
     </app-button>
   </div>
@@ -520,8 +520,8 @@
     {{ confirmActionMessage() }}
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
-    <app-button
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:check"
       [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()"
       (btnClick)="confirmProductAction()"
     >
@@ -546,12 +546,12 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
     <app-button variant="outline" (btnClick)="printBarcode()">
       <app-icon name="mdi:printer-outline" width="16" height="16" />
       <span>Imprimir</span>
     </app-button>
-    <app-button [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+    <app-button startIconName="mdi:content-save-outline" [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -572,7 +572,7 @@
       (tabChange)="setTab($event)"
     />
     <div class="mt-2 flex justify-end px-4 sm:px-8">
-      <app-button size="sm" variant="outline" (btnClick)="formDetailLevel.set(formDetailLevel() === 'basic' ? 'advanced' : 'basic')">
+      <app-button startIconName="mdi:tune-variant" size="sm" variant="outline" (btnClick)="formDetailLevel.set(formDetailLevel() === 'basic' ? 'advanced' : 'basic')">
         {{ formDetailLevel() === 'basic' ? 'Modo avanzado' : 'Modo básico' }}
       </app-button>
     </div>
@@ -1050,7 +1050,7 @@
               placeholder="Nueva categoría" [maxLength]="120"
               (valueChange)="newCategoryName.set($event + '')"
             />
-            <app-button
+            <app-button startIconName="mdi:plus"
               size="sm"
               [disabled]="creatingCategory() || categoriesQuery.isPending()"
               [loading]="creatingCategory()"
@@ -1076,7 +1076,7 @@
               placeholder="Nueva marca" [maxLength]="120"
               (valueChange)="newBrandName.set($event + '')"
             />
-            <app-button
+            <app-button startIconName="mdi:plus"
               size="sm"
               [disabled]="creatingBrand() || brandsQuery.isPending()"
               [loading]="creatingBrand()"
@@ -1102,7 +1102,7 @@
               placeholder="Nueva ubicación" [maxLength]="120"
               (valueChange)="newLocationName.set($event + '')"
             />
-            <app-button
+            <app-button startIconName="mdi:plus"
               size="sm"
               [disabled]="creatingLocation() || locationsQuery.isPending()"
               [loading]="creatingLocation()"
@@ -1234,7 +1234,7 @@
               <app-input-field type="number" min="0" step="1" placeholder="Plazo días" [value]="newSupplierPlazo()" (valueChange)="newSupplierPlazo.set($event + '')" />
             </div>
             <div class="mt-3">
-              <app-button size="sm" [disabled]="upsertProductSupplierMutation.isPending()" [loading]="upsertProductSupplierMutation.isPending()" (btnClick)="linkProductSupplier()">
+              <app-button startIconName="mdi:link-variant" size="sm" [disabled]="upsertProductSupplierMutation.isPending()" [loading]="upsertProductSupplierMutation.isPending()" (btnClick)="linkProductSupplier()">
                 Vincular
               </app-button>
             </div>
@@ -1276,8 +1276,8 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
-    <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button
+    <app-button startIconName="mdi:close" size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline"
       size="sm"
       [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading()"
       [loading]="saveMutation.isPending() || updateMutation.isPending()"

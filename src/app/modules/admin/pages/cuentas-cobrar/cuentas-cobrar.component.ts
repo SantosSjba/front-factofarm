@@ -12,6 +12,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
@@ -32,6 +33,7 @@ import type { AccountReceivableListItemDto } from '../../models/directory.models
     PaginationComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormSelectComponent,
     FormFieldComponent,
     ModalComponent,
   ],
@@ -46,6 +48,13 @@ export class CuentasCobrarComponent {
   protected readonly payModalOpen = signal(false);
   protected readonly selectedAr = signal<AccountReceivableListItemDto | null>(null);
   protected readonly payAmount = signal(0);
+  protected readonly payMethodOptions = [
+    { value: 'TRANSFERENCIA', label: 'Transferencia' },
+    { value: 'EFECTIVO', label: 'Efectivo' },
+    { value: 'YAPE', label: 'Yape' },
+    { value: 'PLIN', label: 'Plin' },
+    { value: 'TARJETA', label: 'Tarjeta' },
+  ];
   protected readonly payMetodo = signal('TRANSFERENCIA');
   protected readonly payReferencia = signal('');
 
@@ -74,6 +83,10 @@ export class CuentasCobrarComponent {
     const saldo = Number.parseFloat(row.saldo);
     if (Number.isFinite(saldo) && amount > saldo + 0.0001) {
       this.notify.warning(`El monto no puede superar el saldo pendiente (S/ ${saldo.toFixed(2)}).`);
+      return;
+    }
+    if (this.payMetodo() !== 'EFECTIVO' && !this.payReferencia().trim()) {
+      this.notify.warning('Ingrese el N° de operación del pago.');
       return;
     }
     this.payMutation.mutate();

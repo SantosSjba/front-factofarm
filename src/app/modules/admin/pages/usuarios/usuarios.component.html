@@ -187,14 +187,14 @@
   </div>
 
   <div data-modal-footer class="mt-4 flex justify-end gap-2">
-    <app-button
+    <app-button startIconName="mdi:close"
       variant="outline"
       [disabled]="deleteUserMutation.isPending()"
       (btnClick)="closeDeleteConfirm()"
     >
       Cancelar
     </app-button>
-    <app-button
+    <app-button startIconName="mdi:trash-can-outline"
       [disabled]="deleteUserMutation.isPending()"
       [loading]="deleteUserMutation.isPending()"
       (btnClick)="confirmDelete()"

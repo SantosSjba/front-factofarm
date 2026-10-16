@@ -1,7 +1,7 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Reporte psicotrópicos y estupefacientes</h1>
-  <app-button variant="outline" (btnClick)="helpOpen.set(!helpOpen())">
+  <app-button startIconName="mdi:help-circle-outline" variant="outline" (btnClick)="helpOpen.set(!helpOpen())">
     {{ helpOpen() ? 'Ocultar ayuda' : 'Guía DIGEMID' }}
   </app-button>
 </app-page-toolbar>
@@ -37,7 +37,7 @@
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-input-field label="Desde" [isRequired]="true" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
       <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
-      <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportLedger()">Exportar Excel DIGEMID</app-button>
+      <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportLedger()">Exportar Excel DIGEMID</app-button>
     </div>
 
     <div class="overflow-x-auto">

@@ -18,7 +18,7 @@
         <app-label for="kardex-product" required>Producto</app-label>
         <div class="mt-1 flex gap-2">
           <app-input-field id="kardex-product" className="flex-1" placeholder="Buscar producto" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" (keydown.enter)="searchProducts()" />
-          <app-button size="sm" (btnClick)="searchProducts()">Buscar</app-button>
+          <app-button startIconName="mdi:magnify" size="sm" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length) {
           <app-option-list class="mt-2">

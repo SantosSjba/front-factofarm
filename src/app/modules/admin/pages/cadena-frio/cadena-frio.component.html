@@ -43,7 +43,7 @@
         <app-label>Observación</app-label>
         <app-input-field [maxLength]="500" [value]="observacion()" (valueChange)="observacion.set('' + $event)" />
       </div>
-      <app-button
+      <app-button startIconName="mdi:content-save-outline"
         variant="primary"
         [disabled]="!zoneId() || registerMutation.isPending()" [loading]="registerMutation.isPending()"
         (btnClick)="submitRegister()"

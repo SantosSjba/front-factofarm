@@ -1,7 +1,7 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Cotizaciones</h1>
-  <app-button variant="primary" (btnClick)="createOpen.set(true)">Nueva cotización</app-button>
+  <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nueva cotización</app-button>
 </app-page-toolbar>
 
 @let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
@@ -70,7 +70,7 @@
     </app-form-field>
     <div class="flex gap-3">
       <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />
-      <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
+      <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
     <app-option-list>
       @if (!warehouseId()) {
@@ -94,7 +94,7 @@
     </app-form-field>
     <div class="flex items-center justify-between pt-2">
       <span class="font-bold">{{ quoteTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-      <app-button
+      <app-button startIconName="mdi:content-save-outline"
         variant="primary"
         [disabled]="lines().length === 0 || !warehouseId() || createMutation.isPending()"
         [loading]="createMutation.isPending()"

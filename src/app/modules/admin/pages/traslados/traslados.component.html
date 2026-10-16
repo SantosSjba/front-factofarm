@@ -7,7 +7,7 @@
     Traslados entre almacenes
   </h1>
   <div data-toolbar-actions *appHasPermission="'inventory.write'">
-    <app-button size="sm" (btnClick)="openCreateModal()">Nueva transferencia</app-button>
+    <app-button startIconName="mdi:plus" size="sm" (btnClick)="openCreateModal()">Nueva transferencia</app-button>
   </div>
 </app-page-toolbar>
 
@@ -164,7 +164,7 @@
             (valueChange)="productSearch.set($event + '')"
             (keydown.enter)="$event.preventDefault(); searchProducts()"
           />
-          <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
+          <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
           <app-option-list class="mb-2">
@@ -193,7 +193,7 @@
           />
         </div>
         <div class="flex items-end">
-          <app-button size="sm" variant="outline" (btnClick)="addDraftItem()">Agregar línea</app-button>
+          <app-button startIconName="mdi:plus" size="sm" variant="outline" (btnClick)="addDraftItem()">Agregar línea</app-button>
         </div>
       </div>
     </div>
@@ -224,8 +224,8 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="createPending()" (btnClick)="closeCreateModal()">Cancelar</app-button>
-    <app-button [disabled]="createPending()" [loading]="createPending()" (btnClick)="processCreate()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="createPending()" (btnClick)="closeCreateModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline" [disabled]="createPending()" [loading]="createPending()" (btnClick)="processCreate()">
       {{ createPending() ? 'Guardando…' : 'Crear borrador' }}
     </app-button>
   </div>

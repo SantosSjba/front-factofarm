@@ -260,7 +260,7 @@
               [value]="form().numeroDocumento"
               (valueChange)="updateFormField('numeroDocumento', $event + '')"
             />
-            <app-button
+            <app-button startIconName="mdi:card-account-details-outline"
               variant="outline"
               [disabled]="!canConsultDocument() || isDocumentConsultPending()"
               [loading]="isDocumentConsultPending()"
@@ -408,8 +408,8 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submitForm()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeFormModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submitForm()">
       {{ saveMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -423,7 +423,7 @@
     <app-button variant="link" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
       <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
-      <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
+      <app-button startIconName="mdi:eye-outline" variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
         {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
       </app-button>
     </div>
@@ -441,8 +441,8 @@
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">Cancelar</app-button>
-    <app-button [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">Cancelar</app-button>
+    <app-button startIconName="mdi:play-circle-outline" [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
       {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
     </app-button>
   </div>
@@ -483,8 +483,8 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button variant="outline" (btnClick)="exportOpen.set(false)">Cancelar</app-button>
-    <app-button (btnClick)="processExport()">Procesar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="exportOpen.set(false)">Cancelar</app-button>
+    <app-button startIconName="mdi:play-circle-outline" (btnClick)="processExport()">Procesar</app-button>
   </div>
 </app-modal>
 
@@ -496,8 +496,8 @@
     ¿Desea eliminar el registro?
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="deleteOpen.set(false)">Cancelar</app-button>
-    <app-button [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="deleteOpen.set(false)">Cancelar</app-button>
+    <app-button startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>
@@ -519,12 +519,12 @@
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
     <app-button variant="outline" (btnClick)="printBarcode()">
       <app-icon name="mdi:printer-outline" width="16" height="16" />
       <span>Imprimir</span>
     </app-button>
-    <app-button [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+    <app-button startIconName="mdi:content-save-outline" [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -539,8 +539,8 @@
     <app-input-field [maxLength]="500" className="mt-2" [value]="tagsValue()" (valueChange)="tagsValue.set($event + '')" />
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="tagsOpen.set(false)">Cancelar</app-button>
-    <app-button [disabled]="tagsMutation.isPending()" [loading]="tagsMutation.isPending()" (btnClick)="submitTags()">
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="tagsOpen.set(false)">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline" [disabled]="tagsMutation.isPending()" [loading]="tagsMutation.isPending()" (btnClick)="submitTags()">
       {{ tagsMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>

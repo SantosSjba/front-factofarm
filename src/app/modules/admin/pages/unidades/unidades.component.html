@@ -152,10 +152,10 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
   >
-    <app-button variant="outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="closeFormModal()">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="closeFormModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
+    <app-button startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
       {{ submitLabel() }}
     </app-button>
   </div>
@@ -183,14 +183,14 @@
     data-modal-footer
     class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6"
   >
-    <app-button
+    <app-button startIconName="mdi:close"
       variant="outline"
       [disabled]="deleteMutation.isPending()"
       (btnClick)="closeDeleteConfirm()"
     >
       Cancelar
     </app-button>
-    <app-button
+    <app-button startIconName="mdi:trash-can-outline"
       [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()"
       (btnClick)="confirmDelete()"
     >
