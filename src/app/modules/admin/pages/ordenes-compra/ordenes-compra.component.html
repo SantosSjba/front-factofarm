@@ -70,10 +70,16 @@
   <div class="space-y-4">
     <div class="grid gap-3 sm:grid-cols-2">
       <app-form-field label="Proveedor" required>
-        <app-form-select [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
+        <div class="flex items-center gap-2">
+          <app-form-select className="flex-1" [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
+          <app-quick-create entity="supplier" [iconOnly]="true" (created)="supplierId.set($event.id)" />
+        </div>
       </app-form-field>
       <app-form-field label="Almacén de destino" required>
-        <app-form-select [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
+        <div class="flex items-center gap-2">
+          <app-form-select className="flex-1" [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
+          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
+        </div>
       </app-form-field>
     </div>
     <div class="flex flex-col gap-2 sm:flex-row">

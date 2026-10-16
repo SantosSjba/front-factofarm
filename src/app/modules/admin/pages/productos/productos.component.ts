@@ -132,10 +132,12 @@ const barcodeSchema = yup.object({
     .max(60, 'Código de barra no debe exceder 60 caracteres'),
 });
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-productos',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     FileInputComponent,
     OptionItemComponent,
     OptionListComponent,

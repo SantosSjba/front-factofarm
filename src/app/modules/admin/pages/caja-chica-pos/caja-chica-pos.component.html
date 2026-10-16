@@ -14,13 +14,16 @@
     <div class="grid gap-4 sm:grid-cols-2 lg:max-w-xl">
       <div>
         <app-label required>Caja</app-label>
-        <app-form-select
-          className="mt-1.5"
-          placeholder="Seleccionar caja"
-          [options]="registerOptions()"
-          [value]="cashRegisterId()"
-          (valueChange)="cashRegisterId.set($event)"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select
+            className="mt-1.5 flex-1"
+            placeholder="Seleccionar caja"
+            [options]="registerOptions()"
+            [value]="cashRegisterId()"
+            (valueChange)="cashRegisterId.set($event)"
+          />
+          <app-quick-create entity="cashRegister" [iconOnly]="true" (created)="cashRegisterId.set($event.id)" />
+        </div>
       </div>
       <div>
         <app-label>Monto inicial (S/)</app-label>

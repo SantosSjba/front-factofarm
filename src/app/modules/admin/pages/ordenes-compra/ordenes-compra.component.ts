@@ -27,10 +27,12 @@ type OrderLine = { productId: string; nombre: string; quantity: number; unitPric
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-ordenes-compra',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     OptionItemComponent,
     OptionListComponent,
     StatusBadgeComponent,

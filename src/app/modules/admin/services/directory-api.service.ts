@@ -1544,6 +1544,14 @@ export class DirectoryApiService {
     });
   }
 
+  createWarehouse(body: { establishmentId: string; nombre: string }) {
+    return this.http.post<{ id: string; nombre: string }>(`${this.base}/warehouses`, body);
+  }
+
+  createCashRegister(body: { nombre: string }) {
+    return this.http.post<{ id: string; nombre: string }>(`${this.base}/cash-registers`, body);
+  }
+
   createWarehouseZone(body: CreateWarehouseZoneRequest) {
     return this.http.post<WarehouseZoneDto>(`${this.base}/warehouse-zones`, body);
   }

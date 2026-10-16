@@ -125,10 +125,12 @@ import { OptionListComponent } from '../../../../shared/components/ui/option-lis
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { TabStripComponent } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     AuthFilePipe,
     CheckboxComponent,
     TabStripComponent,

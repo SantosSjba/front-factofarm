@@ -40,10 +40,12 @@ const NEXT_STATUS: Partial<Record<DeliveryOrderStatus, DeliveryOrderStatus>> = {
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-ordenes-pedido',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     OptionItemComponent,
     OptionListComponent,
     StatusBadgeComponent,

@@ -27,10 +27,12 @@ type ReportTab = 'valorizacion' | 'conteo' | 'zonas';
 
 type CreateWarehouseZoneTipo = 'NORMAL' | 'REFRIGERADO' | 'CONTROLADO';
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-reporte-inventario',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     OptionItemComponent,
     OptionListComponent,
     QueryPageStatePipe,

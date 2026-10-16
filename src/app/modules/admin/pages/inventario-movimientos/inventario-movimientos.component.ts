@@ -37,10 +37,12 @@ import { OptionItemComponent } from '../../../../shared/components/ui/option-lis
 import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-inventario-movimientos',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     TextAreaComponent,
     FileInputComponent,
     OptionItemComponent,

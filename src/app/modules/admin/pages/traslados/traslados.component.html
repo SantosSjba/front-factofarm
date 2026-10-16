@@ -118,23 +118,29 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div>
         <app-label required>Almacén origen</app-label>
-        <app-form-select
-          className="mt-2"
-          [value]="fromWarehouseId()"
-          [options]="warehouseOptions()"
-          [disabled]="createPending()"
-          (valueChange)="fromWarehouseId.set($event)"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select
+            className="mt-2 flex-1"
+            [value]="fromWarehouseId()"
+            [options]="warehouseOptions()"
+            [disabled]="createPending()"
+            (valueChange)="fromWarehouseId.set($event)"
+          />
+          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="fromWarehouseId.set($event.id)" />
+        </div>
       </div>
       <div>
         <app-label required>Almacén destino</app-label>
-        <app-form-select
-          className="mt-2"
-          [value]="toWarehouseId()"
-          [options]="warehouseOptions()"
-          [disabled]="createPending()"
-          (valueChange)="toWarehouseId.set($event)"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select
+            className="mt-2 flex-1"
+            [value]="toWarehouseId()"
+            [options]="warehouseOptions()"
+            [disabled]="createPending()"
+            (valueChange)="toWarehouseId.set($event)"
+          />
+          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="toWarehouseId.set($event.id)" />
+        </div>
       </div>
       <div>
         <app-label>Guía (opcional)</app-label>

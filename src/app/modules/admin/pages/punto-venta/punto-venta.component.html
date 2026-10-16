@@ -171,6 +171,7 @@
         <app-button size="sm" variant="outline" startIconName="mdi:account-search-outline" class="hidden sm:inline-flex" (btnClick)="searchCustomers()">
           Buscar
         </app-button>
+        <app-quick-create entity="customer" [iconOnly]="true" (created)="selectCustomer($any($event.row))" />
       </div>
       @if (customerOptions().length > 0) {
         <app-option-list class="mt-1">

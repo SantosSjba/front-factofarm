@@ -24,10 +24,12 @@ import { OptionItemComponent } from '../../../../shared/components/ui/option-lis
 
 type QuoteLine = { productId: string; nombre: string; quantity: number; precio: number };
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-cotizaciones',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     OptionItemComponent,
     OptionListComponent,
     QueryPageStatePipe,

@@ -16,10 +16,12 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-cadena-frio',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

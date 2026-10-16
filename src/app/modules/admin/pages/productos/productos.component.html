@@ -737,14 +737,17 @@
         </div>
         <div>
           <app-label>Almacén</app-label>
-          <app-form-select
-            className="mt-2"
-            [value]="defaultWarehouseId()"
-            [options]="warehouseSelectOptions()"
-            placeholder="Seleccionar"
-            [disabled]="warehousesQuery.isPending()"
-            (valueChange)="defaultWarehouseId.set($event)"
-          />
+          <div class="flex items-center gap-2">
+            <app-form-select
+              className="mt-2 flex-1"
+              [value]="defaultWarehouseId()"
+              [options]="warehouseSelectOptions()"
+              placeholder="Seleccionar"
+              [disabled]="warehousesQuery.isPending()"
+              (valueChange)="defaultWarehouseId.set($event)"
+            />
+            <app-quick-create entity="warehouse" [iconOnly]="true" (created)="defaultWarehouseId.set($event.id)" />
+          </div>
         </div>
         <div>
           @if (editingProductId()) {
@@ -1223,12 +1226,15 @@
           <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-white/10">
             <p class="mb-3 text-theme-sm font-medium">Vincular proveedor</p>
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <app-form-select
-                [value]="newSupplierId()"
-                [options]="supplierSelectOptions()"
-                placeholder="Proveedor"
-                (valueChange)="newSupplierId.set($event)"
-              />
+              <div class="flex items-center gap-2">
+                <app-form-select className="flex-1"
+                  [value]="newSupplierId()"
+                  [options]="supplierSelectOptions()"
+                  placeholder="Proveedor"
+                  (valueChange)="newSupplierId.set($event)"
+                />
+                <app-quick-create entity="supplier" [iconOnly]="true" (created)="newSupplierId.set($event.id)" />
+              </div>
               <app-input-field placeholder="Cód. proveedor" [maxLength]="60" [value]="newSupplierCodigo()" (valueChange)="newSupplierCodigo.set($event + '')" />
               <app-input-field type="number" min="0" placeholder="Precio compra" [value]="newSupplierPrecio()" (valueChange)="newSupplierPrecio.set($event + '')" />
               <app-input-field type="number" min="0" step="1" placeholder="Plazo días" [value]="newSupplierPlazo()" (valueChange)="newSupplierPlazo.set($event + '')" />

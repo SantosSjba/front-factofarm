@@ -62,11 +62,14 @@
   <app-form-stack className="p-6">
     <h3 class="text-lg font-semibold">Nueva cotización</h3>
     <app-form-field label="Almacén" required>
-      <app-form-select
-        [options]="warehouseOptions()"
-        [value]="warehouseId()"
-        (valueChange)="warehouseId.set($event)"
-      />
+      <div class="flex items-center gap-2">
+        <app-form-select className="flex-1"
+          [options]="warehouseOptions()"
+          [value]="warehouseId()"
+          (valueChange)="warehouseId.set($event)"
+        />
+        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
+      </div>
     </app-form-field>
     <div class="flex gap-3">
       <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />

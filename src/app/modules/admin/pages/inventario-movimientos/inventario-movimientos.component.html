@@ -172,14 +172,17 @@
 
       <div class="md:col-span-2">
         <app-label required>Almacén</app-label>
-        <app-form-select
-          className="mt-2"
-          [value]="outboundWarehouseId()"
-          [options]="warehouseOptions()"
-          placeholder="Seleccionar"
-          [disabled]="outboundPending() || warehousesQuery.isPending()"
-          (valueChange)="outboundWarehouseId.set($event)"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select
+            className="mt-2 flex-1"
+            [value]="outboundWarehouseId()"
+            [options]="warehouseOptions()"
+            placeholder="Seleccionar"
+            [disabled]="outboundPending() || warehousesQuery.isPending()"
+            (valueChange)="outboundWarehouseId.set($event)"
+          />
+          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="outboundWarehouseId.set($event.id)" />
+        </div>
       </div>
       <div>
         <app-label>Código lote</app-label>
@@ -284,14 +287,17 @@
 
       <div class="md:col-span-2">
         <app-label required>Almacén</app-label>
-        <app-form-select
-          className="mt-2"
-          [value]="inboundWarehouseId()"
-          [options]="warehouseOptions()"
-          placeholder="Seleccionar"
-          [disabled]="inboundPending() || warehousesQuery.isPending()"
-          (valueChange)="inboundWarehouseId.set($event)"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select
+            className="mt-2 flex-1"
+            [value]="inboundWarehouseId()"
+            [options]="warehouseOptions()"
+            placeholder="Seleccionar"
+            [disabled]="inboundPending() || warehousesQuery.isPending()"
+            (valueChange)="inboundWarehouseId.set($event)"
+          />
+          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="inboundWarehouseId.set($event.id)" />
+        </div>
       </div>
       <div>
         <app-label>Código lote</app-label>
@@ -410,14 +416,17 @@
       </div>
       <div class="md:col-span-2">
         <app-label required>Almacén</app-label>
-        <app-form-select
-          className="mt-2"
-          [value]="adjustmentWarehouseId()"
-          [options]="warehouseOptions()"
-          placeholder="Seleccionar"
-          [disabled]="adjustmentPending()"
-          (valueChange)="adjustmentWarehouseId.set($event)"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select
+            className="mt-2 flex-1"
+            [value]="adjustmentWarehouseId()"
+            [options]="warehouseOptions()"
+            placeholder="Seleccionar"
+            [disabled]="adjustmentPending()"
+            (valueChange)="adjustmentWarehouseId.set($event)"
+          />
+          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="adjustmentWarehouseId.set($event.id)" />
+        </div>
       </div>
       <div class="md:col-span-2">
         <app-label>Código lote (opcional)</app-label>

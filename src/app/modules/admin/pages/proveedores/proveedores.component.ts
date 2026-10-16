@@ -204,7 +204,7 @@ export class ProveedoresComponent {
     queryKey: ['products', 'options-suppliers'],
     queryFn: () =>
       firstValueFrom(
-        this.api.listProducts({ page: 1, pageSize: 500, field: 'nombre', search: '' }),
+        this.api.listProducts({ page: 1, pageSize: 100, field: 'nombre', search: '' }),
       ),
     enabled: this.productsModalOpen(),
   }));

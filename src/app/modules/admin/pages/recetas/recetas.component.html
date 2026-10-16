@@ -50,6 +50,7 @@
       <div class="flex gap-2">
         <app-input-field className="flex-1" [value]="customerSearch()" (valueChange)="onCustomerSearchChange('' + $event)" (keydown.enter)="searchCustomers()" placeholder="Buscar cliente por nombre o documento" />
         <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
+        <app-quick-create entity="customer" (created)="selectCustomer($any($event.row))" />
       </div>
     </app-form-field>
     @if (customerOptions().length) {
@@ -62,7 +63,7 @@
     <app-form-field label="Médico prescriptor" required>
       <div class="flex gap-2">
         <app-form-select className="flex-1" [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
-        <app-button *appHasPermission="'medicos.write'" size="sm" variant="outline" startIconName="mdi:account-plus-outline" (btnClick)="openQuickMedico()">Nuevo médico</app-button>
+        <app-quick-create entity="medico" (created)="onMedicoCreated($event)" />
       </div>
     </app-form-field>
     <app-form-field label="Diagnóstico">
@@ -107,24 +108,3 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="quickMedicoOpen()" (closed)="quickMedicoOpen.set(false)" className="w-full max-w-lg">
-  <div class="space-y-3 p-6">
-    <h3 class="text-lg font-semibold">Nuevo médico prescriptor</h3>
-    <app-form-field label="CMP" required helpText="Número de colegiatura del Colegio Médico del Perú.">
-      <app-input-field [value]="quickCmp()" (valueChange)="quickCmp.set('' + $event)" [maxLength]="20" placeholder="Ej. 045123" />
-    </app-form-field>
-    <app-form-field label="Nombres" required>
-      <app-input-field [value]="quickNombres()" (valueChange)="quickNombres.set('' + $event)" [maxLength]="120" />
-    </app-form-field>
-    <app-form-field label="Apellidos" required>
-      <app-input-field [value]="quickApellidos()" (valueChange)="quickApellidos.set('' + $event)" [maxLength]="120" />
-    </app-form-field>
-    <app-form-field label="Especialidad">
-      <app-input-field [value]="quickEspecialidad()" (valueChange)="quickEspecialidad.set('' + $event)" [maxLength]="120" />
-    </app-form-field>
-    <div class="flex justify-end gap-2 pt-2">
-      <app-button startIconName="mdi:close" variant="outline" (btnClick)="quickMedicoOpen.set(false)">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" (btnClick)="saveQuickMedico()" [disabled]="quickMedicoMutation.isPending()" [loading]="quickMedicoMutation.isPending()">Guardar médico</app-button>
-    </div>
-  </div>
-</app-modal>

@@ -34,10 +34,12 @@ interface TransferDraftItem {
   cantidad: number;
 }
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-traslados',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     TextAreaComponent,
     OptionItemComponent,
     OptionListComponent,

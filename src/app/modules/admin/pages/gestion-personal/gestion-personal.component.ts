@@ -257,7 +257,7 @@ export class GestionPersonalComponent {
 
   protected readonly usersQuery = injectQuery(() => ({
     queryKey: ['staff', 'users'] as const,
-    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 200 })) }));
+    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 100 })) }));
 
   protected readonly userOptions = computed(() =>
     (this.usersQuery.data()?.items ?? []).map((u: UserListItemDto) => ({

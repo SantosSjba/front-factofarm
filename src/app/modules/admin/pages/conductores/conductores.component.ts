@@ -20,10 +20,12 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import type { ShippingDriverDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-conductores',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,
@@ -91,7 +93,10 @@ import { DirectoryApiService } from '../../services/directory-api.service';
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold">{{ editing() ? 'Editar conductor' : 'Nuevo conductor' }}</h3>
         <app-form-field label="Transportista">
-          <app-form-select [options]="carrierOptions()" [value]="carrierId()" (valueChange)="carrierId.set('' + $event)" />
+          <div class="flex items-center gap-2">
+            <app-form-select className="flex-1" [options]="carrierOptions()" [value]="carrierId()" (valueChange)="carrierId.set('' + $event)" />
+            <app-quick-create entity="carrier" [iconOnly]="true" (created)="carrierId.set('' + $event.id)" />
+          </div>
         </app-form-field>
         @if (!editing()) {
           <app-form-field label="Número de documento" required>
@@ -141,7 +146,7 @@ export class ConductoresComponent {
 
   protected readonly carriersQuery = injectQuery(() => ({
     queryKey: ['shipping', 'carriers', 'all'] as const,
-    queryFn: () => firstValueFrom(this.api.listShippingCarriers({ pageSize: 200 })),
+    queryFn: () => firstValueFrom(this.api.listShippingCarriers({ pageSize: 100 })),
   }));
 
   protected readonly carrierOptions = computed(() => [

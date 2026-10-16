@@ -20,10 +20,12 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import type { PaymentMethod, PosPrinterPaperWidth } from '../../models/directory.models';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-caja-chica-pos',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     CheckboxComponent,
     CommonModule,
     AppDatePipe,

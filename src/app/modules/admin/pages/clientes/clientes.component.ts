@@ -184,10 +184,12 @@ const exportSchema = yup.object({
   sellerId: yup.string().optional(),
 });
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-clientes',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     FileInputComponent,
     CheckboxComponent,
     MenuItemComponent,

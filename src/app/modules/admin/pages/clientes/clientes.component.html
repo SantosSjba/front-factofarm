@@ -302,7 +302,10 @@
         </div>
         <div>
           <app-label>Tipo de cliente</app-label>
-          <app-form-select className="mt-2" [value]="form().customerTypeId ?? ''" [options]="customerTypeOptions()" (valueChange)="updateFormField('customerTypeId', $event || null)" />
+          <div class="flex items-center gap-2">
+            <app-form-select className="mt-2 flex-1" [value]="form().customerTypeId ?? ''" [options]="customerTypeOptions()" (valueChange)="updateFormField('customerTypeId', $event || null)" />
+            <app-quick-create entity="customerType" [iconOnly]="true" (created)="updateFormField('customerTypeId', $event.id || null)" />
+          </div>
         </div>
       </div>
     }
@@ -393,7 +396,10 @@
         </div>
         <div>
           <app-label>Zona</app-label>
-          <app-form-select className="mt-2" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
+          <div class="flex items-center gap-2">
+            <app-form-select className="mt-2 flex-1" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
+            <app-quick-create entity="customerZone" [iconOnly]="true" (created)="updateFormField('zoneId', $event.id || null)" />
+          </div>
         </div>
         @if (!editing()) {
           <div class="md:col-span-2 rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">

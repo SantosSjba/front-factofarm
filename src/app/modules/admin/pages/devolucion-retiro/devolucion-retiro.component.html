@@ -16,11 +16,14 @@
   <div class="grid gap-4 md:grid-cols-2">
     <div>
       <app-label required>Almacén</app-label>
-      <app-form-select
-        [options]="warehouseOptions()"
-        [value]="warehouseId()"
-        (valueChange)="warehouseId.set($event)"
-      />
+      <div class="flex items-center gap-2">
+        <app-form-select className="flex-1"
+          [options]="warehouseOptions()"
+          [value]="warehouseId()"
+          (valueChange)="warehouseId.set($event)"
+        />
+        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
+      </div>
     </div>
     <div>
       <app-label required>Motivo</app-label>

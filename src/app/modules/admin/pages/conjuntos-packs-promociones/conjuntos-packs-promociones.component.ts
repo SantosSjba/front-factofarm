@@ -173,7 +173,7 @@ export class ConjuntosPacksPromocionesComponent {
   }));
   protected readonly productsForDetailQuery = injectQuery(() => ({
     queryKey: ['products', 'selector'],
-    queryFn: () => firstValueFrom(this.api.listProducts({ field: 'all', page: 1, pageSize: 200 })),
+    queryFn: () => firstValueFrom(this.api.listProducts({ field: 'all', page: 1, pageSize: 100 })),
   }));
 
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);

@@ -29,10 +29,12 @@ const DEVOLUCION_RETIRO_CODES = [
   'SUSTITUCION_SINIESTRADO',
 ];
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-devolucion-retiro',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     OptionItemComponent,
     OptionListComponent,
     CommonModule,

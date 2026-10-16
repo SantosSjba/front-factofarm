@@ -20,10 +20,12 @@ import { OptionListComponent } from '../../../../shared/components/ui/option-lis
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-salida-venta-lotes',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     TextAreaComponent,
     OptionItemComponent,
     OptionListComponent,

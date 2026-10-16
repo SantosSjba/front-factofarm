@@ -91,12 +91,15 @@
   <div class="mb-6 grid grid-cols-1 gap-4 rounded-xl border border-gray-100 p-4 md:grid-cols-3 dark:border-gray-800">
     <div>
       <app-label>Almacén a contar</app-label>
-      <app-form-select
-        className="mt-2"
-        [value]="countWarehouseId()"
-        [options]="warehouseOptions()"
-        (valueChange)="countWarehouseId.set($event)"
-      />
+      <div class="flex items-center gap-2">
+        <app-form-select
+          className="mt-2 flex-1"
+          [value]="countWarehouseId()"
+          [options]="warehouseOptions()"
+          (valueChange)="countWarehouseId.set($event)"
+        />
+        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="countWarehouseId.set($event.id)" />
+      </div>
     </div>
     <div class="md:col-span-2">
       <app-label>Comentario</app-label>
@@ -215,12 +218,15 @@
   <div class="mb-4 grid max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
     <div>
       <app-label>Almacén</app-label>
-      <app-form-select
-        className="mt-2"
-        [value]="zoneWarehouseId()"
-        [options]="warehouseOptions()"
-        (valueChange)="zoneWarehouseId.set($event)"
-      />
+      <div class="flex items-center gap-2">
+        <app-form-select
+          className="mt-2 flex-1"
+          [value]="zoneWarehouseId()"
+          [options]="warehouseOptions()"
+          (valueChange)="zoneWarehouseId.set($event)"
+        />
+        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="zoneWarehouseId.set($event.id)" />
+      </div>
     </div>
     <div>
       <app-label>Nueva zona</app-label>

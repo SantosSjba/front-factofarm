@@ -16,19 +16,25 @@
     <div class="space-y-4">
       <div>
         <app-label required>Almacén</app-label>
-        <app-form-select
-          [options]="warehouseOptions()"
-          [value]="warehouseId()"
-          (valueChange)="warehouseId.set($event); zoneId.set('')"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select className="flex-1"
+            [options]="warehouseOptions()"
+            [value]="warehouseId()"
+            (valueChange)="warehouseId.set($event); zoneId.set('')"
+          />
+          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id); zoneId.set('')" />
+        </div>
       </div>
       <div>
         <app-label required>Zona refrigerada</app-label>
-        <app-form-select
-          [options]="zoneOptions()"
-          [value]="zoneId()"
-          (valueChange)="zoneId.set($event)"
-        />
+        <div class="flex items-center gap-2">
+          <app-form-select className="flex-1"
+            [options]="zoneOptions()"
+            [value]="zoneId()"
+            (valueChange)="zoneId.set($event)"
+          />
+          <app-quick-create entity="warehouseZone" [context]="{ warehouseId: warehouseId() }" [iconOnly]="true" (created)="zoneId.set($event.id)" />
+        </div>
         @if (warehouseId() && coldZones().length === 0) {
           <p class="mt-2 text-theme-xs text-amber-600">
             No hay zonas tipo REFRIGERADO. Créelas en Reporte Inventario → Mapa de zonas.

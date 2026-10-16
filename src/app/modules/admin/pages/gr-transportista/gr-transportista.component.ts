@@ -24,10 +24,12 @@ function paginatedItems<T>(data: PaginatedResponseDto<T> | T[] | undefined): T[]
   return Array.isArray(data) ? data : data.items;
 }
 
+import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-gr-transportista',
   standalone: true,
   imports: [
+    QuickCreateComponent,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -48,35 +50,47 @@ function paginatedItems<T>(data: PaginatedResponseDto<T> | T[] | undefined): T[]
       <div class="grid max-w-xl gap-4">
         <div>
           <app-label>Transportista</app-label>
-          <app-form-select
-            [options]="carrierOptions()"
-            [value]="carrierId()"
-            (valueChange)="onCarrierChange('' + $event)"
-          />
+          <div class="flex items-center gap-2">
+            <app-form-select className="flex-1"
+              [options]="carrierOptions()"
+              [value]="carrierId()"
+              (valueChange)="onCarrierChange('' + $event)"
+            />
+            <app-quick-create entity="carrier" [iconOnly]="true" (created)="onCarrierChange('' + $event.id)" />
+          </div>
         </div>
         <div>
           <app-label>Conductor</app-label>
-          <app-form-select
-            [options]="driverOptions()"
-            [value]="driverId()"
-            (valueChange)="driverId.set('' + $event)"
-          />
+          <div class="flex items-center gap-2">
+            <app-form-select className="flex-1"
+              [options]="driverOptions()"
+              [value]="driverId()"
+              (valueChange)="driverId.set('' + $event)"
+            />
+            <app-quick-create entity="driver" [context]="{ carrierId: carrierId() }" [iconOnly]="true" (created)="driverId.set('' + $event.id)" />
+          </div>
         </div>
         <div>
           <app-label>Vehículo</app-label>
-          <app-form-select
-            [options]="vehicleOptions()"
-            [value]="vehicleId()"
-            (valueChange)="vehicleId.set('' + $event)"
-          />
+          <div class="flex items-center gap-2">
+            <app-form-select className="flex-1"
+              [options]="vehicleOptions()"
+              [value]="vehicleId()"
+              (valueChange)="vehicleId.set('' + $event)"
+            />
+            <app-quick-create entity="vehicle" [context]="{ carrierId: carrierId() }" [iconOnly]="true" (created)="vehicleId.set('' + $event.id)" />
+          </div>
         </div>
         <div>
           <app-label>Dirección de partida</app-label>
-          <app-form-select
-            [options]="departureOptions()"
-            [value]="departureId()"
-            (valueChange)="departureId.set('' + $event)"
-          />
+          <div class="flex items-center gap-2">
+            <app-form-select className="flex-1"
+              [options]="departureOptions()"
+              [value]="departureId()"
+              (valueChange)="departureId.set('' + $event)"
+            />
+            <app-quick-create entity="departure" [iconOnly]="true" (created)="departureId.set('' + $event.id)" />
+          </div>
         </div>
         <div class="border-t border-gray-100 pt-4 dark:border-gray-800">
           <p class="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">Destinatario (autocompletado)</p>
@@ -158,7 +172,7 @@ export class GrTransportistaComponent {
 
   protected readonly carriersQuery = injectQuery(() => ({
     queryKey: ['shipping', 'carriers', 'gr-transportista'] as const,
-    queryFn: () => firstValueFrom(this.api.listShippingCarriers({ pageSize: 200 })),
+    queryFn: () => firstValueFrom(this.api.listShippingCarriers({ pageSize: 100 })),
   }));
 
   protected readonly driversQuery = injectQuery(() => ({
@@ -167,7 +181,7 @@ export class GrTransportistaComponent {
       firstValueFrom(
         this.api.listShippingDrivers({
           carrierId: this.carrierId() || undefined,
-          pageSize: 200,
+          pageSize: 100,
         }),
       ),
   }));
@@ -178,14 +192,14 @@ export class GrTransportistaComponent {
       firstValueFrom(
         this.api.listShippingVehicles({
           carrierId: this.carrierId() || undefined,
-          pageSize: 200,
+          pageSize: 100,
         }),
       ),
   }));
 
   protected readonly departuresQuery = injectQuery(() => ({
     queryKey: ['shipping', 'departure-addresses', 'gr-transportista'] as const,
-    queryFn: () => firstValueFrom(this.api.listDepartureAddresses({ pageSize: 200 })),
+    queryFn: () => firstValueFrom(this.api.listDepartureAddresses({ pageSize: 100 })),
   }));
 
   protected readonly carriers = computed(() =>

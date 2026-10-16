@@ -23,14 +23,14 @@ import { FilesApiService } from '../../../../core/services/files-api.service';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
-import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+import { QuickCreateComponent, type QuickCreated } from '../../components/quick-create/quick-create.component';
 
 @Component({
   selector: 'app-recetas',
   standalone: true,
   imports: [
     AuthFilePipe,
-    HasPermissionDirective,
+    QuickCreateComponent,
     FileInputComponent,
     OptionItemComponent,
     OptionListComponent,
@@ -92,52 +92,10 @@ export class RecetasComponent {
     queryKey: ['prescriptions', this.page()] as const,
     queryFn: () => firstValueFrom(this.api.listPrescriptions({ page: this.page(), pageSize: 15 })) }));
 
-  protected readonly quickMedicoOpen = signal(false);
-  protected readonly quickCmp = signal('');
-  protected readonly quickNombres = signal('');
-  protected readonly quickApellidos = signal('');
-  protected readonly quickEspecialidad = signal('');
-
-  /** Alta rápida: registra el médico sin salir de la receta y lo deja seleccionado. */
-  protected readonly quickMedicoMutation = injectMutation(() => ({
-    mutationFn: () =>
-      firstValueFrom(
-        this.api.createMedico({
-          cmp: this.quickCmp().trim(),
-          nombres: this.quickNombres().trim(),
-          apellidos: this.quickApellidos().trim(),
-          especialidad: this.quickEspecialidad().trim() || undefined,
-        }),
-      ),
-    onSuccess: (medico) => {
-      this.quickCreatedMedico.set(medico);
-      this.medicoId.set(medico.id);
-      void this.queryClient.invalidateQueries({ queryKey: ['medicos'] });
-      this.quickMedicoOpen.set(false);
-      this.notify.success('Médico registrado y seleccionado');
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar el médico')),
-  }));
-
-  protected openQuickMedico() {
-    this.quickCmp.set('');
-    this.quickNombres.set('');
-    this.quickApellidos.set('');
-    this.quickEspecialidad.set('');
-    this.quickMedicoOpen.set(true);
-  }
-
-  protected saveQuickMedico() {
-    const missing = [
-      !this.quickCmp().trim() && 'CMP',
-      !this.quickNombres().trim() && 'nombres',
-      !this.quickApellidos().trim() && 'apellidos',
-    ].filter(Boolean);
-    if (missing.length) {
-      this.notify.warning(`Complete: ${missing.join(', ')}.`);
-      return;
-    }
-    this.quickMedicoMutation.mutate();
+  protected onMedicoCreated(medico: QuickCreated) {
+    const row = medico.row as { id: string; cmp: string; nombres: string; apellidos: string };
+    this.quickCreatedMedico.set(row);
+    this.medicoId.set(row.id);
   }
 
   protected createMutation = injectMutation(() => ({
