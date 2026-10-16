@@ -68,39 +68,54 @@
 
 <app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" title="Nueva orden de compra" className="w-full max-w-2xl">
   <div class="space-y-4">
-    <app-form-select [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
-    <app-form-select [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
+    <div class="grid gap-3 sm:grid-cols-2">
+      <app-form-field label="Proveedor" required>
+        <app-form-select [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
+      </app-form-field>
+      <app-form-field label="Almacén de destino" required>
+        <app-form-select [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
+      </app-form-field>
+    </div>
     <div class="flex flex-col gap-2 sm:flex-row">
       <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />
       <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
     <div class="max-h-40 overflow-auto rounded-lg border border-gray-200 text-sm dark:border-gray-800">
-      @if (!warehouseId()) {
-        <p class="px-3 py-4 text-center text-gray-500">Seleccione un almacén</p>
-      } @else if (catalog().length === 0) {
-        <p class="px-3 py-4 text-center text-gray-500">No hay productos con stock</p>
+      @if (catalog().length === 0) {
+        <p class="px-3 py-4 text-center text-gray-500">No se encontraron productos</p>
       } @else {
         @for (item of catalog(); track item.id) {
           <button type="button" class="block w-full border-b border-gray-100 px-3 py-2 text-left last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5" (click)="addLine(item)">
-            {{ item.nombre }} · {{ item.codigoInterno }}
+            {{ item.nombre }}@if (item.codigoInterno) { · {{ item.codigoInterno }} }
           </button>
         }
       }
     </div>
-    @for (line of lines(); track line.productId) {
-      <div class="flex justify-between gap-3 text-sm">
-        <span class="min-w-0 truncate">{{ line.nombre }} × {{ line.quantity }}</span>
-        <span>{{ (line.unitPrice ?? 0) * line.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+    @if (lines().length) {
+      <div class="grid grid-cols-[1fr_88px_110px_auto] items-center gap-2 text-xs font-medium uppercase text-gray-500">
+        <span>Producto</span><span>Cantidad <span class="text-error-500" aria-hidden="true">*</span></span><span>Costo unit. (S/)</span><span></span>
       </div>
     }
-    <app-input-field [value]="condicionesPago()" (valueChange)="condicionesPago.set('' + $event)" placeholder="Condiciones de pago" />
-    <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
+    @for (line of lines(); track line.productId) {
+      <div class="grid grid-cols-[1fr_88px_110px_auto] items-center gap-2 text-sm">
+        <span class="min-w-0 truncate" [title]="line.nombre">{{ line.nombre }}</span>
+        <app-input-field type="number" min="0" [ariaLabel]="'Cantidad de ' + line.nombre" [value]="line.quantity" (valueChange)="updateLine(line.productId, { quantity: +$event })" />
+        <app-input-field type="number" min="0" [ariaLabel]="'Costo unitario de ' + line.nombre" [value]="line.unitPrice ?? ''" (valueChange)="updateLine(line.productId, { unitPrice: $event === '' ? undefined : +$event })" />
+        <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar" (btnClick)="removeLine(line.productId)" />
+      </div>
+    }
+    <app-form-field label="Condiciones de pago">
+      <app-input-field [value]="condicionesPago()" (valueChange)="condicionesPago.set('' + $event)" placeholder="Ej. Crédito 30 días" [maxLength]="200" />
+    </app-form-field>
+    <app-form-field label="Comentario">
+      <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" [maxLength]="500" />
+    </app-form-field>
     <div class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
       <span class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
       <app-button
         variant="primary"
-        [disabled]="!supplierId() || !warehouseId() || lines().length === 0 || createMutation.isPending()" [loading]="createMutation.isPending()"
-        (btnClick)="createMutation.mutate()"
+        [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()"
+        (btnClick)="submitCreate()"
       >
         Crear OC
       </app-button>
@@ -150,11 +165,11 @@
       }
       <div class="flex flex-wrap gap-2">
         @if (po.estado === 'BORRADOR') {
-          <app-button variant="primary" (btnClick)="actionMutation.mutate({ id: po.id, action: 'approve' })">Aprobar</app-button>
-          <app-button variant="outline" (btnClick)="actionMutation.mutate({ id: po.id, action: 'cancel' })">Anular</app-button>
+          <app-button variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'approve' })">Aprobar</app-button>
+          <app-button variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'cancel' })">Anular</app-button>
         }
         @if (po.estado === 'APROBADA') {
-          <app-button variant="primary" (btnClick)="actionMutation.mutate({ id: po.id, action: 'send' })">Enviar</app-button>
+          <app-button variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'send' })">Enviar</app-button>
         }
       </div>
     </div>

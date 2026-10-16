@@ -7,6 +7,7 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { AuthService } from '../../../../core/services/auth.service';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { isValidEmail } from '../../../../core/utils/form-validators';
 
 @Component({
   selector: 'app-forgot-password',
@@ -31,7 +32,15 @@ export class ForgotPasswordComponent {
 
   protected submit() {
     const value = this.email().trim();
-    if (!value || this.isLoading()) return;
+    if (this.isLoading()) return;
+    if (!value) {
+      this.notify.warning('Ingrese su correo electrónico.');
+      return;
+    }
+    if (!isValidEmail(value)) {
+      this.notify.warning('Ingrese un correo electrónico válido.');
+      return;
+    }
 
     this.submitError.set(null);
     this.isLoading.set(true);

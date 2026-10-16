@@ -524,23 +524,23 @@
           <form (submit)="onSubmitContact($event)">
             <app-form-stack>
               <app-form-row>
-                <app-form-field label="Nombre completo" for="contact-nombre">
-                  <app-input-field id="contact-nombre" placeholder="Ej. María Pérez" [value]="nombre()" (valueChange)="nombre.set($event + '')" [isRequired]="true" />
+                <app-form-field label="Nombre completo" for="contact-nombre" required>
+                  <app-input-field [maxLength]="120" id="contact-nombre" placeholder="Ej. María Pérez" [value]="nombre()" (valueChange)="nombre.set($event + '')" [isRequired]="true" />
                 </app-form-field>
-                <app-form-field label="Farmacia / botica" for="contact-farmacia">
-                  <app-input-field id="contact-farmacia" placeholder="Nombre del establecimiento" [value]="farmacia()" (valueChange)="farmacia.set($event + '')" [isRequired]="true" />
+                <app-form-field label="Farmacia / botica" for="contact-farmacia" required>
+                  <app-input-field [maxLength]="200" id="contact-farmacia" placeholder="Nombre del establecimiento" [value]="farmacia()" (valueChange)="farmacia.set($event + '')" [isRequired]="true" />
                 </app-form-field>
               </app-form-row>
               <app-form-row>
-                <app-form-field label="Teléfono" for="contact-telefono">
-                  <app-input-field id="contact-telefono" type="tel" placeholder="Ej. 999 888 777" [value]="telefono()" (valueChange)="telefono.set($event + '')" [isRequired]="true" />
+                <app-form-field label="Teléfono" for="contact-telefono" required>
+                  <app-input-field [maxLength]="30" id="contact-telefono" type="tel" placeholder="Ej. 999 888 777" [value]="telefono()" (valueChange)="telefono.set($event + '')" [isRequired]="true" />
                 </app-form-field>
-                <app-form-field label="Correo electrónico" for="contact-email">
-                  <app-input-field id="contact-email" type="email" placeholder="correo@tufarmacia.com" [value]="email()" (valueChange)="email.set($event + '')" [isRequired]="true" />
+                <app-form-field label="Correo electrónico" for="contact-email" required>
+                  <app-input-field [maxLength]="120" id="contact-email" type="email" placeholder="correo@tufarmacia.com" [value]="email()" (valueChange)="email.set($event + '')" [isRequired]="true" />
                 </app-form-field>
               </app-form-row>
               <app-form-field label="Mensaje (opcional)" for="contact-mensaje">
-                <app-text-area placeholder="Cuéntanos cuántas sucursales tienes, qué módulos te interesan, etc." [rows]="4" [value]="mensaje()" (valueChange)="mensaje.set($event)" />
+                <app-text-area [maxLength]="2000" id="contact-mensaje" placeholder="Cuéntanos cuántas sucursales tienes, qué módulos te interesan, etc." [rows]="4" [value]="mensaje()" (valueChange)="mensaje.set($event)" />
               </app-form-field>
               @if (formError()) {
                 <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200" role="alert">

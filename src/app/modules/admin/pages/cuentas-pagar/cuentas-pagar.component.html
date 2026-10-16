@@ -66,9 +66,15 @@
     @if (selectedAp(); as ap) {
       <p class="text-sm text-gray-600 dark:text-gray-400">{{ ap.supplier.razonSocial }} · Saldo: {{ ap.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
     }
-    <app-input-field type="number" [value]="payAmount()" (valueChange)="payAmount.set(parseNum($event))" placeholder="Monto" />
-    <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Método (transferencia, cheque…)" />
-    <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" placeholder="Referencia / N° operación" />
-    <app-button variant="primary" [disabled]="payMutation.isPending()" [loading]="payMutation.isPending()" (btnClick)="payMutation.mutate()">Confirmar pago</app-button>
+    <app-form-field label="Monto (S/)" required>
+      <app-input-field type="number" min="0" [value]="payAmount()" (valueChange)="payAmount.set(parseNum($event))" placeholder="0.00" />
+    </app-form-field>
+    <app-form-field label="Método">
+      <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Transferencia, efectivo, cheque…" [maxLength]="40" />
+    </app-form-field>
+    <app-form-field label="Referencia / N° operación">
+      <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" [maxLength]="60" />
+    </app-form-field>
+    <app-button variant="primary" [disabled]="payMutation.isPending()" [loading]="payMutation.isPending()" (btnClick)="submitPay()">Confirmar pago</app-button>
   </div>
 </app-modal>

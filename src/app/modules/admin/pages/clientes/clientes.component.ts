@@ -6,6 +6,10 @@ import { firstValueFrom } from 'rxjs';
 import JsBarcode from 'jsbarcode';
 import * as yup from 'yup';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import {
+  identityDocumentNumberMessage,
+  isValidIdentityDocumentNumber,
+} from '../../../../core/utils/peru-documents';
 import { customerQueryKeys } from '../../../../core/query/customer-query.keys';
 import { establishmentQueryKeys } from '../../../../core/query/establishment-query.keys';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
@@ -102,7 +106,13 @@ const customerCreateSchema = yup.object({
     .string()
     .trim()
     .required('Número de documento es obligatorio')
-    .max(30, 'Número de documento no debe exceder 30 caracteres'),
+    .max(30, 'Número de documento no debe exceder 30 caracteres')
+    .test('peru-document', function (value) {
+      const tipo = (this.parent as { tipoDocumento?: string }).tipoDocumento;
+      return isValidIdentityDocumentNumber(tipo, value)
+        ? true
+        : this.createError({ message: identityDocumentNumberMessage(tipo) });
+    }),
   nacionalidad: yup.string().max(80, 'Nacionalidad no debe exceder 80 caracteres').optional(),
   diasCredito: yup
     .number()

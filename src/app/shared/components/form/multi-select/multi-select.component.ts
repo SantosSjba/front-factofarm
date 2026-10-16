@@ -20,6 +20,8 @@ export class MultiSelectComponent implements OnInit {
   @Input() options: Option[] = [];
   @Input() defaultSelected: string[] = [];
   @Input() disabled: boolean = false;
+  @Input() required = false;
+  @Input() placeholder = 'Seleccione opciones';
   @Output() selectionChange = new EventEmitter<string[]>();
 
   readonly labelId = 'multi-select-' + crypto.randomUUID();

@@ -6,12 +6,16 @@ import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { isOptionalEmail } from '../../../../core/utils/form-validators';
+import { isValidRuc } from '../../../../core/utils/peru-documents';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/common/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { ShippingCarrierDto } from '../../models/directory.models';
@@ -31,6 +35,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
+    ConfirmDialogComponent,
     HasPermissionDirective,
   ],
   template: `
@@ -68,7 +74,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                     [iconOnly]="true"
                     startIconName="mdi:trash-can-outline"
                     tooltip="Eliminar"
-                    (btnClick)="deleteMutation.mutate(row.id)"
+                    (btnClick)="deleteTarget.set(row)"
                   />
                 </div>
               </td>
@@ -83,14 +89,34 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     <app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold">{{ editing() ? 'Editar transportista' : 'Nuevo transportista' }}</h3>
-        @if (!editing()) { <app-input-field [value]="ruc()" (valueChange)="ruc.set('' + $event)" placeholder="RUC" /> }
-        <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" placeholder="Razón social" />
-        <app-input-field [value]="nombreComercial()" (valueChange)="nombreComercial.set('' + $event)" placeholder="Nombre comercial" />
-        <app-input-field [value]="telefono()" (valueChange)="telefono.set('' + $event)" placeholder="Teléfono" />
-        <app-input-field [value]="correo()" (valueChange)="correo.set('' + $event)" placeholder="Correo" />
-        <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+        @if (!editing()) {
+          <app-form-field label="RUC" required>
+            <app-input-field [value]="ruc()" (valueChange)="ruc.set('' + $event)" placeholder="20XXXXXXXXX" [maxLength]="11" inputMode="numeric" />
+          </app-form-field>
+        }
+        <app-form-field label="Razón social" required>
+          <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" [maxLength]="200" />
+        </app-form-field>
+        <app-form-field label="Nombre comercial">
+          <app-input-field [value]="nombreComercial()" (valueChange)="nombreComercial.set('' + $event)" [maxLength]="200" />
+        </app-form-field>
+        <app-form-field label="Teléfono">
+          <app-input-field [value]="telefono()" (valueChange)="telefono.set('' + $event)" [maxLength]="40" inputMode="tel" />
+        </app-form-field>
+        <app-form-field label="Correo">
+          <app-input-field type="email" [value]="correo()" (valueChange)="correo.set('' + $event)" [maxLength]="120" />
+        </app-form-field>
+        <app-button variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
       </div>
     </app-modal>
+    <app-confirm-dialog
+      [open]="!!deleteTarget()"
+      title="Eliminar transportista"
+      [message]="'¿Desea eliminar al transportista ' + (deleteTarget()?.razonSocial ?? '') + '?'"
+      confirmLabel="Eliminar"
+      (cancelled)="deleteTarget.set(null)"
+      (confirmed)="confirmDelete()"
+    />
   `,
 })
 export class TransportistasComponent {
@@ -142,19 +168,44 @@ export class TransportistasComponent {
     this.modalOpen.set(true);
   }
 
+  protected readonly deleteTarget = signal<ShippingCarrierDto | null>(null);
+
+  protected submit() {
+    const ruc = this.ruc().trim();
+    if (!this.editing() && (!/^\d{11}$/.test(ruc) || !isValidRuc(ruc))) {
+      this.notify.warning('Ingrese un RUC válido de 11 dígitos.');
+      return;
+    }
+    if (!this.razonSocial().trim()) {
+      this.notify.warning('Ingrese la razón social.');
+      return;
+    }
+    if (!isOptionalEmail(this.correo())) {
+      this.notify.warning('El correo no es válido.');
+      return;
+    }
+    this.saveMutation.mutate();
+  }
+
+  protected confirmDelete() {
+    const row = this.deleteTarget();
+    this.deleteTarget.set(null);
+    if (row) this.deleteMutation.mutate(row.id);
+  }
+
   protected readonly saveMutation = injectMutation(() => ({
     mutationFn: () => {
       const body = {
-        ruc: this.ruc().trim(),
         razonSocial: this.razonSocial().trim(),
         nombreComercial: this.nombreComercial().trim() || undefined,
         telefono: this.telefono().trim() || undefined,
         correo: this.correo().trim() || undefined,
       };
       const edit = this.editing();
+      // El RUC no se puede cambiar: UpdateShippingCarrierDto lo rechaza.
       return edit
         ? firstValueFrom(this.api.updateShippingCarrier(edit.id, body))
-        : firstValueFrom(this.api.createShippingCarrier(body));
+        : firstValueFrom(this.api.createShippingCarrier({ ...body, ruc: this.ruc().trim() }));
     },
     onSuccess: () => {
       this.notify.success('Transportista guardado');

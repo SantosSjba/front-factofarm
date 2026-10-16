@@ -2,11 +2,13 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { isValidRuc } from '../../../../core/utils/peru-documents';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
@@ -23,6 +25,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
     FormSelectComponent,
     LabelComponent,
   ],
@@ -31,19 +34,33 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 
     <app-component-card title="Percepciones SUNAT" [loading]="recordsQuery.isPending()">
       <div class="mb-4 flex flex-wrap items-end gap-4">
-        <app-input-field placeholder="Periodo YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
+        <app-form-field label="Periodo">
+          <app-input-field type="month" placeholder="YYYY-MM" ariaLabel="Periodo YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
+        </app-form-field>
         <app-button variant="outline" (btnClick)="recordsQuery.refetch()">Actualizar</app-button>
       </div>
 
       <div class="mb-6 grid gap-4 md:grid-cols-3">
-        <app-input-field placeholder="Nombre cliente" [value]="partyNombre()" (valueChange)="partyNombre.set($event + '')" />
-        <app-input-field placeholder="Tipo doc (1=DNI, 6=RUC)" [value]="partyDocType()" (valueChange)="partyDocType.set($event + '')" />
-        <app-input-field placeholder="Número documento" [value]="partyDocNumber()" (valueChange)="partyDocNumber.set($event + '')" />
-        <app-input-field placeholder="Serie comprobante ref." [value]="refSerie()" (valueChange)="refSerie.set($event + '')" />
-        <app-input-field placeholder="Número comprobante ref." [value]="refNumero()" (valueChange)="refNumero.set($event + '')" />
-        <app-input-field placeholder="Base imponible" [value]="baseImponible()" (valueChange)="onBaseChange($event + '')" />
+        <app-form-field label="Nombre del cliente" required>
+          <app-input-field [value]="partyNombre()" (valueChange)="partyNombre.set($event + '')" [maxLength]="200" />
+        </app-form-field>
+        <app-form-field label="Tipo doc. (SUNAT)" required helpText="Catálogo 06 SUNAT: 1 = DNI, 6 = RUC, 4 = CE, 7 = Pasaporte.">
+          <app-input-field placeholder="1=DNI, 6=RUC" [value]="partyDocType()" (valueChange)="partyDocType.set($event + '')" [maxLength]="20" />
+        </app-form-field>
+        <app-form-field label="Número documento" required>
+          <app-input-field [value]="partyDocNumber()" (valueChange)="partyDocNumber.set($event + '')" [maxLength]="20" />
+        </app-form-field>
+        <app-form-field label="Serie comprobante ref.">
+          <app-input-field placeholder="F001" [value]="refSerie()" (valueChange)="refSerie.set($event + '')" [maxLength]="10" />
+        </app-form-field>
+        <app-form-field label="Número comprobante ref.">
+          <app-input-field [value]="refNumero()" (valueChange)="refNumero.set($event + '')" [maxLength]="20" />
+        </app-form-field>
+        <app-form-field label="Base imponible (S/)" required>
+          <app-input-field type="number" min="0.01" [value]="baseImponible()" (valueChange)="onBaseChange($event + '')" />
+        </app-form-field>
         <div>
-          <app-label>Régimen</app-label>
+          <app-label required>Régimen</app-label>
           <app-form-select
             placeholder="Seleccione tasa"
             [options]="regimenOptions()"
@@ -51,7 +68,9 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
             (valueChange)="onRegimenChange($event)"
           />
         </div>
-        <app-input-field placeholder="Monto calculado" [value]="montoCalculado()" [disabled]="true" />
+        <app-form-field label="Monto calculado">
+          <app-input-field [value]="montoCalculado()" [disabled]="true" />
+        </app-form-field>
         @if (specialDocumentBlockedMessage(); as blocked) {
           <p class="md:col-span-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
             {{ blocked }}
@@ -198,6 +217,19 @@ export class PercepcionesComponent {
   protected emitPerception() {
     if (!this.partyNombre().trim() || !this.partyDocNumber().trim() || !this.baseImponible().trim()) {
       this.notify.warning('Complete cliente, documento y base imponible');
+      return;
+    }
+    if (!this.partyDocType().trim()) {
+      this.notify.warning('Indique el tipo de documento SUNAT del cliente (ej. 6 = RUC).');
+      return;
+    }
+    if (this.partyDocType().trim() === '6' && !isValidRuc(this.partyDocNumber().trim())) {
+      this.notify.warning('El RUC del cliente no es válido.');
+      return;
+    }
+    const base = Number(this.baseImponible());
+    if (!Number.isFinite(base) || base < 0.01) {
+      this.notify.warning('La base imponible debe ser un número mayor a 0.');
       return;
     }
     if (!this.regimenCodigo() && this.selectedTasa() <= 0) {

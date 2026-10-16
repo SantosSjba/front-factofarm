@@ -22,7 +22,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'Exportar formatos PLE' }]" />
     <app-component-card title="Libros electrónicos SUNAT (TXT)">
       <div class="mb-4 flex flex-wrap items-end gap-4">
-        <app-input-field placeholder="Periodo YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
+        <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
       </div>
       <div class="flex flex-wrap gap-3">
         <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportPle('14.1')">PLE 14.1 Ventas</app-button>
@@ -34,7 +34,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
 
     <app-component-card class="mt-6" title="Libros SUNAT (Excel RVIE)">
       <div class="mb-4 flex flex-wrap items-end gap-4">
-        <app-input-field placeholder="Periodo YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
+        <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
       </div>
       <div class="flex flex-wrap gap-3">
         <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportSunatBook('sales')">

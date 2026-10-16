@@ -16,6 +16,7 @@ export class DatePickerComponent implements AfterViewInit, OnDestroy {
   @Input() mode: 'single' | 'multiple' | 'range' | 'time' = 'single';
   @Input() defaultDate?: string | Date | string[] | Date[];
   @Input() label?: string;
+  @Input() required = false;
   @Input() placeholder?: string;
   @Output() dateChange = new EventEmitter<any>();
 

@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { isOptionalNumberAtLeast } from '../../../../core/utils/form-validators';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
@@ -13,6 +14,8 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/common/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { ShippingVehicleDto } from '../../models/directory.models';
@@ -32,6 +35,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
+    ConfirmDialogComponent,
     FormSelectComponent,
     HasPermissionDirective,
   ],
@@ -70,7 +75,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                     [iconOnly]="true"
                     startIconName="mdi:trash-can-outline"
                     tooltip="Eliminar"
-                    (btnClick)="deleteMutation.mutate(row.id)"
+                    (btnClick)="deleteTarget.set(row)"
                   />
                 </div>
               </td>
@@ -85,14 +90,34 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     <app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold">{{ editing() ? 'Editar vehículo' : 'Nuevo vehículo' }}</h3>
-        <app-form-select [options]="carrierOptions()" [value]="carrierId()" (valueChange)="carrierId.set('' + $event)" />
-        @if (!editing()) { <app-input-field [value]="placa()" (valueChange)="placa.set('' + $event)" placeholder="Placa" /> }
-        <app-input-field [value]="marca()" (valueChange)="marca.set('' + $event)" placeholder="Marca" />
-        <app-input-field [value]="modelo()" (valueChange)="modelo.set('' + $event)" placeholder="Modelo" />
-        <app-input-field [value]="capacidadKg()" (valueChange)="capacidadKg.set('' + $event)" placeholder="Capacidad kg" />
-        <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+        <app-form-field label="Transportista">
+          <app-form-select [options]="carrierOptions()" [value]="carrierId()" (valueChange)="carrierId.set('' + $event)" />
+        </app-form-field>
+        @if (!editing()) {
+          <app-form-field label="Placa" required>
+            <app-input-field [value]="placa()" (valueChange)="placa.set(('' + $event).toUpperCase())" placeholder="ABC-123" [maxLength]="20" />
+          </app-form-field>
+        }
+        <app-form-field label="Marca">
+          <app-input-field [value]="marca()" (valueChange)="marca.set('' + $event)" [maxLength]="80" />
+        </app-form-field>
+        <app-form-field label="Modelo">
+          <app-input-field [value]="modelo()" (valueChange)="modelo.set('' + $event)" [maxLength]="80" />
+        </app-form-field>
+        <app-form-field label="Capacidad (kg)">
+          <app-input-field type="number" min="0" [value]="capacidadKg()" (valueChange)="capacidadKg.set('' + $event)" />
+        </app-form-field>
+        <app-button variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
       </div>
     </app-modal>
+    <app-confirm-dialog
+      [open]="!!deleteTarget()"
+      title="Eliminar vehículo"
+      [message]="'¿Desea eliminar el vehículo ' + (deleteTarget()?.placa ?? '') + '?'"
+      confirmLabel="Eliminar"
+      (cancelled)="deleteTarget.set(null)"
+      (confirmed)="confirmDelete()"
+    />
   `,
 })
 export class VehiculosComponent {
@@ -154,6 +179,26 @@ export class VehiculosComponent {
     this.modelo.set(row.modelo ?? '');
     this.capacidadKg.set(row.capacidadKg ?? '');
     this.modalOpen.set(true);
+  }
+
+  protected readonly deleteTarget = signal<ShippingVehicleDto | null>(null);
+
+  protected submit() {
+    if (!this.editing() && !this.placa().trim()) {
+      this.notify.warning('Ingrese la placa del vehículo.');
+      return;
+    }
+    if (!isOptionalNumberAtLeast(this.capacidadKg(), 0)) {
+      this.notify.warning('La capacidad debe ser un número mayor o igual a 0.');
+      return;
+    }
+    this.saveMutation.mutate();
+  }
+
+  protected confirmDelete() {
+    const row = this.deleteTarget();
+    this.deleteTarget.set(null);
+    if (row) this.deleteMutation.mutate(row.id);
   }
 
   protected readonly saveMutation = injectMutation(() => ({

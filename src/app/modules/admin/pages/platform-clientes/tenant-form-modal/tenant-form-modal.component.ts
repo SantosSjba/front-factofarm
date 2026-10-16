@@ -11,6 +11,7 @@ import { FormStackComponent } from '../../../../../shared/components/form/form-s
 import { HelpHintComponent } from '../../../../../shared/components/ui/help-hint/help-hint.component';
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
+import { validateTenantFields } from '../tenant-fields.validation';
 import { DirectoryApiService } from '../../../services/directory-api.service';
 import type { TenantPlanDto } from '../../../models/directory.models';
 
@@ -92,6 +93,11 @@ export class TenantFormModalComponent {
   protected submit(): void {
     if (!this.nombre().trim()) {
       this.notify.warning('Indique el nombre del cliente');
+      return;
+    }
+    const tenantError = validateTenantFields(this.nombre(), this.ruc(), this.contactEmail());
+    if (tenantError) {
+      this.notify.warning(tenantError);
       return;
     }
     this.createMutation.mutate();

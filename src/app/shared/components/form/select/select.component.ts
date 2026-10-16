@@ -13,7 +13,7 @@ export interface Option {
 })
 export class SelectComponent implements OnInit {
   @Input() options: Option[] = [];
-  @Input() placeholder: string = 'Select an option';
+  @Input() placeholder: string = 'Seleccione una opción';
   @Input() className: string = '';
   @Input() defaultValue: string = '';
   @Input() value: string = '';

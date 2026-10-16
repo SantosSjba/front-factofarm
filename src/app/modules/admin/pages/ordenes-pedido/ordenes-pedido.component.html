@@ -137,8 +137,8 @@
 
       @if (order.estado !== 'CANCELADO' && order.estado !== 'ENTREGADO') {
         <div>
-          <app-label>Motivo cancelación</app-label>
-          <app-input-field [value]="cancelReason()" (valueChange)="cancelReason.set('' + $event)" />
+          <app-label required>Motivo cancelación</app-label>
+          <app-input-field [maxLength]="500" [value]="cancelReason()" (valueChange)="cancelReason.set('' + $event)" />
           <app-button variant="outline" className="mt-2" (btnClick)="cancelOrder(order)">
             Cancelar pedido
           </app-button>
@@ -165,7 +165,7 @@
 <app-modal title="Nuevo pedido delivery" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
   <div class="grid gap-3 sm:grid-cols-2">
     <div class="sm:col-span-2">
-      <app-label>Almacén</app-label>
+      <app-label required>Almacén</app-label>
       <app-form-select
         [options]="warehouseOptions()"
         [value]="warehouseId()"
@@ -173,32 +173,32 @@
       />
     </div>
     <div>
-      <app-label>Nombre cliente</app-label>
-      <app-input-field [value]="clienteNombre()" (valueChange)="clienteNombre.set('' + $event)" />
+      <app-label required>Nombre cliente</app-label>
+      <app-input-field [maxLength]="200" [value]="clienteNombre()" (valueChange)="clienteNombre.set('' + $event)" />
     </div>
     <div>
-      <app-label>Teléfono</app-label>
-      <app-input-field [value]="clienteTelefono()" (valueChange)="clienteTelefono.set('' + $event)" />
+      <app-label required>Teléfono</app-label>
+      <app-input-field [maxLength]="30" inputMode="tel" [value]="clienteTelefono()" (valueChange)="clienteTelefono.set('' + $event)" />
     </div>
     <div>
       <app-label>Email</app-label>
-      <app-input-field [value]="clienteEmail()" (valueChange)="clienteEmail.set('' + $event)" />
+      <app-input-field type="email" [maxLength]="120" [value]="clienteEmail()" (valueChange)="clienteEmail.set('' + $event)" />
     </div>
     <div>
       <app-label>Costo delivery (S/)</app-label>
-      <app-input-field type="number" [value]="costoDelivery()" (valueChange)="costoDelivery.set(+$event)" />
+      <app-input-field min="0" type="number" [value]="costoDelivery()" (valueChange)="costoDelivery.set(+$event)" />
     </div>
     <div class="sm:col-span-2">
-      <app-label>Dirección de entrega</app-label>
-      <app-input-field [value]="direccionEntrega()" (valueChange)="direccionEntrega.set('' + $event)" />
+      <app-label required>Dirección de entrega</app-label>
+      <app-input-field [maxLength]="500" [value]="direccionEntrega()" (valueChange)="direccionEntrega.set('' + $event)" />
     </div>
     <div>
       <app-label>Distrito</app-label>
-      <app-input-field [value]="distritoEntrega()" (valueChange)="distritoEntrega.set('' + $event)" />
+      <app-input-field [maxLength]="120" [value]="distritoEntrega()" (valueChange)="distritoEntrega.set('' + $event)" />
     </div>
     <div>
       <app-label>Referencia</app-label>
-      <app-input-field [value]="referenciaDireccion()" (valueChange)="referenciaDireccion.set('' + $event)" />
+      <app-input-field [maxLength]="200" [value]="referenciaDireccion()" (valueChange)="referenciaDireccion.set('' + $event)" />
     </div>
     <div class="sm:col-span-2 flex gap-2">
       <app-input-field
@@ -238,8 +238,8 @@
     <div class="sm:col-span-2">
       <app-button
         variant="primary"
-        [disabled]="!warehouseId() || !clienteNombre() || !clienteTelefono() || !direccionEntrega() || lines().length === 0 || createMutation.isPending()" [loading]="createMutation.isPending()"
-        (btnClick)="createMutation.mutate()"
+        [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()"
+        (btnClick)="submitCreate()"
       >
         Crear pedido
       </app-button>

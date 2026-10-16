@@ -17,8 +17,8 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'Exportar reporte' }]" />
     <app-component-card title="Exportación contable (Contasis / SISCONT / Excel)" className="mt-4">
       <div class="mb-4 flex flex-wrap items-end gap-4">
-        <app-input-field type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
-        <app-input-field type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
+        <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
+        <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
       </div>
       <div class="flex flex-wrap gap-3">
         <app-button variant="outline" [disabled]="exporting()" (btnClick)="export('contasis')">Contasis</app-button>

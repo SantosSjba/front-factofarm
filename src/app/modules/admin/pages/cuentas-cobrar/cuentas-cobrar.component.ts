@@ -12,6 +12,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
@@ -31,6 +32,7 @@ import type { AccountReceivableListItemDto } from '../../models/directory.models
     PaginationComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
     ModalComponent,
   ],
   templateUrl: './cuentas-cobrar.component.html' })
@@ -59,6 +61,22 @@ export class CuentasCobrarComponent {
 
   protected parseNum(value: unknown): number {
     return Number(value) || 0;
+  }
+
+  protected submitPay() {
+    const row = this.selectedAr();
+    if (!row) return;
+    const amount = this.payAmount();
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.notify.warning('El monto del cobro debe ser mayor a 0.');
+      return;
+    }
+    const saldo = Number.parseFloat(row.saldo);
+    if (Number.isFinite(saldo) && amount > saldo + 0.0001) {
+      this.notify.warning(`El monto no puede superar el saldo pendiente (S/ ${saldo.toFixed(2)}).`);
+      return;
+    }
+    this.payMutation.mutate();
   }
 
   protected readonly payMutation = injectMutation(() => ({

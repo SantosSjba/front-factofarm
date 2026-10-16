@@ -152,8 +152,10 @@
       />
     </div>
     <div>
-      <app-label>Nombre</app-label>
+      <app-label for="categoria-nombre" required>Nombre</app-label>
       <app-input-field
+        id="categoria-nombre"
+        [maxLength]="120"
         className="mt-2"
         [value]="nombre()"
         (valueChange)="nombre.set($event + '')"

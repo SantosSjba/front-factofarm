@@ -13,6 +13,7 @@ import { PaginationComponent } from '../../../../shared/components/common/pagina
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
@@ -32,6 +33,7 @@ import { FilesApiService } from '../../../../core/services/files-api.service';
     PaginationComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
     FormSelectComponent,
     ModalComponent,
   ],
@@ -94,11 +96,51 @@ export class RecetasComponent {
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la receta')) }));
 
+  protected submitCreate() {
+    if (!this.customerId()) {
+      this.notify.warning('Busque y seleccione al paciente.');
+      return;
+    }
+    if (this.draftItems().length === 0) {
+      this.notify.warning('Agregue al menos un medicamento a la receta.');
+      return;
+    }
+    const bad = this.draftItems().find((i) => !Number.isFinite(i.cantidad) || i.cantidad <= 0);
+    if (bad) {
+      this.notify.warning(`La cantidad de ${bad.label} debe ser mayor a 0.`);
+      return;
+    }
+    this.createMutation.mutate();
+  }
+
+  protected onCustomerSearchChange(value: string) {
+    this.customerSearch.set(value);
+    // Si el usuario cambia el texto, el paciente elegido deja de ser válido.
+    this.customerId.set('');
+  }
+
+  protected updateItemQty(productId: string, cantidad: number) {
+    this.draftItems.update((rows) => rows.map((r) => (r.productId === productId ? { ...r, cantidad } : r)));
+  }
+
+  protected removeItem(productId: string) {
+    this.draftItems.update((rows) => rows.filter((r) => r.productId !== productId));
+  }
+
   protected async searchCustomers() {
     const search = this.customerSearch().trim();
-    if (!search) return;
-    const res = await firstValueFrom(this.api.listCustomers({ search, page: 1, pageSize: 8 }));
-    this.customerOptions.set('items' in res ? res.items : res);
+    if (!search) {
+      this.notify.warning('Escriba el nombre o documento del paciente para buscar.');
+      return;
+    }
+    try {
+      const res = await firstValueFrom(this.api.listCustomers({ search, page: 1, pageSize: 8 }));
+      const items = 'items' in res ? res.items : res;
+      this.customerOptions.set(items);
+      if (items.length === 0) this.notify.info('No se encontraron clientes con ese criterio.');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo buscar clientes.'));
+    }
   }
 
   protected selectCustomer(c: CustomerItemDto) {
@@ -110,11 +152,20 @@ export class RecetasComponent {
   protected async searchProducts() {
     const search = this.productSearch().trim();
     if (!search) return;
-    const res = await firstValueFrom(this.api.listProducts({ search, page: 1, pageSize: 8 }));
-    this.productOptions.set('items' in res ? res.items : res);
+    try {
+      const res = await firstValueFrom(this.api.listProducts({ search, page: 1, pageSize: 8 }));
+      this.productOptions.set('items' in res ? res.items : res);
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo buscar medicamentos.'));
+    }
   }
 
   protected addItem(p: ProductListItemDto) {
+    if (this.draftItems().some((r) => r.productId === p.id)) {
+      this.notify.info(`${p.nombre} ya está en la receta; ajuste la cantidad.`);
+      this.productOptions.set([]);
+      return;
+    }
     this.draftItems.update((rows) => [
       ...rows,
       { productId: p.id, label: p.nombre, cantidad: this.draftQty() },

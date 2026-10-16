@@ -31,8 +31,8 @@
       <app-form-field
         label="Nombre del establecimiento"
         helpText="Nombre de la primera sede que se creará junto al cliente."
-      >
-        <app-input-field
+       required>
+        <app-input-field [maxLength]="200"
           [value]="establishmentNombre()"
           (valueChange)="establishmentNombre.set('' + $event)"
         />

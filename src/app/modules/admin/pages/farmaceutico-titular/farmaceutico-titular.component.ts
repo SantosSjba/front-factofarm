@@ -7,6 +7,7 @@ import { BreadcrumbInlineComponent } from '../../../../shared/components/common/
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -17,14 +18,21 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'Farmacéutico titular' }]" />
     <app-component-card title="Licencias farmacéuticas (CQP)" [loading]="listQuery.isPending()" [error]="listQuery.isError() ? 'No se pudieron cargar las licencias' : null" (retry)="listQuery.refetch()">
       <div class="mb-6 grid gap-4 md:grid-cols-3">
-        <app-input-field ariaLabel="Colegiatura CQP" placeholder="CQP" [value]="colegiatura()" (valueChange)="colegiatura.set($event + '')" />
-        <app-input-field ariaLabel="Nombre completo" placeholder="Nombre completo" [value]="fullName()" (valueChange)="fullName.set($event + '')" />
-        <app-input-field type="date" ariaLabel="Vigencia hasta" [value]="vigencia()" (valueChange)="vigencia.set($event + '')" />
+        <app-form-field label="Colegiatura CQP" required>
+          <app-input-field [value]="colegiatura()" (valueChange)="colegiatura.set($event + '')" [maxLength]="20" />
+        </app-form-field>
+        <app-form-field label="Nombre completo" required>
+          <app-input-field [value]="fullName()" (valueChange)="fullName.set($event + '')" [maxLength]="200" />
+        </app-form-field>
+        <app-form-field label="Vigencia hasta">
+          <app-input-field type="date" ariaLabel="Vigencia hasta" [value]="vigencia()" (valueChange)="vigencia.set($event + '')" />
+        </app-form-field>
       </div>
       <app-button [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="create()">Registrar licencia</app-button>
 

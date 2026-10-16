@@ -160,8 +160,8 @@
 
   <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-8 sm:py-5">
     <div>
-      <app-label>Razón social</app-label>
-      <app-input-field
+      <app-label required>Razón social</app-label>
+      <app-input-field [maxLength]="300"
         className="mt-2"
         [value]="razonSocial()"
         (valueChange)="razonSocial.set($event + '')"
@@ -169,7 +169,7 @@
     </div>
     <div>
       <app-label>Nombre comercial</app-label>
-      <app-input-field
+      <app-input-field [maxLength]="300"
         className="mt-2"
         [value]="nombreComercial()"
         (valueChange)="nombreComercial.set($event + '')"
@@ -177,7 +177,7 @@
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
-        <app-label>Tipo de documento</app-label>
+        <app-label required>Tipo de documento</app-label>
         <app-form-select
           className="mt-2"
           [value]="tipoDocumento()"
@@ -186,8 +186,8 @@
         />
       </div>
       <div>
-        <app-label>Número de documento</app-label>
-        <app-input-field
+        <app-label required>Número de documento</app-label>
+        <app-input-field [maxLength]="20"
           className="mt-2"
           [value]="numeroDocumento()"
           (valueChange)="numeroDocumento.set($event + '')"
@@ -197,7 +197,7 @@
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <app-label>Teléfono</app-label>
-        <app-input-field
+        <app-input-field [maxLength]="30"
           className="mt-2"
           [value]="telefono()"
           (valueChange)="telefono.set($event + '')"
@@ -205,7 +205,7 @@
       </div>
       <div>
         <app-label>Correo electrónico</app-label>
-        <app-input-field
+        <app-input-field type="email" [maxLength]="200"
           className="mt-2"
           [value]="correoElectronico()"
           (valueChange)="correoElectronico.set($event + '')"
@@ -215,7 +215,7 @@
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <app-label>Contacto</app-label>
-        <app-input-field
+        <app-input-field [maxLength]="200"
           className="mt-2"
           [value]="contactoNombre()"
           (valueChange)="contactoNombre.set($event + '')"
@@ -223,7 +223,7 @@
       </div>
       <div>
         <app-label>Días de crédito</app-label>
-        <app-input-field
+        <app-input-field min="0" step="1"
           className="mt-2"
           type="number"
           [value]="diasCredito()"
@@ -247,15 +247,15 @@
     </div>
     <div>
       <app-label>Dirección</app-label>
-      <app-input-field className="mt-2" [value]="direccion()" (valueChange)="direccion.set($event + '')" />
+      <app-input-field [maxLength]="500" className="mt-2" [value]="direccion()" (valueChange)="direccion.set($event + '')" />
     </div>
     <div>
       <app-label>Condiciones de pago</app-label>
-      <app-input-field className="mt-2" [value]="condicionesPago()" (valueChange)="condicionesPago.set($event + '')" />
+      <app-input-field [maxLength]="500" className="mt-2" [value]="condicionesPago()" (valueChange)="condicionesPago.set($event + '')" />
     </div>
     <div>
       <app-label>Observaciones</app-label>
-      <app-input-field className="mt-2" [value]="observaciones()" (valueChange)="observaciones.set($event + '')" />
+      <app-input-field [maxLength]="2000" className="mt-2" [value]="observaciones()" (valueChange)="observaciones.set($event + '')" />
     </div>
     <div class="flex items-center gap-2">
       <app-checkbox [checked]="habilitado()" (checkedChange)="habilitado.set($event)" />
@@ -354,23 +354,27 @@
           <app-form-select
             [value]="newProductId()"
             [options]="productSelectOptions()"
-            placeholder="Producto"
+            placeholder="Producto *"
             (valueChange)="newProductId.set($event)"
           />
           <app-input-field
             placeholder="Cód. proveedor"
+            [maxLength]="60"
             [value]="newCodigoProveedor()"
             (valueChange)="newCodigoProveedor.set($event + '')"
           />
           <app-input-field
             type="number"
             placeholder="Precio compra"
+            min="0"
             [value]="newPrecioCompra()"
             (valueChange)="newPrecioCompra.set($event + '')"
           />
           <app-input-field
             type="number"
             placeholder="Plazo días"
+            min="0"
+            step="1"
             [value]="newPlazoDias()"
             (valueChange)="newPlazoDias.set($event + '')"
           />

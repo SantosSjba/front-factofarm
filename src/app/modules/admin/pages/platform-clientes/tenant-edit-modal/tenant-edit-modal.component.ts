@@ -13,6 +13,7 @@ import { PermissionMenuTreeComponent } from '../../../../../shared/components/ui
 import { HelpHintComponent } from '../../../../../shared/components/ui/help-hint/help-hint.component';
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
+import { validateTenantFields } from '../tenant-fields.validation';
 import { DirectoryApiService } from '../../../services/directory-api.service';
 import type { PermissionMenuNodeDto, TenantDetailDto, TenantPlanDto } from '../../../models/directory.models';
 
@@ -171,6 +172,11 @@ export class TenantEditModalComponent {
       this.notify.warning('Indique el nombre del cliente');
       return;
     }
+    const tenantError = validateTenantFields(this.nombre(), this.ruc(), this.contactEmail());
+    if (tenantError) {
+      this.notify.warning(tenantError);
+      return;
+    }
     if (this.selectedNavCodes().size === 0 && !this.applyPlanDefaults()) {
       this.notify.warning('Seleccione al menos un módulo habilitado');
       return;
@@ -188,7 +194,8 @@ export class TenantEditModalComponent {
     }
     this.api.getPermissionMenuTrees().subscribe({
       next: (trees) => this.menuTrees.set(trees ?? []),
-      error: () => this.notify.error('No se pudo cargar el catálogo de módulos'),
+      error: (err: unknown) =>
+        this.notify.error('No se pudo cargar el catálogo de módulos', httpErrorMessage(err, 'Intente nuevamente.')),
     });
   }
 }

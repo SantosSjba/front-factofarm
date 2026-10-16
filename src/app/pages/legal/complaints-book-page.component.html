@@ -103,7 +103,7 @@
 
       <form (submit)="onSubmit($event)">
         <app-form-stack>
-          <app-form-field label="Tipo" for="complaint-tipo">
+          <app-form-field label="Tipo" for="complaint-tipo" required>
             <app-form-select
               id="complaint-tipo"
               [options]="tipoOptions"
@@ -114,16 +114,16 @@
           </app-form-field>
 
           <app-form-row>
-            <app-form-field label="Nombres y apellidos" for="complaint-nombre">
-              <app-input-field
+            <app-form-field label="Nombres y apellidos" for="complaint-nombre" required>
+              <app-input-field [maxLength]="200"
                 id="complaint-nombre"
                 [value]="nombresApellidos()"
                 (valueChange)="nombresApellidos.set($event + '')"
                 [isRequired]="true"
               />
             </app-form-field>
-            <app-form-field label="Documento de identidad (DNI / CE)" for="complaint-doc">
-              <app-input-field
+            <app-form-field label="Documento de identidad (DNI / CE)" for="complaint-doc" required>
+              <app-input-field [maxLength]="20"
                 id="complaint-doc"
                 [value]="documentoIdentidad()"
                 (valueChange)="documentoIdentidad.set($event + '')"
@@ -132,8 +132,8 @@
             </app-form-field>
           </app-form-row>
 
-          <app-form-field label="Domicilio" for="complaint-domicilio">
-            <app-input-field
+          <app-form-field label="Domicilio" for="complaint-domicilio" required>
+            <app-input-field [maxLength]="300"
               id="complaint-domicilio"
               [value]="domicilio()"
               (valueChange)="domicilio.set($event + '')"
@@ -142,8 +142,8 @@
           </app-form-field>
 
           <app-form-row>
-            <app-form-field label="Teléfono" for="complaint-telefono">
-              <app-input-field
+            <app-form-field label="Teléfono" for="complaint-telefono" required>
+              <app-input-field [maxLength]="30"
                 id="complaint-telefono"
                 type="tel"
                 [value]="telefono()"
@@ -152,7 +152,7 @@
               />
             </app-form-field>
             <app-form-field label="Correo electrónico (opcional)" for="complaint-email">
-              <app-input-field
+              <app-input-field [maxLength]="120"
                 id="complaint-email"
                 type="email"
                 [value]="email()"
@@ -162,8 +162,8 @@
           </app-form-row>
 
           <app-form-row>
-            <app-form-field label="Bien contratado (producto o servicio)" for="complaint-bien">
-              <app-input-field
+            <app-form-field label="Bien contratado (producto o servicio)" for="complaint-bien" required>
+              <app-input-field [maxLength]="300"
                 id="complaint-bien"
                 placeholder="Ej. Suscripción FactoFarm / soporte técnico"
                 [value]="bienContratado()"
@@ -172,7 +172,7 @@
               />
             </app-form-field>
             <app-form-field label="Monto reclamado (opcional)" for="complaint-monto">
-              <app-input-field
+              <app-input-field [maxLength]="40"
                 id="complaint-monto"
                 placeholder="Ej. S/ 150.00"
                 [value]="montoReclamado()"
@@ -181,12 +181,12 @@
             </app-form-field>
           </app-form-row>
 
-          <app-form-field label="Detalle del reclamo o queja" for="complaint-detalle">
-            <app-text-area [rows]="4" [value]="detalle()" (valueChange)="detalle.set($event)" />
+          <app-form-field label="Detalle del reclamo o queja" for="complaint-detalle" required>
+            <app-text-area [maxLength]="4000" id="complaint-detalle" [rows]="4" [value]="detalle()" (valueChange)="detalle.set($event)" />
           </app-form-field>
 
-          <app-form-field label="Pedido del consumidor" for="complaint-pedido">
-            <app-text-area
+          <app-form-field label="Pedido del consumidor" for="complaint-pedido" required>
+            <app-text-area [maxLength]="2000" id="complaint-pedido"
               placeholder="Indique qué solución solicita"
               [rows]="3"
               [value]="pedido()"

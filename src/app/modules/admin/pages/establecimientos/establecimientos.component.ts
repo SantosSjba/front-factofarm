@@ -4,6 +4,11 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import {
+  isOptionalEmail,
+  isOptionalNumberAtLeast,
+  isOptionalUrl,
+} from '../../../../core/utils/form-validators';
 import { establishmentQueryKeys } from '../../../../core/query/establishment-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
@@ -348,6 +353,18 @@ export class EstablecimientosComponent {
       this.notify.warning('Número Plin inválido: use entre 9 y 15 dígitos.');
       return;
     }
+    if (!isOptionalEmail(this.correoContacto())) {
+      this.notify.warning('Ingrese un correo de contacto válido.');
+      return;
+    }
+    if (!isOptionalUrl(this.direccionWeb())) {
+      this.notify.warning('Ingrese una dirección web válida (ej. https://mifarmacia.pe).');
+      return;
+    }
+    if (!isOptionalNumberAtLeast(this.adjustmentQtyThreshold(), 0)) {
+      this.notify.warning('El umbral de ajuste debe ser un número mayor o igual a 0.');
+      return;
+    }
 
     const body: CreateEstablishmentRequest = {
       nombre: this.nombre().trim(),
@@ -440,6 +457,10 @@ export class EstablecimientosComponent {
     }
     if (!numero) {
       this.notify.warning('Ingrese el número de serie.');
+      return;
+    }
+    if (!/^[A-Z0-9-]+$/.test(numero)) {
+      this.notify.warning('La serie solo puede contener letras mayúsculas, números y guiones (ej. F001).');
       return;
     }
 

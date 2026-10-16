@@ -55,7 +55,7 @@
                   [iconOnly]="true"
                   startIconName="mdi:trash-can-outline"
                   tooltip="Eliminar"
-                  (btnClick)="deleteMutation.mutate(row.id)"
+                  (btnClick)="deleteTarget.set(row)"
                 />
               }
             </div>
@@ -77,10 +77,27 @@
 <app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
   <div class="space-y-3 p-6">
     <h3 class="text-lg font-semibold">{{ editing() ? 'Editar médico' : 'Nuevo médico' }}</h3>
-    <app-input-field [value]="cmp()" (valueChange)="cmp.set('' + $event)" placeholder="CMP" [disabled]="!!editing()" />
-    <app-input-field [value]="nombres()" (valueChange)="nombres.set('' + $event)" placeholder="Nombres" />
-    <app-input-field [value]="apellidos()" (valueChange)="apellidos.set('' + $event)" placeholder="Apellidos" />
-    <app-input-field [value]="especialidad()" (valueChange)="especialidad.set('' + $event)" placeholder="Especialidad" />
-    <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+    <app-form-field label="CMP" required helpText="Número de colegiatura del Colegio Médico del Perú.">
+      <app-input-field [value]="cmp()" (valueChange)="cmp.set('' + $event)" [maxLength]="20" [disabled]="!!editing()" />
+    </app-form-field>
+    <app-form-field label="Nombres" required>
+      <app-input-field [value]="nombres()" (valueChange)="nombres.set('' + $event)" [maxLength]="120" />
+    </app-form-field>
+    <app-form-field label="Apellidos" required>
+      <app-input-field [value]="apellidos()" (valueChange)="apellidos.set('' + $event)" [maxLength]="120" />
+    </app-form-field>
+    <app-form-field label="Especialidad">
+      <app-input-field [value]="especialidad()" (valueChange)="especialidad.set('' + $event)" [maxLength]="120" />
+    </app-form-field>
+    <app-button variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
   </div>
 </app-modal>
+
+<app-confirm-dialog
+  [open]="!!deleteTarget()"
+  title="Eliminar médico"
+  [message]="'¿Desea eliminar al médico ' + (deleteTarget()?.nombres ?? '') + ' ' + (deleteTarget()?.apellidos ?? '') + '?'"
+  confirmLabel="Eliminar"
+  (cancelled)="deleteTarget.set(null)"
+  (confirmed)="confirmDelete()"
+/>

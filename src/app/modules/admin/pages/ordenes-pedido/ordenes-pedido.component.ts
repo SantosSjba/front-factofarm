@@ -5,6 +5,7 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { isOptionalEmail } from '../../../../core/utils/form-validators';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -207,6 +208,32 @@ export class OrdenesPedidoComponent {
     }
     this.productSearch.set('');
     void this.searchProducts();
+  }
+
+  protected submitCreate() {
+    const missing = [
+      !this.warehouseId() && 'almacén',
+      !this.clienteNombre().trim() && 'nombre del cliente',
+      !this.clienteTelefono().trim() && 'teléfono',
+      !this.direccionEntrega().trim() && 'dirección de entrega',
+    ].filter(Boolean);
+    if (missing.length) {
+      this.notify.warning(`Complete los campos obligatorios: ${missing.join(', ')}.`);
+      return;
+    }
+    if (!isOptionalEmail(this.clienteEmail())) {
+      this.notify.warning('El correo del cliente no es válido.');
+      return;
+    }
+    if (!Number.isFinite(this.costoDelivery()) || this.costoDelivery() < 0) {
+      this.notify.warning('El costo de delivery debe ser un número mayor o igual a 0.');
+      return;
+    }
+    if (this.lines().length === 0) {
+      this.notify.warning('Agregue al menos un producto al pedido.');
+      return;
+    }
+    this.createMutation.mutate();
   }
 
   protected readonly createMutation = injectMutation(() => ({

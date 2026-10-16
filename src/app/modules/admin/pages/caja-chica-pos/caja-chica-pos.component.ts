@@ -118,6 +118,34 @@ export class CajaChicaPosComponent {
     void this.sessionQuery.refetch();
   }
 
+  protected submitOpen() {
+    if (!this.cashRegisterId()) {
+      this.notify.warning('Seleccione la caja que desea abrir.');
+      return;
+    }
+    if (!Number.isFinite(this.montoApertura()) || this.montoApertura() < 0) {
+      this.notify.warning('El monto inicial debe ser un número mayor o igual a 0.');
+      return;
+    }
+    this.openMutation.mutate();
+  }
+
+  protected submitMovement() {
+    if (!Number.isFinite(this.movMonto()) || this.movMonto() <= 0) {
+      this.notify.warning('El monto del movimiento debe ser mayor a 0.');
+      return;
+    }
+    this.movementMutation.mutate();
+  }
+
+  protected submitClose() {
+    if (!Number.isFinite(this.montoCierre()) || this.montoCierre() < 0) {
+      this.notify.warning('El monto físico contado debe ser un número mayor o igual a 0.');
+      return;
+    }
+    this.closeMutation.mutate();
+  }
+
   protected readonly openMutation = injectMutation(() => ({
     mutationFn: () =>
       firstValueFrom(

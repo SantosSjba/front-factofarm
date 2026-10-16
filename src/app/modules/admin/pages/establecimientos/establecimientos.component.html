@@ -133,8 +133,8 @@
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="md:col-span-2">
-        <app-label for="establecimiento-campo-1">Descripción</app-label>
-        <app-input-field id="establecimiento-campo-1"
+        <app-label for="establecimiento-campo-1" required>Descripción</app-label>
+        <app-input-field [maxLength]="200" id="establecimiento-campo-1"
           className="mt-2"
           placeholder="Oficina Principal"
           [value]="nombre()"
@@ -143,7 +143,7 @@
       </div>
       <div>
         <app-label for="establecimiento-campo-2">Código Domicilio Fiscal</app-label>
-        <app-input-field id="establecimiento-campo-2"
+        <app-input-field [maxLength]="20" id="establecimiento-campo-2"
           className="mt-2"
           placeholder="0000"
           [value]="codigo()"
@@ -191,7 +191,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label for="establecimiento-campo-7">Dirección Fiscal</app-label>
-        <app-input-field id="establecimiento-campo-7"
+        <app-input-field [maxLength]="250" id="establecimiento-campo-7"
           className="mt-2"
           [value]="direccionFiscal()"
           (valueChange)="direccionFiscal.set($event + '')"
@@ -199,7 +199,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label for="establecimiento-campo-8">Dirección Comercial</app-label>
-        <app-input-field id="establecimiento-campo-8"
+        <app-input-field [maxLength]="250" id="establecimiento-campo-8"
           className="mt-2"
           [value]="direccionComercial()"
           (valueChange)="direccionComercial.set($event + '')"
@@ -207,7 +207,7 @@
       </div>
       <div>
         <app-label for="establecimiento-campo-9">Teléfono</app-label>
-        <app-input-field id="establecimiento-campo-9"
+        <app-input-field [maxLength]="30" id="establecimiento-campo-9"
           className="mt-2"
           [value]="telefono()"
           (valueChange)="telefono.set($event + '')"
@@ -215,7 +215,7 @@
       </div>
       <div>
         <app-label for="establecimiento-campo-10">Correo de contacto</app-label>
-        <app-input-field id="establecimiento-campo-10"
+        <app-input-field type="email" [maxLength]="120" id="establecimiento-campo-10"
           type="email"
           className="mt-2"
           [value]="correoContacto()"
@@ -224,7 +224,7 @@
       </div>
       <div>
         <app-label for="establecimiento-campo-11">Dirección web</app-label>
-        <app-input-field id="establecimiento-campo-11"
+        <app-input-field [maxLength]="250" id="establecimiento-campo-11"
           className="mt-2"
           [value]="direccionWeb()"
           (valueChange)="direccionWeb.set($event + '')"
@@ -232,7 +232,7 @@
       </div>
       <div class="md:col-span-3">
         <app-label for="establecimiento-campo-12">Información adicional (Microred/Hospital)</app-label>
-        <app-input-field id="establecimiento-campo-12"
+        <app-input-field [maxLength]="250" id="establecimiento-campo-12"
           className="mt-2"
           [value]="informacionAdicional()"
           (valueChange)="informacionAdicional.set($event + '')"
@@ -240,7 +240,7 @@
       </div>
       <div>
         <app-label for="establecimiento-campo-13">URL Impresora</app-label>
-        <app-input-field id="establecimiento-campo-13"
+        <app-input-field [maxLength]="250" id="establecimiento-campo-13"
           className="mt-2"
           [value]="urlImpresora()"
           (valueChange)="urlImpresora.set($event + '')"
@@ -248,7 +248,7 @@
       </div>
       <div>
         <app-label for="establecimiento-campo-14">Nombre Impresora</app-label>
-        <app-input-field id="establecimiento-campo-14"
+        <app-input-field [maxLength]="150" id="establecimiento-campo-14"
           className="mt-2"
           [value]="nombreImpresora()"
           (valueChange)="nombreImpresora.set($event + '')"
@@ -256,7 +256,7 @@
       </div>
       <div>
         <app-label for="establecimiento-campo-15">Cliente por defecto</app-label>
-        <app-input-field id="establecimiento-campo-15"
+        <app-input-field [maxLength]="200" id="establecimiento-campo-15"
           className="mt-2"
           [value]="clienteDefault()"
           (valueChange)="clienteDefault.set($event + '')"
@@ -283,7 +283,7 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <app-label for="establecimiento-campo-16">Número Yape</app-label>
-            <app-input-field id="establecimiento-campo-16"
+            <app-input-field [maxLength]="15" inputMode="numeric" id="establecimiento-campo-16"
               className="mt-2"
               placeholder="9 dígitos, ej. 987654321"
               [value]="posYapeNumero()"
@@ -292,7 +292,7 @@
           </div>
           <div>
             <app-label for="establecimiento-campo-17">Número Plin</app-label>
-            <app-input-field id="establecimiento-campo-17"
+            <app-input-field [maxLength]="15" inputMode="numeric" id="establecimiento-campo-17"
               className="mt-2"
               placeholder="9 dígitos, ej. 912345678"
               [value]="posPlinNumero()"
@@ -325,7 +325,7 @@
           </div>
           <div>
             <app-label for="establecimiento-campo-20">Umbral ajuste (2da autorización)</app-label>
-            <app-input-field id="establecimiento-campo-20"
+            <app-input-field min="0" id="establecimiento-campo-20"
               className="mt-2"
               type="number"
               [value]="adjustmentQtyThreshold()"
@@ -463,7 +463,7 @@
 
     <div class="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12">
       <div class="md:col-span-5">
-        <app-label for="establecimiento-campo-21">Tipo de documento</app-label>
+        <app-label for="establecimiento-campo-21" required>Tipo de documento</app-label>
         <app-form-select id="establecimiento-campo-21"
           className="mt-2"
           [value]="seriesDocumentType()"
@@ -472,8 +472,8 @@
         />
       </div>
       <div class="md:col-span-3">
-        <app-label for="establecimiento-campo-22">Número</app-label>
-        <app-input-field id="establecimiento-campo-22"
+        <app-label for="establecimiento-campo-22" required>Número</app-label>
+        <app-input-field [maxLength]="20" id="establecimiento-campo-22"
           className="mt-2"
           placeholder="F001"
           [value]="seriesNumero()"

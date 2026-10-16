@@ -152,6 +152,10 @@ export class DevolucionRetiroComponent {
       this.notify.warning('Complete almacén, producto y motivo');
       return;
     }
+    if (!Number.isFinite(this.quantity()) || this.quantity() <= 0) {
+      this.notify.warning('La cantidad debe ser mayor a 0.');
+      return;
+    }
     this.dispatchMutation.mutate();
   }
 }

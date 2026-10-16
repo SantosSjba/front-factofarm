@@ -61,7 +61,7 @@
 <app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
   <app-form-stack className="p-6">
     <h3 class="text-lg font-semibold">Nueva cotización</h3>
-    <app-form-field label="Almacén">
+    <app-form-field label="Almacén" required>
       <app-form-select
         [options]="warehouseOptions()"
         [value]="warehouseId()"
@@ -92,13 +92,14 @@
       </div>
     }
     <app-form-field label="Comentario">
-      <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Opcional" />
+      <app-input-field [maxLength]="500" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Opcional" />
     </app-form-field>
     <div class="flex items-center justify-between pt-2">
       <span class="font-bold">{{ quoteTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
       <app-button
         variant="primary"
-        [disabled]="lines().length === 0 || !warehouseId()"
+        [disabled]="lines().length === 0 || !warehouseId() || createMutation.isPending()"
+        [loading]="createMutation.isPending()"
         (btnClick)="createMutation.mutate()"
       >
         Guardar

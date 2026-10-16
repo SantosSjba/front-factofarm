@@ -122,8 +122,10 @@
   </div>
 
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
-    <app-label>Descripción</app-label>
+    <app-label for="tipo-clientes-descripcion" required>Descripción</app-label>
     <app-input-field
+      id="tipo-clientes-descripcion"
+      [maxLength]="120"
       className="mt-2"
       [value]="descripcion()"
       (valueChange)="descripcion.set($event + '')"

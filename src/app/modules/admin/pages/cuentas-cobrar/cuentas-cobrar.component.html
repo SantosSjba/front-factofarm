@@ -66,9 +66,15 @@
     @if (selectedAr(); as ar) {
       <p class="text-sm text-gray-600 dark:text-gray-400">{{ ar.customer.nombre }} · Saldo: {{ ar.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
     }
-    <app-input-field type="number" [value]="payAmount()" (valueChange)="payAmount.set(parseNum($event))" placeholder="Monto" />
-    <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Método" />
-    <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" placeholder="Referencia" />
-    <app-button variant="primary" [disabled]="payMutation.isPending()" [loading]="payMutation.isPending()" (btnClick)="payMutation.mutate()">Confirmar cobro</app-button>
+    <app-form-field label="Monto (S/)" required>
+      <app-input-field type="number" min="0" [value]="payAmount()" (valueChange)="payAmount.set(parseNum($event))" placeholder="0.00" />
+    </app-form-field>
+    <app-form-field label="Método">
+      <app-input-field [value]="payMetodo()" (valueChange)="payMetodo.set('' + $event)" placeholder="Transferencia, efectivo, cheque…" [maxLength]="40" />
+    </app-form-field>
+    <app-form-field label="Referencia / N° operación">
+      <app-input-field [value]="payReferencia()" (valueChange)="payReferencia.set('' + $event)" [maxLength]="120" />
+    </app-form-field>
+    <app-button variant="primary" [disabled]="payMutation.isPending()" [loading]="payMutation.isPending()" (btnClick)="submitPay()">Confirmar cobro</app-button>
   </div>
 </app-modal>

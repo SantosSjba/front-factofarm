@@ -1,10 +1,14 @@
 import { CommonModule } from '@angular/common';
+import { LabelComponent } from '../label/label.component';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-input-field',
-  imports: [CommonModule],
+  imports: [CommonModule, LabelComponent],
   template: `
+    @if (label) {
+      <app-label [for]="id || undefined" [required]="isRequired">{{ label }}</app-label>
+    }
     <div class="relative">
       <input
         [type]="type"
@@ -16,6 +20,9 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [max]="max"
         [step]="step"
         [disabled]="disabled"
+        [attr.maxlength]="maxLength ?? null"
+        [attr.minlength]="minLength ?? null"
+        [attr.inputmode]="inputMode ?? null"
         [attr.autocomplete]="autocomplete"
         [attr.aria-label]="ariaLabel"
         [attr.aria-required]="isRequired || ariaRequired ? true : null"
@@ -48,7 +55,7 @@ export class InputFieldComponent {
   @Input() value: string | number = '';
   @Input() min?: string;
   @Input() max?: string;
-  @Input() step?: number;
+  @Input() step?: number | string;
   @Input() disabled: boolean = false;
   @Input() success: boolean = false;
   @Input() error: boolean = false;
@@ -59,6 +66,12 @@ export class InputFieldComponent {
   @Input() ariaDescribedBy?: string;
   @Input() ariaRequired = false;
   @Input() isRequired = false;
+  /** Label opcional encima del campo (con asterisco si `isRequired`). */
+  @Input() label = '';
+  /** Debe coincidir con `@MaxLength` del DTO del backend. */
+  @Input() maxLength?: number;
+  @Input() minLength?: number;
+  @Input() inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'email' | 'search' | 'url';
 
   @Output() valueChange = new EventEmitter<string | number>();
 

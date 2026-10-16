@@ -33,7 +33,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
     </app-page-toolbar>
     <app-component-card className="mt-4" title="Periodo">
       <div class="flex flex-wrap items-end gap-3">
-        <app-input-field placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
+        <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
         <app-button variant="primary" (btnClick)="summaryQuery.refetch()">Consultar</app-button>
         <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportPle()">Exportar PLE 8.1</app-button>
       </div>

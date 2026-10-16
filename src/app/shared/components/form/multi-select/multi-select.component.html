@@ -1,6 +1,9 @@
 <div class="w-full">
   <span [id]="labelId" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
     {{ label }}
+    @if (required) {
+      <span class="ml-0.5 text-error-500" aria-hidden="true">*</span>
+    }
   </span>
   <div class="relative z-20 inline-block w-full">
     <div class="relative flex flex-col items-center">
@@ -31,10 +34,10 @@
               }
             } @else {
               <input
-                placeholder="Select option"
+                [placeholder]="placeholder"
                 class="w-full h-full p-1 pr-2 text-sm bg-transparent border-0 outline-hidden appearance-none placeholder:text-gray-800 focus:border-0 focus:outline-hidden focus:ring-0 dark:placeholder:text-white/90"
                 readonly tabindex="-1"
-                value="Select option"
+                [value]="placeholder"
               />
             }
           </div>

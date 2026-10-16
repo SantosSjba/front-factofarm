@@ -13,6 +13,8 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/common/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
@@ -33,6 +35,8 @@ import type { CreateMedicoRequest, MedicoItemDto } from '../../models/directory.
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
+    ConfirmDialogComponent,
     HasPermissionDirective,
   ],
   templateUrl: './medicos.component.html',
@@ -81,18 +85,39 @@ export class MedicosComponent {
     this.modalOpen.set(true);
   }
 
+  protected readonly deleteTarget = signal<MedicoItemDto | null>(null);
+
+  protected submit() {
+    const missing = [
+      !this.editing() && !this.cmp().trim() && 'CMP',
+      !this.nombres().trim() && 'nombres',
+      !this.apellidos().trim() && 'apellidos',
+    ].filter(Boolean);
+    if (missing.length) {
+      this.notify.warning(`Complete los campos obligatorios: ${missing.join(', ')}.`);
+      return;
+    }
+    this.saveMutation.mutate();
+  }
+
+  protected confirmDelete() {
+    const row = this.deleteTarget();
+    this.deleteTarget.set(null);
+    if (row) this.deleteMutation.mutate(row.id);
+  }
+
   protected saveMutation = injectMutation(() => ({
     mutationFn: () => {
-      const body: CreateMedicoRequest = {
-        cmp: this.cmp().trim(),
+      const body = {
         nombres: this.nombres().trim(),
         apellidos: this.apellidos().trim(),
         especialidad: this.especialidad().trim() || undefined,
       };
       const edit = this.editing();
+      // El CMP no se edita: UpdateMedicoDto no lo admite.
       return edit
         ? firstValueFrom(this.api.updateMedico(edit.id, body))
-        : firstValueFrom(this.api.createMedico(body));
+        : firstValueFrom(this.api.createMedico({ ...body, cmp: this.cmp().trim() } satisfies CreateMedicoRequest));
     },
     onSuccess: () => {
       this.notify.success('Médico guardado');

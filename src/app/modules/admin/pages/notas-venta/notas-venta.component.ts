@@ -407,6 +407,10 @@ export class NotasVentaComponent {
       this.notify.warning('Indique el motivo de la devolución');
       return;
     }
+    if (!this.returnLines().some((line) => line.quantity > 0)) {
+      this.notify.warning('Indique la cantidad a devolver en al menos un producto.');
+      return;
+    }
     this.returnMutation.mutate();
   }
 

@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { NotifyService } from '../../../../core/services/notify.service';
 
 type Setting = {
   key: string;
@@ -73,6 +75,7 @@ type Setting = {
 })
 export class PlatformSettingsComponent {
   private readonly http = inject(HttpClient);
+  private readonly notify = inject(NotifyService);
   protected readonly settings = signal<Setting[]>([]);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
@@ -111,8 +114,8 @@ export class PlatformSettingsComponent {
           this.http.get<Setting[]>(`${environment.apiBaseUrl}/platform/settings`),
         ),
       );
-    } catch {
-      this.message.set('No se pudo cargar la configuración.');
+    } catch (error) {
+      this.message.set(httpErrorMessage(error, 'No se pudo cargar la configuración.'));
     } finally {
       this.loading.set(false);
     }
@@ -125,6 +128,7 @@ export class PlatformSettingsComponent {
     );
     if (!Object.keys(changed).length) {
       this.message.set('No hay cambios pendientes.');
+      this.notify.info('No hay cambios pendientes.');
       return;
     }
     this.saving.set(true);
@@ -136,13 +140,20 @@ export class PlatformSettingsComponent {
         ),
       );
       this.message.set('Configuración guardada.');
-    } catch (error: any) {
-      const details = error?.error?.details;
-      this.message.set(
-        Array.isArray(details)
-          ? details.map((d: any) => `${d.field}: ${d.message}`).join(' · ')
-          : error?.error?.message || 'No se pudo guardar la configuración.',
-      );
+      this.notify.success('Configuración guardada.');
+    } catch (error) {
+      const details = (error as { error?: { details?: unknown } })?.error?.details;
+      const text = Array.isArray(details)
+        ? details
+            .map((d: { field?: string; message?: string; messages?: string[] }) =>
+              d.message ? `${d.field}: ${d.message}` : (d.messages?.[0] ?? ''),
+            )
+            .filter(Boolean)
+            .join(' · ')
+        : '';
+      const message = text || httpErrorMessage(error, 'No se pudo guardar la configuración.');
+      this.message.set(message);
+      this.notify.error('No se pudo guardar la configuración', message);
     } finally {
       this.saving.set(false);
     }

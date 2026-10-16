@@ -3,7 +3,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { httpErrorMessage } from '../../core/http/http-error-message';
 import { AuthService } from '../../core/services/auth.service';
+import { isValidEmail } from '../../core/utils/form-validators';
 import { PublicContactService } from '../../core/services/public-contact.service';
 import { ButtonComponent } from '../../shared/components/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/components/form/form-field/form-field.component';
@@ -368,14 +370,18 @@ export class LandingComponent {
       this.formError.set('Completa nombre, farmacia, teléfono y correo.');
       return;
     }
+    if (!isValidEmail(payload.email)) {
+      this.formError.set('El correo electrónico no es válido.');
+      return;
+    }
 
     this.submitting.set(true);
     try {
       await firstValueFrom(this.contactApi.submit(payload));
       this.submitted.set(true);
-    } catch {
+    } catch (err) {
       this.formError.set(
-        'No pudimos enviar tu solicitud. Intenta de nuevo o contáctanos por WhatsApp.',
+        httpErrorMessage(err, 'No pudimos enviar tu solicitud. Intenta de nuevo o contáctanos por WhatsApp.'),
       );
     } finally {
       this.submitting.set(false);

@@ -22,8 +22,8 @@
       <app-form-field
         label="Nombre comercial"
         helpText="Nombre visible del cliente en la plataforma y en reportes internos."
-      >
-        <app-input-field
+       required>
+        <app-input-field [maxLength]="200"
           [value]="nombre()"
           placeholder="Ej. Farmacia San Martín"
           (valueChange)="nombre.set('' + $event)"
@@ -35,12 +35,12 @@
           label="RUC (opcional)"
           helpText="RUC de la empresa. Puedes completarlo después si aún no lo tienes."
         >
-          <app-input-field [value]="ruc()" (valueChange)="ruc.set('' + $event)" />
+          <app-input-field [maxLength]="11" inputMode="numeric" [value]="ruc()" (valueChange)="ruc.set('' + $event)" />
         </app-form-field>
         <app-form-field
           label="Plan"
           helpText="Define límites y módulos por defecto (Botica, Farmacia Pro, Cadena o personalizado)."
-        >
+         required>
           <app-form-select
             [value]="plan()"
             [options]="planOptions"
@@ -52,10 +52,10 @@
 
       <app-form-row>
         <app-form-field label="Contacto" helpText="Persona de contacto comercial o administrativo.">
-          <app-input-field [value]="contactName()" (valueChange)="contactName.set('' + $event)" />
+          <app-input-field [maxLength]="120" [value]="contactName()" (valueChange)="contactName.set('' + $event)" />
         </app-form-field>
         <app-form-field label="Teléfono">
-          <app-input-field [value]="contactPhone()" (valueChange)="contactPhone.set('' + $event)" />
+          <app-input-field [maxLength]="30" [value]="contactPhone()" (valueChange)="contactPhone.set('' + $event)" />
         </app-form-field>
       </app-form-row>
 
@@ -63,7 +63,7 @@
         label="Correo contacto"
         helpText="Correo principal para avisos comerciales y soporte. No es el login del administrador."
       >
-        <app-input-field
+        <app-input-field [maxLength]="150"
           type="email"
           [value]="contactEmail()"
           placeholder="contacto@farmacia.com"
@@ -75,7 +75,7 @@
         label="Notas internas"
         helpText="Solo visibles para el equipo FactoSys. El cliente no las ve."
       >
-        <app-input-field [value]="notes()" (valueChange)="notes.set('' + $event)" />
+        <app-input-field [maxLength]="2000" [value]="notes()" (valueChange)="notes.set('' + $event)" />
       </app-form-field>
     </app-form-stack>
   </div>

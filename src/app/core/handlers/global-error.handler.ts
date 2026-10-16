@@ -1,5 +1,16 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorHandler, Injectable, inject, isDevMode } from '@angular/core';
 import { NotifyService } from '../services/notify.service';
+import { httpErrorMessage } from '../http/http-error-message';
+import { isGloballyNotifiedStatus } from '../interceptors/api-error.interceptor';
+
+/** Promesas rechazadas llegan envueltas (`{ rejection }`) por zone.js. */
+function unwrap(error: unknown): unknown {
+  if (error && typeof error === 'object' && 'rejection' in error) {
+    return (error as { rejection: unknown }).rejection;
+  }
+  return error;
+}
 
 /** Errores de extensiones del navegador / DevTools que no deben mostrar toast al usuario. */
 function isIgnorableClientNoise(error: unknown): boolean {
@@ -44,7 +55,16 @@ function extractMessage(error: unknown): string {
 export class GlobalErrorHandler implements ErrorHandler {
   private readonly notify = inject(NotifyService);
 
-  handleError(error: unknown): void {
+  handleError(raw: unknown): void {
+    const error = unwrap(raw);
+    if (error instanceof HttpErrorResponse) {
+      // Petición sin manejador de error: mostrar el motivo real, no el texto técnico en inglés.
+      if (!isGloballyNotifiedStatus(error.status) && error.status !== 401) {
+        this.notify.error(httpErrorMessage(error, 'No se pudo completar la operación.'));
+      }
+      if (isDevMode()) console.error(error);
+      return;
+    }
     if (isIgnorableClientNoise(error)) {
       if (isDevMode()) {
         console.debug('[ignored client noise]', error);

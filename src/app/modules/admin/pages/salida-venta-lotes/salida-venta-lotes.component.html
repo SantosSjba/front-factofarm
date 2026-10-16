@@ -16,7 +16,7 @@
 <app-component-card title="Datos de la salida" className="mb-6">
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
     <div>
-      <app-label>Almacén</app-label>
+      <app-label required>Almacén</app-label>
       <app-form-select
         className="mt-2"
         [value]="warehouseId()"
@@ -25,8 +25,8 @@
       />
     </div>
     <div>
-      <app-label>Cantidad total</app-label>
-      <app-input-field
+      <app-label required>Cantidad total</app-label>
+      <app-input-field min="0"
         className="mt-2"
         type="number"
         [value]="quantity()"
@@ -34,7 +34,7 @@
       />
     </div>
     <div class="md:col-span-2">
-      <app-label>Producto</app-label>
+      <app-label required>Producto</app-label>
       @if (productId()) {
         <p class="mt-2 text-theme-sm text-brand-600">{{ productLabel() }}</p>
       } @else {
@@ -63,7 +63,7 @@
       }
     </div>
     <div>
-      <app-label>Modo de asignación</app-label>
+      <app-label required>Modo de asignación</app-label>
       <app-form-select
         className="mt-2"
         [value]="mode()"
@@ -76,11 +76,11 @@
     </div>
     <div>
       <app-label>Referencia venta</app-label>
-      <app-input-field className="mt-2" [value]="reference()" (valueChange)="reference.set($event + '')" />
+      <app-input-field [maxLength]="120" className="mt-2" [value]="reference()" (valueChange)="reference.set($event + '')" />
     </div>
     <div class="md:col-span-2">
       <app-label>Comentario</app-label>
-      <textarea
+      <textarea maxlength="500"
         rows="2"
         class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
         [value]="comment()"
@@ -93,8 +93,8 @@
     <div class="mt-6 rounded-lg border border-gray-100 p-4 dark:border-gray-800">
       <p class="mb-3 text-sm font-medium">Lotes manuales</p>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <app-input-field placeholder="Código lote" [value]="manualLotCode()" (valueChange)="manualLotCode.set($event + '')" />
-        <app-input-field type="number" placeholder="Cantidad" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event || 0)" />
+        <app-input-field placeholder="Código lote *" [maxLength]="120" [value]="manualLotCode()" (valueChange)="manualLotCode.set($event + '')" />
+        <app-input-field type="number" min="0" placeholder="Cantidad *" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event || 0)" />
         <app-button size="sm" variant="outline" (btnClick)="addManualLine()">Agregar lote</app-button>
       </div>
       @if (manualLines().length > 0) {

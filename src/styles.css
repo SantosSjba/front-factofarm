@@ -398,6 +398,35 @@ layer(base);
   }
 }
 
+/* Scroll visible del sidebar: en laptops con touchpad el usuario necesita
+   ver y arrastrar la barra para recorrer menús largos.
+   En Chromium/Safari, `scrollbar-width`/`scrollbar-color` anulan los estilos
+   ::-webkit-scrollbar y en macOS dejan la barra superpuesta (se oculta sola);
+   por eso allí se restablecen a `auto` y se usa la barra clásica estilizada. */
+@utility sidebar-scrollbar {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #98a2b3 transparent;
+
+  @supports selector(::-webkit-scrollbar) {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    @apply rounded-full bg-gray-100 dark:bg-gray-800;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500;
+  }
+}
+
 @utility custom-scrollbar {
   &::-webkit-scrollbar {
     width: 4px;

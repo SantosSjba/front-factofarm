@@ -333,7 +333,7 @@
       Para factura el cliente debe tener RUC.
     </p>
     <div>
-      <app-label>Comprobante destino</app-label>
+      <app-label required>Comprobante destino</app-label>
       <app-form-select
         className="mt-1.5"
         [showPlaceholder]="false"
@@ -361,8 +361,8 @@
       <h3 class="text-lg font-semibold">Devolución · {{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
       <p class="text-sm text-gray-500">Se generará nota de crédito electrónica si el comprobante original fue aceptado por SUNAT.</p>
       <div>
-        <app-label>Motivo</app-label>
-        <app-input-field [value]="returnMotivo()" (valueChange)="returnMotivo.set('' + $event)" placeholder="Motivo de devolución" />
+        <app-label required>Motivo</app-label>
+        <app-input-field [maxLength]="500" [value]="returnMotivo()" (valueChange)="returnMotivo.set('' + $event)" placeholder="Motivo de devolución" />
       </div>
       <table class="w-full text-sm">
         <thead>
@@ -392,6 +392,7 @@
                   class="w-full rounded border px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
                   [value]="line.lotCode"
                   placeholder="Opcional"
+                  maxlength="120"
                   (input)="updateReturnLot(line.saleItemId, $any($event.target).value)"
                 />
               </td>
@@ -418,16 +419,16 @@
       Cargo adicional sobre comprobante ya emitido (intereses, ajuste de valor, etc.). Requiere CPE original aceptado.
     </p>
     <div>
-      <app-label>Motivo</app-label>
-      <app-input-field [value]="debitMotivo()" (valueChange)="debitMotivo.set('' + $event)" placeholder="Motivo del cargo" />
+      <app-label required>Motivo</app-label>
+      <app-input-field [maxLength]="500" [value]="debitMotivo()" (valueChange)="debitMotivo.set('' + $event)" placeholder="Motivo del cargo" />
     </div>
     <div>
-      <app-label>Descripción en comprobante</app-label>
-      <app-input-field [value]="debitDescripcion()" (valueChange)="debitDescripcion.set('' + $event)" placeholder="Ej. Interés por mora" />
+      <app-label required>Descripción en comprobante</app-label>
+      <app-input-field [maxLength]="500" [value]="debitDescripcion()" (valueChange)="debitDescripcion.set('' + $event)" placeholder="Ej. Interés por mora" />
     </div>
     <div>
-      <app-label>Monto total (inc. IGV)</app-label>
-      <app-input-field type="number" [value]="debitTotal()" (valueChange)="debitTotal.set('' + $event)" placeholder="0.00" />
+      <app-label required>Monto total (inc. IGV)</app-label>
+      <app-input-field min="0.01" type="number" [value]="debitTotal()" (valueChange)="debitTotal.set('' + $event)" placeholder="0.00" />
     </div>
     <div class="flex justify-end gap-2 border-t pt-4">
       <app-button variant="outline" (btnClick)="closeDebit()">Cancelar</app-button>

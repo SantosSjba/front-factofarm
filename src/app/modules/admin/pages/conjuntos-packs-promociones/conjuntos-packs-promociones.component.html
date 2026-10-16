@@ -255,7 +255,7 @@
   <div data-modal-body class="px-4 py-4 sm:px-6">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-[1fr_280px]">
       <div>
-        <app-label>Producto</app-label>
+        <app-label required>Producto</app-label>
         <app-form-select
           className="mt-2"
           [value]="addProductId()"
@@ -265,10 +265,10 @@
         />
       </div>
       <div>
-        <app-label>Cantidad</app-label>
+        <app-label required>Cantidad</app-label>
         <div class="mt-2 flex items-center gap-2">
           <button type="button" class="h-10 w-10 rounded-lg border border-gray-300 dark:border-gray-700" (click)="addProductQtyStep(-1)">-</button>
-          <app-input-field className="flex-1" type="number" [value]="addProductQty()" (valueChange)="addProductQtyChange($event)" />
+          <app-input-field min="1" step="1" className="flex-1" type="number" [value]="addProductQty()" (valueChange)="addProductQtyChange($event)" />
           <button type="button" class="h-10 w-10 rounded-lg border border-gray-300 dark:border-gray-700" (click)="addProductQtyStep(1)">+</button>
         </div>
       </div>
@@ -295,33 +295,33 @@
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div>
-        <app-label>Nombre *</app-label>
-        <app-input-field className="mt-2" [value]="form().nombre" (valueChange)="updateForm('nombre', $event + '')" />
+        <app-label required>Nombre</app-label>
+        <app-input-field [maxLength]="300" className="mt-2" [value]="form().nombre" (valueChange)="updateForm('nombre', $event + '')" />
         @if (formErrors()['nombre']) { <p class="mt-1 text-xs text-error-500">{{ formErrors()['nombre'] }}</p> }
       </div>
       <div>
         <app-label>Nombre secundario</app-label>
-        <app-input-field className="mt-2" [value]="form().nombreSecundario ?? ''" (valueChange)="updateForm('nombreSecundario', $event + '')" />
+        <app-input-field [maxLength]="300" className="mt-2" [value]="form().nombreSecundario ?? ''" (valueChange)="updateForm('nombreSecundario', $event + '')" />
       </div>
       <div>
         <app-label>Descripción</app-label>
-        <app-input-field className="mt-2" [value]="form().descripcion ?? ''" (valueChange)="updateForm('descripcion', $event + '')" />
+        <app-input-field [maxLength]="2000" className="mt-2" [value]="form().descripcion ?? ''" (valueChange)="updateForm('descripcion', $event + '')" />
       </div>
       <div>
         <app-label>Modelo</app-label>
-        <app-input-field className="mt-2" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
+        <app-input-field [maxLength]="120" className="mt-2" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
       </div>
       <div>
-        <app-label>Unidad *</app-label>
+        <app-label required>Unidad</app-label>
         <app-form-select className="mt-2" [value]="form().unitId" [options]="unitOptions()" placeholder="Seleccionar" (valueChange)="updateForm('unitId', $event)" />
       </div>
       <div>
-        <app-label>Moneda *</app-label>
+        <app-label required>Moneda</app-label>
         <app-form-select className="mt-2" [value]="form().currencyId" [options]="currencyOptions()" placeholder="Seleccionar" (valueChange)="updateForm('currencyId', $event)" />
       </div>
       <div>
-        <app-label>Precio Unitario (Venta) *</app-label>
-        <app-input-field className="mt-2" type="number" [value]="form().precioUnitarioVenta" (valueChange)="updateForm('precioUnitarioVenta', +$event)" />
+        <app-label required>Precio Unitario (Venta)</app-label>
+        <app-input-field min="0" className="mt-2" type="number" [value]="form().precioUnitarioVenta" (valueChange)="updateForm('precioUnitarioVenta', +$event)" />
       </div>
       <div>
         <app-label>Plataforma</app-label>
@@ -400,30 +400,30 @@
       <div class="md:col-span-3">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div class="md:col-span-2">
-            <app-label>Tipo de afectación (Venta) *</app-label>
+            <app-label required>Tipo de afectación (Venta)</app-label>
             <app-form-select className="mt-2" [value]="form().saleTaxAffectationId" [options]="taxOptions()" placeholder="Seleccionar" (valueChange)="updateForm('saleTaxAffectationId', $event)" />
           </div>
           <div>
             <app-label>Código Sunat</app-label>
-            <app-input-field className="mt-2" [value]="form().codigoSunat ?? ''" (valueChange)="updateForm('codigoSunat', $event + '')" />
+            <app-input-field [maxLength]="20" className="mt-2" [value]="form().codigoSunat ?? ''" (valueChange)="updateForm('codigoSunat', $event + '')" />
           </div>
           <div>
             <app-label>Código Interno</app-label>
-            <app-input-field className="mt-2" [value]="form().codigoInterno ?? ''" (valueChange)="updateForm('codigoInterno', $event + '')" />
+            <app-input-field [maxLength]="60" className="mt-2" [value]="form().codigoInterno ?? ''" (valueChange)="updateForm('codigoInterno', $event + '')" />
           </div>
           <div>
             <app-label>Total P. Compra (Referencia)</app-label>
             <app-input-field className="mt-2" [value]="detailTotal()" [disabled]="true" />
           </div>
           <div>
-            <app-label>Precio Unitario (Compra) *</app-label>
-            <app-input-field className="mt-2" type="number" [value]="form().precioUnitarioCompra" (valueChange)="updateForm('precioUnitarioCompra', +$event)" />
+            <app-label required>Precio Unitario (Compra)</app-label>
+            <app-input-field min="0" className="mt-2" type="number" [value]="form().precioUnitarioCompra" (valueChange)="updateForm('precioUnitarioCompra', +$event)" />
           </div>
           <div class="md:col-span-2">
             <app-label>Categoría</app-label>
             <app-form-select className="mt-2" [value]="form().categoryId ?? ''" [options]="categoryOptions()" (valueChange)="updateForm('categoryId', $event || undefined)" />
             <div class="mt-2 flex gap-2">
-              <app-input-field className="flex-1" [value]="newCategoryName()" placeholder="Nueva categoría" (valueChange)="newCategoryName.set($event + '')" />
+              <app-input-field className="flex-1" [value]="newCategoryName()" placeholder="Nueva categoría" [maxLength]="120" (valueChange)="newCategoryName.set($event + '')" />
               <app-button
                 size="sm"
                 [disabled]="creatingCategory()"
@@ -438,7 +438,7 @@
             <app-label>Marca/Laboratorio</app-label>
             <app-form-select className="mt-2" [value]="form().brandId ?? ''" [options]="brandOptions()" (valueChange)="updateForm('brandId', $event || undefined)" />
             <div class="mt-2 flex gap-2">
-              <app-input-field className="flex-1" [value]="newBrandName()" placeholder="Nueva marca" (valueChange)="newBrandName.set($event + '')" />
+              <app-input-field className="flex-1" [value]="newBrandName()" placeholder="Nueva marca" [maxLength]="120" (valueChange)="newBrandName.set($event + '')" />
               <app-button
                 size="sm"
                 [disabled]="creatingBrand()"

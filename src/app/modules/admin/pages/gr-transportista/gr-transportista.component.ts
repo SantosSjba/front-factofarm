@@ -80,14 +80,27 @@ function paginatedItems<T>(data: PaginatedResponseDto<T> | T[] | undefined): T[]
         </div>
         <div class="border-t border-gray-100 pt-4 dark:border-gray-800">
           <p class="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">Destinatario (autocompletado)</p>
-          <app-input-field [value]="customer()" (valueChange)="customer.set('' + $event)" placeholder="Razón social" />
+          <app-label required>Razón social</app-label>
+          <app-input-field [value]="customer()" (valueChange)="customer.set('' + $event)" [maxLength]="200" />
           <div class="mt-3 grid grid-cols-2 gap-2">
-            <app-input-field [value]="docType()" (valueChange)="docType.set('' + $event)" placeholder="Tipo doc (6=RUC)" />
-            <app-input-field [value]="docNumber()" (valueChange)="docNumber.set('' + $event)" placeholder="Número documento" />
+            <div>
+              <app-label required>Tipo doc. (SUNAT)</app-label>
+              <app-input-field [value]="docType()" (valueChange)="docType.set('' + $event)" placeholder="6 = RUC" [maxLength]="20" />
+            </div>
+            <div>
+              <app-label required>Número documento</app-label>
+              <app-input-field [value]="docNumber()" (valueChange)="docNumber.set('' + $event)" [maxLength]="20" />
+            </div>
           </div>
         </div>
-        <app-input-field [value]="description()" (valueChange)="description.set('' + $event)" placeholder="Concepto / motivo del traslado" />
-        <app-input-field [value]="amount()" (valueChange)="amount.set('' + $event)" placeholder="Valor referencial (inc. IGV)" />
+        <div>
+          <app-label>Concepto / motivo del traslado</app-label>
+          <app-input-field [value]="description()" (valueChange)="description.set('' + $event)" [maxLength]="500" />
+        </div>
+        <div>
+          <app-label required>Valor referencial (inc. IGV)</app-label>
+          <app-input-field type="number" min="0.01" [value]="amount()" (valueChange)="amount.set('' + $event)" placeholder="0.00" />
+        </div>
         @if (previewDescription()) {
           <p class="text-xs text-gray-500"><strong>Descripción en comprobante:</strong> {{ previewDescription() }}</p>
         }
@@ -261,12 +274,15 @@ export class GrTransportistaComponent {
   protected readonly emitMutation = injectMutation(() => ({
     mutationFn: () => {
       const total = Number(this.amount());
-      if (!Number.isFinite(total) || total <= 0) throw new Error('Monto inválido');
-      if (!this.customer().trim() || !this.docNumber().trim()) {
-        throw new Error('Seleccione un transportista o complete el destinatario');
+      if (!Number.isFinite(total) || total <= 0) {
+        throw new Error('El valor referencial debe ser un número mayor a 0.');
       }
-      const igv = Math.round(total * 0.18 * 100) / 100;
-      const subtotal = Math.round((total - igv) * 100) / 100;
+      if (!this.customer().trim() || !this.docType().trim() || !this.docNumber().trim()) {
+        throw new Error('Seleccione un transportista o complete razón social, tipo y número de documento.');
+      }
+      // El valor ingresado incluye IGV: subtotal = total / 1.18 (igual que POS y comprobantes especiales).
+      const subtotal = Math.round((total / 1.18) * 100) / 100;
+      const igv = Math.round((total - subtotal) * 100) / 100;
       const lineDesc = this.buildLineDescription() || 'Traslado de mercadería';
       return firstValueFrom(
         this.api.emitSpecialElectronicDocument({

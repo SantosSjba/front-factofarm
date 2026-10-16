@@ -4,6 +4,15 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import {
+  isOptionalEmail,
+  isOptionalIntAtLeast,
+  isOptionalNumberAtLeast,
+} from '../../../../core/utils/form-validators';
+import {
+  identityDocumentNumberMessage,
+  isValidIdentityDocumentNumber,
+} from '../../../../core/utils/peru-documents';
 import { establishmentQueryKeys } from '../../../../core/query/establishment-query.keys';
 import { supplierQueryKeys } from '../../../../core/query/supplier-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
@@ -332,6 +341,18 @@ export class ProveedoresComponent {
       this.notify.warning('Ingrese el número de documento.');
       return null;
     }
+    if (!isValidIdentityDocumentNumber(this.tipoDocumento(), numeroDocumento)) {
+      this.notify.warning(identityDocumentNumberMessage(this.tipoDocumento()));
+      return null;
+    }
+    if (!isOptionalEmail(this.correoElectronico())) {
+      this.notify.warning('Ingrese un correo electrónico válido.');
+      return null;
+    }
+    if (!isOptionalIntAtLeast(this.diasCredito(), 0)) {
+      this.notify.warning('Los días de crédito deben ser un número entero mayor o igual a 0.');
+      return null;
+    }
     const dias = Number.parseInt(this.diasCredito(), 10);
     return {
       razonSocial,
@@ -416,6 +437,14 @@ export class ProveedoresComponent {
     const productId = this.newProductId();
     if (!supplier || !productId) {
       this.notify.warning('Seleccione un producto.');
+      return;
+    }
+    if (!isOptionalNumberAtLeast(this.newPrecioCompra(), 0)) {
+      this.notify.warning('El precio de compra debe ser un número mayor o igual a 0.');
+      return;
+    }
+    if (!isOptionalIntAtLeast(this.newPlazoDias(), 0)) {
+      this.notify.warning('El plazo debe ser un número entero de días mayor o igual a 0.');
       return;
     }
     const body: UpsertSupplierProductRequest = { productId };

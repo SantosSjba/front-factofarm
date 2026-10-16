@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../../core/services/auth.service';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { NotifyService } from '../../../../core/services/notify.service';
+import { isValidEmail } from '../../../../core/utils/form-validators';
 
 @Component({
   standalone: true,
@@ -19,7 +21,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
     }
     <form (ngSubmit)="saveProfile()" class="space-y-4">
       <label class="block"
-        >Nombre
+        >Nombre<span class="text-error-500" aria-hidden="true"> *</span>
         <input
           name="nombre"
           [(ngModel)]="nombre"
@@ -30,7 +32,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
         />
       </label>
       <label class="block"
-        >Correo
+        >Correo<span class="text-error-500" aria-hidden="true"> *</span>
         <input
           name="email"
           type="email"
@@ -54,7 +56,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
       <form (ngSubmit)="changePassword()" class="space-y-4">
         <h2 class="text-xl font-semibold">Cambiar contraseña</h2>
         <label class="block"
-          >Contraseña actual
+          >Contraseña actual<span class="text-error-500" aria-hidden="true"> *</span>
           <input
             name="currentPassword"
             type="password"
@@ -65,7 +67,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
           />
         </label>
         <label class="block"
-          >Nueva contraseña
+          >Nueva contraseña<span class="text-error-500" aria-hidden="true"> *</span>
           <input
             name="newPassword"
             type="password"
@@ -79,7 +81,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
         </label>
         <p>Incluye mayúscula, minúscula, número y carácter especial.</p>
         <label class="block"
-          >Confirmar contraseña
+          >Confirmar contraseña<span class="text-error-500" aria-hidden="true"> *</span>
           <input
             name="confirmPassword"
             type="password"
@@ -102,6 +104,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 export class ProfileComponent {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly notify = inject(NotifyService);
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly message = signal('');
@@ -124,10 +127,19 @@ export class ProfileComponent {
       this.loading.set(false);
     }
   }
+  private feedback(text: string, kind: 'success' | 'warning' | 'error') {
+    this.message.set(text);
+    this.notify[kind](text);
+  }
+
   protected async saveProfile() {
     if (this.busy() || this.auth.user()?.supportSession) return;
-    if (this.nombre.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email.trim())) {
-      this.message.set('Ingresa un nombre y correo válidos.');
+    if (this.nombre.trim().length < 2) {
+      this.feedback('El nombre debe tener al menos 2 caracteres.', 'warning');
+      return;
+    }
+    if (!isValidEmail(this.email)) {
+      this.feedback('Ingresa un correo electrónico válido.', 'warning');
       return;
     }
     this.busy.set(true);
@@ -138,9 +150,9 @@ export class ProfileComponent {
           email: this.email.trim().toLowerCase(),
         }),
       );
-      this.message.set('Perfil actualizado.');
+      this.feedback('Perfil actualizado.', 'success');
     } catch (error) {
-      this.message.set(httpErrorMessage(error, 'No se pudo actualizar el perfil.'));
+      this.feedback(httpErrorMessage(error, 'No se pudo actualizar el perfil.'), 'error');
     } finally {
       this.busy.set(false);
     }
@@ -148,19 +160,24 @@ export class ProfileComponent {
   protected async changePassword() {
     if (this.busy() || this.auth.user()?.supportSession) return;
     const password = this.newPassword;
+    if (!this.currentPassword) {
+      this.feedback('Ingresa tu contraseña actual.', 'warning');
+      return;
+    }
     const policyError = passwordPolicyError(password);
-    if (policyError) { this.message.set(policyError); return; }
+    if (policyError) { this.feedback(policyError, 'warning'); return; }
     if (password !== this.confirmPassword) {
-      this.message.set('Las contraseñas no coinciden.');
+      this.feedback('Las contraseñas no coinciden.', 'warning');
       return;
     }
     this.busy.set(true);
     try {
       await firstValueFrom(this.auth.changePassword(this.currentPassword, password));
+      this.notify.success('Contraseña actualizada. Inicia sesión con tu nueva contraseña.');
       this.auth.clearSession();
       await this.router.navigateByUrl('/auth/signin');
     } catch (error) {
-      this.message.set(httpErrorMessage(error, 'No se pudo cambiar la contraseña.'));
+      this.feedback(httpErrorMessage(error, 'No se pudo cambiar la contraseña.'), 'error');
     } finally {
       this.busy.set(false);
     }

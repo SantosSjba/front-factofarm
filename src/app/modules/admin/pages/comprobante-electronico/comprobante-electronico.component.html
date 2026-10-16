@@ -86,7 +86,9 @@
       <a routerLink="/mi-farmacia" class="text-brand-600 underline">Mi farmacia</a>.
       Primero configure el panel del proveedor; aquí solo pega URL y token para que FactoFarm emita.
     </p>
-    <app-form-select [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
+    <app-form-field label="Proveedor de facturación" required>
+      <app-form-select [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
+    </app-form-field>
     <p class="text-xs text-gray-600 dark:text-gray-300">{{ providerSetupHint() }}</p>
     @if (billingCapabilities(); as caps) {
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
@@ -101,23 +103,36 @@
         }
       </div>
     }
-    <app-input-field [value]="rucEmisor()" (valueChange)="rucEmisor.set('' + $event)" placeholder="RUC emisor" />
-    <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" placeholder="Razón social emisor" />
-    <app-input-field
-      [value]="apiUrl()"
-      (valueChange)="apiUrl.set('' + $event)"
-      placeholder="URL / RUTA del panel del proveedor"
-    />
-    <app-input-field
-      [value]="consultaApiUrl()"
-      (valueChange)="consultaApiUrl.set('' + $event)"
-      placeholder="URL consulta (opcional)"
-    />
-    <app-input-field
-      [value]="apiToken()"
-      (valueChange)="apiToken.set('' + $event)"
-      placeholder="Token del panel del proveedor (encriptado)"
-    />
+    <app-form-field label="RUC emisor">
+      <app-input-field [value]="rucEmisor()" (valueChange)="rucEmisor.set('' + $event)" placeholder="20XXXXXXXXX" [maxLength]="11" inputMode="numeric" />
+    </app-form-field>
+    <app-form-field label="Razón social emisor">
+      <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" [maxLength]="200" />
+    </app-form-field>
+    <app-form-field label="URL / RUTA del panel del proveedor">
+      <app-input-field
+        [value]="apiUrl()"
+        (valueChange)="apiUrl.set('' + $event)"
+        placeholder="https://…"
+        [maxLength]="500"
+      />
+    </app-form-field>
+    <app-form-field label="URL consulta (opcional)">
+      <app-input-field
+        [value]="consultaApiUrl()"
+        (valueChange)="consultaApiUrl.set('' + $event)"
+        placeholder="https://…"
+        [maxLength]="500"
+      />
+    </app-form-field>
+    <app-form-field label="Token del proveedor">
+      <app-input-field
+        type="password"
+        [value]="apiToken()"
+        (valueChange)="apiToken.set('' + $event)"
+        placeholder="Se guarda encriptado · vacío conserva el actual"
+      />
+    </app-form-field>
     <label class="flex items-center gap-2 text-sm">
       <input type="checkbox" [checked]="modoSandbox()" (change)="modoSandbox.set($any($event.target).checked)" />
       Modo sandbox
@@ -138,7 +153,7 @@
       <input type="checkbox" [checked]="autoEmitGuia()" (change)="autoEmitGuia.set($any($event.target).checked)" />
       Emitir guía de remisión al despachar traslado
     </label>
-    <app-button variant="primary" (btnClick)="saveConfigMutation.mutate()">Guardar</app-button>
+    <app-button variant="primary" [disabled]="saveConfigMutation.isPending()" [loading]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
   </div>
 </app-modal>
 
@@ -175,7 +190,9 @@
         }
       </div>
       @if (canVoid(doc)) {
-        <app-input-field [value]="voidReason()" (valueChange)="voidReason.set('' + $event)" placeholder="Motivo de baja SUNAT" />
+        <app-form-field label="Motivo de baja SUNAT" required>
+          <app-input-field [value]="voidReason()" (valueChange)="voidReason.set('' + $event)" placeholder="Ej. Error en datos del cliente" [maxLength]="500" />
+        </app-form-field>
       }
       <div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -205,20 +222,32 @@
 
 <app-modal title="Emitir comprobante especial" [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-lg">
   <div class="space-y-4">
-    <app-form-select [options]="filteredSpecialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
+    <app-form-field label="Tipo de comprobante" required>
+      <app-form-select [options]="filteredSpecialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
+    </app-form-field>
     @if (specialDocumentBlockedReason(specialType()); as reason) {
       <p class="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">{{ reason }}</p>
     }
-    <app-input-field [value]="specialCustomer()" (valueChange)="specialCustomer.set('' + $event)" placeholder="Razón social / nombre" />
+    <app-form-field label="Razón social / nombre del cliente" required>
+      <app-input-field [value]="specialCustomer()" (valueChange)="specialCustomer.set('' + $event)" [maxLength]="200" />
+    </app-form-field>
     <div class="grid grid-cols-2 gap-2">
-      <app-input-field [value]="specialDocType()" (valueChange)="specialDocType.set('' + $event)" placeholder="Tipo doc (6=RUC)" />
-      <app-input-field [value]="specialDocNumber()" (valueChange)="specialDocNumber.set('' + $event)" placeholder="Número documento" />
+      <app-form-field label="Tipo doc. (SUNAT)" required helpText="Catálogo 06 SUNAT: 1 = DNI, 6 = RUC, 4 = CE, 7 = Pasaporte.">
+        <app-input-field [value]="specialDocType()" (valueChange)="specialDocType.set('' + $event)" placeholder="6" [maxLength]="20" />
+      </app-form-field>
+      <app-form-field label="Número documento" required>
+        <app-input-field [value]="specialDocNumber()" (valueChange)="specialDocNumber.set('' + $event)" [maxLength]="20" />
+      </app-form-field>
     </div>
-    <app-input-field [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" placeholder="Concepto / descripción" />
-    <app-input-field [value]="specialAmount()" (valueChange)="specialAmount.set('' + $event)" placeholder="Monto total (inc. IGV)" />
+    <app-form-field label="Concepto / descripción">
+      <app-input-field [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" placeholder="Servicio / concepto" [maxLength]="500" />
+    </app-form-field>
+    <app-form-field label="Monto total (inc. IGV)" required>
+      <app-input-field type="number" min="0.01" [value]="specialAmount()" (valueChange)="specialAmount.set('' + $event)" placeholder="0.00" />
+    </app-form-field>
     <app-button
       variant="primary"
-      (btnClick)="emitSpecialMutation.mutate()"
+      (btnClick)="submitSpecial()"
       [disabled]="emitSpecialMutation.isPending() || !!specialDocumentBlockedReason(specialType())" [loading]="emitSpecialMutation.isPending()"
     >
       Emitir

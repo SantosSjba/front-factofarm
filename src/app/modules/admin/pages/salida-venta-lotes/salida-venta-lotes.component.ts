@@ -171,6 +171,10 @@ export class SalidaVentaLotesComponent {
       this.notify.warning('Seleccione producto y almacén.');
       return;
     }
+    if (!Number.isFinite(this.quantity()) || this.quantity() <= 0) {
+      this.notify.warning('La cantidad total debe ser mayor a 0.');
+      return;
+    }
     if (this.mode() === 'MANUAL' && this.manualLines().length === 0) {
       this.notify.warning('Agregue al menos un lote en modo manual.');
       return;

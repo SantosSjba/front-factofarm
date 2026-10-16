@@ -909,6 +909,17 @@ export class ServiciosComponent {
       return;
     }
 
+    const neg = (v: number | null | undefined) => v != null && Number.isFinite(v) && v < 0;
+    if (neg(f.precioUnitarioCompra) || neg(f.porcentajeIsc) || neg(f.numeroPuntos)) {
+      this.notify.warning('El precio de compra, el porcentaje ISC y los puntos no pueden ser negativos.');
+      return;
+    }
+    if (this.attributeRows().some((r) => !!r.attributeTypeId !== !!r.descripcion.trim())) {
+      this.notify.warning('En Atributos, complete el tipo y la descripción de cada fila (o elimine la fila).');
+      this.activeTab.set('atributos');
+      return;
+    }
+
     const attributes = this.attributeRows()
       .filter((r) => r.attributeTypeId && r.descripcion.trim())
       .map((r) => ({

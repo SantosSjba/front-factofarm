@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { IconComponent } from '../../ui/icon/icon.component';
+import { LabelComponent } from '../label/label.component';
 
 const baseSelect =
   'shadow-theme-xs h-11 w-full appearance-none rounded-lg border bg-transparent pl-4 pr-12 py-2.5 text-sm focus:ring-3 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
@@ -9,7 +10,7 @@ const baseSelect =
 @Component({
   selector: 'app-form-select',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, LabelComponent],
   templateUrl: './form-select.component.html',
 })
 export class FormSelectComponent {
@@ -25,6 +26,9 @@ export class FormSelectComponent {
   /** `{ value, label }` */
   @Input() options: { value: string; label: string }[] = [];
   @Input() className = '';
+  /** Label opcional encima del select. */
+  @Input() label = '';
+  @Input() required = false;
   @Output() valueChange = new EventEmitter<string>();
 
   protected get selectClass(): string {

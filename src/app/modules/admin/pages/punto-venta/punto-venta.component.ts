@@ -459,7 +459,19 @@ export class PuntoVentaComponent implements OnDestroy {
   }
 
   protected onLineDiscountValueChange(productId: string, value: string | number) {
-    this.updateLineDiscount(productId, { discountValue: Number(value) || 0 });
+    let discountValue = Math.max(0, Number(value) || 0);
+    const line = this.cart().find((l) => l.productId === productId);
+    if (line?.discountType === 'PORCENTAJE' && discountValue > 100) {
+      this.notify.warning('El descuento porcentual no puede superar el 100%.');
+      discountValue = 100;
+    } else if (line?.discountType && line.discountType !== 'PORCENTAJE') {
+      const gross = Math.round(line.precio * line.quantity * 100) / 100;
+      if (discountValue > gross) {
+        this.notify.warning(`El descuento no puede superar el importe de la línea (S/ ${gross.toFixed(2)}).`);
+        discountValue = gross;
+      }
+    }
+    this.updateLineDiscount(productId, { discountValue });
   }
 
   protected lineDisplayTotal(line: CartLine): number {
@@ -944,7 +956,15 @@ export class PuntoVentaComponent implements OnDestroy {
     const id = this.lotModalProductId();
     const code = this.manualLotCode().trim();
     const qty = this.manualLotQty();
-    if (!id || !code || qty <= 0) return;
+    if (!id) return;
+    if (!code) {
+      this.notify.warning('Ingrese el código de lote.');
+      return;
+    }
+    if (!Number.isFinite(qty) || qty <= 0) {
+      this.notify.warning('La cantidad del lote debe ser mayor a 0.');
+      return;
+    }
     this.cart.update((lines) =>
       lines.map((l) =>
         l.productId === id

@@ -11,6 +11,7 @@ import { FormStackComponent } from '../../../../../shared/components/form/form-s
 import { HelpHintComponent } from '../../../../../shared/components/ui/help-hint/help-hint.component';
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
+import { isValidEmail } from '../../../../../core/utils/form-validators';
 import { DirectoryApiService } from '../../../services/directory-api.service';
 import type { TenantDetailDto } from '../../../models/directory.models';
 
@@ -98,6 +99,14 @@ export class TenantProvisionModalComponent {
       !this.adminPassword().trim()
     ) {
       this.notify.warning('Complete establecimiento, admin y contraseña');
+      return;
+    }
+    if (this.establishmentNombre().trim().length < 2 || this.adminNombre().trim().length < 2) {
+      this.notify.warning('El nombre del establecimiento y del administrador deben tener al menos 2 caracteres.');
+      return;
+    }
+    if (!isValidEmail(this.adminEmail())) {
+      this.notify.warning('Ingrese un correo válido para el administrador.');
       return;
     }
     const policyError = passwordPolicyError(this.adminPassword());

@@ -77,6 +77,18 @@ export class CadenaFrioComponent {
     ...this.coldZones().map((z) => ({ value: z.id, label: z.nombre })),
   ]);
 
+  protected submitRegister() {
+    if (!this.zoneId()) {
+      this.notify.warning('Seleccione la zona refrigerada.');
+      return;
+    }
+    if (!Number.isFinite(this.temperatura())) {
+      this.notify.warning('Ingrese una temperatura válida en °C.');
+      return;
+    }
+    this.registerMutation.mutate();
+  }
+
   protected readonly registerMutation = injectMutation(() => ({
     mutationFn: () =>
       firstValueFrom(

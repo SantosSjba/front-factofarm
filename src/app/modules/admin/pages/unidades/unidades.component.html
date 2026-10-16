@@ -127,16 +127,20 @@
 
   <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-8 sm:py-5">
     <div>
-      <app-label>Código</app-label>
+      <app-label for="unidad-codigo" required>Código</app-label>
       <app-input-field
+        id="unidad-codigo"
+        [maxLength]="20"
         className="mt-2"
         [value]="codigo()"
         (valueChange)="codigo.set($event + '')"
       />
     </div>
     <div>
-      <app-label>Nombre</app-label>
+      <app-label for="unidad-nombre" required>Nombre</app-label>
       <app-input-field
+        id="unidad-nombre"
+        [maxLength]="120"
         className="mt-2"
         [value]="nombre()"
         (valueChange)="nombre.set($event + '')"

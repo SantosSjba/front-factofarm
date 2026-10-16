@@ -11,6 +11,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import type { StaffLeaveStatusDto, StaffLeaveTypeDto, UserListItemDto } from '../../models/directory.models';
@@ -32,6 +33,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     PageStateComponent,
     FormSelectComponent,
     InputFieldComponent,
+    FormFieldComponent,
     ButtonComponent,
   ],
   template: `
@@ -41,14 +43,14 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     </app-page-toolbar>
 
     <div class="mt-4 flex flex-wrap items-end gap-3">
-      <div class="w-full sm:w-64">
+      <app-form-field label="Empleado" required className="w-full sm:w-64">
         <app-form-select
-          placeholder="Empleado"
+          placeholder="Seleccione un empleado"
           [options]="userOptions()"
           [value]="selectedUserId()"
           (valueChange)="onUserChange($event)"
         />
-      </div>
+      </app-form-field>
       @if (selectedUserId()) {
         <app-button variant="outline" (btnClick)="checkIn()">Check-in</app-button>
         <app-button variant="outline" (btnClick)="checkOut()">Check-out</app-button>
@@ -73,12 +75,16 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
       <app-component-card title="Comisión por ventas" className="mt-4">
         <div class="flex flex-wrap items-end gap-3">
-          <app-input-field
-            type="number"
-            placeholder="% comisión"
-            [value]="commissionPercent()"
-            (valueChange)="setCommissionPercent($event)"
-          />
+          <app-form-field label="% de comisión" required>
+            <app-input-field
+              type="number"
+              min="0"
+              max="100"
+              placeholder="0 – 100"
+              [value]="commissionPercent()"
+              (valueChange)="setCommissionPercent($event)"
+            />
+          </app-form-field>
           <app-button variant="primary" (btnClick)="saveCommission()">Guardar comisión</app-button>
         </div>
       </app-component-card>
@@ -111,9 +117,13 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
     <app-component-card title="Productividad" className="mt-4">
       <div class="mb-3 flex flex-wrap gap-3">
-        <app-input-field type="date" ariaLabel="Productividad desde" [value]="prodFrom()" (valueChange)="prodFrom.set('' + $event)" />
-        <app-input-field type="date" ariaLabel="Productividad hasta" [value]="prodTo()" (valueChange)="prodTo.set('' + $event)" />
-        <app-button variant="primary" (btnClick)="productivityQuery.refetch()">Consultar</app-button>
+        <app-form-field label="Desde" required>
+          <app-input-field type="date" ariaLabel="Productividad desde" [value]="prodFrom()" (valueChange)="prodFrom.set('' + $event)" />
+        </app-form-field>
+        <app-form-field label="Hasta" required>
+          <app-input-field type="date" ariaLabel="Productividad hasta" [value]="prodTo()" (valueChange)="prodTo.set('' + $event)" />
+        </app-form-field>
+        <app-button variant="primary" (btnClick)="consultProductivity()">Consultar</app-button>
       </div>
       <app-page-state [loading]="productivityQuery.isPending()" [error]="productivityError()" (retry)="productivityQuery.refetch()">
         @if (productivityQuery.data(); as report) {
@@ -146,14 +156,20 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     <app-component-card title="Licencias y vacaciones" className="mt-4">
       @if (selectedUserId()) {
         <div class="mb-4 flex flex-wrap items-end gap-3">
-          <app-form-select
-            placeholder="Tipo"
-            [options]="leaveTypeOptions"
-            [value]="leaveTipo()"
-            (valueChange)="onLeaveTipoChange($event)"
-          />
-          <app-input-field type="date" placeholder="Desde" [value]="leaveFrom()" (valueChange)="leaveFrom.set('' + $event)" />
-          <app-input-field type="date" placeholder="Hasta" [value]="leaveTo()" (valueChange)="leaveTo.set('' + $event)" />
+          <app-form-field label="Tipo" required>
+            <app-form-select
+              placeholder="Tipo"
+              [options]="leaveTypeOptions"
+              [value]="leaveTipo()"
+              (valueChange)="onLeaveTipoChange($event)"
+            />
+          </app-form-field>
+          <app-form-field label="Desde" required>
+            <app-input-field type="date" ariaLabel="Licencia desde" [value]="leaveFrom()" (valueChange)="leaveFrom.set('' + $event)" />
+          </app-form-field>
+          <app-form-field label="Hasta" required>
+            <app-input-field type="date" ariaLabel="Licencia hasta" [value]="leaveTo()" (valueChange)="leaveTo.set('' + $event)" />
+          </app-form-field>
           <app-button variant="primary" (btnClick)="createLeave()">Solicitar</app-button>
         </div>
       }
@@ -261,6 +277,7 @@ export class GestionPersonalComponent {
 
   protected readonly productivityQuery = injectQuery(() => ({
     queryKey: ['staff', 'productivity', this.prodFrom(), this.prodTo()] as const,
+    enabled: !!this.prodFrom() && !!this.prodTo() && this.prodFrom() <= this.prodTo(),
     queryFn: () => firstValueFrom(this.api.getStaffProductivityReport(this.prodFrom(), this.prodTo())) }));
 
   protected readonly leavesQuery = injectQuery(() => ({
@@ -352,9 +369,26 @@ export class GestionPersonalComponent {
     this.checkOutMutation.mutate(userId);
   }
 
+  protected consultProductivity() {
+    if (!this.prodFrom() || !this.prodTo()) {
+      this.notify.warning('Indique las fechas desde y hasta.');
+      return;
+    }
+    if (this.prodFrom() > this.prodTo()) {
+      this.notify.warning('La fecha "desde" no puede ser posterior a "hasta".');
+      return;
+    }
+    void this.productivityQuery.refetch();
+  }
+
   protected saveSchedule() {
     const userId = this.selectedUserId();
     if (!userId) return;
+    const bad = this.scheduleRows().find((r) => r.startTime && r.endTime && r.startTime >= r.endTime);
+    if (bad) {
+      this.notify.warning(`En ${this.dayLabel(bad.dayOfWeek)}, la hora de salida debe ser posterior a la de entrada.`);
+      return;
+    }
     firstValueFrom(this.api.upsertStaffWorkSchedule(userId, this.scheduleRows()))
       .then(() => {
         this.notify.success('Horario guardado');
@@ -365,6 +399,11 @@ export class GestionPersonalComponent {
   protected saveCommission() {
     const userId = this.selectedUserId();
     if (!userId) return;
+    const pct = this.commissionPercent();
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      this.notify.warning('El porcentaje de comisión debe estar entre 0 y 100.');
+      return;
+    }
     firstValueFrom(this.api.upsertStaffCommissionRule(userId, this.commissionPercent()))
       .then(() => {
         this.notify.success('Comisión actualizada');
@@ -377,6 +416,10 @@ export class GestionPersonalComponent {
     const userId = this.selectedUserId();
     if (!userId || !this.leaveFrom() || !this.leaveTo()) {
       this.notify.warning('Seleccione empleado y fechas');
+      return;
+    }
+    if (this.leaveFrom() > this.leaveTo()) {
+      this.notify.warning('La fecha "desde" no puede ser posterior a "hasta".');
       return;
     }
     firstValueFrom(

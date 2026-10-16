@@ -19,8 +19,8 @@
     @if (activeTab() === 'datos') {
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         <div (focusout)="onFieldBlur('nombre')">
-          <app-label for="usuario-campo-1">Nombre</app-label>
-          <app-input-field id="usuario-campo-1"
+          <app-label for="usuario-campo-1" required>Nombre</app-label>
+          <app-input-field [maxLength]="150" id="usuario-campo-1"
             className="mt-1.5"
             placeholder="Nombre completo"
             [value]="nombre()"
@@ -30,8 +30,8 @@
           />
         </div>
         <div (focusout)="onFieldBlur('email')">
-          <app-label for="usuario-campo-2">Correo electrónico</app-label>
-          <app-input-field id="usuario-campo-2"
+          <app-label for="usuario-campo-2" required>Correo electrónico</app-label>
+          <app-input-field [maxLength]="150" id="usuario-campo-2"
             type="email"
             className="mt-1.5"
             placeholder="correo@ejemplo.com"
@@ -42,7 +42,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('establecimientoId')">
-          <app-label for="usuario-campo-3">Establecimiento</app-label>
+          <app-label for="usuario-campo-3" required>Establecimiento</app-label>
           <app-form-select id="usuario-campo-3"
             className="mt-1.5"
             [value]="establecimientoId()"
@@ -53,7 +53,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('role')">
-          <app-label for="usuario-campo-4">Perfil</app-label>
+          <app-label for="usuario-campo-4" required>Perfil</app-label>
           <app-form-select id="usuario-campo-4"
             className="mt-1.5"
             [value]="role()"
@@ -66,9 +66,10 @@
           />
         </div>
         <div (focusout)="onFieldBlur('password')">
-          <app-label for="usuario-campo-5">{{ passwordLabel() }}</app-label>
+          <app-label for="usuario-campo-5" [required]="!isEditing()">{{ passwordLabel() }}</app-label>
           <app-input-field id="usuario-campo-5"
             type="password"
+            [maxLength]="100"
             className="mt-1.5"
             [placeholder]="passwordPlaceholder()"
             [value]="password()"
@@ -78,9 +79,10 @@
           />
         </div>
         <div (focusout)="onFieldBlur('password2')">
-          <app-label for="usuario-campo-6">Confirmar contraseña</app-label>
+          <app-label for="usuario-campo-6" [required]="!isEditing() || !!password()">Confirmar contraseña</app-label>
           <app-input-field id="usuario-campo-6"
             type="password"
+            [maxLength]="100"
             className="mt-1.5"
             placeholder="••••••••"
             [value]="password2()"
@@ -114,7 +116,7 @@
     @if (activeTab() === 'personales') {
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         <div (focusout)="onFieldBlur('tipoDoc')">
-          <app-label for="usuario-campo-7">Tipo Doc. Identidad</app-label>
+          <app-label for="usuario-campo-7" [required]="!!numeroDoc().trim()">Tipo Doc. Identidad</app-label>
           <app-form-select id="usuario-campo-7"
             className="mt-1.5"
             [value]="tipoDoc()"
@@ -125,8 +127,8 @@
           />
         </div>
         <div (focusout)="onFieldBlur('numeroDoc')">
-          <app-label for="usuario-campo-8">Número</app-label>
-          <app-input-field id="usuario-campo-8"
+          <app-label for="usuario-campo-8" [required]="!!tipoDoc()">Número</app-label>
+          <app-input-field [maxLength]="20" id="usuario-campo-8"
             className="mt-1.5"
             [value]="numeroDoc()"
             [error]="showFieldError('numeroDoc')"
@@ -136,7 +138,7 @@
         </div>
         <div (focusout)="onFieldBlur('nombres')">
           <app-label for="usuario-campo-9">Nombres</app-label>
-          <app-input-field id="usuario-campo-9"
+          <app-input-field [maxLength]="120" id="usuario-campo-9"
             className="mt-1.5"
             [value]="nombres()"
             [error]="showFieldError('nombres')"
@@ -146,7 +148,7 @@
         </div>
         <div (focusout)="onFieldBlur('apellidos')">
           <app-label for="usuario-campo-10">Apellidos</app-label>
-          <app-input-field id="usuario-campo-10"
+          <app-input-field [maxLength]="120" id="usuario-campo-10"
             className="mt-1.5"
             [value]="apellidos()"
             [error]="showFieldError('apellidos')"
@@ -167,7 +169,7 @@
         </div>
         <div (focusout)="onFieldBlur('emailPersonal')">
           <app-label for="usuario-campo-12">Correo electrónico personal</app-label>
-          <app-input-field id="usuario-campo-12"
+          <app-input-field [maxLength]="150" id="usuario-campo-12"
             type="email"
             className="mt-1.5"
             [value]="emailPersonal()"
@@ -178,7 +180,7 @@
         </div>
         <div (focusout)="onFieldBlur('celPersonal')">
           <app-label for="usuario-campo-13">Nº Celular personal</app-label>
-          <app-input-field id="usuario-campo-13"
+          <app-input-field [maxLength]="16" inputMode="tel" id="usuario-campo-13"
             className="mt-1.5"
             [value]="celPersonal()"
             [error]="showFieldError('celPersonal')"
@@ -188,7 +190,7 @@
         </div>
         <div (focusout)="onFieldBlur('direccion')">
           <app-label for="usuario-campo-14">Dirección</app-label>
-          <app-input-field id="usuario-campo-14"
+          <app-input-field [maxLength]="250" id="usuario-campo-14"
             className="mt-1.5"
             [value]="direccion()"
             [error]="showFieldError('direccion')"
@@ -198,7 +200,7 @@
         </div>
         <div (focusout)="onFieldBlur('emailCorp')">
           <app-label for="usuario-campo-15">Correo electrónico corporativo</app-label>
-          <app-input-field id="usuario-campo-15"
+          <app-input-field [maxLength]="150" id="usuario-campo-15"
             type="email"
             className="mt-1.5"
             [value]="emailCorp()"
@@ -209,7 +211,7 @@
         </div>
         <div (focusout)="onFieldBlur('celCorp')">
           <app-label for="usuario-campo-16">Nº Celular corporativo</app-label>
-          <app-input-field id="usuario-campo-16"
+          <app-input-field [maxLength]="16" inputMode="tel" id="usuario-campo-16"
             className="mt-1.5"
             [value]="celCorp()"
             [error]="showFieldError('celCorp')"
@@ -230,7 +232,7 @@
         </div>
         <div (focusout)="onFieldBlur('cargo')">
           <app-label for="usuario-campo-18">Cargo</app-label>
-          <app-input-field id="usuario-campo-18"
+          <app-input-field [maxLength]="120" id="usuario-campo-18"
             className="mt-1.5"
             [value]="cargo()"
             [error]="showFieldError('cargo')"

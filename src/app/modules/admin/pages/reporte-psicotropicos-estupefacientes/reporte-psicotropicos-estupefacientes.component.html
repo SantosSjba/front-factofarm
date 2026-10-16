@@ -35,8 +35,8 @@
     emptyHint="Ajuste el rango de fechas e intente de nuevo."
     (retry)="ledgerQuery.refetch()">
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
-      <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
+      <app-input-field label="Desde" [isRequired]="true" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
+      <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
       <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportLedger()">Exportar Excel DIGEMID</app-button>
     </div>
 
@@ -84,8 +84,8 @@
     emptyTitle="Sin movimientos en el mes indicado"
     (retry)="monthlyQuery.refetch()">
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <app-input-field label="Año" type="number" [value]="reportYear()" (valueChange)="onReportYearChange($event)" />
-      <app-input-field label="Mes" type="number" [value]="reportMonth()" (valueChange)="onReportMonthChange($event)" />
+      <app-input-field label="Año" [isRequired]="true" min="2000" max="2100" type="number" [value]="reportYear()" (valueChange)="onReportYearChange($event)" />
+      <app-input-field label="Mes" [isRequired]="true" min="1" max="12" type="number" [value]="reportMonth()" (valueChange)="onReportMonthChange($event)" />
     </div>
 
     <div class="overflow-x-auto">

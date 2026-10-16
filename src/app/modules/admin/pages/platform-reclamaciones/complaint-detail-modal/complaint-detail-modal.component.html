@@ -62,7 +62,7 @@
           label="Notas internas (plataforma)"
           helpText="Notas solo para el equipo FactoSys; el consumidor no las ve."
         >
-          <app-text-area
+          <app-text-area [maxLength]="4000"
             [value]="internalNotes()"
             [rows]="4"
             (valueChange)="internalNotes.set('' + $event)"
@@ -73,7 +73,7 @@
           label="Respuesta al consumidor"
           helpText="Texto de respuesta conforme Ley 29571 (plazo orientativo: 15 días hábiles)."
         >
-          <app-text-area
+          <app-text-area [maxLength]="4000"
             [value]="responseNotes()"
             [rows]="4"
             placeholder="Texto de respuesta conforme Ley 29571 (15 días hábiles)"

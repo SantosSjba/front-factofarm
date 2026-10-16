@@ -94,22 +94,22 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-modal title="Nuevo convenio" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-4">
         <div>
-          <app-label>Código</app-label>
-          <app-input-field [value]="formCodigo()" (valueChange)="formCodigo.set('' + $event)" />
+          <app-label required>Código</app-label>
+          <app-input-field [maxLength]="40" [value]="formCodigo()" (valueChange)="formCodigo.set('' + $event)" />
         </div>
         <div>
-          <app-label>Nombre</app-label>
-          <app-input-field [value]="formNombre()" (valueChange)="formNombre.set('' + $event)" />
+          <app-label required>Nombre</app-label>
+          <app-input-field [maxLength]="200" [value]="formNombre()" (valueChange)="formNombre.set('' + $event)" />
         </div>
         <div>
-          <app-label>Tipo</app-label>
+          <app-label required>Tipo</app-label>
           <app-form-select [value]="formTipo()" (valueChange)="onTipoChange($event)" [options]="tipoOptions" />
         </div>
         <div>
           <app-label>Cobertura %</app-label>
-          <app-input-field type="number" [value]="formCobertura()" (valueChange)="formCobertura.set(parseNum($event))" />
+          <app-input-field min="0" max="100" type="number" [value]="formCobertura()" (valueChange)="formCobertura.set(parseNum($event))" />
         </div>
-        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
+        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">Guardar</app-button>
       </div>
     </app-modal>
   `,
@@ -152,6 +152,19 @@ export class ConveniosSegurosComponent {
 
   protected onTipoChange(value: string) {
     this.formTipo.set(value as AgreementType);
+  }
+
+  protected submitCreate() {
+    if (!this.formCodigo().trim() || !this.formNombre().trim()) {
+      this.notify.warning('Complete el código y el nombre del convenio.');
+      return;
+    }
+    const cobertura = this.formCobertura();
+    if (!Number.isFinite(cobertura) || cobertura < 0 || cobertura > 100) {
+      this.notify.warning('La cobertura debe estar entre 0 y 100 %.');
+      return;
+    }
+    this.createMutation.mutate();
   }
 
   protected readonly createMutation = injectMutation(() => ({

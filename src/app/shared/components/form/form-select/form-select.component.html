@@ -1,3 +1,6 @@
+@if (label) {
+  <app-label [for]="id || undefined" [required]="required">{{ label }}</app-label>
+}
 <div class="relative">
   <select
     [id]="id || null"

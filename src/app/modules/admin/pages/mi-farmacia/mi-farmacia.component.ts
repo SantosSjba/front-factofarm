@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { isOptionalEmail, isOptionalUrl } from '../../../../core/utils/form-validators';
+import { isValidRuc } from '../../../../core/utils/peru-documents';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FilesApiService } from '../../../../core/services/files-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
@@ -328,9 +330,10 @@ export class MiFarmaciaComponent {
         this.logoPreview.set(this.filesApi.absoluteFileUrl(res.url));
         this.notify.success('Logo subido. Guarde los cambios para aplicarlo.');
       },
-      error: () => {
-        this.logoUploadError.set('No se pudo subir el logo.');
-        this.notify.error('Error al subir el logo');
+      error: (err: unknown) => {
+        const msg = httpErrorMessage(err, 'No se pudo subir el logo.');
+        this.logoUploadError.set(msg);
+        this.notify.error('Error al subir el logo', msg);
       },
     });
   }
@@ -347,11 +350,27 @@ export class MiFarmaciaComponent {
   protected submit() {
     const ruc = this.rucEmisor().trim();
     if (ruc && !/^\d{11}$/.test(ruc)) {
-      this.notify.error('El RUC debe tener 11 dígitos');
+      this.notify.warning('El RUC debe tener 11 dígitos');
+      return;
+    }
+    if (ruc && !isValidRuc(ruc)) {
+      this.notify.warning('El RUC no es válido: revise los dígitos (dígito verificador SUNAT).');
       return;
     }
     if (!this.nombre().trim()) {
-      this.notify.error('Indique el nombre del local');
+      this.notify.warning('Indique el nombre del local');
+      return;
+    }
+    if (!isOptionalEmail(this.correoContacto())) {
+      this.notify.warning('Ingrese un correo de contacto válido.');
+      return;
+    }
+    if (!isOptionalUrl(this.direccionWeb())) {
+      this.notify.warning('Ingrese un sitio web válido (ej. https://mifarmacia.pe).');
+      return;
+    }
+    if (!isOptionalUrl(this.apiUrl()) || !isOptionalUrl(this.consultaApiUrl())) {
+      this.notify.warning('Revise las URL del proveedor de facturación: no tienen un formato válido.');
       return;
     }
 
@@ -362,7 +381,7 @@ export class MiFarmaciaComponent {
       !this.hasOseCredentials() &&
       !token
     ) {
-      this.notify.error('Ingrese el token API del proveedor OSE o elija “solo notas de venta”.');
+      this.notify.warning('Ingrese el token API del proveedor OSE o elija “solo notas de venta”.');
       return;
     }
 

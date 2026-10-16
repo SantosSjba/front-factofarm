@@ -1,7 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { httpErrorMessage } from '../../core/http/http-error-message';
 import { PublicLegalService } from '../../core/services/public-legal.service';
+import { isValidEmail } from '../../core/utils/form-validators';
 import { ButtonComponent } from '../../shared/components/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/components/form/form-field/form-field.component';
 import { FormRowComponent } from '../../shared/components/form/form-row/form-row.component';
@@ -84,7 +86,11 @@ export class ComplaintsBookPageComponent {
       !payload.detalle ||
       !payload.pedido
     ) {
-      this.formError.set('Completa todos los campos obligatorios marcados.');
+      this.formError.set('Completa todos los campos obligatorios marcados con *.');
+      return;
+    }
+    if (payload.email && !isValidEmail(payload.email)) {
+      this.formError.set('El correo electrónico no es válido.');
       return;
     }
 
@@ -92,8 +98,10 @@ export class ComplaintsBookPageComponent {
     try {
       const res = await firstValueFrom(this.api.submitComplaint(payload));
       this.numeroRegistro.set(res.numeroRegistro);
-    } catch {
-      this.formError.set('No se pudo registrar su reclamo. Intente nuevamente en unos minutos.');
+    } catch (err) {
+      this.formError.set(
+        httpErrorMessage(err, 'No se pudo registrar su reclamo. Intente nuevamente en unos minutos.'),
+      );
     } finally {
       this.submitting.set(false);
     }

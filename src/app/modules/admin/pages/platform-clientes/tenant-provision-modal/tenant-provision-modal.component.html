@@ -27,8 +27,8 @@
       <app-form-field
         label="Establecimiento inicial"
         helpText="Nombre de la primera sede (local o botica) del cliente."
-      >
-        <app-input-field
+       required>
+        <app-input-field [maxLength]="200"
           [value]="establishmentNombre()"
           (valueChange)="establishmentNombre.set('' + $event)"
         />
@@ -39,14 +39,14 @@
           label="Código sede"
           helpText="Código interno corto de la sede (ej. 0001)."
         >
-          <app-input-field
+          <app-input-field [maxLength]="20"
             [value]="establishmentCodigo()"
             placeholder="0001"
             (valueChange)="establishmentCodigo.set('' + $event)"
           />
         </app-form-field>
-        <app-form-field label="Administrador — nombre">
-          <app-input-field
+        <app-form-field label="Administrador — nombre" required>
+          <app-input-field [maxLength]="120"
             [value]="adminNombre()"
             (valueChange)="adminNombre.set('' + $event)"
           />
@@ -56,8 +56,8 @@
       <app-form-field
         label="Administrador — correo"
         helpText="Correo de acceso (login) del administrador del cliente."
-      >
-        <app-input-field
+       required>
+        <app-input-field [maxLength]="150"
           type="email"
           [value]="adminEmail()"
           placeholder="admin@farmacia.com"
@@ -68,7 +68,7 @@
       <app-form-field
         label="Contraseña inicial"
         helpText="Contraseña temporal. El administrador debería cambiarla al ingresar."
-      >
+       required>
         <app-input-field
           type="password"
           [value]="adminPassword()"

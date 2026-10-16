@@ -7,11 +7,14 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { isOptionalUrl } from '../../../../core/utils/form-validators';
+import { isValidRuc } from '../../../../core/utils/peru-documents';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -37,6 +40,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/sta
     ButtonComponent,
     FormSelectComponent,
     InputFieldComponent,
+    FormFieldComponent,
     ModalComponent,
   ],
   templateUrl: './comprobante-electronico.component.html' })
@@ -249,6 +253,37 @@ export class ComprobanteElectronicoComponent {
       void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo consultar el estado')) }));
+
+  protected submitConfig() {
+    const ruc = this.rucEmisor().trim();
+    if (ruc && !isValidRuc(ruc)) {
+      this.notify.warning('El RUC emisor no es válido (11 dígitos con dígito verificador SUNAT).');
+      return;
+    }
+    if (!isOptionalUrl(this.apiUrl()) || !isOptionalUrl(this.consultaApiUrl())) {
+      this.notify.warning('Revise las URL del proveedor: no tienen un formato válido.');
+      return;
+    }
+    this.saveConfigMutation.mutate();
+  }
+
+  protected submitSpecial() {
+    const missing = [
+      !this.specialCustomer().trim() && 'cliente',
+      !this.specialDocType().trim() && 'tipo de documento',
+      !this.specialDocNumber().trim() && 'número de documento',
+    ].filter(Boolean);
+    if (missing.length) {
+      this.notify.warning(`Complete los campos obligatorios: ${missing.join(', ')}.`);
+      return;
+    }
+    const amount = Number(this.specialAmount());
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.notify.warning('El monto total debe ser un número mayor a 0.');
+      return;
+    }
+    this.emitSpecialMutation.mutate();
+  }
 
   protected emitSpecialMutation = injectMutation(() => ({
     mutationFn: () => {

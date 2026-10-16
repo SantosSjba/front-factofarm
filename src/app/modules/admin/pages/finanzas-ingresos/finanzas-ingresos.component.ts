@@ -32,7 +32,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
       <h1 data-toolbar-title class="text-title-sm font-semibold">Presupuesto vs compras</h1>
     </app-page-toolbar>
     <div class="mt-4 flex gap-3">
-      <app-input-field type="number" [value]="anio()" (valueChange)="anio.set(parseNum($event))" placeholder="Año" />
+      <app-input-field label="Año" [isRequired]="true" type="number" min="2000" max="2100" [value]="anio()" (valueChange)="anio.set(parseNum($event))" />
       <app-button variant="primary" (btnClick)="budgetQuery.refetch()">Consultar</app-button>
     </div>
     <app-page-state [loading]="budgetQuery.isPending()" [error]="budgetError()" (retry)="budgetQuery.refetch()">

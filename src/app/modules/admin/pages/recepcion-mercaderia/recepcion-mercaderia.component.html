@@ -59,9 +59,10 @@
           </div>
           @if (line.manejaLotes) {
             <div>
-              <label [for]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Lote</label>
+              <label [for]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Lote <span class="text-error-500" aria-hidden="true">*</span></label>
               <app-input-field [id]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId"
                 placeholder="Código lote"
+                [maxLength]="60"
                 [ariaLabel]="'Código de lote de ' + line.producto"
                 [value]="line.lotCode"
                 (valueChange)="updateLine(line.purchaseOrderItemId, { lotCode: '' + $event })"
@@ -86,11 +87,11 @@
       <div class="grid gap-2 sm:grid-cols-2">
         <div>
           <label for="recepcion-mercaderia-4" class="mb-1 block text-xs text-gray-500">N° factura / guía</label>
-          <app-input-field id="recepcion-mercaderia-4" ariaLabel="Número de factura o guía del proveedor" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
+          <app-input-field id="recepcion-mercaderia-4" [maxLength]="60" ariaLabel="Número de factura o guía del proveedor" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
         </div>
         <div>
           <label for="recepcion-mercaderia-5" class="mb-1 block text-xs text-gray-500">Comentario</label>
-          <app-input-field id="recepcion-mercaderia-5" ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
+          <app-input-field id="recepcion-mercaderia-5" [maxLength]="500" ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
         </div>
       </div>
       <app-button variant="primary" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">

@@ -174,7 +174,7 @@
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-6">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="md:col-span-2">
-        <app-label>Producto</app-label>
+        <app-label required>Producto</app-label>
         <app-input-field
           className="mt-2"
           [value]="(outboundProduct()?.producto || '') + (outboundProduct()?.codigoInterno ? ' | ' + outboundProduct()?.codigoInterno : '')"
@@ -182,8 +182,8 @@
         />
       </div>
       <div>
-        <app-label>Cantidad</app-label>
-        <app-input-field
+        <app-label required>Cantidad</app-label>
+        <app-input-field min="0"
           className="mt-2"
           type="number"
           [disabled]="outboundPending()"
@@ -193,7 +193,7 @@
       </div>
 
       <div class="md:col-span-2">
-        <app-label>Almacén</app-label>
+        <app-label required>Almacén</app-label>
         <app-form-select
           className="mt-2"
           [value]="outboundWarehouseId()"
@@ -206,7 +206,7 @@
       <div>
         <app-label>Código lote</app-label>
         <div class="relative mt-2">
-          <input
+          <input maxlength="120"
             type="text"
             class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-10 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
             [disabled]="outboundPending()"
@@ -252,7 +252,7 @@
       </div>
 
       <div class="md:col-span-2">
-        <app-label>Motivo traslado</app-label>
+        <app-label required>Motivo traslado</app-label>
         <app-form-select
           className="mt-2"
           [value]="outboundTransferReasonId()"
@@ -274,7 +274,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label>Comentarios</app-label>
-        <textarea
+        <textarea maxlength="500"
           rows="3"
           class="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
           [disabled]="outboundPending()"
@@ -301,7 +301,7 @@
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-6">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="md:col-span-2">
-        <app-label>Producto</app-label>
+        <app-label required>Producto</app-label>
         <app-input-field
           className="mt-2"
           [value]="(inboundProduct()?.producto || '') + (inboundProduct()?.codigoInterno ? ' | ' + inboundProduct()?.codigoInterno : '')"
@@ -309,8 +309,8 @@
         />
       </div>
       <div>
-        <app-label>Cantidad</app-label>
-        <app-input-field
+        <app-label required>Cantidad</app-label>
+        <app-input-field min="0"
           className="mt-2"
           type="number"
           [disabled]="inboundPending()"
@@ -320,7 +320,7 @@
       </div>
 
       <div class="md:col-span-2">
-        <app-label>Almacén</app-label>
+        <app-label required>Almacén</app-label>
         <app-form-select
           className="mt-2"
           [value]="inboundWarehouseId()"
@@ -333,7 +333,7 @@
       <div>
         <app-label>Código lote</app-label>
         <div class="relative mt-2">
-          <input
+          <input maxlength="120"
             type="text"
             class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-10 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
             [disabled]="inboundPending()"
@@ -389,7 +389,7 @@
         />
       </div>
       <div class="md:col-span-2">
-        <app-label>Motivo traslado</app-label>
+        <app-label required>Motivo traslado</app-label>
         <app-form-select
           className="mt-2"
           [value]="inboundTransferReasonId()"
@@ -412,7 +412,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label>Comentarios</app-label>
-        <textarea
+        <textarea maxlength="500"
           rows="3"
           class="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
           [disabled]="inboundPending()"
@@ -439,7 +439,7 @@
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-6">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div class="md:col-span-2">
-        <app-label>Producto</app-label>
+        <app-label required>Producto</app-label>
         <app-input-field
           className="mt-2"
           [value]="(adjustmentProduct()?.producto || '') + (adjustmentProduct()?.codigoInterno ? ' | ' + adjustmentProduct()?.codigoInterno : '')"
@@ -451,8 +451,8 @@
         <app-input-field className="mt-2" [value]="formatStock(adjustmentProduct()?.stock || '0')" [disabled]="true" />
       </div>
       <div>
-        <app-label>Cantidad contada</app-label>
-        <app-input-field
+        <app-label required>Cantidad contada</app-label>
+        <app-input-field min="0"
           className="mt-2"
           type="number"
           [disabled]="adjustmentPending()"
@@ -461,7 +461,7 @@
         />
       </div>
       <div class="md:col-span-2">
-        <app-label>Almacén</app-label>
+        <app-label required>Almacén</app-label>
         <app-form-select
           className="mt-2"
           [value]="adjustmentWarehouseId()"
@@ -473,7 +473,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label>Código lote (opcional)</app-label>
-        <app-input-field
+        <app-input-field [maxLength]="120"
           className="mt-2"
           [disabled]="adjustmentPending()"
           [value]="adjustmentLotCode()"
@@ -481,8 +481,8 @@
         />
       </div>
       <div class="md:col-span-2">
-        <app-label>Motivo</app-label>
-        <textarea
+        <app-label required>Motivo</app-label>
+        <textarea maxlength="500"
           rows="3"
           class="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
           [disabled]="adjustmentPending()"

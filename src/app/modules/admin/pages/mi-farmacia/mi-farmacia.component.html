@@ -75,8 +75,8 @@
             <app-form-field
               label="Nombre del local"
               helpText="Nombre comercial de esta sede (aparece en menús y reportes)."
-            >
-              <app-input-field
+             required>
+              <app-input-field [maxLength]="200"
                 [value]="nombre()"
                 placeholder="Ej. Botica San Martín — Local 1"
                 (valueChange)="nombre.set('' + $event)"
@@ -86,7 +86,7 @@
               label="Código sede"
               helpText="Código interno corto del local (ej. 0001)."
             >
-              <app-input-field
+              <app-input-field [maxLength]="20"
                 [value]="codigo()"
                 placeholder="0001"
                 (valueChange)="codigo.set('' + $event)"
@@ -119,10 +119,10 @@
 
         <app-form-row>
           <app-form-field label="Teléfono">
-            <app-input-field [value]="telefono()" (valueChange)="telefono.set('' + $event)" />
+            <app-input-field [maxLength]="40" [value]="telefono()" (valueChange)="telefono.set('' + $event)" />
           </app-form-field>
           <app-form-field label="Correo de contacto">
-            <app-input-field
+            <app-input-field [maxLength]="200"
               type="email"
               [value]="correoContacto()"
               (valueChange)="correoContacto.set('' + $event)"
@@ -131,7 +131,7 @@
         </app-form-row>
 
         <app-form-field label="Sitio web">
-          <app-input-field
+          <app-input-field [maxLength]="200"
             [value]="direccionWeb()"
             placeholder="https://"
             (valueChange)="direccionWeb.set('' + $event)"
@@ -142,14 +142,14 @@
           label="Registro DIGEMID"
           helpText="Número de registro sanitario del establecimiento ante DIGEMID (si aplica)."
         >
-          <app-input-field
+          <app-input-field [maxLength]="80"
             [value]="numeroRegistroDigemid()"
             (valueChange)="numeroRegistroDigemid.set('' + $event)"
           />
         </app-form-field>
 
         <app-form-field label="Información adicional">
-          <app-text-area
+          <app-text-area [maxLength]="1000"
             [value]="informacionAdicional()"
             [rows]="3"
             (valueChange)="informacionAdicional.set('' + $event)"
@@ -170,7 +170,7 @@
               label="RUC emisor"
               helpText="RUC de 11 dígitos con el que emitirá boletas y facturas."
             >
-              <app-input-field
+              <app-input-field [maxLength]="11" inputMode="numeric"
                 [value]="rucEmisor()"
                 placeholder="20XXXXXXXXX"
                 (valueChange)="rucEmisor.set('' + $event)"
@@ -180,7 +180,7 @@
               label="Razón social"
               helpText="Nombre legal registrado en SUNAT."
             >
-              <app-input-field
+              <app-input-field [maxLength]="200"
                 [value]="razonSocialEmisor()"
                 (valueChange)="razonSocialEmisor.set('' + $event)"
               />
@@ -240,7 +240,7 @@
 
           @if (needsOseCredentials()) {
             <app-form-field label="URL API" [helpText]="apiUrlHelp()">
-              <app-input-field
+              <app-input-field [maxLength]="500"
                 [value]="apiUrl()"
                 [placeholder]="defaultApiUrlHint()"
                 (valueChange)="apiUrl.set('' + $event)"
@@ -251,14 +251,14 @@
               label="URL consulta (RUC / CPE)"
               helpText="Opcional. Solo si su proveedor da API de consulta aparte (p. ej. Factiliza: https://api.factiliza.com/v1)."
             >
-              <app-input-field
+              <app-input-field [maxLength]="500"
                 [value]="consultaApiUrl()"
                 placeholder="https://…"
                 (valueChange)="consultaApiUrl.set('' + $event)"
               />
             </app-form-field>
 
-            <app-form-field label="Token API" [helpText]="apiTokenHelp()">
+            <app-form-field label="Token API" [helpText]="apiTokenHelp()" [required]="!hasOseCredentials()">
               <app-input-field
                 type="password"
                 [value]="apiToken()"
@@ -336,14 +336,14 @@
           </app-form-field>
 
           <app-form-field label="Dirección fiscal">
-            <app-input-field
+            <app-input-field [maxLength]="500"
               [value]="direccionFiscal()"
               (valueChange)="direccionFiscal.set('' + $event)"
             />
           </app-form-field>
 
           <app-form-field label="Dirección comercial">
-            <app-input-field
+            <app-input-field [maxLength]="500"
               [value]="direccionComercial()"
               (valueChange)="direccionComercial.set('' + $event)"
             />

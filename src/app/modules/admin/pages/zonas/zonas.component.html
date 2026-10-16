@@ -113,8 +113,10 @@
   </div>
 
   <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
-    <app-label>Nombre</app-label>
+    <app-label for="zona-nombre" required>Nombre</app-label>
     <app-input-field
+      id="zona-nombre"
+      [maxLength]="120"
       className="mt-2"
       [value]="nombre()"
       (valueChange)="nombre.set($event + '')"

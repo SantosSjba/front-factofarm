@@ -12,6 +12,8 @@ import { ListFiltersComponent } from '../../../../shared/components/common/list-
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/common/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { DepartureAddressDto } from '../../models/directory.models';
@@ -31,6 +33,8 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
+    ConfirmDialogComponent,
     HasPermissionDirective,
   ],
   template: `
@@ -68,7 +72,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                     [iconOnly]="true"
                     startIconName="mdi:trash-can-outline"
                     tooltip="Eliminar"
-                    (btnClick)="deleteMutation.mutate(row.id)"
+                    (btnClick)="deleteTarget.set(row)"
                   />
                 </div>
               </td>
@@ -83,12 +87,28 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     <app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold">{{ editing() ? 'Editar dirección' : 'Nueva dirección' }}</h3>
-        @if (!editing()) { <app-input-field [value]="codigo()" (valueChange)="codigo.set('' + $event)" placeholder="Código" /> }
-        <app-input-field [value]="nombre()" (valueChange)="nombre.set('' + $event)" placeholder="Nombre (ej. Almacén central)" />
-        <app-input-field [value]="direccion()" (valueChange)="direccion.set('' + $event)" placeholder="Dirección completa" />
-        <app-button variant="primary" (btnClick)="saveMutation.mutate()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+        @if (!editing()) {
+          <app-form-field label="Código" required helpText="Código de establecimiento anexo SUNAT del punto de partida.">
+            <app-input-field [value]="codigo()" (valueChange)="codigo.set('' + $event)" placeholder="0000" [maxLength]="40" />
+          </app-form-field>
+        }
+        <app-form-field label="Nombre" required>
+          <app-input-field [value]="nombre()" (valueChange)="nombre.set('' + $event)" placeholder="Ej. Almacén central" [maxLength]="200" />
+        </app-form-field>
+        <app-form-field label="Dirección completa" required>
+          <app-input-field [value]="direccion()" (valueChange)="direccion.set('' + $event)" [maxLength]="500" />
+        </app-form-field>
+        <app-button variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
       </div>
     </app-modal>
+    <app-confirm-dialog
+      [open]="!!deleteTarget()"
+      title="Eliminar dirección"
+      [message]="'¿Desea eliminar la dirección ' + (deleteTarget()?.nombre ?? '') + '?'"
+      confirmLabel="Eliminar"
+      (cancelled)="deleteTarget.set(null)"
+      (confirmed)="confirmDelete()"
+    />
   `,
 })
 export class DireccionesPartidaComponent {
@@ -132,6 +152,27 @@ export class DireccionesPartidaComponent {
     this.nombre.set(row.nombre);
     this.direccion.set(row.direccion);
     this.modalOpen.set(true);
+  }
+
+  protected readonly deleteTarget = signal<DepartureAddressDto | null>(null);
+
+  protected submit() {
+    const missing = [
+      !this.editing() && !this.codigo().trim() && 'código',
+      !this.nombre().trim() && 'nombre',
+      !this.direccion().trim() && 'dirección',
+    ].filter(Boolean);
+    if (missing.length) {
+      this.notify.warning(`Complete los campos obligatorios: ${missing.join(', ')}.`);
+      return;
+    }
+    this.saveMutation.mutate();
+  }
+
+  protected confirmDelete() {
+    const row = this.deleteTarget();
+    this.deleteTarget.set(null);
+    if (row) this.deleteMutation.mutate(row.id);
   }
 
   protected readonly saveMutation = injectMutation(() => ({

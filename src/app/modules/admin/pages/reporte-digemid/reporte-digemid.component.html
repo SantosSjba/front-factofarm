@@ -7,8 +7,8 @@
 
 @if (activeTab() !== 'farmacovigilancia') {
   <div class="mb-4 flex flex-wrap gap-3">
-    <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
-    <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
+    <app-input-field label="Desde" [isRequired]="true" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
+    <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
   </div>
 }
 
@@ -144,20 +144,20 @@
 
 <app-modal [isOpen]="createOpen()" title="Registrar evento adverso" (closed)="createOpen.set(false)">
   <div class="space-y-3">
-    <app-input-field label="Buscar producto" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" (keydown.enter)="searchProducts()" />
+    <app-input-field label="Producto" placeholder="Buscar y seleccionar producto" [isRequired]="true" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" (keydown.enter)="searchProducts()" />
     @if (productOptions().length) { <ul class="max-h-48 overflow-auto rounded-lg border border-gray-200 text-sm dark:border-gray-800">@for (p of productOptions(); track p.id) { <li><button type="button" class="block w-full cursor-pointer px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectProduct(p)">{{ p.nombre }}</button></li> }</ul> }
     <app-input-field label="Buscar paciente (opcional)" [value]="customerSearch()" (valueChange)="customerSearch.set('' + $event)" (keydown.enter)="searchCustomers()" />
     @if (customerOptions().length) { <ul class="max-h-48 overflow-auto rounded-lg border border-gray-200 text-sm dark:border-gray-800">@for (c of customerOptions(); track c.id) { <li><button type="button" class="block w-full cursor-pointer px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCustomer(c)">{{ c.nombre }}</button></li> }</ul> }
     <app-form-select label="Severidad" [value]="severidad()" [options]="severityOptions" (valueChange)="severidad.set($any($event))" />
-    <app-text-area [rows]="4" placeholder="Descripción del evento adverso" [value]="descripcion()" (valueChange)="descripcion.set($event)" />
+    <app-text-area label="Descripción del evento adverso" [required]="true" [maxLength]="2000" [rows]="4" placeholder="Describa el evento observado" [value]="descripcion()" (valueChange)="descripcion.set($event)" />
     <app-button [disabled]="!productId() || !descripcion().trim() || createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
   </div>
 </app-modal>
 
 <app-modal [isOpen]="notifyOpen()" title="Notificación DIGEMID" (closed)="notifyOpen.set(false)">
   <div class="space-y-3">
-    <app-input-field label="N° reporte DIGEMID" [value]="digemidReportNumber()" (valueChange)="digemidReportNumber.set('' + $event)" />
-    <app-text-area [rows]="3" placeholder="Medidas correctivas" [value]="medidasCorrectivas()" (valueChange)="medidasCorrectivas.set($event)" />
+    <app-input-field label="N° reporte DIGEMID" [isRequired]="true" [maxLength]="40" [value]="digemidReportNumber()" (valueChange)="digemidReportNumber.set('' + $event)" />
+    <app-text-area label="Medidas correctivas" [maxLength]="2000" [rows]="3" [value]="medidasCorrectivas()" (valueChange)="medidasCorrectivas.set($event)" />
     <app-button [disabled]="!digemidReportNumber().trim() || notifyMutation.isPending()" [loading]="notifyMutation.isPending()" (btnClick)="notifyMutation.mutate()">Registrar notificación</app-button>
   </div>
 </app-modal>

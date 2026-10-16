@@ -1596,6 +1596,30 @@ export class ProductosComponent {
     return selectedWarehouse?.establishment.id ?? null;
   }
 
+
+  /** Reglas `@Min(0)` / `@IsInt` del DTO de producto que no cubre el esquema yup. */
+  private productNumericError(f: CreateProductRequest): { message: string; tab: ProductTab } | null {
+    const neg = (v: number | null | undefined) => v != null && Number.isFinite(v) && v < 0;
+    const notInt = (v: number | null | undefined) => v != null && Number.isFinite(v) && !Number.isInteger(v);
+    if (this.stockInicial() < 0) return { message: 'El stock inicial no puede ser negativo.', tab: 'general' };
+    if (neg(f.stockMinimo) || notInt(f.stockMinimo))
+      return { message: 'El stock mínimo debe ser un número entero mayor o igual a 0.', tab: 'general' };
+    if (neg(f.stockMaximo) || notInt(f.stockMaximo))
+      return { message: 'El stock máximo debe ser un número entero mayor o igual a 0.', tab: 'general' };
+    if (f.stockMaximo != null && f.stockMinimo != null && f.stockMaximo > 0 && f.stockMaximo < f.stockMinimo)
+      return { message: 'El stock máximo no puede ser menor que el stock mínimo.', tab: 'general' };
+    if (neg(f.porcentajeIsc)) return { message: 'El porcentaje ISC no puede ser negativo.', tab: 'compra' };
+    if (neg(f.numeroPuntos)) return { message: 'El número de puntos no puede ser negativo.', tab: 'general' };
+    if (neg(f.costoUnitario)) return { message: 'El costo unitario no puede ser negativo.', tab: 'compra' };
+    if (neg(f.porcentajeGanancia))
+      return { message: 'El porcentaje de ganancia no puede ser negativo.', tab: 'compra' };
+    const incompleteAttr = this.attributeRows().some(
+      (r) => !!r.attributeTypeId !== !!r.descripcion.trim(),
+    );
+    if (incompleteAttr)
+      return { message: 'En Atributos, complete el tipo y la descripción de cada fila (o elimine la fila).', tab: 'atributos' };
+    return null;
+  }
   protected async submitProduct() {
     this.formErrors.set({});
     const f = this.form();
@@ -1622,6 +1646,13 @@ export class ProductosComponent {
       return;
     }
 
+    const numericError = this.productNumericError(f);
+    if (numericError) {
+      this.notify.warning(numericError.message);
+      this.activeTab.set(numericError.tab);
+      return;
+    }
+
     const warehousePrices = Object.entries(this.warehousePrecioInputs())
       .map(([warehouseId, s]) => {
         const precio = parseFloat(String(s).replace(',', '.'));
@@ -1629,9 +1660,24 @@ export class ProductosComponent {
       })
       .filter((x) => x.precio > 0);
 
+    if (
+      Object.values(this.warehousePrecioInputs()).some(
+        (s) => parseFloat(String(s).replace(',', '.')) < 0,
+      )
+    ) {
+      this.notify.warning('Los precios por almacén no pueden ser negativos.');
+      this.activeTab.set('almacenes');
+      return;
+    }
+
     const warehouseStocks: { warehouseId: string; cantidad: number }[] = [];
     const dw = this.defaultWarehouseId();
     const si = this.stockInicial();
+    if (si > 0 && !dw && !this.editingProductId()) {
+      this.notify.warning('Seleccione el almacén donde se registrará el stock inicial.');
+      this.activeTab.set('general');
+      return;
+    }
     if (dw && si > 0) {
       warehouseStocks.push({ warehouseId: dw, cantidad: si });
     }

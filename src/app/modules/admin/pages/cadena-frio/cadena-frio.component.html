@@ -15,7 +15,7 @@
   <app-component-card title="Registrar temperatura">
     <div class="space-y-4">
       <div>
-        <app-label>Almacén</app-label>
+        <app-label required>Almacén</app-label>
         <app-form-select
           [options]="warehouseOptions()"
           [value]="warehouseId()"
@@ -23,7 +23,7 @@
         />
       </div>
       <div>
-        <app-label>Zona refrigerada</app-label>
+        <app-label required>Zona refrigerada</app-label>
         <app-form-select
           [options]="zoneOptions()"
           [value]="zoneId()"
@@ -36,17 +36,17 @@
         }
       </div>
       <div>
-        <app-label>Temperatura (°C)</app-label>
+        <app-label required>Temperatura (°C)</app-label>
         <app-input-field type="number" [value]="temperatura()" (valueChange)="temperatura.set(+$event)" />
       </div>
       <div>
         <app-label>Observación</app-label>
-        <app-input-field [value]="observacion()" (valueChange)="observacion.set('' + $event)" />
+        <app-input-field [maxLength]="500" [value]="observacion()" (valueChange)="observacion.set('' + $event)" />
       </div>
       <app-button
         variant="primary"
         [disabled]="!zoneId() || registerMutation.isPending()" [loading]="registerMutation.isPending()"
-        (btnClick)="registerMutation.mutate()"
+        (btnClick)="submitRegister()"
       >
         Registrar
       </app-button>

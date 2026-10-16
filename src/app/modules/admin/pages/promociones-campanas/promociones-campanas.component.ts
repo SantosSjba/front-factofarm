@@ -96,19 +96,22 @@ import type { PromotionType } from '../../models/directory.models';
     <app-modal title="Nueva promoción" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
       <div class="grid gap-3">
         <div>
-          <app-label>Código cupón</app-label>
-          <app-input-field [value]="codigo()" (valueChange)="codigo.set('' + $event)" />
+          <app-label required>Código cupón</app-label>
+          <app-input-field [maxLength]="40" [value]="codigo()" (valueChange)="codigo.set('' + $event)" />
         </div>
         <div>
-          <app-label>Nombre campaña</app-label>
-          <app-input-field [value]="nombre()" (valueChange)="nombre.set('' + $event)" />
+          <app-label required>Nombre campaña</app-label>
+          <app-input-field [maxLength]="200" [value]="nombre()" (valueChange)="nombre.set('' + $event)" />
         </div>
-        <app-form-select [options]="tipoOptions" [value]="tipo()" (valueChange)="tipo.set($any($event))" />
         <div>
-          <app-label>Valor (% o monto según tipo)</app-label>
-          <app-input-field type="number" [value]="valor()" (valueChange)="valor.set(+$event)" />
+          <app-label required>Tipo de promoción</app-label>
+          <app-form-select [options]="tipoOptions" [value]="tipo()" (valueChange)="tipo.set($any($event))" />
         </div>
-        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">
+        <div>
+          <app-label required>Valor (% o monto según tipo)</app-label>
+          <app-input-field min="0" type="number" [value]="valor()" (valueChange)="valor.set(+$event)" />
+        </div>
+        <app-button variant="primary" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">
           Guardar
         </app-button>
       </div>
@@ -146,6 +149,23 @@ export class PromocionesCampanasComponent {
       return httpErrorMessage(this.listQuery.error(), 'No se pudieron cargar promociones');
     }
     return null;
+  }
+
+  protected submitCreate() {
+    if (!this.codigo().trim() || !this.nombre().trim()) {
+      this.notify.warning('Complete el código del cupón y el nombre de la campaña.');
+      return;
+    }
+    const valor = this.valor();
+    if (!Number.isFinite(valor) || valor <= 0) {
+      this.notify.warning('El valor de la promoción debe ser mayor a 0.');
+      return;
+    }
+    if (this.tipo().startsWith('PORCENTAJE') && valor > 100) {
+      this.notify.warning('El porcentaje de descuento no puede superar el 100%.');
+      return;
+    }
+    this.createMutation.mutate();
   }
 
   protected readonly createMutation = injectMutation(() => ({

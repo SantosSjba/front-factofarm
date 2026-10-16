@@ -361,11 +361,11 @@ export class UsuarioFormModalComponent {
   private loadRefs() {
     this.api.listEstablishmentsAll().subscribe({
       next: (rows) => this.establishments.set(rows),
-      error: () => {
+      error: (err: unknown) => {
         this.establishments.set([]);
         this.notify.error(
           'No se pudieron cargar los establecimientos.',
-          'Compruebe la conexión o la API.',
+          httpErrorMessage(err, 'Compruebe la conexión e intente nuevamente.'),
         );
       },
     });
@@ -387,9 +387,12 @@ export class UsuarioFormModalComponent {
         }
         // Nuevo usuario: no marcar todo el árbol; plantilla de rol se aplica al cargar templates.
       },
-      error: () => {
+      error: (err: unknown) => {
         this.menuTrees.set([]);
-        this.notify.error('No se pudo cargar el catálogo de permisos.');
+        this.notify.error(
+          'No se pudo cargar el catálogo de permisos.',
+          httpErrorMessage(err, 'Intente nuevamente.'),
+        );
       },
     });
     this.api.getRoleTemplates().subscribe({
@@ -717,11 +720,12 @@ export class UsuarioFormModalComponent {
         this.fotoArchivoId.set(res.id);
         this.loadFotoPreview(res.id);
       },
-      error: () => {
-        this.fotoUploadError.set('No se pudo subir la imagen. ¿Tiene sesión iniciada?');
+      error: (err: unknown) => {
+        const msg = httpErrorMessage(err, 'No se pudo subir la imagen.');
+        this.fotoUploadError.set(msg);
         this.fotoArchivoId.set(null);
         this.revokeFotoPreview();
-        this.notify.error('Error al subir la imagen');
+        this.notify.error('Error al subir la imagen', msg);
       },
     });
   }

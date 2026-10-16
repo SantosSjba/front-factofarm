@@ -13,11 +13,12 @@ import { PaginationComponent } from '../../../../shared/components/common/pagina
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type {
-  PosCatalogItemDto,
+  ProductListItemDto,
   PurchaseOrderStatus,
   SupplierOptionDto } from '../../models/directory.models';
 
@@ -40,6 +41,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/sta
     ButtonComponent,
     FormSelectComponent,
     InputFieldComponent,
+    FormFieldComponent,
     ModalComponent,
   ],
   templateUrl: './ordenes-compra.component.html' })
@@ -57,7 +59,7 @@ export class OrdenesCompraComponent {
   protected readonly supplierId = signal('');
   protected readonly warehouseId = signal('');
   protected readonly search = signal('');
-  protected readonly catalog = signal<PosCatalogItemDto[]>([]);
+  protected readonly catalog = signal<ProductListItemDto[]>([]);
   protected readonly lines = signal<OrderLine[]>([]);
   protected readonly comentario = signal('');
   protected readonly condicionesPago = signal('');
@@ -115,7 +117,7 @@ export class OrdenesCompraComponent {
 
   constructor() {
     effect((onCleanup) => {
-      if (!this.createOpen() || !this.warehouseId()) return;
+      if (!this.createOpen()) return;
       const term = this.search().trim();
       const timer = setTimeout(() => void this.searchProducts(), term ? 350 : 0);
       onCleanup(() => clearTimeout(timer));
@@ -123,18 +125,21 @@ export class OrdenesCompraComponent {
   }
 
   protected async searchProducts() {
-    if (!this.warehouseId()) return;
     try {
+      // Catálogo completo de productos habilitados: se compra también lo que no tiene stock.
       const term = this.search().trim();
-      const rows = await firstValueFrom(this.api.getPosCatalog(this.warehouseId(), term || undefined));
-      this.catalog.set(rows);
+      const res = await firstValueFrom(
+        this.api.listProducts({ search: term || undefined, habilitado: true, pageSize: 50 }),
+      );
+      this.catalog.set(res.items);
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'Error al buscar productos'));
     }
   }
 
-  protected addLine(item: PosCatalogItemDto) {
-    const price = Number.parseFloat(item.precio);
+  protected addLine(item: ProductListItemDto) {
+    const parsed = Number.parseFloat(item.precioUnitarioCompra ?? '');
+    const price = Number.isFinite(parsed) ? parsed : undefined;
     const existing = this.lines().find((l) => l.productId === item.id);
     if (existing) {
       this.lines.update((rows) =>
@@ -156,6 +161,36 @@ export class OrdenesCompraComponent {
 
   protected closeDetail() {
     this.detailId.set(null);
+  }
+
+  protected updateLine(productId: string, patch: Partial<Pick<OrderLine, 'quantity' | 'unitPrice'>>) {
+    this.lines.update((rows) => rows.map((l) => (l.productId === productId ? { ...l, ...patch } : l)));
+  }
+
+  protected removeLine(productId: string) {
+    this.lines.update((rows) => rows.filter((l) => l.productId !== productId));
+  }
+
+  protected submitCreate() {
+    if (!this.supplierId() || !this.warehouseId()) {
+      this.notify.warning('Seleccione el proveedor y el almacén de destino.');
+      return;
+    }
+    if (this.lines().length === 0) {
+      this.notify.warning('Agregue al menos un producto a la orden.');
+      return;
+    }
+    const bad = this.lines().find((l) => !Number.isFinite(l.quantity) || l.quantity <= 0);
+    if (bad) {
+      this.notify.warning(`La cantidad de ${bad.nombre} debe ser mayor a 0.`);
+      return;
+    }
+    const badPrice = this.lines().find((l) => l.unitPrice != null && (!Number.isFinite(l.unitPrice) || l.unitPrice < 0));
+    if (badPrice) {
+      this.notify.warning(`El costo unitario de ${badPrice.nombre} no puede ser negativo.`);
+      return;
+    }
+    this.createMutation.mutate();
   }
 
   protected readonly createMutation = injectMutation(() => ({

@@ -34,7 +34,7 @@
   <header class="flex flex-wrap items-end gap-2 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:gap-3 sm:px-4">
     <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-1 sm:flex-wrap sm:items-end">
       <div class="col-span-2 min-w-0 sm:max-w-xs sm:flex-1">
-        <app-label>
+        <app-label required>
           <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm">
             <app-icon name="mdi:warehouse" iconClass="size-3.5 text-gray-400" />
             Almacén
@@ -49,7 +49,7 @@
         />
       </div>
       <div class="min-w-0 sm:w-auto sm:max-w-[160px]">
-        <app-label>
+        <app-label required>
           <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm">
             <app-icon name="mdi:file-document-outline" iconClass="size-3.5 text-gray-400" />
             Comprobante
@@ -71,7 +71,7 @@
         />
       </div>
       <div class="min-w-0 sm:w-auto sm:max-w-[120px]">
-        <app-label>
+        <app-label required>
           <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm">
             <app-icon name="mdi:barcode" iconClass="size-3.5 text-gray-400" />
             Serie
@@ -518,6 +518,7 @@
               <app-input-field
                 className="text-xs"
                 type="number"
+                min="0"
                 placeholder="Valor"
                 [value]="line.discountValue ?? ''"
                 [disabled]="!line.discountType"
@@ -600,6 +601,7 @@
             <app-icon name="mdi:shield-lock-outline" iconClass="size-3.5" />
             Doble validación — medicamento controlado
           </p>
+          <app-label required>Farmacéutico que autoriza</app-label>
           <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
         </div>
       }
@@ -742,7 +744,7 @@
         @for (line of paymentLineRows; track line.localId) {
           <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700 sm:p-4">
             <app-form-row>
-              <app-form-field label="Medio de pago">
+              <app-form-field label="Medio de pago" required>
                 <app-form-select
                   [showPlaceholder]="false"
                   [options]="paymentOptions"
@@ -750,8 +752,8 @@
                   (valueChange)="updatePaymentLine(line.localId, { metodo: $any($event) })"
                 />
               </app-form-field>
-              <app-form-field label="Monto (S/)">
-                <app-input-field
+              <app-form-field label="Monto (S/)" required>
+                <app-input-field min="0"
                   type="number"
                   placeholder="0.00"
                   [value]="line.monto"
@@ -760,8 +762,8 @@
               </app-form-field>
             </app-form-row>
             @if (requiresPaymentReference(line.metodo)) {
-              <app-form-field label="Código / N° operación" className="mt-4">
-                <app-input-field
+              <app-form-field label="Código / N° operación" className="mt-4" required>
+                <app-input-field [maxLength]="120"
                   placeholder="Ingrese el código de la operación"
                   [value]="line.referencia"
                   (valueChange)="updatePaymentLine(line.localId, { referencia: '' + $event })"
@@ -786,7 +788,7 @@
     </div>
 
     <app-form-field label="Código promoción">
-      <app-input-field
+      <app-input-field [maxLength]="40"
         [value]="promotionCode()"
         (valueChange)="onPromotionCodeChange('' + $event)"
         placeholder="Opcional"
@@ -799,7 +801,7 @@
     </app-form-field>
     @if (requiresControlled()) {
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-900/20">
-        <app-form-field label="Autorización farmacéutico titular (controlados)">
+        <app-form-field label="Autorización farmacéutico titular (controlados)" required>
           <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
         </app-form-field>
       </div>
@@ -847,8 +849,8 @@
       </div>
       @if (line.lotMode === 'MANUAL') {
         <div class="flex flex-col gap-2 sm:flex-row">
-          <app-input-field placeholder="Código lote" [value]="manualLotCode()" (valueChange)="manualLotCode.set('' + $event)" />
-          <app-input-field type="number" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event)" />
+          <app-input-field placeholder="Código lote *" [maxLength]="120" [value]="manualLotCode()" (valueChange)="manualLotCode.set('' + $event)" />
+          <app-input-field type="number" min="0" placeholder="Cantidad *" ariaLabel="Cantidad del lote" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event)" />
           <app-button size="sm" (btnClick)="addManualLot()">+</app-button>
         </div>
       }

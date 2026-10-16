@@ -7,6 +7,7 @@ import { BreadcrumbInlineComponent } from '../../../../shared/components/common/
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -17,14 +18,21 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
+    FormFieldComponent,
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Productos' }, { label: 'Precios regulados DIGEMED' }]" />
     <app-component-card title="Catálogo precios máximos" [loading]="listQuery.isPending()">
       <div class="mb-6 grid gap-4 md:grid-cols-4">
-        <app-input-field placeholder="Código DIGEMID" [value]="codigo()" (valueChange)="codigo.set($event + '')" />
-        <app-input-field placeholder="Nombre" [value]="nombre()" (valueChange)="nombre.set($event + '')" />
-        <app-input-field placeholder="Precio máximo" [value]="precio()" (valueChange)="precio.set($event + '')" />
+        <app-form-field label="Código DIGEMID">
+          <app-input-field [value]="codigo()" (valueChange)="codigo.set($event + '')" [maxLength]="40" />
+        </app-form-field>
+        <app-form-field label="Nombre" required>
+          <app-input-field [value]="nombre()" (valueChange)="nombre.set($event + '')" [maxLength]="300" />
+        </app-form-field>
+        <app-form-field label="Precio máximo (S/)" required>
+          <app-input-field type="number" min="0" [value]="precio()" (valueChange)="precio.set($event + '')" />
+        </app-form-field>
         <app-button class="mt-6" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="save()">Guardar</app-button>
       </div>
 
@@ -84,6 +92,11 @@ export class PreciosReguladosComponent {
   protected save() {
     if (!this.nombre().trim() || !this.precio().trim()) {
       this.notify.warning('Complete nombre y precio');
+      return;
+    }
+    const precio = Number(this.precio());
+    if (!Number.isFinite(precio) || precio < 0) {
+      this.notify.warning('El precio máximo debe ser un número mayor o igual a 0.');
       return;
     }
     this.saveMutation.mutate();

@@ -46,17 +46,23 @@
 <app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
   <div class="space-y-4 p-6">
     <h3 class="text-lg font-semibold">Registrar receta</h3>
-    <div class="flex gap-2">
-      <app-input-field className="flex-1" [value]="customerSearch()" (valueChange)="customerSearch.set('' + $event)" placeholder="Buscar paciente (cliente)" />
-      <app-button size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
-    </div>
+    <app-form-field label="Paciente" required>
+      <div class="flex gap-2">
+        <app-input-field className="flex-1" [value]="customerSearch()" (valueChange)="onCustomerSearchChange('' + $event)" (keydown.enter)="searchCustomers()" placeholder="Buscar cliente por nombre o documento" />
+        <app-button size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
+      </div>
+    </app-form-field>
     @for (c of customerOptions(); track c.id) {
       <button type="button" class="block w-full rounded border px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCustomer(c)">
         {{ c.nombre }} · {{ c.numeroDocumento }}
       </button>
     }
-    <app-form-select [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
-    <app-input-field [value]="diagnostico()" (valueChange)="diagnostico.set('' + $event)" placeholder="Diagnóstico" />
+    <app-form-field label="Médico">
+      <app-form-select [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
+    </app-form-field>
+    <app-form-field label="Diagnóstico">
+      <app-input-field [value]="diagnostico()" (valueChange)="diagnostico.set('' + $event)" [maxLength]="500" />
+    </app-form-field>
     <div class="rounded border border-dashed p-3">
       <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Receta escaneada / digital (opcional)</p>
       <input type="file" accept="image/*" capture="environment" class="text-sm" (change)="onImageSelected($event)" />
@@ -68,6 +74,7 @@
       }
     </div>
     <div class="rounded border p-3">
+      <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Medicamentos prescritos <span class="text-error-500" aria-hidden="true">*</span></p>
       <div class="mb-2 flex gap-2">
         <app-input-field className="flex-1" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" placeholder="Buscar medicamento" />
         <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
@@ -75,13 +82,17 @@
       @for (p of productOptions(); track p.id) {
         <button type="button" class="block w-full px-2 py-1 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="addItem(p)">{{ p.nombre }}</button>
       }
-      <ul class="mt-2 text-sm">
+      <ul class="mt-2 space-y-2 text-sm">
         @for (item of draftItems(); track item.productId) {
-          <li>{{ item.label }} × {{ item.cantidad }}</li>
+          <li class="flex items-center gap-2">
+            <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+            <app-input-field className="w-24" type="number" min="0" [ariaLabel]="'Cantidad de ' + item.label" [value]="item.cantidad" (valueChange)="updateItemQty(item.productId, +$event)" />
+            <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar" (btnClick)="removeItem(item.productId)" />
+          </li>
         }
       </ul>
     </div>
-    <app-button variant="primary" (btnClick)="createMutation.mutate()" [disabled]="!customerId() || draftItems().length === 0 || createMutation.isPending()" [loading]="createMutation.isPending()">
+    <app-button variant="primary" (btnClick)="submitCreate()" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()">
       Guardar receta
     </app-button>
   </div>
