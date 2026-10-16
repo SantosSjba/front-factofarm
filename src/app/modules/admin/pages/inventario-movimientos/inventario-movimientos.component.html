@@ -18,20 +18,8 @@
         </app-button>
       </div>
       <div dropdown-content>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-          (click)="openImportModal('LOTES')"
-        >
-          Lotes
-        </button>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-          (click)="openImportModal('SERIES')"
-        >
-          Series
-        </button>
+        <app-menu-item (itemClick)="openImportModal('LOTES')">Lotes</app-menu-item>
+        <app-menu-item (itemClick)="openImportModal('SERIES')">Series</app-menu-item>
       </div>
     </app-table-dropdown>
   </div>
@@ -142,19 +130,9 @@
         (valueChange)="importWarehouseId.set($event)"
       />
       <div class="mt-4">
-        <label class="inline-flex cursor-pointer rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-700">
-          <span>{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
-          <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
-        </label>
+        <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
       </div>
-      <button
-        type="button"
-        class="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-brand-500 underline"
-        (click)="downloadImportTemplate()"
-      >
-        Descargar formato de ejemplo para importar
-        <app-icon name="mdi:download" width="16" height="16" />
-      </button>
+      <app-button variant="link" className="mt-6" endIconName="mdi:download" (btnClick)="downloadImportTemplate()">Descargar formato de ejemplo para importar</app-button>
     </div>
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
@@ -206,15 +184,17 @@
       <div>
         <app-label>Código lote</app-label>
         <div class="relative mt-2">
-          <input maxlength="120"
-            type="text"
-            class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-10 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          <app-input-field
+            [maxLength]="120"
+            className="pr-10"
+            placeholder="Escribe para buscar"
+            ariaLabel="Código de lote"
+            autocomplete="off"
             [disabled]="outboundPending()"
             [value]="outboundLotCode()"
-            placeholder="Escribe para buscar"
-            (input)="onOutboundLotInput($any($event.target).value || '')"
-            (focus)="onOutboundLotFocus()"
-            (blur)="onOutboundLotBlur()"
+            (valueChange)="onOutboundLotInput('' + $event)"
+            (focusin)="onOutboundLotFocus()"
+            (focusout)="onOutboundLotBlur()"
           />
           @if (outboundLotCodesQuery.isPending()) {
             <app-icon
@@ -225,28 +205,17 @@
             />
           }
           @if (outboundLotDropdownOpen() && outboundLotSearch().trim().length >= 1) {
-            <div
-              class="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+            <app-option-list
+              [floating]="true"
+              ariaLabel="Lotes disponibles"
+              [emptyText]="outboundLotCodesQuery.isPending() ? 'Buscando lotes…' : (outboundLotOptions().length === 0 ? 'No se encontraron lotes con stock.' : '')"
             >
-              @if (outboundLotCodesQuery.isPending()) {
-                <div class="px-3 py-2 text-xs text-gray-500">Buscando lotes...</div>
-              } @else if (outboundLotOptions().length === 0) {
-                <div class="px-3 py-2 text-xs text-gray-500">No se encontraron lotes con stock.</div>
-              } @else {
-                <div class="max-h-48 overflow-auto">
+              @if (!outboundLotCodesQuery.isPending()) {
                   @for (lot of outboundLotOptions(); track lot.id) {
-                    <button
-                      type="button"
-                      class="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/10"
-                      (mousedown)="selectOutboundLot(lot.codigoLote)"
-                    >
-                      <span>{{ lot.codigoLote }}</span>
-                      <span class="text-xs text-gray-500">Stock: {{ formatLotStock(lot.stock) }}</span>
-                    </button>
-                  }
-                </div>
+                <app-option-item [keepFocus]="true" [meta]="'Stock: ' + formatLotStock(lot.stock)" (optionSelect)="selectOutboundLot(lot.codigoLote)">{{ lot.codigoLote }}</app-option-item>
               }
-            </div>
+              }
+            </app-option-list>
           }
         </div>
       </div>
@@ -274,13 +243,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label>Comentarios</app-label>
-        <textarea maxlength="500"
-          rows="3"
-          class="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-          [disabled]="outboundPending()"
-          [value]="outboundComment()"
-          (input)="onOutboundCommentInput($event)"
-        ></textarea>
+        <app-text-area className="mt-2" [maxLength]="500" [rows]="3" [disabled]="outboundPending()" [value]="outboundComment()" (valueChange)="outboundComment.set($event)" />
       </div>
     </div>
   </div>
@@ -333,15 +296,17 @@
       <div>
         <app-label>Código lote</app-label>
         <div class="relative mt-2">
-          <input maxlength="120"
-            type="text"
-            class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-10 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          <app-input-field
+            [maxLength]="120"
+            className="pr-10"
+            placeholder="Escribe para buscar"
+            ariaLabel="Código de lote"
+            autocomplete="off"
             [disabled]="inboundPending()"
             [value]="inboundLotCode()"
-            placeholder="Escribe para buscar"
-            (input)="onInboundLotInput($any($event.target).value || '')"
-            (focus)="onInboundLotFocus()"
-            (blur)="onInboundLotBlur()"
+            (valueChange)="onInboundLotInput('' + $event)"
+            (focusin)="onInboundLotFocus()"
+            (focusout)="onInboundLotBlur()"
           />
           @if (inboundLotCodesQuery.isPending()) {
             <app-icon
@@ -352,28 +317,17 @@
             />
           }
           @if (inboundLotDropdownOpen() && inboundLotSearch().trim().length >= 1) {
-            <div
-              class="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+            <app-option-list
+              [floating]="true"
+              ariaLabel="Lotes disponibles"
+              [emptyText]="inboundLotCodesQuery.isPending() ? 'Buscando lotes…' : (inboundLotOptions().length === 0 ? 'No se encontraron lotes.' : '')"
             >
-              @if (inboundLotCodesQuery.isPending()) {
-                <div class="px-3 py-2 text-xs text-gray-500">Buscando lotes...</div>
-              } @else if (inboundLotOptions().length === 0) {
-                <div class="px-3 py-2 text-xs text-gray-500">No se encontraron lotes.</div>
-              } @else {
-                <div class="max-h-48 overflow-auto">
+              @if (!inboundLotCodesQuery.isPending()) {
                   @for (lot of inboundLotOptions(); track lot.id) {
-                    <button
-                      type="button"
-                      class="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/10"
-                      (mousedown)="selectInboundLot(lot.codigoLote, lot.fechaVencimiento)"
-                    >
-                      <span>{{ lot.codigoLote }}</span>
-                      <span class="text-xs text-gray-500">Stock: {{ formatLotStock(lot.stock) }}</span>
-                    </button>
-                  }
-                </div>
+                <app-option-item [keepFocus]="true" [meta]="'Stock: ' + formatLotStock(lot.stock)" (optionSelect)="selectInboundLot(lot.codigoLote, lot.fechaVencimiento)">{{ lot.codigoLote }}</app-option-item>
               }
-            </div>
+              }
+            </app-option-list>
           }
         </div>
       </div>
@@ -412,13 +366,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label>Comentarios</app-label>
-        <textarea maxlength="500"
-          rows="3"
-          class="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-          [disabled]="inboundPending()"
-          [value]="inboundComment()"
-          (input)="onInboundCommentInput($event)"
-        ></textarea>
+        <app-text-area className="mt-2" [maxLength]="500" [rows]="3" [disabled]="inboundPending()" [value]="inboundComment()" (valueChange)="inboundComment.set($event)" />
       </div>
     </div>
   </div>
@@ -482,13 +430,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label required>Motivo</app-label>
-        <textarea maxlength="500"
-          rows="3"
-          class="mt-2 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-          [disabled]="adjustmentPending()"
-          [value]="adjustmentReason()"
-          (input)="onAdjustmentReasonInput($event)"
-        ></textarea>
+        <app-text-area className="mt-2" [maxLength]="500" [rows]="3" [disabled]="adjustmentPending()" [value]="adjustmentReason()" (valueChange)="adjustmentReason.set($event)" />
       </div>
       <p class="md:col-span-2 text-theme-xs text-gray-500">
         Si la diferencia supera el umbral del establecimiento, el ajuste requerirá aprobación de otro usuario.

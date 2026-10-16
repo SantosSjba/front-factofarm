@@ -8,10 +8,18 @@ import { ComponentCardComponent } from '../../../../shared/components/common/com
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import type { AuditLogItemDto } from '../../models/directory.models';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 
 @Component({
   selector: 'app-auditoria',
-  imports: [ComponentCardComponent, PageStateComponent, PageToolbarComponent],
+  imports: [
+    BreadcrumbInlineComponent,
+    ButtonComponent,
+    ComponentCardComponent,
+    PageStateComponent,
+    PageToolbarComponent,
+  ],
   templateUrl: './auditoria.component.html',
 })
 export class AuditoriaComponent {

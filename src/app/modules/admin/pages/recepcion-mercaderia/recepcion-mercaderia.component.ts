@@ -14,6 +14,7 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { PurchaseOrderDetailDto, PurchaseOrderItemDto } from '../../models/directory.models';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 
 type ReceiptLine = {
   purchaseOrderItemId: string;
@@ -29,6 +30,7 @@ type ReceiptLine = {
   selector: 'app-recepcion-mercaderia',
   standalone: true,
   imports: [
+    LabelComponent,
     QueryPageStatePipe,
     CommonModule,
     CurrencyPipe,

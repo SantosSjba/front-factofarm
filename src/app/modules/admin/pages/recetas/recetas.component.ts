@@ -19,11 +19,17 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { CreatePrescriptionRequest, CustomerItemDto, ProductListItemDto } from '../../models/directory.models';
 import { FilesApiService } from '../../../../core/services/files-api.service';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
 
 @Component({
   selector: 'app-recetas',
   standalone: true,
   imports: [
+    FileInputComponent,
+    OptionItemComponent,
+    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

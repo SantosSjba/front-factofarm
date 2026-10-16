@@ -24,11 +24,13 @@ export class TableDropdownComponent implements AfterViewInit, OnDestroy {
   
   isOpen = false;
   private popperInstance: Instance | null = null;
+  /** Referencia estable: con `.bind()` en cada llamada el listener nunca se retiraba. */
+  private readonly onDocumentClick = (event: MouseEvent) => this.close(event);
 
   constructor() {}
 
   ngAfterViewInit() {
-    document.addEventListener('click', this.close.bind(this));
+    document.addEventListener('click', this.onDocumentClick);
 
     if (this.buttonRef && this.contentRef) {
       this.popperInstance = createPopper(
@@ -50,7 +52,7 @@ export class TableDropdownComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    document.removeEventListener('click', this.close.bind(this));
+    document.removeEventListener('click', this.onDocumentClick);
     if (this.popperInstance) {
       this.popperInstance.destroy();
       this.popperInstance = null;

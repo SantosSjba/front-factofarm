@@ -23,10 +23,12 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import type { BillingProviderType, ElectronicDocumentDetailDto, SunatDocumentStatus } from '../../models/directory.models';
 
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 @Component({
   selector: 'app-comprobante-electronico',
   standalone: true,
   imports: [
+    CheckboxComponent,
     StatusBadgeComponent,
     QueryPageStatePipe,
     CommonModule,

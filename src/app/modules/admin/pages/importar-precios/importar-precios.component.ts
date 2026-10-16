@@ -11,11 +11,15 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import type { ProductImportResultDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 
 @Component({
   selector: 'app-importar-precios',
   standalone: true,
   imports: [
+    LabelComponent,
+    FileInputComponent,
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

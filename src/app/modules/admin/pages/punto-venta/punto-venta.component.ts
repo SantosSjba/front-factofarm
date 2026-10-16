@@ -120,10 +120,18 @@ const DOC_OPTIONS_INTERNAL: { value: SaleDocumentType; label: string }[] = [
 ];
 
 import { statusToneClasses } from '../../../../shared/components/ui/badge/status-badge.component';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { TabStripComponent } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
   imports: [
+    CheckboxComponent,
+    TabStripComponent,
+    OptionItemComponent,
+    OptionListComponent,
     CommonModule,
     CurrencyPipe,
     ButtonComponent,
@@ -150,7 +158,11 @@ export class PuntoVentaComponent implements OnDestroy {
   private readonly offlineQueue = inject(PosOfflineQueueService);
   private readonly posRealtime = inject(PosRealtimeService);
   private readonly customerDisplay = inject(PosCustomerDisplayService);
-  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  private readonly searchInput = viewChild('searchInput', { read: ElementRef<HTMLElement> });
+
+  private focusSearch() {
+    this.searchInput()?.nativeElement.querySelector('input')?.focus();
+  }
   private unsubscribeCustomerDisplay: (() => void) | null = null;
   /** True tras abrir "Pantalla cliente" en esta sesión (sincroniza aunque el flag de caja esté off). */
   private readonly customerDisplayOpened = signal(false);
@@ -213,6 +225,10 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly catalogViewMode = signal<'table' | 'tiles'>('tiles');
   /** Pestaña móvil Catálogo | Carrito (F-UX-01). */
   protected readonly mobilePosTab = signal<'catalog' | 'cart'>('catalog');
+  protected readonly mobilePosTabs = computed(() => [
+    { id: 'catalog', label: 'Catálogo' },
+    { id: 'cart', label: this.cart().length ? `Carrito (${this.cart().length})` : 'Carrito' },
+  ]);
   protected readonly discountTypeOptions = [
     { value: '', label: 'Sin descuento' },
     { value: 'PORCENTAJE', label: '% descuento' },
@@ -686,7 +702,7 @@ export class PuntoVentaComponent implements OnDestroy {
   onKeydown(event: KeyboardEvent) {
     if (event.key === 'F1') {
       event.preventDefault();
-      this.searchInput()?.nativeElement.focus();
+      this.focusSearch();
     }
     if (event.key === 'F2' && this.cart().length > 0) {
       event.preventDefault();
@@ -818,7 +834,7 @@ export class PuntoVentaComponent implements OnDestroy {
       ]);
     }
     this.search.set('');
-    this.searchInput()?.nativeElement.focus();
+    this.focusSearch();
     void this.loadCatalog(false);
   }
 

@@ -38,10 +38,14 @@ const NEXT_STATUS: Partial<Record<DeliveryOrderStatus, DeliveryOrderStatus>> = {
   EN_CAMINO: 'ENTREGADO' };
 
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 @Component({
   selector: 'app-ordenes-pedido',
   standalone: true,
   imports: [
+    OptionItemComponent,
+    OptionListComponent,
     StatusBadgeComponent,
     CommonModule,
     AppDatePipe,

@@ -19,6 +19,8 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { PosCatalogItemDto } from '../../models/directory.models';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 
 type QuoteLine = { productId: string; nombre: string; quantity: number; precio: number };
 
@@ -26,6 +28,8 @@ type QuoteLine = { productId: string; nombre: string; quantity: number; precio: 
   selector: 'app-cotizaciones',
   standalone: true,
   imports: [
+    OptionItemComponent,
+    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

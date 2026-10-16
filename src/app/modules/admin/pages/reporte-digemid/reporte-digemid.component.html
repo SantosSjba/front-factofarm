@@ -145,9 +145,13 @@
 <app-modal [isOpen]="createOpen()" title="Registrar evento adverso" (closed)="createOpen.set(false)">
   <div class="space-y-3">
     <app-input-field label="Producto" placeholder="Buscar y seleccionar producto" [isRequired]="true" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" (keydown.enter)="searchProducts()" />
-    @if (productOptions().length) { <ul class="max-h-48 overflow-auto rounded-lg border border-gray-200 text-sm dark:border-gray-800">@for (p of productOptions(); track p.id) { <li><button type="button" class="block w-full cursor-pointer px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectProduct(p)">{{ p.nombre }}</button></li> }</ul> }
+    @if (productOptions().length) { <app-option-list>@for (p of productOptions(); track p.id) {
+<app-option-item (optionSelect)="selectProduct(p)">{{ p.nombre }}</app-option-item>
+}</app-option-list> }
     <app-input-field label="Buscar paciente (opcional)" [value]="customerSearch()" (valueChange)="customerSearch.set('' + $event)" (keydown.enter)="searchCustomers()" />
-    @if (customerOptions().length) { <ul class="max-h-48 overflow-auto rounded-lg border border-gray-200 text-sm dark:border-gray-800">@for (c of customerOptions(); track c.id) { <li><button type="button" class="block w-full cursor-pointer px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCustomer(c)">{{ c.nombre }}</button></li> }</ul> }
+    @if (customerOptions().length) { <app-option-list>@for (c of customerOptions(); track c.id) {
+<app-option-item (optionSelect)="selectCustomer(c)">{{ c.nombre }}</app-option-item>
+}</app-option-list> }
     <app-form-select label="Severidad" [value]="severidad()" [options]="severityOptions" (valueChange)="severidad.set($any($event))" />
     <app-text-area label="Descripción del evento adverso" [required]="true" [maxLength]="2000" [rows]="4" placeholder="Describa el evento observado" [value]="descripcion()" (valueChange)="descripcion.set($event)" />
     <app-button [disabled]="!productId() || !descripcion().trim() || createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>

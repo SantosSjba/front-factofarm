@@ -16,11 +16,17 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { ProductListItemDto, SaleLotAllocationMode } from '../../models/directory.models';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 
 @Component({
   selector: 'app-salida-venta-lotes',
   standalone: true,
   imports: [
+    TextAreaComponent,
+    OptionItemComponent,
+    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,
@@ -182,8 +188,4 @@ export class SalidaVentaLotesComponent {
     this.dispatchMutation.mutate();
   }
 
-  protected onCommentInput(event: Event) {
-    const target = event.target as HTMLTextAreaElement | null;
-    this.comment.set(target?.value ?? '');
-  }
 }

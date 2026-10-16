@@ -13,11 +13,19 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import type { DataStorageMode, ProductListItemDto } from '../../models/directory.models';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 
 @Component({
   selector: 'app-reporte-kardex',
   standalone: true,
   imports: [
+    LabelComponent,
+    InputFieldComponent,
+    OptionItemComponent,
+    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

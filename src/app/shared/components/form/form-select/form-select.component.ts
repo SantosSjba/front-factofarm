@@ -4,11 +4,13 @@ import { IconComponent } from '../../ui/icon/icon.component';
 import { LabelComponent } from '../label/label.component';
 
 const baseSelect =
-  'shadow-theme-xs h-11 w-full appearance-none rounded-lg border bg-transparent pl-4 pr-12 py-2.5 text-sm focus:ring-3 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+  'shadow-theme-xs block h-11 w-full appearance-none rounded-lg border bg-transparent pl-4 pr-12 py-2.5 text-sm focus:ring-3 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Select reutilizable con el estilo FactoFarm / TailAdmin. */
 @Component({
   selector: 'app-form-select',
+  // `className="flex-1"` debe aplicar al host para que crezca dentro de filas flex.
+  host: { class: 'block', '[class.flex-1]': 'hostFlex', '[class.min-w-0]': 'hostFlex' },
   standalone: true,
   imports: [CommonModule, IconComponent, LabelComponent],
   templateUrl: './form-select.component.html',
@@ -25,6 +27,10 @@ export class FormSelectComponent {
   @Input() hint = '';
   /** `{ value, label }` */
   @Input() options: { value: string; label: string }[] = [];
+  protected get hostFlex(): boolean {
+    return /(^|\s)flex-1(\s|$)/.test(this.className);
+  }
+
   @Input() className = '';
   /** Label opcional encima del select. */
   @Input() label = '';

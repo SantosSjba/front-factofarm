@@ -209,19 +209,17 @@
       />
       <app-button variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
     </div>
-    <div class="sm:col-span-2 max-h-40 overflow-auto rounded border p-2 dark:border-gray-700">
+    <app-option-list class="sm:col-span-2" ariaLabel="Productos disponibles">
       @if (!warehouseId()) {
-        <p class="py-3 text-center text-sm text-gray-500">Seleccione un almacén</p>
+        <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">Seleccione un almacén</p>
       } @else if (catalog().length === 0) {
-        <p class="py-3 text-center text-sm text-gray-500">No hay productos con stock</p>
+        <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">No hay productos con stock</p>
       } @else {
         @for (item of catalog(); track item.id) {
-          <button type="button" class="block w-full text-left py-1.5 hover:text-brand-600" (click)="addLine(item)">
-            {{ item.nombre }} — S/ {{ item.precio }}
-          </button>
+          <app-option-item [meta]="'S/ ' + item.precio" (optionSelect)="addLine(item)">{{ item.nombre }}</app-option-item>
         }
       }
-    </div>
+    </app-option-list>
     @if (lines().length) {
       <ul class="sm:col-span-2 divide-y text-sm">
         @for (line of lines(); track line.productId) {

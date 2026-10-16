@@ -24,15 +24,7 @@
       </nav>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button
-          type="button"
-          class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 lg:hidden dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-          (click)="toggleMobileNav()"
-          [attr.aria-expanded]="mobileNavOpen()"
-          aria-label="Abrir menú"
-        >
-          <app-icon [name]="mobileNavOpen() ? 'mdi:close' : 'mdi:menu'" iconClass="size-5" />
-        </button>
+        <app-button size="sm" variant="outline" [iconOnly]="true" [startIconName]="mobileNavOpen() ? 'mdi:close' : 'mdi:menu'" tooltip="Abrir menú" (btnClick)="toggleMobileNav()"></app-button>
 
         <app-theme-toggle-button />
 
@@ -584,9 +576,9 @@
         <div>
           <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Producto</h4>
           <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-            <li><button type="button" class="hover:text-brand-500" (click)="scrollTo('beneficios')">Beneficios</button></li>
-            <li><button type="button" class="hover:text-brand-500" (click)="scrollTo('modulos')">Módulos</button></li>
-            <li><button type="button" class="hover:text-brand-500" (click)="scrollTo('faq')">Preguntas frecuentes</button></li>
+            <li><app-button variant="link" (btnClick)="scrollTo('beneficios')">Beneficios</app-button></li>
+            <li><app-button variant="link" (btnClick)="scrollTo('modulos')">Módulos</app-button></li>
+            <li><app-button variant="link" (btnClick)="scrollTo('faq')">Preguntas frecuentes</app-button></li>
           </ul>
         </div>
         <div>
@@ -600,7 +592,7 @@
             } @else {
               <li><a routerLink="/auth/signin" class="hover:text-brand-500">Iniciar sesión</a></li>
             }
-            <li><button type="button" class="hover:text-brand-500" (click)="scrollTo('contacto')">Contacto</button></li>
+            <li><app-button variant="link" (btnClick)="scrollTo('contacto')">Contacto</app-button></li>
           </ul>
         </div>
       </div>

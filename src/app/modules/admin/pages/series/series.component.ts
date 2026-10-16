@@ -19,11 +19,13 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import type { ProductSerialStatus, SeriesListFiltersRequest, SeriesListItemDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 
 @Component({
   selector: 'app-series',
   standalone: true,
   imports: [
+    MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,

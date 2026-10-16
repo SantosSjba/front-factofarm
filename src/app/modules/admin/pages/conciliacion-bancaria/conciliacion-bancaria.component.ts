@@ -13,11 +13,13 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 
 @Component({
   selector: 'app-conciliacion-bancaria',
   standalone: true,
   imports: [
+    CheckboxComponent,
     CommonModule,
     AppDatePipe,
     CurrencyPipe,
@@ -55,7 +57,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
                 <tr class="border-b border-gray-100 dark:border-gray-800">
                   <td class="py-2">
                     @if (!row.conciliado) {
-                      <input type="checkbox" [checked]="selectedIds().includes(row.id)" (change)="toggle(row.id)" />
+                      <app-checkbox [checked]="selectedIds().includes(row.id)" [ariaLabel]="'Seleccionar movimiento ' + row.tipo + ' ' + row.monto" (checkedChange)="toggle(row.id)" />
                     }
                   </td>
                   <td class="py-2">{{ row.bankAccount.nombre }}</td>

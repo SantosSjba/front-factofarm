@@ -39,6 +39,9 @@ import type {
   ExportCustomersRequest,
 } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
+import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
 
 type CustomerTab = 'datos' | 'direccion' | 'otros';
 const CUSTOMER_TABS: TabStripItem[] = [
@@ -185,6 +188,9 @@ const exportSchema = yup.object({
   selector: 'app-clientes',
   standalone: true,
   imports: [
+    FileInputComponent,
+    CheckboxComponent,
+    MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,

@@ -111,22 +111,10 @@
         />
       </app-form-field>
       <div class="flex flex-wrap gap-4 text-sm lg:col-span-2">
-        <label class="flex items-center gap-2">
-          <input type="checkbox" [checked]="hardwareAutoPrint()" (change)="hardwareAutoPrint.set($any($event.target).checked)" />
-          Imprimir ticket al cobrar
-        </label>
-        <label class="flex items-center gap-2">
-          <input type="checkbox" [checked]="hardwareOpenDrawer()" (change)="hardwareOpenDrawer.set($any($event.target).checked)" />
-          Abrir cajón al imprimir
-        </label>
-        <label class="flex items-center gap-2">
-          <input type="checkbox" [checked]="hardwareWedge()" (change)="hardwareWedge.set($any($event.target).checked)" />
-          Escáner keyboard wedge
-        </label>
-        <label class="flex items-center gap-2">
-          <input type="checkbox" [checked]="hardwareCustomerDisplay()" (change)="hardwareCustomerDisplay.set($any($event.target).checked)" />
-          Pantalla cliente
-        </label>
+        <app-checkbox [checked]="hardwareAutoPrint()" label="Imprimir ticket al cobrar" (checkedChange)="hardwareAutoPrint.set($event)" />
+        <app-checkbox [checked]="hardwareOpenDrawer()" label="Abrir cajón al imprimir" (checkedChange)="hardwareOpenDrawer.set($event)" />
+        <app-checkbox [checked]="hardwareWedge()" label="Escáner keyboard wedge" (checkedChange)="hardwareWedge.set($event)" />
+        <app-checkbox [checked]="hardwareCustomerDisplay()" label="Pantalla cliente" (checkedChange)="hardwareCustomerDisplay.set($event)" />
       </div>
       <div class="lg:col-span-2">
         <app-button variant="primary" [disabled]="hardwareMutation.isPending()" [loading]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">

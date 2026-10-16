@@ -1,15 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { LabelComponent } from '../label/label.component';
+import { IconComponent } from '../../ui/icon/icon.component';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-input-field',
-  imports: [CommonModule, LabelComponent],
+  // `className="flex-1"` debe aplicar al host para que crezca dentro de filas flex.
+  host: { class: 'block', '[class.flex-1]': 'hostFlex', '[class.min-w-0]': 'hostFlex' },
+  imports: [CommonModule, LabelComponent, IconComponent],
   template: `
     @if (label) {
       <app-label [for]="id || undefined" [required]="isRequired">{{ label }}</app-label>
     }
     <div class="relative">
+      @if (icon) {
+        <app-icon
+          [name]="icon"
+          iconClass="pointer-events-none absolute left-3 top-[1.375rem] z-10 size-4 -translate-y-1/2 text-gray-400"
+        />
+      }
       <input
         [type]="type"
         [id]="id"
@@ -60,6 +69,10 @@ export class InputFieldComponent {
   @Input() success: boolean = false;
   @Input() error: boolean = false;
   @Input() hint?: string;
+  protected get hostFlex(): boolean {
+    return /(^|\s)flex-1(\s|$)/.test(this.className);
+  }
+
   @Input() className: string = '';
   @Input() autocomplete?: string;
   @Input() ariaLabel?: string;
@@ -68,6 +81,8 @@ export class InputFieldComponent {
   @Input() isRequired = false;
   /** Label opcional encima del campo (con asterisco si `isRequired`). */
   @Input() label = '';
+  /** Icono a la izquierda dentro del campo (p. ej. búsqueda). */
+  @Input() icon = '';
   /** Debe coincidir con `@MaxLength` del DTO del backend. */
   @Input() maxLength?: number;
   @Input() minLength?: number;
@@ -76,7 +91,7 @@ export class InputFieldComponent {
   @Output() valueChange = new EventEmitter<string | number>();
 
   get inputClasses(): string {
-    let inputClasses = `h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${this.className}`;
+    let inputClasses = `h-11 w-full rounded-lg border appearance-none ${this.icon ? 'pl-9 pr-4' : 'px-4'} py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${this.className}`;
 
     if (this.disabled) {
       inputClasses += ` text-gray-500 border-gray-300 opacity-40 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 opacity-40`;

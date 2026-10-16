@@ -15,11 +15,13 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import type { SunatWithholdingRateDto } from '../../models/directory.models';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-retenciones',
   standalone: true,
   imports: [
+    PageToolbarComponent,
     AppDatePipe,
     BreadcrumbInlineComponent,
     ComponentCardComponent,
@@ -31,6 +33,9 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Facturación' }, { label: 'Retenciones' }]" />
+    <app-page-toolbar>
+      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Retenciones</h1>
+    </app-page-toolbar>
 
     <app-component-card title="Retenciones SUNAT" [loading]="recordsQuery.isPending()">
       <div class="mb-4 flex flex-wrap items-end gap-4">

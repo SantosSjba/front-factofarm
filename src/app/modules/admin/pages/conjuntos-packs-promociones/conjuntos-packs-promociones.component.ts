@@ -32,6 +32,9 @@ import type {
   CreateCompoundProductRequest,
 } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
+import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
 
 type CompoundColumnKey =
   | 'codigoInterno'
@@ -67,6 +70,9 @@ const formSchema = yup.object({
   selector: 'app-conjuntos-packs-promociones',
   standalone: true,
   imports: [
+    FileInputComponent,
+    CheckboxComponent,
+    MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,

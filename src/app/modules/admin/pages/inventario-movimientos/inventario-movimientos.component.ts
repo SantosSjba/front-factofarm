@@ -31,11 +31,21 @@ import type {
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 
 @Component({
   selector: 'app-inventario-movimientos',
   standalone: true,
   imports: [
+    TextAreaComponent,
+    FileInputComponent,
+    OptionItemComponent,
+    OptionListComponent,
+    MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,
@@ -432,10 +442,6 @@ export class InventarioMovimientosComponent {
     this.inboundMutation.mutate(body);
   }
 
-  protected onInboundCommentInput(event: Event) {
-    const target = event.target as HTMLTextAreaElement | null;
-    this.inboundComment.set(target?.value ?? '');
-  }
 
   protected openOutboundModal(row: InventoryMovementListItemDto) {
     this.outboundProduct.set(row);
@@ -489,10 +495,6 @@ export class InventarioMovimientosComponent {
     this.outboundMutation.mutate(body);
   }
 
-  protected onOutboundCommentInput(event: Event) {
-    const target = event.target as HTMLTextAreaElement | null;
-    this.outboundComment.set(target?.value ?? '');
-  }
 
   protected onInboundLotInput(value: string | number) {
     const text = String(value ?? '');
@@ -590,10 +592,6 @@ export class InventarioMovimientosComponent {
     });
   }
 
-  protected onAdjustmentReasonInput(event: Event) {
-    const target = event.target as HTMLTextAreaElement | null;
-    this.adjustmentReason.set(target?.value ?? '');
-  }
 
   protected openPendingAdjustmentsModal() {
     this.pendingOpen.set(true);

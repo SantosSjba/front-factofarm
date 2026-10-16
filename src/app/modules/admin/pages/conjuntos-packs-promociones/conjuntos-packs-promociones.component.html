@@ -15,20 +15,8 @@
         </app-button>
       </div>
       <div dropdown-content>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-          (click)="openImportModal('PRODUCTOS_COMPUESTOS')"
-        >
-          Productos compuestos
-        </button>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-          (click)="openImportModal('DETALLE_PRODUCTOS_COMPUESTOS')"
-        >
-          Detalle productos compuestos
-        </button>
+        <app-menu-item (itemClick)="openImportModal('PRODUCTOS_COMPUESTOS')">Productos compuestos</app-menu-item>
+        <app-menu-item (itemClick)="openImportModal('DETALLE_PRODUCTOS_COMPUESTOS')">Detalle productos compuestos</app-menu-item>
       </div>
     </app-table-dropdown>
     <app-button size="sm" (btnClick)="openCreateModal()">
@@ -62,22 +50,11 @@
     <div class="flex justify-end">
       <app-table-dropdown>
         <div dropdown-button>
-          <button
-            type="button"
-            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600"
-          >
-            <span>Mostrar/Ocultar columnas</span>
-            <app-icon name="mdi:chevron-down" width="18" height="18" />
-          </button>
+          <app-button size="sm" variant="primary" endIconName="mdi:chevron-down">Mostrar/Ocultar columnas</app-button>
         </div>
         <div dropdown-content>
           @for (col of columns; track col.key) {
-            <label
-              class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
-            >
-              <input type="checkbox" [checked]="isVisible(col.key)" (change)="toggleColumn(col.key)" />
-              <span>{{ col.label }}</span>
-            </label>
+            <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
           }
         </div>
       </app-table-dropdown>
@@ -150,29 +127,11 @@
               <td class="px-5 py-4 text-end">
                 <app-table-dropdown>
                   <div dropdown-button>
-                    <button
-                      type="button"
-                      class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                      [attr.aria-label]="'Acciones para ' + row.nombre"
-                    >
-                      <app-icon name="mdi:dots-vertical" width="18" height="18" />
-                    </button>
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + row.nombre"></app-button>
                   </div>
                   <div dropdown-content>
-                    <button
-                      type="button"
-                      class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                      (click)="openEditModal(row)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="w-full rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
-                      (click)="askDelete(row)"
-                    >
-                      Eliminar
-                    </button>
+                    <app-menu-item (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                    <app-menu-item variant="danger" (itemClick)="askDelete(row)">Eliminar</app-menu-item>
                   </div>
                 </app-table-dropdown>
               </td>
@@ -204,14 +163,9 @@
     </h3>
   </div>
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-    <button type="button" class="text-base font-semibold text-brand-600 underline" (click)="downloadImportTemplate()">
-      Descargar formato
-    </button>
+    <app-button variant="link" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
     <div class="mt-10 flex items-center justify-center">
-      <label class="inline-flex cursor-pointer rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700">
-        <span>{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
-        <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
-      </label>
+      <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
     </div>
     @if (importResult(); as result) {
       <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-900">
@@ -267,9 +221,9 @@
       <div>
         <app-label required>Cantidad</app-label>
         <div class="mt-2 flex items-center gap-2">
-          <button type="button" class="h-10 w-10 rounded-lg border border-gray-300 dark:border-gray-700" (click)="addProductQtyStep(-1)">-</button>
+          <app-button variant="outline" [iconOnly]="true" startIconName="mdi:minus" tooltip="Disminuir cantidad" (btnClick)="addProductQtyStep(-1)" />
           <app-input-field min="1" step="1" className="flex-1" type="number" [value]="addProductQty()" (valueChange)="addProductQtyChange($event)" />
-          <button type="button" class="h-10 w-10 rounded-lg border border-gray-300 dark:border-gray-700" (click)="addProductQtyStep(1)">+</button>
+          <app-button variant="outline" [iconOnly]="true" startIconName="mdi:plus" tooltip="Aumentar cantidad" (btnClick)="addProductQtyStep(1)" />
         </div>
       </div>
     </div>
@@ -356,16 +310,14 @@
               <td class="px-4 py-3 text-right text-sm">{{ row.precioUnitario.toFixed(2) }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-1">
-                  <button type="button" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-700" (click)="patchRowQty(row.uid, -1)">-</button>
+                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:minus" tooltip="Disminuir cantidad" (btnClick)="patchRowQty(row.uid, -1)" />
                   <span class="inline-flex h-8 min-w-[32px] items-center justify-center text-sm">{{ row.cantidad }}</span>
-                  <button type="button" class="h-8 w-8 rounded border border-gray-300 dark:border-gray-700" (click)="patchRowQty(row.uid, 1)">+</button>
+                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:plus" tooltip="Aumentar cantidad" (btnClick)="patchRowQty(row.uid, 1)" />
                 </div>
               </td>
               <td class="px-4 py-3 text-right text-sm">{{ row.total.toFixed(2) }}</td>
               <td class="px-4 py-3 text-right">
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded bg-red-500 text-white" (click)="removeRow(row.uid)">
-                  <app-icon name="mdi:close" width="16" height="16" />
-                </button>
+                <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:close" (btnClick)="removeRow(row.uid)"></app-button>
               </td>
             </tr>
           } @empty {
@@ -393,7 +345,7 @@
           @if (imageUploadError()) { <p class="mb-1 text-xs text-error-500">{{ imageUploadError() }}</p> }
           <app-image-square-picker [previewUrl]="imagePreview()" (fileSelected)="onImageFile($event)" />
           @if (form().imagenArchivoId) {
-            <button type="button" class="mt-2 text-xs text-red-600 underline" (click)="clearImage()">Quitar imagen</button>
+            <app-button variant="link-danger" className="mt-2" (btnClick)="clearImage()">Quitar imagen</app-button>
           }
         </div>
       </div>

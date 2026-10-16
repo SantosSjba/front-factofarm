@@ -52,10 +52,12 @@
         <app-button size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
       </div>
     </app-form-field>
-    @for (c of customerOptions(); track c.id) {
-      <button type="button" class="block w-full rounded border px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCustomer(c)">
-        {{ c.nombre }} · {{ c.numeroDocumento }}
-      </button>
+    @if (customerOptions().length) {
+      <app-option-list ariaLabel="Pacientes encontrados">
+        @for (c of customerOptions(); track c.id) {
+          <app-option-item (optionSelect)="selectCustomer(c)">{{ c.nombre }} · {{ c.numeroDocumento }}</app-option-item>
+        }
+      </app-option-list>
     }
     <app-form-field label="Médico">
       <app-form-select [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
@@ -65,7 +67,7 @@
     </app-form-field>
     <div class="rounded border border-dashed p-3">
       <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Receta escaneada / digital (opcional)</p>
-      <input type="file" accept="image/*" capture="environment" class="text-sm" (change)="onImageSelected($event)" />
+      <app-file-input variant="button" accept="image/*" capture="environment" icon="mdi:camera-outline" buttonLabel="Tomar foto o elegir imagen" (fileChange)="onImageSelected($event)" />
       @if (uploadingImage()) {
         <p class="mt-2 text-xs text-gray-500">Subiendo imagen…</p>
       }
@@ -79,8 +81,12 @@
         <app-input-field className="flex-1" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" placeholder="Buscar medicamento" />
         <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
       </div>
-      @for (p of productOptions(); track p.id) {
-        <button type="button" class="block w-full px-2 py-1 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="addItem(p)">{{ p.nombre }}</button>
+      @if (productOptions().length) {
+        <app-option-list ariaLabel="Medicamentos encontrados">
+          @for (p of productOptions(); track p.id) {
+            <app-option-item (optionSelect)="addItem(p)">{{ p.nombre }}</app-option-item>
+          }
+        </app-option-list>
       }
       <ul class="mt-2 space-y-2 text-sm">
         @for (item of draftItems(); track item.productId) {
@@ -88,8 +94,7 @@
             <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
             <app-input-field className="w-24" type="number" min="0" [ariaLabel]="'Cantidad de ' + item.label" [value]="item.cantidad" (valueChange)="updateItemQty(item.productId, +$event)" />
             <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar" (btnClick)="removeItem(item.productId)" />
-          </li>
-        }
+}
       </ul>
     </div>
     <app-button variant="primary" (btnClick)="submitCreate()" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()">

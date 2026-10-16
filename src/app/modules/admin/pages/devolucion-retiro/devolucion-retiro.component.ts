@@ -14,6 +14,8 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { ProductListItemDto } from '../../models/directory.models';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 
 const DEVOLUCION_RETIRO_CODES = [
   'DEVOLUCION_ENTREGADA',
@@ -31,6 +33,8 @@ const DEVOLUCION_RETIRO_CODES = [
   selector: 'app-devolucion-retiro',
   standalone: true,
   imports: [
+    OptionItemComponent,
+    OptionListComponent,
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

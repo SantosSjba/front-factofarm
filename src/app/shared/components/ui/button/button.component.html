@@ -14,7 +14,8 @@
   "
   [disabled]="isDisabled"
   [attr.aria-busy]="loading || null"
-  [attr.aria-label]="tooltip || null"
+  [attr.id]="id || null"
+  [attr.aria-label]="tooltip || ariaLabel || null"
   (click)="onClick($event)"
 >
   @if (loading) {

@@ -133,26 +133,11 @@
         placeholder="Se guarda encriptado · vacío conserva el actual"
       />
     </app-form-field>
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" [checked]="modoSandbox()" (change)="modoSandbox.set($any($event.target).checked)" />
-      Modo sandbox
-    </label>
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" [checked]="autoEmit()" (change)="autoEmit.set($any($event.target).checked)" />
-      Emitir automáticamente al registrar venta (boleta/factura)
-    </label>
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" [checked]="emitNotaVenta()" (change)="emitNotaVenta.set($any($event.target).checked)" />
-      Emitir nota de venta electrónica (donde aplique)
-    </label>
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" [checked]="applyDetraccion()" (change)="applyDetraccion.set($any($event.target).checked)" />
-      Aplicar detracción en facturas ≥ S/ 700
-    </label>
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" [checked]="autoEmitGuia()" (change)="autoEmitGuia.set($any($event.target).checked)" />
-      Emitir guía de remisión al despachar traslado
-    </label>
+    <app-checkbox [checked]="modoSandbox()" label="Modo sandbox" (checkedChange)="modoSandbox.set($event)" />
+    <app-checkbox [checked]="autoEmit()" label="Emitir automáticamente al registrar venta (boleta/factura)" (checkedChange)="autoEmit.set($event)" />
+    <app-checkbox [checked]="emitNotaVenta()" label="Emitir nota de venta electrónica (donde aplique)" (checkedChange)="emitNotaVenta.set($event)" />
+    <app-checkbox [checked]="applyDetraccion()" label="Aplicar detracción en facturas ≥ S/ 700" (checkedChange)="applyDetraccion.set($event)" />
+    <app-checkbox [checked]="autoEmitGuia()" label="Emitir guía de remisión al despachar traslado" (checkedChange)="autoEmitGuia.set($event)" />
     <app-button variant="primary" [disabled]="saveConfigMutation.isPending()" [loading]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
   </div>
 </app-modal>

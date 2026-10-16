@@ -16,7 +16,6 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
@@ -32,10 +31,12 @@ import type {
 type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string };
 
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 @Component({
   selector: 'app-notas-venta',
   standalone: true,
   imports: [
+    MenuItemComponent,
     StatusBadgeComponent,
     QueryPageStatePipe,
     CommonModule,
@@ -50,7 +51,6 @@ import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/sta
     ButtonComponent,
     InputFieldComponent,
     LabelComponent,
-    IconComponent,
     TableDropdownComponent,
   ],
   templateUrl: './notas-venta.component.html' })

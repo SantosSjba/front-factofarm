@@ -9,11 +9,13 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-precios-regulados',
   standalone: true,
   imports: [
+    PageToolbarComponent,
     BreadcrumbInlineComponent,
     ComponentCardComponent,
     ButtonComponent,
@@ -21,7 +23,10 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     FormFieldComponent,
   ],
   template: `
-    <app-breadcrumb-inline [segments]="[{ label: 'Productos' }, { label: 'Precios regulados DIGEMED' }]" />
+    <app-breadcrumb-inline [segments]="[{ label: 'Productos' }, { label: 'Precios regulados DIGEMID' }]" />
+    <app-page-toolbar>
+      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Precios regulados DIGEMID</h1>
+    </app-page-toolbar>
     <app-component-card title="Catálogo precios máximos" [loading]="listQuery.isPending()">
       <div class="mb-6 grid gap-4 md:grid-cols-4">
         <app-form-field label="Código DIGEMID">

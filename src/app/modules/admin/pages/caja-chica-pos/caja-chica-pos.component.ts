@@ -18,11 +18,13 @@ import { PageStateComponent } from '../../../../shared/components/common/page-st
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { PaymentMethod, PosPrinterPaperWidth } from '../../models/directory.models';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 
 @Component({
   selector: 'app-caja-chica-pos',
   standalone: true,
   imports: [
+    CheckboxComponent,
     CommonModule,
     AppDatePipe,
     CurrencyPipe,

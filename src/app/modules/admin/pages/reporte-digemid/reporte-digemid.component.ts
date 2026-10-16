@@ -23,6 +23,8 @@ import type {
   AdverseEventSeverity,
   CustomerItemDto,
   ProductListItemDto } from '../../models/directory.models';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 
 type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos';
 
@@ -30,6 +32,8 @@ type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos
   selector: 'app-reporte-digemid',
   standalone: true,
   imports: [
+    OptionItemComponent,
+    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

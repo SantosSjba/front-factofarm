@@ -11,26 +11,10 @@
     <app-form-select [options]="paymentMethodOptions" [value]="paymentMetodo()" (valueChange)="paymentMetodo.set($event); onFilterChange()" />
     <app-input-field placeholder="Código operación" [value]="paymentReferencia()" (valueChange)="paymentReferencia.set('' + $event); onFilterChange()" />
     <div>
-      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="notas-venta-desde">Desde</label>
-      <input
-        id="notas-venta-desde"
-        type="date"
-        aria-label="Desde"
-        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-        [value]="dateFrom()"
-        (input)="dateFrom.set($any($event.target).value); onFilterChange()"
-      />
+      <app-input-field id="notas-venta-desde" label="Desde" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event); onFilterChange()" />
     </div>
     <div>
-      <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="notas-venta-hasta">Hasta</label>
-      <input
-        id="notas-venta-hasta"
-        type="date"
-        aria-label="Hasta"
-        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-        [value]="dateTo()"
-        (input)="dateTo.set($any($event.target).value); onFilterChange()"
-      />
+      <app-input-field id="notas-venta-hasta" label="Hasta" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event); onFilterChange()" />
     </div>
   </div>
   @if (storage() === 'archived') {
@@ -143,67 +127,24 @@
               <div class="inline-flex justify-end md:hidden">
                 <app-table-dropdown>
                   <div dropdown-button>
-                    <button
-                      type="button"
-                      class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                      aria-label="Acciones de la venta"
-                    >
-                      <app-icon name="mdi:dots-vertical" width="18" height="18" />
-                    </button>
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones de la venta"></app-button>
                   </div>
                   <div dropdown-content>
-                    <button
-                      type="button"
-                      class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-                      (click)="openDetail(row.id)"
-                    >
-                      Ver
-                    </button>
+                    <app-menu-item (itemClick)="openDetail(row.id)">Ver</app-menu-item>
                     @if (!isArchivedRow(row)) {
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-                        (click)="downloadPdf(row.id)"
-                      >
-                        PDF
-                      </button>
+                      <app-menu-item (itemClick)="downloadPdf(row.id)">PDF</app-menu-item>
                     }
                     @if (!isArchivedRow(row) && row.canEmitCpe) {
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-                        [disabled]="emitMutation.isPending()"
-                        (click)="emitCpe(row.id)"
-                      >
-                        Emitir a SUNAT
-                      </button>
+                      <app-menu-item [disabled]="emitMutation.isPending()" (itemClick)="emitCpe(row.id)">Emitir a SUNAT</app-menu-item>
                     }
                     @if (!isArchivedRow(row) && row.canConvertToCpe) {
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-                        (click)="openConvert(row.id)"
-                      >
-                        Migrar a boleta/factura
-                      </button>
+                      <app-menu-item (itemClick)="openConvert(row.id)">Migrar a boleta/factura</app-menu-item>
                     }
                     @if (!isArchivedRow(row) && canReturn(row)) {
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-                        (click)="openReturn(row.id)"
-                      >
-                        Devolver
-                      </button>
+                      <app-menu-item (itemClick)="openReturn(row.id)">Devolver</app-menu-item>
                     }
                     @if (!isArchivedRow(row) && canDebit(row)) {
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-                        (click)="openDebit(row.id)"
-                      >
-                        Nota de débito
-                      </button>
+                      <app-menu-item (itemClick)="openDebit(row.id)">Nota de débito</app-menu-item>
                     }
                   </div>
                 </app-table-dropdown>
@@ -377,24 +318,10 @@
             <tr class="border-b border-gray-100 dark:border-gray-800">
               <td class="py-2">{{ line.producto }} <span class="text-xs text-gray-500">(máx. {{ line.maxQty }})</span></td>
               <td class="py-2 text-right">
-                <input
-                  type="number"
-                  class="w-20 rounded border px-2 py-1 text-right text-sm dark:border-gray-700 dark:bg-gray-900"
-                  [value]="line.quantity"
-                  [max]="line.maxQty"
-                  min="0"
-                  (input)="updateReturnQty(line.saleItemId, $any($event.target).value)"
-                />
+                <app-input-field class="ml-auto block w-24" className="text-right" type="number" min="0" [max]="'' + line.maxQty" [ariaLabel]="'Cantidad a devolver de ' + line.producto" [value]="line.quantity" (valueChange)="updateReturnQty(line.saleItemId, '' + $event)" />
               </td>
               <td class="py-2">
-                <input
-                  type="text"
-                  class="w-full rounded border px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
-                  [value]="line.lotCode"
-                  placeholder="Opcional"
-                  maxlength="120"
-                  (input)="updateReturnLot(line.saleItemId, $any($event.target).value)"
-                />
+                <app-input-field placeholder="Opcional" [maxLength]="120" [ariaLabel]="'Lote de ' + line.producto" [value]="line.lotCode" (valueChange)="updateReturnLot(line.saleItemId, '' + $event)" />
               </td>
             </tr>
           }

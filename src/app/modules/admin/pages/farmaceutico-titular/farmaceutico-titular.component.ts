@@ -9,11 +9,13 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-farmaceutico-titular',
   standalone: true,
   imports: [
+    PageToolbarComponent,
     BreadcrumbInlineComponent,
     ComponentCardComponent,
     ButtonComponent,
@@ -22,6 +24,9 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'Farmacéutico titular' }]" />
+    <app-page-toolbar>
+      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Farmacéutico titular</h1>
+    </app-page-toolbar>
     <app-component-card title="Licencias farmacéuticas (CQP)" [loading]="listQuery.isPending()" [error]="listQuery.isError() ? 'No se pudieron cargar las licencias' : null" (retry)="listQuery.refetch()">
       <div class="mb-6 grid gap-4 md:grid-cols-3">
         <app-form-field label="Colegiatura CQP" required>

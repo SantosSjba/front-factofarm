@@ -22,7 +22,7 @@
     } @else if (detailQuery.isError() && selectedOrderId()) {
       <div class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
         {{ detailErrorMessage() }}
-        <button type="button" class="ml-2 font-medium underline" (click)="detailQuery.refetch()">Reintentar</button>
+        <app-button variant="link-danger" className="ml-2" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
       </div>
     } @else if (detailQuery.data(); as po) {
       <div class="rounded-lg border border-gray-200 p-2.5 text-sm dark:border-gray-700">
@@ -45,7 +45,7 @@
             <p class="text-xs text-gray-500">Pendiente: {{ line.pendiente }}</p>
           </div>
           <div>
-            <label [for]="'recepcion-mercaderia-1-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Cantidad</label>
+            <app-label [for]="'recepcion-mercaderia-1-' + line.purchaseOrderItemId">Cantidad</app-label>
             <app-input-field [id]="'recepcion-mercaderia-1-' + line.purchaseOrderItemId"
               type="number"
               placeholder="0"
@@ -59,7 +59,7 @@
           </div>
           @if (line.manejaLotes) {
             <div>
-              <label [for]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Lote <span class="text-error-500" aria-hidden="true">*</span></label>
+              <app-label [for]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId" required>Lote</app-label>
               <app-input-field [id]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId"
                 placeholder="Código lote"
                 [maxLength]="60"
@@ -69,7 +69,7 @@
               />
             </div>
             <div>
-              <label [for]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId" class="mb-1 block text-xs text-gray-500">Vencimiento</label>
+              <app-label [for]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId">Vencimiento</app-label>
               <app-input-field [id]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId"
                 type="date"
                 placeholder="Vencimiento"
@@ -86,11 +86,11 @@
       }
       <div class="grid gap-2 sm:grid-cols-2">
         <div>
-          <label for="recepcion-mercaderia-4" class="mb-1 block text-xs text-gray-500">N° factura / guía</label>
+          <app-label for="recepcion-mercaderia-4">N° factura / guía</app-label>
           <app-input-field id="recepcion-mercaderia-4" [maxLength]="60" ariaLabel="Número de factura o guía del proveedor" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
         </div>
         <div>
-          <label for="recepcion-mercaderia-5" class="mb-1 block text-xs text-gray-500">Comentario</label>
+          <app-label for="recepcion-mercaderia-5">Comentario</app-label>
           <app-input-field id="recepcion-mercaderia-5" [maxLength]="500" ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
         </div>
       </div>

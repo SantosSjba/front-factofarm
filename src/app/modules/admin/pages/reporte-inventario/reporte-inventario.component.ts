@@ -20,6 +20,8 @@ import type {
   InventoryPhysicalCountListItemDto,
   ProductListItemDto,
 } from '../../models/directory.models';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 
 type ReportTab = 'valorizacion' | 'conteo' | 'zonas';
 
@@ -29,6 +31,8 @@ type CreateWarehouseZoneTipo = 'NORMAL' | 'REFRIGERADO' | 'CONTROLADO';
   selector: 'app-reporte-inventario',
   standalone: true,
   imports: [
+    OptionItemComponent,
+    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

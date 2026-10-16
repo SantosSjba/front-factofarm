@@ -8,13 +8,18 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-contabilidad-exportar-reporte',
   standalone: true,
-  imports: [BreadcrumbInlineComponent, ComponentCardComponent, ButtonComponent, InputFieldComponent],
+  imports: [
+    PageToolbarComponent,BreadcrumbInlineComponent, ComponentCardComponent, ButtonComponent, InputFieldComponent],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'Exportar reporte' }]" />
+    <app-page-toolbar>
+      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Exportar reporte</h1>
+    </app-page-toolbar>
     <app-component-card title="Exportación contable (Contasis / SISCONT / Excel)" className="mt-4">
       <div class="mb-4 flex flex-wrap items-end gap-4">
         <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />

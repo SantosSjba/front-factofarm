@@ -6,16 +6,17 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   imports: [CommonModule],
   template: `
   <label
-  class="flex items-center space-x-3 group cursor-pointer"
+  class="flex items-start gap-3 group cursor-pointer"
   [ngClass]="{ 'cursor-not-allowed opacity-60': disabled }"
 >
-  <div class="relative w-5 h-5">
+  <div class="relative w-5 h-5 shrink-0">
     <input
       [id]="id"
       type="checkbox"
       class="w-5 h-5 appearance-none cursor-pointer dark:border-gray-700 border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60"
       [ngClass]="className"
       [checked]="checked"
+      [attr.aria-label]="ariaLabel || null"
       (change)="onChange($event)"
       [disabled]="disabled"
     />
@@ -67,6 +68,8 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       {{ label }}
   </span>
   }
+  <!-- Texto enriquecido (p. ej. con enlaces) cuando no basta con label. -->
+  <span class="text-sm text-gray-700 empty:hidden dark:text-gray-300"><ng-content /></span>
 </label>
   `,
   styles: ``
@@ -78,6 +81,8 @@ export class CheckboxComponent {
   @Input() className = '';
   @Input() id?: string;
   @Input() disabled = false;
+  /** Nombre accesible cuando no hay label visible (p. ej. selección en tablas). */
+  @Input() ariaLabel = '';
   @Output() checkedChange = new EventEmitter<boolean>();
 
   onChange(event: Event) {

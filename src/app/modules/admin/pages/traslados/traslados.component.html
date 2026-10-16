@@ -147,13 +147,7 @@
       </div>
       <div class="md:col-span-2">
         <app-label>Comentario</app-label>
-        <textarea maxlength="500"
-          rows="2"
-          class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-          [disabled]="createPending()"
-          [value]="comentario()"
-          (input)="onComentarioInput($event)"
-        ></textarea>
+        <app-text-area className="mt-2" [maxLength]="500" [rows]="2" [disabled]="createPending()" [value]="comentario()" (valueChange)="comentario.set($event)" />
       </div>
     </div>
 
@@ -173,17 +167,11 @@
           <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
-          <div class="mb-2 max-h-40 overflow-auto rounded border border-gray-100 dark:border-gray-800">
+          <app-option-list class="mb-2">
             @for (product of productOptions(); track product.id) {
-              <button
-                type="button"
-                class="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5"
-                (click)="selectProduct(product)"
-              >
-                {{ product.nombre }} ({{ product.codigoInterno ?? 'sin código' }})
-              </button>
+              <app-option-item (optionSelect)="selectProduct(product)">{{ product.nombre }} ({{ product.codigoInterno ?? 'sin código' }})</app-option-item>
             }
-          </div>
+          </app-option-list>
         }
       }
       <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -227,7 +215,7 @@
               <td class="py-2">{{ item.codigoLote || '—' }}</td>
               <td class="py-2">{{ item.cantidad }}</td>
               <td class="py-2 text-end">
-                <button type="button" class="text-xs text-error-500" (click)="removeDraftItem(i)">Quitar</button>
+                <app-button variant="link-danger" (btnClick)="removeDraftItem(i)">Quitar</app-button>
               </td>
             </tr>
           }

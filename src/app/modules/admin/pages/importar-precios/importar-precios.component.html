@@ -14,13 +14,7 @@
 <app-component-card title="Subir archivo XLS de precios" className="overflow-hidden">
   <div class="grid gap-4 md:grid-cols-2">
     <div>
-      <button
-        type="button"
-        class="text-sm font-semibold text-brand-600 underline hover:text-brand-700"
-        (click)="downloadTemplate()"
-      >
-        Formato Precios-Productos
-      </button>
+      <app-button variant="link" (btnClick)="downloadTemplate()">Formato Precios-Productos</app-button>
     </div>
     <div class="text-center md:text-left">
       <p class="text-sm text-gray-700 dark:text-gray-300">Descarga de layout para Precios:</p>
@@ -32,18 +26,11 @@
       Selecciona tu archivo para subir y luego da clic en el botón Subir
     </p>
     <div class="mt-4">
-      <label for="price-file" class="mb-2 block text-sm text-gray-700 dark:text-gray-300">Archivo XLS</label>
-      <div class="flex flex-col gap-3 md:flex-row md:items-center">
-        <input
-          id="price-file" type="file"
-          accept=".xls,.xlsx"
-          (change)="onFileChange($event)"
-          class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-gray-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-100 dark:text-gray-300 dark:file:border-gray-600 dark:file:bg-gray-800 dark:file:text-gray-200"
-        />
-        <span class="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400" [title]="selectedFile()?.name || ''">
-          {{ selectedFile()?.name || 'Ningún archivo seleccionado' }}
-        </span>
-      </div>
+      <app-label for="price-file" required>Archivo XLS</app-label>
+      <app-file-input id="price-file" accept=".xls,.xlsx" ariaLabel="Archivo XLS de precios" (fileChange)="onFileChange($event)" />
+      @if (selectedFile()?.name; as name) {
+        <p class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400" [title]="name">{{ name }}</p>
+      }
     </div>
   </div>
 

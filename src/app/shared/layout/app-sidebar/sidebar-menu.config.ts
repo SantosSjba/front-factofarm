@@ -78,7 +78,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     name: 'Productos/Servicios',
     subItems: [
       { name: 'Productos', path: '/productos', permissionCode: 'nav.productos' },
-      { name: 'Precios regulados DIGEMED', path: '/precios-regulados', permissionCode: 'nav.precios_regulados' },
+      { name: 'Precios regulados DIGEMID', path: '/precios-regulados', permissionCode: 'nav.precios_regulados' },
       {
         name: 'Conjuntos/Packs/Promociones',
         path: '/conjuntos-packs-promociones',

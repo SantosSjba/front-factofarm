@@ -48,17 +48,11 @@
           <app-button size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
-          <div class="mt-2 max-h-40 overflow-auto rounded border border-gray-100 dark:border-gray-800">
+          <app-option-list class="mt-2">
             @for (p of productOptions(); track p.id) {
-              <button
-                type="button"
-                class="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5"
-                (click)="selectProduct(p)"
-              >
-                {{ p.nombre }} ({{ p.codigoInterno ?? 'sin código' }})
-              </button>
+              <app-option-item (optionSelect)="selectProduct(p)">{{ p.nombre }} ({{ p.codigoInterno ?? 'sin código' }})</app-option-item>
             }
-          </div>
+          </app-option-list>
         }
       }
     </div>
@@ -80,12 +74,7 @@
     </div>
     <div class="md:col-span-2">
       <app-label>Comentario</app-label>
-      <textarea maxlength="500"
-        rows="2"
-        class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-        [value]="comment()"
-        (input)="onCommentInput($event)"
-      ></textarea>
+      <app-text-area className="mt-2" [maxLength]="500" [rows]="2" [value]="comment()" (valueChange)="comment.set($event)" />
     </div>
   </div>
 
@@ -102,7 +91,7 @@
           @for (line of manualLines(); track $index; let i = $index) {
             <li class="flex justify-between">
               <span>{{ line.lotCode }} · {{ line.quantity }}</span>
-              <button type="button" class="text-error-500" (click)="removeManualLine(i)">Quitar</button>
+              <app-button variant="link-danger" (btnClick)="removeManualLine(i)">Quitar</app-button>
             </li>
           }
         </ul>

@@ -7,99 +7,55 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { isValidEmail } from '../../../../core/utils/form-validators';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
+import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
+import { userRoleLabel } from '../../../../core/utils/user-role-label.util';
 
 @Component({
   standalone: true,
-  imports: [FormsModule],
-  template: ` <div class="p-6 max-w-2xl mx-auto space-y-6">
-    <h1 class="text-2xl font-semibold">Mi perfil</h1>
-    @if (message()) {
-      <p role="status">{{ message() }}</p>
-    }
-    @if (loading()) {
-      <p>Cargando perfil…</p>
-    }
-    <form (ngSubmit)="saveProfile()" class="space-y-4">
-      <label class="block"
-        >Nombre<span class="text-error-500" aria-hidden="true"> *</span>
-        <input
-          name="nombre"
-          [(ngModel)]="nombre"
-          required
-          minlength="2"
-          maxlength="200"
-          class="block w-full border rounded-lg p-3 dark:bg-gray-900"
-        />
-      </label>
-      <label class="block"
-        >Correo<span class="text-error-500" aria-hidden="true"> *</span>
-        <input
-          name="email"
-          type="email"
-          [(ngModel)]="email"
-          required
-          maxlength="254"
-          class="block w-full border rounded-lg p-3 dark:bg-gray-900"
-        />
-      </label>
-      <p>Rol: {{ auth.user()?.role }}</p>
-      <button
-        [disabled]="loading() || busy() || !!auth.user()?.supportSession"
-        class="bg-blue-600 text-white rounded-lg px-5 py-3 disabled:opacity-50"
-      >
-        Guardar perfil
-      </button>
-    </form>
-    @if (auth.user()?.supportSession) {
-      <p>La sesión de soporte no permite cambiar datos del operador.</p>
-    } @else {
-      <form (ngSubmit)="changePassword()" class="space-y-4">
-        <h2 class="text-xl font-semibold">Cambiar contraseña</h2>
-        <label class="block"
-          >Contraseña actual<span class="text-error-500" aria-hidden="true"> *</span>
-          <input
-            name="currentPassword"
-            type="password"
-            [(ngModel)]="currentPassword"
-            required
-            autocomplete="current-password"
-            class="block w-full border rounded-lg p-3 dark:bg-gray-900"
-          />
-        </label>
-        <label class="block"
-          >Nueva contraseña<span class="text-error-500" aria-hidden="true"> *</span>
-          <input
-            name="newPassword"
-            type="password"
-            [(ngModel)]="newPassword"
-            required
-            minlength="8"
-            maxlength="128"
-            autocomplete="new-password"
-            class="block w-full border rounded-lg p-3 dark:bg-gray-900"
-          />
-        </label>
-        <p>Incluye mayúscula, minúscula, número y carácter especial.</p>
-        <label class="block"
-          >Confirmar contraseña<span class="text-error-500" aria-hidden="true"> *</span>
-          <input
-            name="confirmPassword"
-            type="password"
-            [(ngModel)]="confirmPassword"
-            required
-            autocomplete="new-password"
-            class="block w-full border rounded-lg p-3 dark:bg-gray-900"
-          />
-        </label>
-        <button
-          [disabled]="loading() || busy()"
-          class="bg-blue-600 text-white rounded-lg px-5 py-3 disabled:opacity-50"
-        >
-          Cambiar contraseña
-        </button>
-      </form>
-    }
-  </div>`,
+  imports: [
+    FormsModule,
+    InputFieldComponent,
+    ButtonComponent,
+    BreadcrumbInlineComponent,
+    PageToolbarComponent,
+    ComponentCardComponent,
+  ],
+  template: `
+    <app-breadcrumb-inline [segments]="[{ label: 'Cuenta' }, { label: 'Mi perfil' }]" />
+    <app-page-toolbar>
+      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Mi perfil</h1>
+    </app-page-toolbar>
+    <div class="grid max-w-5xl gap-4 lg:grid-cols-2">
+      <app-component-card title="Datos personales" [loading]="loading()" [error]="loadError()" (retry)="reload()">
+        <form (ngSubmit)="saveProfile()" class="space-y-4">
+          <app-input-field id="profile-nombre" name="nombre" label="Nombre" [isRequired]="true" [maxLength]="200" [value]="nombre" (valueChange)="nombre = '' + $event" />
+          <app-input-field id="profile-email" name="email" type="email" label="Correo" [isRequired]="true" [maxLength]="254" [value]="email" (valueChange)="email = '' + $event" />
+          <p class="text-sm text-gray-600 dark:text-gray-400">Rol: <span class="font-medium text-gray-800 dark:text-white/90">{{ roleLabel() }}</span></p>
+          @if (auth.user()?.supportSession) {
+            <p class="text-sm text-amber-700 dark:text-amber-400">La sesión de soporte no permite cambiar datos del operador.</p>
+          }
+          <app-button type="submit" [disabled]="busy() || !!auth.user()?.supportSession" [loading]="busy()">
+            Guardar perfil
+          </app-button>
+        </form>
+      </app-component-card>
+      @if (!auth.user()?.supportSession) {
+        <app-component-card title="Cambiar contraseña" desc="Al cambiarla se cerrará tu sesión.">
+          <form (ngSubmit)="changePassword()" class="space-y-4">
+            <app-input-field id="profile-current-password" name="currentPassword" type="password" label="Contraseña actual" [isRequired]="true" autocomplete="current-password" [value]="currentPassword" (valueChange)="currentPassword = '' + $event" />
+            <app-input-field id="profile-new-password" name="newPassword" type="password" label="Nueva contraseña" [isRequired]="true" [maxLength]="128" autocomplete="new-password" hint="Incluye mayúscula, minúscula, número y carácter especial." [value]="newPassword" (valueChange)="newPassword = '' + $event" />
+            <app-input-field id="profile-confirm-password" name="confirmPassword" type="password" label="Confirmar contraseña" [isRequired]="true" [maxLength]="128" autocomplete="new-password" [value]="confirmPassword" (valueChange)="confirmPassword = '' + $event" />
+            <app-button type="submit" [disabled]="loading() || busy()" [loading]="busy()">
+              Cambiar contraseña
+            </app-button>
+          </form>
+        </app-component-card>
+      }
+    </div>`,
 })
 export class ProfileComponent {
   protected readonly auth = inject(AuthService);
@@ -108,6 +64,16 @@ export class ProfileComponent {
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly message = signal('');
+  protected readonly loadError = signal<string | null>(null);
+  protected roleLabel(): string {
+    const role = this.auth.user()?.role;
+    return role ? userRoleLabel(role) : '—';
+  }
+  protected reload() {
+    this.loadError.set(null);
+    this.loading.set(true);
+    void this.load();
+  }
   protected nombre = '';
   protected email = '';
   protected currentPassword = '';
@@ -122,7 +88,7 @@ export class ProfileComponent {
       this.nombre = user.nombre;
       this.email = user.email;
     } catch (error) {
-      this.message.set(httpErrorMessage(error, 'No se pudo cargar el perfil.'));
+      this.loadError.set(httpErrorMessage(error, 'No se pudo cargar el perfil.'));
     } finally {
       this.loading.set(false);
     }

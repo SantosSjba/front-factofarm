@@ -129,13 +129,11 @@
       </div>
 
       @if (countProductOptions().length > 0) {
-        <div class="mb-4 max-h-32 overflow-auto rounded border">
+        <app-option-list class="mb-4">
           @for (p of countProductOptions(); track p.id) {
-            <button type="button" class="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/5" (click)="selectCountProduct(p)">
-              {{ p.nombre }}
-            </button>
+            <app-option-item (optionSelect)="selectCountProduct(p)">{{ p.nombre }}</app-option-item>
           }
-        </div>
+        </app-option-list>
       }
 
       <table class="min-w-full text-left text-theme-sm">
@@ -188,14 +186,7 @@
             <td class="px-4 py-3 text-theme-sm">{{ row.fecha | appDate: 'yyyy-MM-dd HH:mm' }}</td>
             <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
             <td class="px-4 py-3 text-theme-sm">
-              <button
-                type="button"
-                class="text-brand-600 underline"
-                [disabled]="row.estado !== 'EN_PROCESO'"
-                (click)="openCount(row)"
-              >
-                {{ row.estado }}
-              </button>
+              <app-button variant="link" [disabled]="row.estado !== 'EN_PROCESO'" (btnClick)="openCount(row)">{{ row.estado }}</app-button>
             </td>
             <td class="px-4 py-3 text-theme-sm">{{ row.itemsCount }}</td>
             <td class="px-4 py-3 text-theme-sm">{{ row.usuario || '—' }}</td>

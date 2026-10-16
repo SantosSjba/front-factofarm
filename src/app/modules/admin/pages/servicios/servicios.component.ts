@@ -28,6 +28,9 @@ import { ModalTabHeaderComponent } from '../../../../shared/components/ui/modal-
 import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 import type { CreateServiceRequest, ServiceListFiltersRequest, ServiceListItemDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 
 type ServiceTab = 'general' | 'atributos';
 type HistoryTab = 'stock' | 'sales' | 'purchases';
@@ -88,6 +91,9 @@ const barcodeSchema = yup.object({
   selector: 'app-servicios',
   standalone: true,
   imports: [
+    OptionItemComponent,
+    OptionListComponent,
+    MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
     BreadcrumbInlineComponent,

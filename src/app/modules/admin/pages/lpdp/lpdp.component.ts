@@ -4,13 +4,18 @@ import { firstValueFrom } from 'rxjs';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-lpdp',
   standalone: true,
-  imports: [BreadcrumbInlineComponent, ComponentCardComponent],
+  imports: [
+    PageToolbarComponent,BreadcrumbInlineComponent, ComponentCardComponent],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'LPDP / ARCO' }]" />
+    <app-page-toolbar>
+      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">LPDP / ARCO</h1>
+    </app-page-toolbar>
     <app-component-card title="Matriz de tratamiento LPDP" className="mt-4" [loading]="matrixQuery.isPending()" [error]="matrixQuery.isError() ? 'No se pudo cargar la matriz de tratamiento' : null" (retry)="matrixQuery.refetch()">
       @if (matrixQuery.data(); as matrix) {
         <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Versión {{ matrix.version }} · Cifrado salud: {{ matrix.encryptionEnabled ? 'activo' : 'no configurado' }}</p>

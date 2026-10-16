@@ -1411,3 +1411,12 @@ pre[class*="language-"].line-numbers {
 .dark .driver-popover.ff-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: var(--color-gray-dark); }
 .dark .driver-popover.ff-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--color-gray-dark); }
 .dark .driver-popover.ff-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--color-gray-dark); }
+
+/* Título de página compacto y uniforme en todas las pantallas que usan
+   <app-page-toolbar>. Fuera de @layer para prevalecer sobre las utilidades
+   (text-title-sm / sm:text-title-md) que cada página trae en su <h1>. */
+[data-page-toolbar] [data-toolbar-title] {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+}

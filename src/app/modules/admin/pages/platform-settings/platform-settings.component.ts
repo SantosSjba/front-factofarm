@@ -5,6 +5,12 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
+import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 
 type Setting = {
   key: string;
@@ -16,70 +22,86 @@ type Setting = {
 };
 @Component({
   standalone: true,
-  imports: [FormsModule],
-  template: ` <div class="p-6 max-w-4xl mx-auto">
-    <h1 class="text-2xl font-semibold mb-3">Configuración de plataforma</h1>
-    <p class="mb-6">
-      Correo, recuperación de contraseña, sesiones y datos públicos. Los cambios se aplican a las
-      próximas solicitudes.
-    </p>
-    @if (message()) {
-      <p role="status" class="mb-4">{{ message() }}</p>
-    }
-    @if (loading()) {
-      <p>Cargando configuración…</p>
-    }
+  imports: [
+    FormsModule,
+    FormSelectComponent,
+    InputFieldComponent,
+    ButtonComponent,
+    BreadcrumbInlineComponent,
+    PageToolbarComponent,
+    ComponentCardComponent,
+  ],
+  template: `
+    <app-breadcrumb-inline [segments]="[{ label: 'Plataforma' }, { label: 'Configuración' }]" />
+    <app-page-toolbar>
+      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Configuración de plataforma</h1>
+    </app-page-toolbar>
+    <app-component-card
+      className="max-w-4xl"
+      title="Parámetros generales"
+      desc="Correo, recuperación de contraseña, sesiones y datos públicos. Los cambios se aplican a las próximas solicitudes."
+      [loading]="loading()"
+      [error]="loadError()"
+      (retry)="reload()"
+    >
     <form (ngSubmit)="save()" class="space-y-4">
       @for (item of settings(); track item.key) {
         <div>
-          <label [for]="item.key" class="block font-medium mb-1">{{ item.label }}</label>
           @if (item.key.endsWith('_ENABLED')) {
-            <select
+            <app-form-select
               [id]="item.key"
-              [name]="item.key"
-              [(ngModel)]="item.value"
+              [label]="item.label"
+              [showPlaceholder]="false"
+              [options]="enabledOptions"
+              [value]="item.value"
               [disabled]="saving()"
-              class="w-full border rounded-lg p-3 dark:bg-gray-900"
-            >
-              <option value="false">Deshabilitado</option>
-              <option value="true">Habilitado</option>
-            </select>
+              (valueChange)="item.value = $event"
+            />
           } @else {
-            <input
+            <app-input-field
               [id]="item.key"
               [name]="item.key"
+              [label]="item.label"
               [type]="item.secret ? 'password' : inputType(item.key)"
-              [(ngModel)]="item.value"
               [autocomplete]="item.secret ? 'new-password' : 'off'"
-              [placeholder]="
-                item.secret && item.configured ? 'Configurada: dejar vacío para conservar' : ''
-              "
-              class="w-full border rounded-lg p-3 dark:bg-gray-900"
+              [placeholder]="item.secret && item.configured ? 'Configurada: dejar vacío para conservar' : ''"
+              [value]="item.value"
               [disabled]="saving()"
+              (valueChange)="item.value = '' + $event"
             />
           }
-          <small>{{
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{
             item.source === 'panel' ? 'Guardado en plataforma' : 'Valor inicial del entorno'
-          }}</small>
+          }}</p>
         </div>
       }
-      <button
+      <app-button
         type="submit"
         [disabled]="loading() || saving() || !settings().length"
-        class="rounded-lg px-5 py-3 bg-blue-600 text-white disabled:opacity-50"
+        [loading]="saving()"
       >
         {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
-      </button>
+      </app-button>
     </form>
-  </div>`,
+    </app-component-card>`,
 })
 export class PlatformSettingsComponent {
   private readonly http = inject(HttpClient);
   private readonly notify = inject(NotifyService);
+  protected readonly enabledOptions = [
+    { value: 'false', label: 'Deshabilitado' },
+    { value: 'true', label: 'Habilitado' },
+  ];
   protected readonly settings = signal<Setting[]>([]);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly message = signal('');
+  protected readonly loadError = signal<string | null>(null);
+  protected reload() {
+    this.loadError.set(null);
+    this.loading.set(true);
+    void this.load();
+  }
   private original = new Map<string, string>();
   constructor() {
     void this.load();
@@ -115,7 +137,7 @@ export class PlatformSettingsComponent {
         ),
       );
     } catch (error) {
-      this.message.set(httpErrorMessage(error, 'No se pudo cargar la configuración.'));
+      this.loadError.set(httpErrorMessage(error, 'No se pudo cargar la configuración.'));
     } finally {
       this.loading.set(false);
     }

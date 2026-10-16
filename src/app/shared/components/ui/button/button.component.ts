@@ -23,6 +23,10 @@ import { TooltipDirective } from '../../../directives/tooltip.directive';
       :host(.sm\\:hidden) {
         display: none !important;
       }
+      /* "hidden sm:inline-flex": oculto en móvil, visible desde sm. */
+      :host(.hidden.sm\\:inline-flex) {
+        display: inline-flex !important;
+      }
     }
     @media (max-width: 639px) {
       :host(.sm\\:inline-flex) {
@@ -33,7 +37,7 @@ import { TooltipDirective } from '../../../directives/tooltip.directive';
 })
 export class ButtonComponent {
   @Input() size: 'sm' | 'md' = 'md';
-  @Input() variant: 'primary' | 'outline' | 'danger' | 'ghost' = 'primary';
+  @Input() variant: 'primary' | 'outline' | 'danger' | 'ghost' | 'link' | 'link-danger' = 'primary';
   /** Native button type. Use `submit` inside forms so Enter triggers ngSubmit. */
   @Input() type: 'button' | 'submit' | 'reset' = 'button';
   @Input() disabled = false;
@@ -48,6 +52,10 @@ export class ButtonComponent {
   @Input() iconOnly = false;
   /** Tooltip / aria-label (recomendado con iconOnly). */
   @Input() tooltip = '';
+  /** Nombre accesible sin tooltip visual. */
+  @Input() ariaLabel = '';
+  /** id del <button> interno (p. ej. para devolver el foco tras cerrar un menú). */
+  @Input() id = '';
 
   @Output() btnClick = new EventEmitter<Event>();
 
@@ -56,6 +64,7 @@ export class ButtonComponent {
   }
 
   get sizeClasses(): string {
+    if (this.isLink) return this.size === 'sm' ? 'p-0 text-xs font-medium' : 'p-0 text-sm font-medium';
     if (this.iconOnly) {
       return this.size === 'sm' ? 'p-2' : 'p-2.5';
     }
@@ -70,8 +79,17 @@ export class ButtonComponent {
     return this.size === 'sm' ? 'xs' : 'sm';
   }
 
+  /** Acción de texto (sin fondo), p. ej. "+ Agregar", "Descargar plantilla". */
+  get isLink(): boolean {
+    return this.variant === 'link' || this.variant === 'link-danger';
+  }
+
   get variantClasses(): string {
     switch (this.variant) {
+      case 'link':
+        return 'text-brand-600 hover:underline dark:text-brand-400';
+      case 'link-danger':
+        return 'text-error-600 hover:underline dark:text-error-400';
       case 'danger':
         return 'bg-error-50 text-error-600 ring-1 ring-inset ring-error-100 hover:bg-error-100 dark:bg-error-500/15 dark:text-error-400 dark:ring-error-500/20 dark:hover:bg-error-500/25';
       case 'ghost':

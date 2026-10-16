@@ -1,3 +1,5 @@
+<app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'Auditoría' }]" />
+
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md">
     Auditoría
@@ -39,13 +41,7 @@
     </div>
     @if (nextCursor()) {
       <div class="border-t border-gray-100 p-4 text-center dark:border-white/[0.05]">
-        <button
-          type="button"
-          class="text-theme-sm font-medium text-brand-600 hover:underline"
-          (click)="loadMore()"
-        >
-          Cargar más
-        </button>
+        <app-button variant="link" (btnClick)="loadMore()">Cargar más</app-button>
       </div>
     }
   </app-component-card>

@@ -35,9 +35,7 @@
       @if (productId()) {
         <div class="flex items-center gap-2">
           <span class="text-theme-sm font-medium">{{ productLabel() }}</span>
-          <button type="button" class="text-theme-xs text-brand-600" (click)="productId.set(''); productLabel.set('')">
-            Cambiar
-          </button>
+          <app-button variant="link" (btnClick)="productId.set(''); productLabel.set('')">Cambiar</app-button>
         </div>
       } @else {
         <div class="flex gap-2">
@@ -50,19 +48,11 @@
           <app-button variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
         </div>
         @if (productOptions().length > 0) {
-          <ul class="mt-2 rounded-lg border border-gray-100 dark:border-gray-800">
+          <app-option-list class="mt-2">
             @for (p of productOptions(); track p.id) {
-              <li>
-                <button
-                  type="button"
-                  class="w-full px-3 py-2 text-left text-theme-sm hover:bg-gray-50 dark:hover:bg-white/5"
-                  (click)="selectProduct(p)"
-                >
-                  {{ p.nombre }} — {{ p.codigoInterno ?? 'sin código' }}
-                </button>
-              </li>
-            }
-          </ul>
+<app-option-item (optionSelect)="selectProduct(p)">{{ p.nombre }} — {{ p.codigoInterno ?? 'sin código' }}</app-option-item>
+}
+          </app-option-list>
         }
       }
     </div>

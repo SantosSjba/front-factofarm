@@ -38,6 +38,10 @@ import type {
   ProductListItemDto,
 } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
 
 type ProductTab = 'general' | 'almacenes' | 'presentaciones' | 'atributos' | 'compra' | 'proveedores';
 type HistoryTab = 'stock' | 'prices' | 'sales' | 'purchases';
@@ -132,6 +136,10 @@ const barcodeSchema = yup.object({
   selector: 'app-productos',
   standalone: true,
   imports: [
+    FileInputComponent,
+    OptionItemComponent,
+    OptionListComponent,
+    MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,

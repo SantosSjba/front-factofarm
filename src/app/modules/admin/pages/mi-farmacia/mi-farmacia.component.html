@@ -59,13 +59,7 @@
               (fileSelected)="onLogoFile($event)"
             />
             @if (logoPreview()) {
-              <button
-                type="button"
-                class="mt-2 text-theme-xs text-error-600 hover:underline"
-                (click)="clearLogo()"
-              >
-                Quitar logo
-              </button>
+              <app-button variant="link-danger" className="mt-2" (btnClick)="clearLogo()">Quitar logo</app-button>
             }
             @if (logoUploadError()) {
               <p class="mt-1 text-theme-xs text-error-600">{{ logoUploadError() }}</p>

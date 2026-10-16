@@ -13,6 +13,8 @@ export type TabStripItem = { id: string; label: string };
 export class TabStripComponent {
   readonly tabs = input.required<TabStripItem[]>();
   readonly activeId = input.required<string>();
+  /** Pestañas a ancho completo, repartidas en partes iguales (móvil). */
+  readonly stretch = input(false);
   readonly tabChange = output<string>();
 
   protected select(id: string) {

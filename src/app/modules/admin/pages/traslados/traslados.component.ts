@@ -23,6 +23,9 @@ import type {
   InventoryTransferDto,
   ProductListItemDto,
 } from '../../models/directory.models';
+import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 
 interface TransferDraftItem {
   productId: string;
@@ -35,6 +38,9 @@ interface TransferDraftItem {
   selector: 'app-traslados',
   standalone: true,
   imports: [
+    TextAreaComponent,
+    OptionItemComponent,
+    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,
@@ -277,10 +283,6 @@ export class TrasladosComponent {
     });
   }
 
-  protected onComentarioInput(event: Event) {
-    const target = event.target as HTMLTextAreaElement | null;
-    this.comentario.set(target?.value ?? '');
-  }
 
   private resetDraftLine() {
     this.draftProductId.set('');

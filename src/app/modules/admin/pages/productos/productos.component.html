@@ -21,13 +21,7 @@
         </app-button>
       </div>
       <div dropdown-content>
-        <button
-          type="button"
-          class="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
-          (click)="exportProducts()"
-        >
-          Exportar Excel
-        </button>
+        <app-menu-item (itemClick)="exportProducts()">Exportar Excel</app-menu-item>
       </div>
     </app-table-dropdown>
     <ng-container *appHasPermission="'products.write'">
@@ -38,27 +32,9 @@
           </app-button>
         </div>
         <div dropdown-content>
-          <button
-            type="button"
-            class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-            (click)="openImportModal('PRODUCTOS')"
-          >
-            Productos
-          </button>
-          <button
-            type="button"
-            class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-            (click)="openImportModal('L_PRECIOS')"
-          >
-            L. Precios
-          </button>
-          <button
-            type="button"
-            class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
-            (click)="openImportModal('ACTUALIZAR_PRECIOS')"
-          >
-            Actualizar precios
-          </button>
+          <app-menu-item (itemClick)="openImportModal('PRODUCTOS')">Productos</app-menu-item>
+          <app-menu-item (itemClick)="openImportModal('L_PRECIOS')">L. Precios</app-menu-item>
+          <app-menu-item (itemClick)="openImportModal('ACTUALIZAR_PRECIOS')">Actualizar precios</app-menu-item>
         </div>
       </app-table-dropdown>
       <app-button size="sm" (btnClick)="openCreateModal()">
@@ -126,22 +102,11 @@
     <div class="flex justify-end">
       <app-table-dropdown>
         <div dropdown-button>
-          <button
-            type="button"
-            class="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5"
-          >
-            <span>Columnas</span>
-            <app-icon name="mdi:chevron-down" width="16" height="16" />
-          </button>
+          <app-button size="sm" variant="outline" endIconName="mdi:chevron-down">Columnas</app-button>
         </div>
         <div dropdown-content>
           @for (col of columns; track col.key) {
-            <label
-              class="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
-            >
-              <input type="checkbox" [checked]="isVisible(col.key)" (change)="toggleColumn(col.key)" />
-              <span>{{ col.label }}</span>
-            </label>
+            <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
           }
         </div>
       </app-table-dropdown>
@@ -237,26 +202,10 @@
                 <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.descripcion || '—' }}</td>
               }
               <td class="hidden px-5 py-4 lg:table-cell">
-                <button
-                  type="button"
-                  class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
-                  (click)="openHistoryModal(row)"
-                  title="Historial"
-                  [attr.aria-label]="'Historial de ' + row.nombre"
-                >
-                  <app-icon name="mdi:history" width="18" height="18" />
-                </button>
+                <app-button size="sm" variant="primary" [iconOnly]="true" startIconName="mdi:history" [tooltip]="'Historial de ' + row.nombre" (btnClick)="openHistoryModal(row)"></app-button>
               </td>
               <td class="px-5 py-4">
-                <button
-                  type="button"
-                  class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
-                  (click)="openStockModal(row)"
-                  title="Stock"
-                  [attr.aria-label]="'Stock de ' + row.nombre"
-                >
-                  <app-icon name="mdi:magnify" width="18" height="18" />
-                </button>
+                <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:magnify" [tooltip]="'Stock de ' + row.nombre" (btnClick)="openStockModal(row)"></app-button>
               </td>
               @if (isVisible('stockMinimo')) {
                 <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.stockMinimo }}</td>
@@ -298,99 +247,26 @@
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
-                      <button
-                        [id]="'product-actions-' + row.id"
-                        type="button"
-                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                        [attr.aria-label]="'Acciones para ' + row.nombre"
-                      >
-                        <app-icon name="mdi:dots-vertical" width="18" height="18" />
-                      </button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [id]="'product-actions-' + row.id" [tooltip]="'Acciones para ' + row.nombre"></app-button>
                     </div>
                     <div dropdown-content>
                       <ng-container *appHasPermission="'products.write'">
-                        <button
-                          type="button"
-                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                          (click)="openEditModal(row)"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          class="inline-flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
-                          [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()"
-                          (click)="duplicateProductRow(row)"
-                        >
-                          @if (duplicateMutation.isPending()) {
-                            <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
-                          }
-                          {{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}
-                        </button>
-                        <button
-                          type="button"
-                          class="inline-flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:text-gray-300 dark:hover:bg-white/10"
-                          [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
-                          (click)="toggleProductStatus(row, 'product-actions-' + row.id)"
-                        >
-                          @if (statusMutation.isPending()) {
-                            <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
-                          }
-                          {{
+                        <app-menu-item (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                        <app-menu-item [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()" [loading]="duplicateMutation.isPending()" (itemClick)="duplicateProductRow(row)">{{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}</app-menu-item>
+                        <app-menu-item [disabled]="statusMutation.isPending() || deleteMutation.isPending()" [loading]="statusMutation.isPending()" (itemClick)="toggleProductStatus(row, 'product-actions-' + row.id)">{{
                             statusMutation.isPending()
                               ? 'Procesando...'
                               : (row.habilitado ? 'Inhabilitar' : 'Habilitar')
-                          }}
-                        </button>
-                        <button
-                          type="button"
-                          class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                          (click)="openBarcodeModal(row)"
-                        >
-                          Cod. Barras
-                        </button>
+                          }}</app-menu-item>
+                        <app-menu-item (itemClick)="openBarcodeModal(row)">Cod. Barras</app-menu-item>
                       </ng-container>
                       <ng-container *appHasPermission="'products.delete'">
-                        <button
-                          type="button"
-                          class="inline-flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
-                          [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
-                          (click)="deleteProductRow(row, 'product-actions-' + row.id)"
-                        >
-                          @if (deleteMutation.isPending()) {
-                            <app-icon name="mdi:loading" iconClass="size-3.5 animate-spin" />
-                          }
-                          {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
-                        </button>
+                        <app-menu-item variant="danger" [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()" (itemClick)="deleteProductRow(row, 'product-actions-' + row.id)">{{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}</app-menu-item>
                       </ng-container>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                        (click)="printProductLabels(row, 'single')"
-                      >
-                        Etiquetas
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                        (click)="printProductLabels(row, '1x1')"
-                      >
-                        Etiquetas 1x1
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                        (click)="printProductLabels(row, '1x2')"
-                      >
-                        Etiquetas 1x2
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/10"
-                        (click)="printProductLabels(row, '3x3')"
-                      >
-                        Etiquetas 3x3
-                      </button>
+                      <app-menu-item (itemClick)="printProductLabels(row, 'single')">Etiquetas</app-menu-item>
+                      <app-menu-item (itemClick)="printProductLabels(row, '1x1')">Etiquetas 1x1</app-menu-item>
+                      <app-menu-item (itemClick)="printProductLabels(row, '1x2')">Etiquetas 1x2</app-menu-item>
+                      <app-menu-item (itemClick)="printProductLabels(row, '3x3')">Etiquetas 3x3</app-menu-item>
                     </div>
                   </app-table-dropdown>
                 </div>
@@ -605,15 +481,9 @@
     <p class="text-sm text-gray-600 dark:text-gray-300">
       Cargue el archivo correspondiente a <strong>{{ importModeLabel(importMode()) }}</strong>.
     </p>
-    <button type="button" class="mt-3 text-sm font-semibold text-brand-500 underline" (click)="downloadImportTemplate()">
-      Descargar plantilla
-    </button>
+    <app-button variant="link" className="mt-3" (btnClick)="downloadImportTemplate()">Descargar plantilla</app-button>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-      <label class="inline-flex cursor-pointer rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600">
-        <app-icon name="mdi:file-excel-outline" width="18" height="18" />
-        <span class="ml-2">{{ importFile()?.name || 'Seleccione un archivo (xlsx)' }}</span>
-        <input class="hidden" type="file" accept=".xlsx" (change)="onImportFileChange($event)" />
-      </label>
+      <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
       <app-button variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
         {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
       </app-button>
@@ -749,28 +619,14 @@
                 placeholder="Ingresa el código a buscar"
                 (valueChange)="onCodigoBusquedaInput($event + '')"
               />
-              <button
-                type="button"
-                class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-white/5"
-                [disabled]="codigoLookupLoading()"
-                (click)="buscarCodigoManual()"
-                title="Buscar"
-              >
-                <app-icon name="mdi:magnify" width="18" height="18" />
-              </button>
+              <app-button size="md" variant="outline" [iconOnly]="true" startIconName="mdi:magnify" tooltip="Buscar" [disabled]="codigoLookupLoading()" (btnClick)="buscarCodigoManual()"></app-button>
             </div>
             @if (codigoSuggestions().length > 0) {
-              <div class="absolute left-0 right-0 z-20 mt-1 max-h-72 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:bg-gray-900 dark:border-gray-800">
+              <app-option-list [floating]="true" class="mt-1">
                 @for (row of codigoSuggestions(); track row.id) {
-                  <button
-                    type="button"
-                    class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-800 dark:hover:bg-white/5"
-                    (click)="onCodigoSuggestionSelect(row)"
-                  >
-                    {{ codigoSuggestionCode(row) }} - {{ row.nombre }}
-                  </button>
+                  <app-option-item (optionSelect)="onCodigoSuggestionSelect(row)">{{ codigoSuggestionCode(row) }} - {{ row.nombre }}</app-option-item>
                 }
-              </div>
+              </app-option-list>
             } @else if (codigoLookupDone() && !codigoLookupLoading() && (form().codigoBusqueda ?? '').trim().length >= 2) {
               <div class="absolute left-0 right-0 z-20 mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-lg dark:bg-gray-900 dark:border-gray-800">
                 No se encontraron coincidencias para ese código.
@@ -1046,9 +902,7 @@
     @if (activeTab() === 'presentaciones') {
       <div class="mb-2 flex items-center justify-between gap-2">
         <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Listado de precios</h3>
-        <button type="button" class="text-sm font-medium text-brand-600 hover:underline" (click)="addPresentationRow()">
-          + Agregar
-        </button>
+        <app-button variant="link" (btnClick)="addPresentationRow()">+ Agregar</app-button>
       </div>
       <div class="max-w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-white/[0.08]">
         <table class="min-w-[720px] text-left text-xs text-gray-700 dark:text-gray-300">
@@ -1139,22 +993,14 @@
                   />
                 </td>
                 <td class="px-2 py-1">
-                  <button
-                    type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-error-500 text-white"
-                    (click)="removePresentationRow(pr.uid)"
-                  >
-                    <app-icon name="mdi:delete" width="18" height="18" />
-                  </button>
+                  <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:delete" (btnClick)="removePresentationRow(pr.uid)"></app-button>
                 </td>
               </tr>
             }
           </tbody>
         </table>
       </div>
-      <button type="button" class="mt-2 text-sm font-medium text-brand-600 hover:underline" (click)="addPresentationRow()">
-        + Agregar
-      </button>
+      <app-button variant="link" className="mt-2" (btnClick)="addPresentationRow()">+ Agregar</app-button>
     }
 
     @if (activeTab() === 'atributos') {
@@ -1171,13 +1017,7 @@
             <div class="flex flex-wrap items-end gap-3">
               <app-image-square-picker [previewUrl]="productImagePreview()" (fileSelected)="onProductImageFile($event)" />
               @if (form().imagenArchivoId) {
-                <button
-                  type="button"
-                  class="inline-flex h-10 items-center rounded-lg border border-error-300 px-3 text-xs font-medium text-error-700 hover:bg-error-50 dark:text-error-400 dark:border-error-500/30 dark:hover:bg-error-500/10"
-                  (click)="clearProductImage()"
-                >
-                  Quitar imagen
-                </button>
+                <app-button variant="danger" startIconName="mdi:image-remove-outline" (btnClick)="clearProductImage()">Quitar imagen</app-button>
               }
             </div>
           </div>
@@ -1264,9 +1104,7 @@
       <div class="mt-6">
         <div class="mb-2 flex items-center justify-between">
           <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Listado</h3>
-          <button type="button" class="text-sm font-medium text-brand-600 hover:underline" (click)="addAttributeRow()">
-            + Agregar
-          </button>
+          <app-button variant="link" (btnClick)="addAttributeRow()">+ Agregar</app-button>
         </div>
         <div class="space-y-2">
           @for (ar of attributeRows(); track ar.uid) {
@@ -1289,13 +1127,7 @@
                   (valueChange)="patchAttributeRow(ar.uid, { descripcion: $event + '' })"
                 />
               </div>
-              <button
-                type="button"
-                class="mb-0.5 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-error-500 text-white"
-                (click)="removeAttributeRow(ar.uid)"
-              >
-                <app-icon name="mdi:close" width="18" height="18" />
-              </button>
+              <app-button size="sm" variant="danger" className="mb-0.5" [iconOnly]="true" startIconName="mdi:close" (btnClick)="removeAttributeRow(ar.uid)"></app-button>
             </div>
           }
         </div>
@@ -1416,9 +1248,7 @@
                   <td class="px-4 py-2 text-theme-sm">{{ link.plazoDias ?? '—' }}</td>
                   <td class="px-4 py-2 text-end">
                     <ng-container *appHasPermission="'products.write'">
-                      <button type="button" class="text-theme-xs text-error-600 hover:underline" (click)="unlinkProductSupplier(link.supplierId)">
-                        Quitar
-                      </button>
+                      <app-button variant="link-danger" (btnClick)="unlinkProductSupplier(link.supplierId)">Quitar</app-button>
                     </ng-container>
                   </td>
                 </tr>

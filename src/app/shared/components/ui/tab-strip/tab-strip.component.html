@@ -8,6 +8,7 @@
       role="tab"
       [attr.aria-selected]="activeId() === tab.id"
       (click)="select(tab.id)"
+      [class.flex-1]="stretch()"
       class="shrink-0 whitespace-nowrap border-b-2 border-transparent px-3 py-3 text-sm font-medium text-gray-500 transition-colors hover:text-gray-700 aria-selected:border-brand-500 aria-selected:text-brand-500 dark:text-gray-400 dark:hover:text-gray-200 dark:aria-selected:text-brand-400 sm:px-4"
     >
       {{ tab.label }}

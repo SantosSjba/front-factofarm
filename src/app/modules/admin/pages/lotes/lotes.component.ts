@@ -14,11 +14,13 @@ import { PaginationComponent } from '../../../../shared/components/common/pagina
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 
 @Component({
   selector: 'app-lotes',
   standalone: true,
   imports: [
+    LabelComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,
