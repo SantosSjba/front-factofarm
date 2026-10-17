@@ -7,6 +7,7 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -57,6 +58,7 @@ import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/me
 export class NotasVentaComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
+  private readonly auth = inject(AuthService);
   private readonly queryClient = injectQueryClient();
   private readonly locale = inject(LocaleService);
   private readonly route = inject(ActivatedRoute);
@@ -333,9 +335,14 @@ export class NotasVentaComponent {
     if (sale.storage === 'archived' || sale.fromColdStorage || ('archivedAt' in sale && sale.archivedAt)) {
       return false;
     }
+    if (!this.canCreateReturns) return false;
     if (typeof sale.canReturn === 'boolean') return sale.canReturn;
     return false;
   }
+
+  /** La API exige `sales.write` o el ítem Anulaciones para registrar devoluciones. */
+  private readonly canCreateReturns =
+    this.auth.hasPermission('sales.write') || this.auth.hasPermission('nav.anulaciones');
 
   protected isArchivedRow(row: { storage?: string; archivedAt?: string | null }): boolean {
     return row.storage === 'archived' || !!row.archivedAt;

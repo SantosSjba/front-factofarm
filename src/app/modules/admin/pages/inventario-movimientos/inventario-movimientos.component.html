@@ -7,9 +7,11 @@
     Inventario
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <app-button startIconName="mdi:clipboard-clock-outline" size="sm" variant="outline" (btnClick)="openPendingAdjustmentsModal()">
-      <span>Ajustes pendientes</span>
-    </app-button>
+    <ng-container *appHasPermission="'inventory.adjust'">
+      <app-button startIconName="mdi:clipboard-clock-outline" size="sm" variant="outline" (btnClick)="openPendingAdjustmentsModal()">
+        <span>Ajustes pendientes</span>
+      </app-button>
+    </ng-container>
     <app-table-dropdown>
       <div dropdown-button>
         <app-button size="sm">

@@ -5,6 +5,7 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -32,6 +33,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
   selector: 'app-reporte-inventario',
   standalone: true,
   imports: [
+    HasPermissionDirective,
     QuickCreateComponent,
     OptionItemComponent,
     OptionListComponent,

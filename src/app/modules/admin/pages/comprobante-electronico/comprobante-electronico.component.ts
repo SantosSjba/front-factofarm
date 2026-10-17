@@ -7,6 +7,7 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { isOptionalUrl } from '../../../../core/utils/form-validators';
 import { isValidRuc } from '../../../../core/utils/peru-documents';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
@@ -49,6 +50,7 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
 export class ComprobanteElectronicoComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
+  private readonly auth = inject(AuthService);
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [
@@ -321,6 +323,10 @@ export class ComprobanteElectronicoComponent {
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir')) }));
 
   protected canVoid(doc: ElectronicDocumentDetailDto): boolean {
+    // La API exige `billing.void` o el ítem Anulaciones.
+    if (!this.auth.hasPermission('billing.void') && !this.auth.hasPermission('nav.anulaciones')) {
+      return false;
+    }
     const caps = this.billingCapabilities();
     if (caps && !caps.supportsVoidDocument) return false;
     return (

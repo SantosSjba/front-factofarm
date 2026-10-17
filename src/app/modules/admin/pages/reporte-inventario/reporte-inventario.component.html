@@ -228,6 +228,7 @@
         <app-quick-create entity="warehouse" [iconOnly]="true" (created)="zoneWarehouseId.set($event.id)" />
       </div>
     </div>
+    <ng-container *appHasPermission="'inventory.write'">
     <div>
       <app-label>Nueva zona</app-label>
       <app-input-field className="mt-2" [value]="newZoneName()" (valueChange)="newZoneName.set($event + '')" />
@@ -244,6 +245,7 @@
     <div class="md:col-span-3">
       <app-button startIconName="mdi:snowflake-thermometer" size="sm" (btnClick)="createZone()">Agregar zona</app-button>
     </div>
+    </ng-container>
   </div>
 
   <app-component-card title="Mapa de zonas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
