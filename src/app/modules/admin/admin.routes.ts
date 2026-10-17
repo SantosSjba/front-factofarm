@@ -370,6 +370,15 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Caja Chica POS',
       },
       {
+        path: 'historial-cajas',
+        ...guarded(P.historialCajas),
+        loadComponent: () =>
+          import('./pages/historial-cajas/historial-cajas.component').then(
+            (m) => m.HistorialCajasComponent,
+          ),
+        title: 'FactoFarm | Historial de cajas',
+      },
+      {
         path: 'comprobante-electronico',
         ...guarded(P.comprobanteElectronico),
         loadComponent: () =>

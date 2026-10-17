@@ -13,19 +13,29 @@ import { FormFieldComponent } from '../../../../shared/components/form/form-fiel
 import { FormStackComponent } from '../../../../shared/components/form/form-stack/form-stack.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { PaymentMethod, PosPrinterPaperWidth } from '../../models/directory.models';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 
-import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { LocaleService } from '../../../../core/services/locale.service';
+import { RouterLink } from '@angular/router';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { CashCloseModalComponent } from '../../components/cash/cash-close-modal.component';
+import { CashOpenFormComponent } from '../../components/cash/cash-open-form.component';
+import { CashOpenSessionsBannerComponent } from '../../components/cash/cash-open-sessions-banner.component';
+import { openPdfBlob } from '../../components/cash/cash-files';
 @Component({
   selector: 'app-caja-chica-pos',
   standalone: true,
   imports: [
-    QuickCreateComponent,
+    RouterLink,
+    StatusBadgeComponent,
+    CashCloseModalComponent,
+    CashOpenFormComponent,
+    CashOpenSessionsBannerComponent,
     CheckboxComponent,
     CommonModule,
     AppDatePipe,
@@ -38,21 +48,20 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
     FormStackComponent,
     FormSelectComponent,
     InputFieldComponent,
-    LabelComponent,
     PageStateComponent,
   ],
   templateUrl: './caja-chica-pos.component.html' })
 export class CajaChicaPosComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
+  private readonly auth = inject(AuthService);
+  private readonly locale = inject(LocaleService);
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Caja POS' }];
 
-  protected readonly cashRegisterId = signal('');
-  protected readonly montoApertura = signal(0);
-  protected readonly montoCierre = signal(0);
-  protected readonly notasCierre = signal('');
+  /** Sesión a cerrar en el modal de arqueo. */
+  protected readonly closeId = signal<string | null>(null);
   protected readonly movTipo = signal<'INGRESO' | 'EGRESO'>('INGRESO');
   protected readonly movMonto = signal(0);
   protected readonly movComentario = signal('');
@@ -72,15 +81,17 @@ export class CajaChicaPosComponent {
     queryKey: ['cash', 'active-session'] as const,
     queryFn: () => firstValueFrom(this.api.getActiveCashSession()) }));
 
+  protected readonly canSeeHistory = this.auth.hasPermission('nav.historial_cajas');
+
+  protected readonly recentQuery = injectQuery(() => ({
+    queryKey: ['cash', 'sessions', 'recent'] as const,
+    queryFn: () => firstValueFrom(this.api.listCashSessions({ page: 1, pageSize: 5 })),
+  }));
+
   protected readonly summaryQuery = injectQuery(() => ({
     queryKey: ['cash', 'summary', this.sessionQuery.data()?.id] as const,
     enabled: !!this.sessionQuery.data()?.id,
     queryFn: () => firstValueFrom(this.api.getCashSessionSummary(this.sessionQuery.data()!.id)) }));
-
-  protected readonly registerOptions = computed(() => [
-    { value: '', label: 'Seleccionar caja' },
-    ...(this.registersQuery.data() ?? []).map((r) => ({ value: r.id, label: r.nombre })),
-  ]);
 
   protected readonly session = computed(() => this.sessionQuery.data());
   protected readonly summary = computed(() => this.summaryQuery.data());
@@ -117,21 +128,22 @@ export class CajaChicaPosComponent {
     return null;
   }
 
+  /** La sesión activa viene de un día anterior: hay que cerrarla con su arqueo. */
+  protected readonly sessionFromPreviousDay = computed(() => {
+    const s = this.session();
+    return !!s && this.locale.todayYmd(new Date(s.openedAt)) !== this.locale.todayYmd();
+  });
+
+  protected printReport(sessionId: string, format: 'a4' | 'ticket') {
+    this.api.getCashSessionReport(sessionId, format).subscribe({
+      next: (blob) => openPdfBlob(blob),
+      error: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo generar el reporte de arqueo')),
+    });
+  }
+
   protected refetchPosInit() {
     void this.registersQuery.refetch();
     void this.sessionQuery.refetch();
-  }
-
-  protected submitOpen() {
-    if (!this.cashRegisterId()) {
-      this.notify.warning('Seleccione la caja que desea abrir.');
-      return;
-    }
-    if (!Number.isFinite(this.montoApertura()) || this.montoApertura() < 0) {
-      this.notify.warning('El monto inicial debe ser un número mayor o igual a 0.');
-      return;
-    }
-    this.openMutation.mutate();
   }
 
   protected submitMovement() {
@@ -141,40 +153,6 @@ export class CajaChicaPosComponent {
     }
     this.movementMutation.mutate();
   }
-
-  protected submitClose() {
-    if (!Number.isFinite(this.montoCierre()) || this.montoCierre() < 0) {
-      this.notify.warning('El monto físico contado debe ser un número mayor o igual a 0.');
-      return;
-    }
-    this.closeMutation.mutate();
-  }
-
-  protected readonly openMutation = injectMutation(() => ({
-    mutationFn: () =>
-      firstValueFrom(
-        this.api.openCashSession({
-          cashRegisterId: this.cashRegisterId(),
-          montoApertura: this.montoApertura() }),
-      ),
-    onSuccess: () => {
-      this.notify.success('Caja abierta');
-      void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo abrir la caja')) }));
-
-  protected readonly closeMutation = injectMutation(() => ({
-    mutationFn: () =>
-      firstValueFrom(
-        this.api.closeCashSession(this.session()!.id, {
-          montoCierreFisico: this.montoCierre(),
-          notasCierre: this.notasCierre().trim() || undefined }),
-      ),
-    onSuccess: (res) => {
-      this.notify.success(`Caja cerrada. Diferencia: S/ ${res.diferenciaArqueo}`);
-      void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo cerrar la caja')) }));
 
   protected readonly movementMutation = injectMutation(() => ({
     mutationFn: () =>

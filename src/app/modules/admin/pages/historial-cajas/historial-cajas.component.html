@@ -1,0 +1,296 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Historial de cajas</h1>
+  <div data-toolbar-actions class="flex flex-wrap gap-2">
+    <app-button size="sm" variant="outline" startIconName="mdi:microsoft-excel" [loading]="exporting() === 'xlsx'" [disabled]="!!exporting()" (btnClick)="exportList('xlsx')">Excel</app-button>
+    <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" [loading]="exporting() === 'pdf'" [disabled]="!!exporting()" (btnClick)="exportList('pdf')">PDF</app-button>
+  </div>
+</app-page-toolbar>
+
+<div class="mt-3"><app-cash-open-sessions-banner /></div>
+
+<!-- Indicadores -->
+@if (kpisError(); as err) {
+  <p class="mb-3 text-sm text-rose-600 dark:text-rose-400">{{ err }}</p>
+}
+@if (kpisQuery.data(); as k) {
+  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <button type="button" class="rounded-xl border border-gray-200 bg-white p-3 text-left hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]" (click)="showOpen(false)">
+      <p class="text-xs text-gray-500 dark:text-gray-400">Cajas abiertas ahora</p>
+      <p class="mt-1 text-2xl font-bold tabular-nums text-gray-800 dark:text-white/90">{{ k.abiertasAhora }}</p>
+    </button>
+    <button type="button" class="rounded-xl border bg-white p-3 text-left hover:border-brand-300 dark:bg-white/[0.03]"
+      [ngClass]="k.abiertasMas24h > 0 ? 'border-amber-400' : 'border-gray-200 dark:border-gray-800'"
+      title="Filtra las cajas abiertas desde días anteriores"
+      (click)="showOpen(true)">
+      <p class="text-xs text-gray-500 dark:text-gray-400">Abiertas más de 24 h</p>
+      <p class="mt-1 text-2xl font-bold tabular-nums" [ngClass]="k.abiertasMas24h > 0 ? 'text-amber-600' : 'text-gray-800 dark:text-white/90'">{{ k.abiertasMas24h }}</p>
+    </button>
+    <button type="button" class="rounded-xl border border-gray-200 bg-white p-3 text-left hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.03]" (click)="showDifferences()">
+      <p class="text-xs text-gray-500 dark:text-gray-400">Diferencia acumulada (rango)</p>
+      <p class="mt-1 text-2xl font-bold tabular-nums" [ngClass]="diffClass(k.diferenciaAcumulada)">{{ k.diferenciaAcumulada | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        Faltante {{ k.faltanteAcumulado | currency: 'PEN' : 'symbol' : '1.2-2' }} · Sobrante {{ k.sobranteAcumulado | currency: 'PEN' : 'symbol' : '1.2-2' }}
+      </p>
+    </button>
+    <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]">
+      <p class="text-xs text-gray-500 dark:text-gray-400">Cierres en el rango</p>
+      <p class="mt-1 text-2xl font-bold tabular-nums text-gray-800 dark:text-white/90">{{ k.cerradasEnRango }}</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400">{{ k.cierresConDiferencia }} con diferencia · {{ k.cierresForzados }} forzados</p>
+    </div>
+  </div>
+}
+
+<app-component-card title="Filtros" className="mb-4">
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <app-input-field id="cajas-desde" label="Desde (apertura)" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event); onFilterChange()" />
+    <app-input-field id="cajas-hasta" label="Hasta (apertura)" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event); onFilterChange()" />
+    @if (isChain) {
+      <app-form-select label="Establecimiento" [showPlaceholder]="false" [options]="establishmentOptions()" [value]="establishmentId()" (valueChange)="setEstablishment($event)" />
+    }
+    @if (supervisor()) {
+      <app-form-select label="Cajero" [showPlaceholder]="false" [options]="cashierOptions()" [value]="userId()" (valueChange)="userId.set($event); onFilterChange()" />
+    }
+    @if (!establishmentId()) {
+      <app-form-select label="Caja" [showPlaceholder]="false" [options]="registerOptions()" [value]="cashRegisterId()" (valueChange)="cashRegisterId.set($event); onFilterChange()" />
+    }
+    <app-form-select label="Estado" [showPlaceholder]="false" [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set($any($event)); onFilterChange()" />
+    <app-form-select label="Arqueo" [showPlaceholder]="false" [options]="diferenciaOptions" [value]="diferencia()" (valueChange)="diferencia.set($any($event)); onFilterChange()" />
+    <app-form-select label="Tipo de cierre" [showPlaceholder]="false" [options]="forzadoOptions" [value]="forzado()" (valueChange)="forzado.set($any($event)); onFilterChange()" />
+  </div>
+  <div class="mt-3">
+    <app-button size="sm" variant="ghost" startIconName="mdi:filter-remove-outline" (btnClick)="clearFilters()">Limpiar filtros</app-button>
+  </div>
+</app-component-card>
+
+@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+
+<app-component-card
+  [title]="supervisor() ? 'Sesiones de caja' : 'Mis sesiones de caja'"
+  [loading]="listState.loading"
+  [error]="listState.error"
+  [empty]="listState.empty"
+  emptyTitle="No hay sesiones de caja para los filtros aplicados"
+  (retry)="listQuery.refetch()"
+>
+  @if (listQuery.data(); as data) {
+    <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
+      {{ data.total }} sesiones · diferencia
+      <span class="font-medium tabular-nums" [ngClass]="diffClass(data.totales.diferencia)">{{ data.totales.diferencia | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+      (faltante {{ data.totales.faltante | currency: 'PEN' : 'symbol' : '1.2-2' }}, sobrante {{ data.totales.sobrante | currency: 'PEN' : 'symbol' : '1.2-2' }})
+    </p>
+  }
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm">
+      <caption class="sr-only">Sesiones de caja con apertura, cierre, arqueo y diferencia</caption>
+      <thead class="border-b text-xs uppercase text-gray-500">
+        <tr>
+          <th class="px-3 py-2">Apertura</th>
+          <th class="px-3 py-2">Cierre</th>
+          <th class="px-3 py-2">Caja</th>
+          <th class="px-3 py-2">Cajero</th>
+          <th class="px-3 py-2">Estado</th>
+          <th class="px-3 py-2 text-right">Inicial</th>
+          <th class="px-3 py-2 text-right">Ventas</th>
+          <th class="px-3 py-2 text-right">Esperado</th>
+          <th class="px-3 py-2 text-right">Contado</th>
+          <th class="px-3 py-2 text-right">Diferencia</th>
+          <th class="px-3 py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of listQuery.data()?.items ?? []; track row.id) {
+          <tr class="border-b border-gray-100 dark:border-gray-800">
+            <td class="whitespace-nowrap px-3 py-2">{{ row.openedAt | appDate: 'short' }}</td>
+            <td class="whitespace-nowrap px-3 py-2">
+              {{ row.closedAt ? (row.closedAt | appDate: 'short') : '—' }}
+              @if (row.closedBy && row.cierreForzado) {
+                <span class="block text-xs text-gray-500">por {{ row.closedBy.nombre }}</span>
+              }
+            </td>
+            <td class="px-3 py-2">
+              {{ row.cashRegister.nombre }}
+              @if (establishmentId()) {
+                <span class="block text-xs text-gray-500">{{ row.establishment.nombre }}</span>
+              }
+            </td>
+            <td class="px-3 py-2">{{ row.user.nombre }}</td>
+            <td class="px-3 py-2"><app-status-badge [status]="row.estado" [tone]="statusTone(row)" [label]="statusLabel(row)" /></td>
+            <td class="px-3 py-2 text-right tabular-nums">{{ row.montoApertura | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            <td class="px-3 py-2 text-right tabular-nums">
+              {{ row.totalVentas | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              <span class="block text-xs text-gray-500">{{ row.numVentas }} ventas</span>
+            </td>
+            <td class="px-3 py-2 text-right tabular-nums">{{ row.efectivoEsperado === null ? '—' : (row.efectivoEsperado | currency: 'PEN' : 'symbol' : '1.2-2') }}</td>
+            <td class="px-3 py-2 text-right tabular-nums">{{ row.montoCierreFisico === null ? '—' : (row.montoCierreFisico | currency: 'PEN' : 'symbol' : '1.2-2') }}</td>
+            <td class="px-3 py-2 text-right font-medium tabular-nums" [ngClass]="diffClass(row.diferenciaArqueo)">
+              {{ row.diferenciaArqueo === null ? '—' : (row.diferenciaArqueo | currency: 'PEN' : 'symbol' : '1.2-2') }}
+            </td>
+            <td class="px-3 py-2 text-right">
+              <div class="hidden items-center justify-end gap-1.5 md:flex">
+                <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:eye-outline" tooltip="Ver detalle" (btnClick)="detailId.set(row.id)" />
+                @if (row.canClose) {
+                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:cash-lock" [tooltip]="row.isMine ? 'Cerrar con arqueo' : 'Cierre forzado'" (btnClick)="openClose(row.id)" />
+                }
+                <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:printer-outline" tooltip="Reimprimir arqueo (ticket)" (btnClick)="printReport(row.id, 'ticket')" />
+                <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:file-pdf-box" tooltip="Reporte de cierre PDF" (btnClick)="printReport(row.id, 'a4')" />
+              </div>
+              <div class="inline-flex justify-end md:hidden">
+                <app-table-dropdown>
+                  <div dropdown-button>
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones de la sesión" />
+                  </div>
+                  <div dropdown-content>
+                    <app-menu-item (itemClick)="detailId.set(row.id)">Ver detalle</app-menu-item>
+                    @if (row.canClose) {
+                      <app-menu-item (itemClick)="openClose(row.id)">{{ row.isMine ? 'Cerrar con arqueo' : 'Cierre forzado' }}</app-menu-item>
+                    }
+                    <app-menu-item (itemClick)="printReport(row.id, 'ticket')">Reimprimir arqueo (ticket)</app-menu-item>
+                    <app-menu-item (itemClick)="printReport(row.id, 'a4')">Reporte de cierre PDF</app-menu-item>
+                  </div>
+                </app-table-dropdown>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (listQuery.data(); as data) {
+    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="pageSize()" (currentPageChange)="page.set($event)" />
+  }
+</app-component-card>
+
+<!-- Detalle de sesión -->
+<app-modal [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-3xl shadow-theme-lg" ariaLabel="Detalle de sesión de caja">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Detalle de sesión de caja</h3>
+    @if (detailQuery.data(); as s) {
+      <p class="mt-1 pr-12 text-sm text-gray-500 dark:text-gray-400">{{ s.cashRegister.nombre }} · {{ s.establishment.nombre }}</p>
+    }
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    @if (detailQuery.isPending()) {
+      <p class="text-sm text-gray-500">Cargando detalle…</p>
+    } @else if (detailQuery.isError()) {
+      <p class="text-sm text-rose-600 dark:text-rose-400">{{ detailError() }}</p>
+      <app-button startIconName="mdi:refresh" variant="outline" size="sm" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
+    } @else if (detailQuery.data(); as s) {
+      <div class="flex flex-wrap items-center gap-2">
+        <app-status-badge [status]="s.estado" [tone]="statusTone(s)" [label]="statusLabel(s)" />
+        @if (s.cierreForzado) {
+          <span class="text-sm text-gray-600 dark:text-gray-300">Cerrada por {{ s.closedBy?.nombre ?? '—' }}</span>
+        }
+      </div>
+
+      <dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <div><dt class="text-xs text-gray-500">Cajero</dt><dd class="font-medium">{{ s.user.nombre }}</dd></div>
+        <div><dt class="text-xs text-gray-500">Apertura</dt><dd>{{ s.openedAt | appDate: 'short' }}</dd></div>
+        <div><dt class="text-xs text-gray-500">Cierre</dt><dd>{{ s.closedAt ? (s.closedAt | appDate: 'short') : '—' }}</dd></div>
+        <div><dt class="text-xs text-gray-500">Tiempo abierta</dt><dd>{{ formatHours(s.horasAbierta) }}</dd></div>
+        @if (s.closedBy) {
+          <div><dt class="text-xs text-gray-500">Cerrada por</dt><dd>{{ s.closedBy.nombre }}</dd></div>
+        }
+      </dl>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="rounded-lg bg-gray-50 p-3 text-sm dark:bg-white/[0.03]">
+          <h4 class="mb-2 font-semibold text-gray-700 dark:text-gray-300">Arqueo de efectivo</h4>
+          <dl class="space-y-1">
+            <div class="flex justify-between"><dt>Monto inicial</dt><dd class="tabular-nums">{{ s.resumenEfectivo.apertura | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div class="flex justify-between"><dt>(+) Ventas en efectivo</dt><dd class="tabular-nums">{{ s.resumenEfectivo.ventasEfectivo | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div class="flex justify-between"><dt>(+) Ingresos de caja</dt><dd class="tabular-nums">{{ s.resumenEfectivo.ingresos | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div class="flex justify-between"><dt>(−) Egresos de caja</dt><dd class="tabular-nums">{{ abs(s.resumenEfectivo.egresos) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            @if (+s.resumenEfectivo.anulaciones !== 0) {
+              <div class="flex justify-between"><dt>(−) Anulaciones</dt><dd class="tabular-nums">{{ abs(s.resumenEfectivo.anulaciones) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            }
+            <div class="flex justify-between border-t border-gray-200 pt-1 font-semibold dark:border-gray-700"><dt>Esperado</dt><dd class="tabular-nums">{{ s.efectivoEsperado | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div class="flex justify-between font-semibold"><dt>Contado</dt><dd class="tabular-nums">{{ s.montoCierreFisico === null ? '—' : (s.montoCierreFisico | currency: 'PEN' : 'symbol' : '1.2-2') }}</dd></div>
+            <div class="flex justify-between font-semibold"><dt>Diferencia</dt><dd class="tabular-nums" [ngClass]="diffClass(s.diferenciaArqueo)">{{ s.diferenciaArqueo === null ? '—' : (s.diferenciaArqueo | currency: 'PEN' : 'symbol' : '1.2-2') }}</dd></div>
+          </dl>
+        </div>
+        <div class="rounded-lg bg-gray-50 p-3 text-sm dark:bg-white/[0.03]">
+          <h4 class="mb-2 font-semibold text-gray-700 dark:text-gray-300">Ventas por medio de pago ({{ s.numVentas }})</h4>
+          <dl class="space-y-1">
+            @for (entry of s.totalesPorMetodo | keyvalue; track entry.key) {
+              <div class="flex justify-between"><dt>{{ entry.key }}</dt><dd class="tabular-nums">{{ entry.value | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            } @empty {
+              <p class="text-gray-500">Sin ventas en la sesión</p>
+            }
+            <div class="flex justify-between border-t border-gray-200 pt-1 font-semibold dark:border-gray-700"><dt>Total vendido</dt><dd class="tabular-nums">{{ s.totalVentas | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            @if (s.ventasAnuladas) {
+              <div class="flex justify-between text-xs text-gray-500"><dt>Ventas anuladas</dt><dd>{{ s.ventasAnuladas }}</dd></div>
+            }
+          </dl>
+        </div>
+      </div>
+
+      @if (s.motivoCierreForzado || s.notasCierre) {
+        <div class="space-y-1 text-sm">
+          @if (s.motivoCierreForzado) {
+            <p><span class="font-semibold">Motivo del cierre forzado:</span> {{ s.motivoCierreForzado }}</p>
+          }
+          @if (s.notasCierre) {
+            <p><span class="font-semibold">Observaciones:</span> {{ s.notasCierre }}</p>
+          }
+        </div>
+      }
+
+      <div>
+        <h4 class="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300">Movimientos de caja</h4>
+        <div class="max-h-64 overflow-auto">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">Movimientos de la sesión de caja</caption>
+            <thead class="border-b text-xs uppercase text-gray-500">
+              <tr><th class="py-1.5 pr-2">Hora</th><th class="py-1.5 pr-2">Tipo</th><th class="py-1.5 pr-2">Medio</th><th class="py-1.5 pr-2">Detalle</th><th class="py-1.5 text-right">Monto</th></tr>
+            </thead>
+            <tbody>
+              @for (m of s.movimientos; track m.id) {
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                  <td class="whitespace-nowrap py-1.5 pr-2">{{ m.createdAt | appDate: 'short' }}</td>
+                  <td class="py-1.5 pr-2">{{ movementLabel(m.tipo) }}</td>
+                  <td class="py-1.5 pr-2">{{ m.metodoPago ?? '—' }}</td>
+                  <td class="py-1.5 pr-2">{{ m.comentario ?? m.referencia ?? '—' }}</td>
+                  <td class="py-1.5 text-right tabular-nums" [class.text-rose-600]="+m.monto < 0">{{ m.monto | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      @if (s.ventas.length) {
+        <div>
+          <h4 class="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300">Ventas de la sesión</h4>
+          <div class="max-h-48 overflow-auto text-sm">
+            @for (v of s.ventas; track v.id) {
+              <div class="flex items-center justify-between gap-3 border-b border-gray-100 py-1.5 dark:border-gray-800">
+                <span class="min-w-0 flex-1 truncate">{{ v.documentType }} {{ v.serie }}-{{ v.numero }} · {{ v.createdAt | appDate: 'short' }}</span>
+                @if (v.estado === 'ANULADA') {
+                  <app-status-badge status="ANULADA" />
+                }
+                <span class="shrink-0 tabular-nums">{{ v.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
+    @if (detailQuery.data(); as s) {
+      @if (s.canClose) {
+        <app-button startIconName="mdi:cash-lock" [variant]="s.isMine ? 'primary' : 'danger'" (btnClick)="openClose(s.id)">{{ s.isMine ? 'Cerrar con arqueo' : 'Cierre forzado' }}</app-button>
+      }
+      <app-button startIconName="mdi:printer-outline" variant="outline" (btnClick)="printReport(s.id, 'ticket')">Ticket</app-button>
+      <app-button startIconName="mdi:file-pdf-box" variant="outline" (btnClick)="printReport(s.id, 'a4')">Reporte PDF</app-button>
+    }
+    <app-button startIconName="mdi:close" variant="outline" (btnClick)="detailId.set(null)">Cerrar</app-button>
+  </div>
+</app-modal>
+
+<app-cash-close-modal [sessionId]="closeId()" (closed)="closeId.set(null)" />

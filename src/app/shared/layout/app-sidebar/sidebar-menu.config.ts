@@ -128,6 +128,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     subItems: [
       { name: 'Punto de venta', path: '/punto-venta', permissionCode: 'nav.punto_venta' },
       { name: 'Caja chica POS', path: '/caja-chica-pos', permissionCode: 'nav.caja_chica_pos' },
+      { name: 'Historial de cajas', path: '/historial-cajas', permissionCode: 'nav.historial_cajas' },
       {
         name: 'Comprobante electronico',
         path: '/comprobante-electronico',

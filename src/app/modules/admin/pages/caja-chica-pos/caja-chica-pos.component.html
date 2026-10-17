@@ -1,6 +1,11 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
 <app-page-toolbar>
   <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Caja chica POS</h1>
+  @if (canSeeHistory) {
+    <a data-toolbar-actions routerLink="/historial-cajas">
+      <app-button size="sm" variant="outline" startIconName="mdi:history">Historial de cajas</app-button>
+    </a>
+  }
 </app-page-toolbar>
 
 <app-page-state
@@ -9,36 +14,11 @@
   [showRetry]="true"
   (retry)="refetchPosInit()"
 >
+<div class="mt-3"><app-cash-open-sessions-banner /></div>
+
 @if (!session()) {
   <app-component-card title="Apertura de caja" className="mt-4">
-    <div class="grid gap-4 sm:grid-cols-2 lg:max-w-xl">
-      <div>
-        <app-label required>Caja</app-label>
-        <div class="flex items-center gap-2">
-          <app-form-select
-            className="mt-1.5 flex-1"
-            placeholder="Seleccionar caja"
-            [options]="registerOptions()"
-            [value]="cashRegisterId()"
-            (valueChange)="cashRegisterId.set($event)"
-          />
-          <app-quick-create entity="cashRegister" [iconOnly]="true" (created)="cashRegisterId.set($event.id)" />
-        </div>
-      </div>
-      <div>
-        <app-label>Monto inicial (S/)</app-label>
-        <app-input-field min="0" className="mt-1.5" type="number" [value]="montoApertura()" (valueChange)="montoApertura.set(+$event)" />
-      </div>
-      <div class="sm:col-span-2">
-        <app-button startIconName="mdi:cash-register"
-          variant="primary"
-          [disabled]="!cashRegisterId() || openMutation.isPending()" [loading]="openMutation.isPending()"
-          (btnClick)="submitOpen()"
-        >
-          Abrir caja
-        </app-button>
-      </div>
-    </div>
+    <app-cash-open-form />
   </app-component-card>
 } @else {
   <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -48,6 +28,9 @@
         {{ summary()?.saldoActual ?? session()!.montoApertura | currency: 'PEN' : 'symbol' : '1.2-2' }}
       </p>
       <p class="mt-1 text-xs text-gray-500">Apertura: {{ session()!.openedAt | appDate: 'short' }}</p>
+      @if (sessionFromPreviousDay()) {
+        <p class="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400">Abierta desde un día anterior: ciérrela con su arqueo.</p>
+      }
       <app-button startIconName="mdi:cog-outline" variant="outline" size="sm" className="mt-2.5" (btnClick)="loadHardwareFromSession()">
         Cargar config hardware
       </app-button>
@@ -84,15 +67,15 @@
     </app-component-card>
 
     <app-component-card title="Cierre de caja" className="md:col-span-2 lg:col-span-1">
-      <app-form-stack>
-        <app-form-field label="Monto físico contado (S/)" required>
-          <app-input-field min="0" type="number" [value]="montoCierre()" (valueChange)="montoCierre.set(+$event)" placeholder="0.00" />
-        </app-form-field>
-        <app-form-field label="Notas">
-          <app-input-field [maxLength]="500" [value]="notasCierre()" (valueChange)="notasCierre.set('' + $event)" placeholder="Obligatorio si el arqueo tiene diferencia" />
-        </app-form-field>
-        <app-button startIconName="mdi:cash-lock" variant="outline" [disabled]="closeMutation.isPending()" [loading]="closeMutation.isPending()" (btnClick)="submitClose()">Cerrar caja</app-button>
-      </app-form-stack>
+      <dl class="space-y-1 text-sm">
+        <div class="flex justify-between"><dt class="text-gray-500">Efectivo esperado</dt><dd class="font-semibold tabular-nums">{{ (summary()?.efectivoEsperado ?? session()!.montoApertura) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500">Ventas de la sesión</dt><dd class="tabular-nums">{{ (summary()?.totalVentas ?? 0) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+      </dl>
+      <p class="mt-2 text-xs text-gray-500">Cuente el efectivo de la gaveta y regístrelo en el arqueo.</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <app-button startIconName="mdi:cash-lock" variant="primary" (btnClick)="closeId.set(session()!.id)">Cerrar caja con arqueo</app-button>
+        <app-button startIconName="mdi:file-pdf-box" variant="outline" size="sm" (btnClick)="printReport(session()!.id, 'a4')">Estado PDF</app-button>
+      </div>
     </app-component-card>
   </div>
 
@@ -194,4 +177,56 @@
     </app-component-card>
   }
 }
+
+@if (recentQuery.data(); as recent) {
+  @if (recent.items.length) {
+    <app-component-card [title]="recent.supervisor ? 'Últimas sesiones de caja' : 'Mis últimas sesiones de caja'" className="mt-4">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <caption class="sr-only">Últimas sesiones de caja con arqueo</caption>
+          <thead class="border-b text-xs uppercase text-gray-500">
+            <tr>
+              <th class="px-3 py-2">Apertura</th>
+              <th class="px-3 py-2">Caja</th>
+              @if (recent.supervisor) { <th class="px-3 py-2">Cajero</th> }
+              <th class="px-3 py-2">Estado</th>
+              <th class="px-3 py-2 text-right">Diferencia</th>
+              <th class="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of recent.items; track row.id) {
+              <tr class="border-b border-gray-100 dark:border-gray-800">
+                <td class="px-3 py-2">{{ row.openedAt | appDate: 'short' }}</td>
+                <td class="px-3 py-2">{{ row.cashRegister.nombre }}</td>
+                @if (recent.supervisor) { <td class="px-3 py-2">{{ row.user.nombre }}</td> }
+                <td class="px-3 py-2">
+                  <app-status-badge
+                    [status]="row.estado"
+                    [tone]="row.estado === 'ABIERTA' ? (row.pendiente ? 'warning' : 'success') : row.cierreForzado ? 'purple' : 'neutral'"
+                    [label]="row.estado === 'ABIERTA' ? 'Abierta' : row.cierreForzado ? 'Cierre forzado' : 'Cerrada'"
+                  />
+                </td>
+                <td class="px-3 py-2 text-right tabular-nums" [class.text-rose-600]="+(row.diferenciaArqueo ?? 0) < 0" [class.text-emerald-600]="+(row.diferenciaArqueo ?? 0) > 0">
+                  {{ row.diferenciaArqueo === null ? '—' : (row.diferenciaArqueo | currency: 'PEN' : 'symbol' : '1.2-2') }}
+                </td>
+                <td class="px-3 py-2 text-right">
+                  <div class="inline-flex gap-1.5">
+                    @if (row.canClose) {
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:cash-lock" tooltip="Cerrar con arqueo" (btnClick)="closeId.set(row.id)" />
+                    }
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:printer-outline" tooltip="Reimprimir arqueo (ticket)" (btnClick)="printReport(row.id, 'ticket')" />
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:file-pdf-box" tooltip="Arqueo PDF" (btnClick)="printReport(row.id, 'a4')" />
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </app-component-card>
+  }
+}
+
+<app-cash-close-modal [sessionId]="closeId()" (closed)="closeId.set(null)" />
 </app-page-state>

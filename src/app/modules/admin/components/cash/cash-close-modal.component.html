@@ -1,0 +1,154 @@
+<app-modal
+  [isOpen]="!!sessionId"
+  (closed)="close()"
+  className="w-full max-w-xl shadow-theme-lg"
+  ariaLabel="Cierre de caja con arqueo"
+>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
+    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      {{ result() ? 'Caja cerrada' : forced() ? 'Cierre forzado de caja' : 'Cerrar caja con arqueo' }}
+    </h3>
+    @if (summary(); as s) {
+      <p class="mt-1 pr-12 text-sm text-gray-500 dark:text-gray-400">
+        {{ s.cashRegister.nombre }} · {{ s.user.nombre }} · abierta {{ s.openedAt | appDate: 'short' }}
+      </p>
+    }
+  </div>
+
+  <div data-modal-body class="px-4 py-4 sm:px-6">
+    @if (summaryQuery.isPending()) {
+      <p class="text-sm text-gray-500 dark:text-gray-400">Cargando arqueo…</p>
+    } @else if (summaryQuery.isError()) {
+      <div class="space-y-3">
+        <p class="text-sm text-rose-600 dark:text-rose-400">
+          {{ summaryError() }}
+        </p>
+        <app-button startIconName="mdi:refresh" variant="outline" size="sm" (btnClick)="summaryQuery.refetch()">Reintentar</app-button>
+      </div>
+    } @else if (summary(); as s) {
+      @if (result(); as r) {
+        <div class="space-y-3">
+          <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+            <app-icon name="mdi:check-circle" iconClass="size-5" />
+            <span class="text-sm font-medium">
+              {{ r.cierreForzado ? 'Cierre forzado registrado a tu nombre.' : 'Caja cerrada correctamente.' }}
+            </span>
+          </div>
+          <dl class="grid grid-cols-3 gap-2 rounded-lg bg-gray-50 p-3 text-sm dark:bg-white/[0.03]">
+            <div><dt class="text-xs text-gray-500">Esperado</dt><dd class="font-semibold tabular-nums">{{ r.montoCierreSistema | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div><dt class="text-xs text-gray-500">Contado</dt><dd class="font-semibold tabular-nums">{{ r.montoCierreFisico | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div>
+              <dt class="text-xs text-gray-500">Diferencia</dt>
+              <dd class="font-semibold tabular-nums" [class.text-rose-600]="+r.diferenciaArqueo < 0" [class.text-emerald-600]="+r.diferenciaArqueo > 0">
+                {{ r.diferenciaArqueo | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              </dd>
+            </div>
+          </dl>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Imprima el arqueo para firmarlo y archivarlo.</p>
+        </div>
+      } @else {
+        @if (s.estado !== 'ABIERTA') {
+          <p class="text-sm text-gray-600 dark:text-gray-300">Esta sesión ya está cerrada.</p>
+        } @else {
+          @if (forced()) {
+            <div class="mb-4 rounded-xl border border-warning-500 bg-warning-50 p-3 text-sm text-gray-700 dark:border-warning-500/30 dark:bg-warning-500/15 dark:text-gray-200">
+              <p class="font-semibold">Esta caja la abrió {{ s.user.nombre }}.</p>
+              <p class="mt-0.5">El cierre quedará registrado a tu nombre como cierre forzado, con el motivo que indiques.</p>
+            </div>
+          }
+          @if (s.pendiente) {
+            <p class="mb-3 inline-flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400">
+              <app-icon name="mdi:clock-alert-outline" iconClass="size-4" />
+              Abierta hace {{ formatHours(s.horasAbierta) }}
+            </p>
+          }
+
+          <dl class="mb-4 space-y-1 rounded-lg bg-gray-50 p-3 text-sm dark:bg-white/[0.03]">
+            <div class="flex justify-between"><dt>Monto inicial</dt><dd class="tabular-nums">{{ s.resumenEfectivo.apertura | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div class="flex justify-between"><dt>(+) Ventas en efectivo</dt><dd class="tabular-nums">{{ s.resumenEfectivo.ventasEfectivo | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div class="flex justify-between"><dt>(+) Ingresos de caja</dt><dd class="tabular-nums">{{ s.resumenEfectivo.ingresos | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            <div class="flex justify-between"><dt>(−) Egresos de caja</dt><dd class="tabular-nums">{{ abs(s.resumenEfectivo.egresos) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            @if (+s.resumenEfectivo.anulaciones !== 0) {
+              <div class="flex justify-between"><dt>(−) Anulaciones</dt><dd class="tabular-nums">{{ abs(s.resumenEfectivo.anulaciones) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            }
+            <div class="flex justify-between border-t border-gray-200 pt-1 font-semibold dark:border-gray-700">
+              <dt>Efectivo esperado</dt><dd class="tabular-nums">{{ s.efectivoEsperado | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd>
+            </div>
+            @if (s.numVentas) {
+              <div class="flex justify-between text-xs text-gray-500"><dt>Ventas de la sesión ({{ s.numVentas }}, todos los medios)</dt><dd class="tabular-nums">{{ s.totalVentas | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+            }
+          </dl>
+
+          <app-form-stack>
+            <app-form-field label="Efectivo contado (S/)" required>
+              <app-input-field
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                placeholder="0.00"
+                [value]="montoContado()"
+                (valueChange)="montoContado.set('' + $event)"
+              />
+            </app-form-field>
+            @if (diferencia() !== null) {
+              <p
+                class="-mt-1 text-sm font-medium tabular-nums"
+                [class.text-emerald-600]="diferencia()! > 0"
+                [class.text-rose-600]="diferencia()! < 0"
+                [class.text-gray-600]="diferencia() === 0"
+              >
+                @if (diferencia() === 0) {
+                  Arqueo cuadrado
+                } @else {
+                  {{ diferencia()! < 0 ? 'Faltante' : 'Sobrante' }}: {{ abs('' + diferencia()) | currency: 'PEN' : 'symbol' : '1.2-2' }}
+                }
+              </p>
+            }
+            <app-form-field label="Observaciones" [required]="notasRequired()">
+              <app-text-area
+                [rows]="2"
+                [maxLength]="500"
+                [value]="notas()"
+                (valueChange)="notas.set($event)"
+                [placeholder]="notasRequired() ? 'Explique la diferencia del arqueo' : 'Opcional'"
+              />
+            </app-form-field>
+            @if (forced()) {
+              <app-form-field label="Motivo del cierre forzado" required>
+                <app-text-area
+                  [rows]="2"
+                  [maxLength]="500"
+                  [value]="motivo()"
+                  (valueChange)="motivo.set($event)"
+                  placeholder="Ej. el cajero no cerró su turno del día anterior"
+                />
+              </app-form-field>
+            }
+          </app-form-stack>
+        }
+      }
+    }
+  </div>
+
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
+    @if (result()) {
+      <app-button startIconName="mdi:printer-outline" variant="outline" [disabled]="printing()" (btnClick)="print('ticket')">Ticket</app-button>
+      <app-button startIconName="mdi:file-pdf-box" variant="outline" [disabled]="printing()" (btnClick)="print('a4')">Arqueo PDF</app-button>
+      <app-button startIconName="mdi:check" (btnClick)="close()">Listo</app-button>
+    } @else {
+      <app-button startIconName="mdi:close" variant="outline" (btnClick)="close()">Cancelar</app-button>
+      @if (summary()?.estado === 'ABIERTA') {
+        <app-button
+          startIconName="mdi:cash-lock"
+          [variant]="forced() ? 'danger' : 'primary'"
+          [disabled]="closeMutation.isPending()"
+          [loading]="closeMutation.isPending()"
+          (btnClick)="submit()"
+        >
+          {{ forced() ? 'Forzar cierre' : 'Cerrar caja' }}
+        </app-button>
+      }
+    }
+  </div>
+</app-modal>

@@ -33,6 +33,7 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   importarPrecios: ['nav.importar_precios'],
   puntoVenta: ['nav.punto_venta'],
   cajaChicaPos: ['nav.caja_chica_pos'],
+  historialCajas: ['nav.historial_cajas'],
   comprobanteElectronico: ['nav.comprobante_electronico'],
   notasVenta: ['nav.notas_venta'],
   resumenes: ['nav.resumenes'],

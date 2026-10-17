@@ -34,6 +34,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.proveedores': { path: '/proveedores' },
   'nav.punto_venta': { path: '/punto-venta' },
   'nav.caja_chica_pos': { path: '/caja-chica-pos' },
+  'nav.historial_cajas': { path: '/historial-cajas' },
   'nav.comprobante_electronico': { path: '/comprobante-electronico' },
   'nav.notas_venta': { path: '/notas-venta' },
   'nav.resumenes': { path: '/resumenes' },

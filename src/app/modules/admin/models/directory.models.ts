@@ -1883,7 +1883,7 @@ export type PaymentMethod =
   | 'CREDITO'
   | 'MIXTO';
 export type SaleStatus = 'COMPLETADA' | 'ANULADA' | 'PARCIALMENTE_DEVUELTA';
-export type CashMovementType = 'APERTURA' | 'CIERRE' | 'INGRESO' | 'EGRESO' | 'VENTA' | 'DEVOLUCION';
+export type CashMovementType = 'APERTURA' | 'CIERRE' | 'INGRESO' | 'EGRESO' | 'VENTA' | 'ANULACION' | 'DEVOLUCION';
 export type QuotationStatus = 'BORRADOR' | 'ENVIADA' | 'CONVERTIDA' | 'VENCIDA' | 'ANULADA';
 
 export interface PosCatalogItemDto {
@@ -2130,6 +2130,87 @@ export interface OpenCashSessionRequest {
 export interface CloseCashSessionRequest {
   montoCierreFisico: number;
   notasCierre?: string;
+  /** Obligatorio cuando un supervisor cierra la caja de otro usuario. */
+  motivoCierreForzado?: string;
+}
+
+export interface CloseCashSessionResponse {
+  ok: boolean;
+  id: string;
+  cierreForzado: boolean;
+  montoCierreSistema: string;
+  montoCierreFisico: string;
+  diferenciaArqueo: string;
+}
+
+export type CashSessionStatus = 'ABIERTA' | 'CERRADA';
+export type CashDifferenceFilter = 'CON_DIFERENCIA' | 'FALTANTE' | 'SOBRANTE' | 'SIN_DIFERENCIA';
+
+/** Caja abierta ahora en el establecimiento (de cualquier usuario). */
+export interface CashOpenSessionDto {
+  id: string;
+  openedAt: string;
+  horasAbierta: number;
+  /** Abierta hace 24 h o más. */
+  pendiente: boolean;
+  cashRegister: { id: string; nombre: string; eliminada: boolean };
+  user: { id: string; nombre: string };
+  isMine: boolean;
+  canClose: boolean;
+  montoApertura: string | null;
+  efectivoEsperado: string | null;
+}
+
+export interface CashSessionListItemDto {
+  id: string;
+  estado: CashSessionStatus;
+  openedAt: string;
+  closedAt: string | null;
+  horasAbierta: number;
+  pendiente: boolean;
+  establishment: { id: string; nombre: string };
+  cashRegister: { id: string; nombre: string };
+  user: { id: string; nombre: string };
+  closedBy: { id: string; nombre: string } | null;
+  isMine: boolean;
+  canClose: boolean;
+  cierreForzado: boolean;
+  motivoCierreForzado: string | null;
+  montoApertura: string;
+  efectivoEsperado: string | null;
+  montoCierreFisico: string | null;
+  diferenciaArqueo: string | null;
+  notasCierre: string | null;
+  numVentas: number;
+  totalVentas: string;
+}
+
+export interface CashSessionListResponseDto extends PaginatedResponseDto<CashSessionListItemDto> {
+  totales: { diferencia: string; faltante: string; sobrante: string };
+  /** El usuario ve las cajas de todos los cajeros. */
+  supervisor: boolean;
+}
+
+export interface CashSessionFiltersRequest {
+  from?: string;
+  to?: string;
+  establishmentId?: string;
+  userId?: string;
+  cashRegisterId?: string;
+  estado?: CashSessionStatus;
+  diferencia?: CashDifferenceFilter;
+  forzado?: 'true' | 'false';
+}
+
+export interface CashSessionKpisDto {
+  abiertasAhora: number;
+  abiertasMas24h: number;
+  cerradasEnRango: number;
+  cierresConDiferencia: number;
+  cierresForzados: number;
+  diferenciaAcumulada: string;
+  faltanteAcumulado: string;
+  sobranteAcumulado: string;
 }
 
 export interface CashMovementRequest {
@@ -2141,9 +2222,36 @@ export interface CashMovementRequest {
 
 export interface CashSessionSummaryDto {
   id: string;
-  estado: string;
+  estado: CashSessionStatus;
+  isMine: boolean;
+  canClose: boolean;
+  cashRegister: { id: string; nombre: string; printerPaperWidth: PosPrinterPaperWidth };
+  establishment: { id: string; nombre: string; timeZone: string };
+  user: { id: string; nombre: string };
+  closedBy: { id: string; nombre: string } | null;
+  openedAt: string;
+  closedAt: string | null;
+  horasAbierta: number;
+  pendiente: boolean;
   montoApertura: string;
   saldoActual: string;
+  efectivoEsperado: string;
+  montoCierreSistema: string | null;
+  montoCierreFisico: string | null;
+  diferenciaArqueo: string | null;
+  notasCierre: string | null;
+  cierreForzado: boolean;
+  motivoCierreForzado: string | null;
+  resumenEfectivo: {
+    apertura: string;
+    ventasEfectivo: string;
+    ingresos: string;
+    egresos: string;
+    anulaciones: string;
+  };
+  totalVentas: string;
+  numVentas: number;
+  ventasAnuladas: number;
   totalesPorMetodo: Partial<Record<PaymentMethod, string>>;
   pagosDigitales: {
     saleId: string;
@@ -2157,13 +2265,17 @@ export interface CashSessionSummaryDto {
     tipo: CashMovementType;
     monto: string;
     metodoPago: PaymentMethod | null;
+    referencia: string | null;
     comentario: string | null;
     createdAt: string;
   }[];
   ventas: {
     id: string;
     documentType: SaleDocumentType;
+    serie: string | null;
     numero: string | null;
+    estado: SaleStatus;
+    createdAt: string;
     total: string;
   }[];
 }

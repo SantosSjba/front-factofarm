@@ -233,6 +233,11 @@ import type {
   CreateSalePaymentRequest,
   OpenCashSessionRequest,
   CloseCashSessionRequest,
+  CloseCashSessionResponse,
+  CashOpenSessionDto,
+  CashSessionFiltersRequest,
+  CashSessionKpisDto,
+  CashSessionListResponseDto,
   CashMovementRequest,
   CashSessionSummaryDto,
   QuotationListItemDto,
@@ -282,6 +287,15 @@ import type {
   SanitaryRegistryAlertDto,
   LotTraceabilityDto,
 } from '../models/directory.models';
+
+/** Query params del historial de cajas sin claves vacías. */
+function cashFilterParams(filters: object): Record<string, string> {
+  const params: Record<string, string> = {};
+  for (const [key, value] of Object.entries(filters) as [string, unknown][]) {
+    if (value !== undefined && value !== null && value !== '') params[key] = String(value);
+  }
+  return params;
+}
 
 @Injectable({ providedIn: 'root' })
 export class DirectoryApiService {
@@ -1754,12 +1768,49 @@ export class DirectoryApiService {
   }
 
   closeCashSession(sessionId: string, body: CloseCashSessionRequest) {
-    return this.http.post<{
-      ok: boolean;
-      montoCierreSistema: string;
-      montoCierreFisico: string;
-      diferenciaArqueo: string;
-    }>(`${this.base}/cash-registers/sessions/${sessionId}/close`, body);
+    return this.http.post<CloseCashSessionResponse>(
+      `${this.base}/cash-registers/sessions/${sessionId}/close`,
+      body,
+    );
+  }
+
+  /** Cajas abiertas ahora en el establecimiento (de cualquier usuario). */
+  listOpenCashSessions() {
+    return this.http.get<CashOpenSessionDto[]>(`${this.base}/cash-registers/sessions/open`);
+  }
+
+  listCashSessions(filters: CashSessionFiltersRequest & { page?: number; pageSize?: number }) {
+    return this.http.get<CashSessionListResponseDto>(`${this.base}/cash-registers/sessions`, {
+      params: cashFilterParams(filters),
+    });
+  }
+
+  getCashSessionKpis(filters: CashSessionFiltersRequest) {
+    return this.http.get<CashSessionKpisDto>(`${this.base}/cash-registers/sessions/kpis`, {
+      params: cashFilterParams(filters),
+    });
+  }
+
+  listCashSessionCashiers(establishmentId?: string) {
+    return this.http.get<{ id: string; nombre: string }[]>(
+      `${this.base}/cash-registers/sessions/cashiers`,
+      { params: cashFilterParams({ establishmentId }) },
+    );
+  }
+
+  exportCashSessions(filters: CashSessionFiltersRequest, format: 'xlsx' | 'pdf') {
+    return this.http.get(`${this.base}/cash-registers/sessions/export`, {
+      params: cashFilterParams({ ...filters, format }),
+      responseType: 'blob',
+    });
+  }
+
+  /** Reporte de cierre / arqueo en PDF (A4 o ticket con el ancho de la caja). */
+  getCashSessionReport(sessionId: string, format: 'a4' | 'ticket') {
+    return this.http.get(`${this.base}/cash-registers/sessions/${sessionId}/report`, {
+      params: { format },
+      responseType: 'blob',
+    });
   }
 
   getCashSessionSummary(sessionId: string) {

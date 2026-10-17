@@ -31,6 +31,7 @@
       }
     </div>
   }
+  <div class="px-3 has-[div]:pt-2 sm:px-4"><app-cash-open-sessions-banner mode="compact" /></div>
   <header class="flex flex-wrap items-end gap-2 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900 sm:gap-3 sm:px-4">
     <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-1 sm:flex-wrap sm:items-end">
       <div class="col-span-2 min-w-0 sm:max-w-xs sm:flex-1">
@@ -94,11 +95,13 @@
             <app-icon name="mdi:cash-register" iconClass="size-3.5" />
             {{ session.cashRegister.nombre }}
           </span>
+          <app-button size="sm" variant="link" startIconName="mdi:cash-lock" (btnClick)="cashCloseId.set(session.id)">Cerrar caja</app-button>
         } @else {
           <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
             <app-icon name="mdi:alert-circle-outline" iconClass="size-3.5" />
             Sin caja
           </span>
+          <app-button size="sm" variant="link" startIconName="mdi:cash-register" (btnClick)="cashOpenModal.set(true)">Abrir caja</app-button>
         }
       </div>
       <div class="hidden text-xs text-gray-500 lg:flex">
@@ -606,7 +609,13 @@
       </app-button>
     </div>
   }
-  </app-page-state>
+    <app-modal [isOpen]="cashOpenModal()" (closed)="cashOpenModal.set(false)" className="w-full max-w-md shadow-theme-lg" title="Abrir caja">
+    <div data-modal-body class="px-4 py-4 sm:px-6">
+      <app-cash-open-form [stacked]="true" [allowCreate]="false" (opened)="cashOpenModal.set(false)" />
+    </div>
+  </app-modal>
+  <app-cash-close-modal [sessionId]="cashCloseId()" (closed)="cashCloseId.set(null)" />
+</app-page-state>
 </div>
 
 <app-modal [isOpen]="payModalOpen()" (closed)="payModalOpen.set(false)" className="w-full max-w-xl" ariaLabel="Cobrar venta">

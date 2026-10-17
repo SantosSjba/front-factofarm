@@ -28,6 +28,9 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
+import { CashCloseModalComponent } from '../../components/cash/cash-close-modal.component';
+import { CashOpenFormComponent } from '../../components/cash/cash-open-form.component';
+import { CashOpenSessionsBannerComponent } from '../../components/cash/cash-open-sessions-banner.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type {
   CustomerItemDto,
@@ -149,6 +152,9 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
     InputFieldComponent,
     ModalComponent,
     PageStateComponent,
+    CashOpenSessionsBannerComponent,
+    CashOpenFormComponent,
+    CashCloseModalComponent,
   ],
   templateUrl: './punto-venta.component.html',
 })
@@ -208,6 +214,10 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly promotionValidating = signal(false);
   protected readonly comentario = signal('');
   protected readonly payModalOpen = signal(false);
+  /** Apertura rápida de caja desde el POS. */
+  protected readonly cashOpenModal = signal(false);
+  /** Sesión a cerrar con arqueo desde el POS. */
+  protected readonly cashCloseId = signal<string | null>(null);
   protected readonly lotModalProductId = signal<string | null>(null);
   protected readonly lotPreviewLoading = signal(false);
   protected readonly lotPreviewRows = signal<{ codigoLote: string; cantidad: string }[]>([]);
@@ -1031,6 +1041,7 @@ export class PuntoVentaComponent implements OnDestroy {
     }
     if (!this.cashSession()) {
       this.notify.warning('Abra una caja antes de cobrar');
+      this.cashOpenModal.set(true);
       return;
     }
     if (this.cart().length === 0) return;
