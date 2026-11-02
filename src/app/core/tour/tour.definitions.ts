@@ -217,7 +217,7 @@ const BIENVENIDA: TourDef = {
       element: '[data-tour="notifications"]',
       title: 'Notificaciones',
       description:
-        'Avisos importantes del sistema: stock bajo, productos por vencer, comprobantes rechazados y otras alertas. El punto naranja indica que hay novedades.',
+        'Avisos que necesitan atención: caja sin cerrar, lotes vencidos o por vencer, productos agotados, comprobantes rechazados y más. El número indica cuántos son nuevos; toca un aviso para ir a resolverlo.',
       side: 'bottom',
       align: 'end',
       area: 'header',
