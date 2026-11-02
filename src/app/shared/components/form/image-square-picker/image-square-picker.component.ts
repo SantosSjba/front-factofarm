@@ -1,16 +1,36 @@
 import { CommonModule } from '@angular/common';
-import { AuthFilePipe } from '../../../pipes/auth-file.pipe';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Observable, map, of, startWith } from 'rxjs';
+import { FilesApiService } from '../../../../core/services/files-api.service';
+
+type PreviewState = { src: string | null; failed: boolean };
 
 /** Botón cuadrado con vista previa; emite el archivo elegido (la URL blob la gestiona el padre). */
 @Component({
   selector: 'app-image-square-picker',
   standalone: true,
-  imports: [CommonModule, AuthFilePipe],
+  imports: [CommonModule],
   templateUrl: './image-square-picker.component.html',
 })
 export class ImageSquarePickerComponent {
-  @Input() previewUrl: string | null = null;
+  private readonly files = inject(FilesApiService);
+
+  /** Carga → imagen, o `failed` si el archivo ya no existe (404) para no quedar "cargando" siempre. */
+  protected preview$: Observable<PreviewState> = of({ src: null, failed: false });
+
+  private url: string | null = null;
+  @Input() set previewUrl(value: string | null) {
+    this.url = value;
+    this.preview$ = value
+      ? this.files.displayUrl(value).pipe(
+          map((src) => ({ src, failed: !src })),
+          startWith({ src: null, failed: false }),
+        )
+      : of({ src: null, failed: false });
+  }
+  get previewUrl(): string | null {
+    return this.url;
+  }
   @Input() sizeClass = 'h-24 w-24';
   @Input() accept = 'image/*';
   @Input() ariaLabel = 'Seleccionar imagen';

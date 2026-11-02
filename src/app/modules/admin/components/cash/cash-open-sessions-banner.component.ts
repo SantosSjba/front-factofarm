@@ -28,17 +28,20 @@ import { formatHoursOpen } from './cash-files';
     }
     @if (staleMine(); as mine) {
       <div class="mb-3 rounded-xl border border-warning-500 bg-warning-50 p-3 dark:border-warning-500/30 dark:bg-warning-500/15 sm:p-4">
-        <div class="flex flex-wrap items-start gap-3">
-          <app-icon name="mdi:alert-outline" iconClass="mt-0.5 size-5 text-warning-500" />
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-gray-800 dark:text-white/90">
-              Tu caja "{{ mine.cashRegister.nombre }}" sigue abierta desde el {{ mine.openedAt | appDate: 'short' }}
-            </p>
-            <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
-              Lleva {{ formatHours(mine.horasAbierta) }} abierta. Ciérrala con su arqueo para cuadrar ese turno y abrir una caja nueva.
-            </p>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+          <div class="flex min-w-0 flex-1 items-start gap-2 sm:gap-3">
+            <app-icon name="mdi:alert-outline" iconClass="mt-0.5 size-5 shrink-0 text-warning-500" />
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-gray-800 dark:text-white/90">
+                Tu caja "{{ mine.cashRegister.nombre }}" sigue abierta desde el {{ mine.openedAt | appDate: 'short' }}
+              </p>
+              <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-300 sm:text-sm">
+                Lleva {{ formatHours(mine.horasAbierta) }} abierta.
+                <span class="hidden sm:inline">Ciérrala con su arqueo para cuadrar ese turno y abrir una caja nueva.</span>
+              </p>
+            </div>
           </div>
-          <app-button size="sm" startIconName="mdi:cash-lock" (btnClick)="closeId.set(mine.id)">Cerrar con arqueo</app-button>
+          <app-button size="sm" className="w-full sm:w-auto" startIconName="mdi:cash-lock" (btnClick)="closeId.set(mine.id)">Cerrar con arqueo</app-button>
         </div>
       </div>
     }

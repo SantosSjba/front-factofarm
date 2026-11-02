@@ -6,8 +6,11 @@
       (click)="inp.click()"
       [attr.aria-label]="ariaLabel"
     >
-      @if (previewUrl | authFile | async; as src) {
+      @let state = preview$ | async;
+      @if (state?.src; as src) {
         <img [src]="src" alt="" class="h-full w-full rounded-[10px] object-cover" />
+      } @else if (state?.failed) {
+        <span class="px-2 text-center text-theme-xs leading-tight">Imagen no disponible<br />Toca para subir otra</span>
       } @else if (previewUrl) {
         <span class="size-5 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
       } @else {

@@ -17,12 +17,12 @@
 <div class="mt-3"><app-cash-open-sessions-banner /></div>
 
 @if (!session()) {
-  <app-component-card title="Apertura de caja" className="mt-4">
+  <app-component-card title="Apertura de caja" className="mt-4" data-tour="cash-open">
     <app-cash-open-form />
   </app-component-card>
 } @else {
   <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-    <app-component-card title="Sesión activa" className="md:col-span-1">
+    <app-component-card title="Sesión activa" className="md:col-span-1" data-tour="cash-session">
       <p class="text-sm text-gray-600 dark:text-gray-400">{{ session()!.cashRegister.nombre }}</p>
       <p class="mt-1.5 text-2xl font-bold tabular-nums text-gray-800 dark:text-white">
         {{ summary()?.saldoActual ?? session()!.montoApertura | currency: 'PEN' : 'symbol' : '1.2-2' }}
@@ -36,7 +36,7 @@
       </app-button>
     </app-component-card>
 
-    <app-component-card title="Movimiento manual" className="md:col-span-1">
+    <app-component-card title="Movimiento manual" className="md:col-span-1" data-tour="cash-movement">
       <app-form-stack>
         <app-form-field label="Tipo de movimiento" required>
           <app-form-select
@@ -66,7 +66,7 @@
       </app-form-stack>
     </app-component-card>
 
-    <app-component-card title="Cierre de caja" className="md:col-span-2 lg:col-span-1">
+    <app-component-card title="Cierre de caja" className="md:col-span-2 lg:col-span-1" data-tour="cash-close">
       <dl class="space-y-1 text-sm">
         <div class="flex justify-between"><dt class="text-gray-500">Efectivo esperado</dt><dd class="font-semibold tabular-nums">{{ (summary()?.efectivoEsperado ?? session()!.montoApertura) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
         <div class="flex justify-between"><dt class="text-gray-500">Ventas de la sesión</dt><dd class="tabular-nums">{{ (summary()?.totalVentas ?? 0) | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>

@@ -33,6 +33,13 @@ import { TooltipDirective } from '../../../directives/tooltip.directive';
         display: none !important;
       }
     }
+    /* Pantallas táctiles: área mínima de toque de 44 px para botones de solo ícono. */
+    @media (pointer: coarse) {
+      .ff-icon-btn {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+      }
+    }
   `,
 })
 export class ButtonComponent {
@@ -66,7 +73,7 @@ export class ButtonComponent {
   get sizeClasses(): string {
     if (this.isLink) return this.size === 'sm' ? 'p-0 text-xs font-medium' : 'p-0 text-sm font-medium';
     if (this.iconOnly) {
-      return this.size === 'sm' ? 'p-2' : 'p-2.5';
+      return this.size === 'sm' ? 'ff-icon-btn p-2' : 'ff-icon-btn p-2.5';
     }
     return this.size === 'sm' ? 'px-3.5 py-2 text-sm' : 'px-4 py-2.5 text-sm';
   }

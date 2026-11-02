@@ -37,14 +37,14 @@ export class SigninFormComponent implements AfterViewInit {
   email = '';
   password = '';
 
-  get canSubmit(): boolean {
-    return this.email.trim().length > 0 && this.password.trim().length > 0;
-  }
-
   ngAfterViewInit(): void {
     // Delay so route/layout paint finishes before focusing (guest → signin remount).
     const focusEmail = () => document.getElementById('signin-email')?.focus();
     requestAnimationFrame(() => setTimeout(focusEmail, 100));
+  }
+
+  private nativeValue(id: string): string {
+    return (document.getElementById(id) as HTMLInputElement | null)?.value ?? '';
   }
 
   togglePasswordVisibility() {
@@ -67,8 +67,11 @@ export class SigninFormComponent implements AfterViewInit {
     this.fieldErrors = {};
     this.loginError = null;
 
-    const email = this.email.trim();
-    const password = this.password.trim();
+    // El autocompletado del navegador puede rellenar los campos sin emitir valueChange.
+    const email = (this.email || this.nativeValue('signin-email')).trim();
+    const password = (this.password || this.nativeValue('signin-password')).trim();
+    this.email = email;
+    this.password = password;
 
     if (!email) {
       this.fieldErrors.email = 'Ingresa tu correo electrónico.';

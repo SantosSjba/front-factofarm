@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { driver, type DriveStep, type Driver, type PopoverDOM } from 'driver.js';
-import { take } from 'rxjs';
+import { filter, take } from 'rxjs';
 import { SidebarService } from '../../shared/services/sidebar.service';
 import { AuthService } from '../services/auth.service';
 import {
@@ -17,6 +17,8 @@ import {
 
 /** Mismo corte que el sidebar docked (`xl` / 1280px). */
 const DESKTOP_MQ = '(min-width: 1280px)';
+/** Dispositivo sin teclado físico habitual (celular/tablet). */
+const TOUCH_MQ = '(hover: none) and (pointer: coarse)';
 /**
  * Momentos para recalcular el resaltado tras abrir/cerrar el sidebar: al terminar su
  * transición (`duration-300`) y al terminar la animación propia de driver.js (~400 ms).
@@ -44,27 +46,72 @@ export class TourService {
 
   readonly active = signal(false);
 
+  constructor() {
+    // Recorridos de pantalla (p. ej. Punto de venta): se lanzan la primera vez que se abre la ruta.
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => this.maybeAutoStartForRoute(e.urlAfterRedirects));
+  }
+
   /** Recorridos que aplican al usuario actual (para el menú "Tutoriales"). */
   available(): TourDef[] {
-    return TOURS.filter((t) => this.matchesAudience(t.audience));
+    return TOURS.filter(
+      (t) =>
+        this.matchesAudience(t.audience) &&
+        (!t.permissions?.length || t.permissions.some((code) => this.auth.hasPermission(code))),
+    );
   }
 
   /** Lanza el recorrido de bienvenida si el usuario aún no lo ha visto. */
   maybeAutoStart(delayMs = 800): void {
-    if (!this.auth.isAuthenticated() || this.auth.isSupportSession()) return;
-    const tour = this.available().find((t) => t.autoStart && !this.isSeen(t.id));
-    if (!tour) return;
+    if (!this.canAutoStart()) return;
+    const tour = this.available().find((t) => t.autoStart && !t.route && !this.isSeen(t.id));
+    if (!tour) {
+      this.maybeAutoStartForRoute(this.router.url);
+      return;
+    }
+    this.scheduleAutoStart(tour.id, delayMs);
+  }
+
+  private maybeAutoStartForRoute(url: string): void {
+    if (!this.canAutoStart() || this.active()) return;
+    const path = url.split(/[?#]/)[0];
+    const tour = this.available().find((t) => t.autoStart && t.route === path && !this.isSeen(t.id));
+    // La bienvenida va primero: el de pantalla saldrá en la siguiente visita.
+    const welcomePending = this.available().some((t) => t.autoStart && !t.route && !this.isSeen(t.id));
+    if (tour && !welcomePending) this.scheduleAutoStart(tour.id, 1200);
+  }
+
+  private canAutoStart(): boolean {
+    return this.auth.isAuthenticated() && !this.auth.isSupportSession();
+  }
+
+  private scheduleAutoStart(id: TourId, delayMs: number): void {
     clearTimeout(this.autoStartTimer);
     this.autoStartTimer = setTimeout(() => {
-      if (!this.active()) this.start(tour.id);
+      if (!this.active()) this.start(id);
     }, delayMs);
   }
 
-  /** Inicia (o reinicia) un recorrido. */
-  start(id: TourId): void {
+  /** Inicia (o reinicia) un recorrido. Si es de una pantalla, navega antes a ella. */
+  start(id: TourId, attempt = 0): void {
     const tour = findTour(id);
     if (!tour) return;
     this.stop();
+    if (tour.route && this.router.url.split(/[?#]/)[0] !== tour.route) {
+      void this.router.navigateByUrl(tour.route).then((ok) => {
+        // Este inicio reemplaza al automático que programa la navegación.
+        clearTimeout(this.autoStartTimer);
+        if (ok) this.autoStartTimer = setTimeout(() => this.start(id), 300);
+      });
+      return;
+    }
+    // La pantalla aún carga datos: espera a que pinte sus elementos (máx. ~6 s).
+    if (tour.route && attempt < 30 && !tour.steps.some((s) => s.element && document.querySelector(s.element))) {
+      clearTimeout(this.autoStartTimer);
+      this.autoStartTimer = setTimeout(() => this.start(id, attempt + 1), 200);
+      return;
+    }
 
     const steps = tour.steps
       .filter((s) => this.isStepAllowed(s) && this.isStepRenderable(s))
@@ -149,7 +196,12 @@ export class TourService {
 
   private toDriveStep(def: TourStepDef): DriveStep {
     const nombre = (this.auth.user()?.nombre ?? '').replace(/\s*\(soporte\)\s*$/i, '').split(' ')[0];
-    const fill = (text: string) => text.replace(/\{nombre\}/g, nombre || 'te damos la bienvenida');
+    const touch = typeof window !== 'undefined' && window.matchMedia(TOUCH_MQ).matches;
+    const fill = (text: string) => {
+      const withName = text.replace(/\{nombre\}/g, nombre || 'te damos la bienvenida');
+      // Atajos de teclado: sin sentido en celulares/tablets.
+      return touch ? withName.replace(/<span class="ff-kbd-only">[\s\S]*?<\/span>/g, '') : withName;
+    };
     const title =
       def.title === MENU_LABEL && def.element
         ? (document.querySelector(def.element)?.getAttribute('data-tour-label') ?? '')

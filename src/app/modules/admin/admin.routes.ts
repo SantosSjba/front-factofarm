@@ -726,7 +726,7 @@ export const adminRoutes: Routes = [
           import('./pages/reporte-digemid/reporte-digemid.component').then(
             (m) => m.ReporteDigemidComponent,
           ),
-        title: 'FactoFarm | Reporte Digemid',
+        title: 'FactoFarm | Reporte DIGEMID',
       },
       {
         path: 'recetas',

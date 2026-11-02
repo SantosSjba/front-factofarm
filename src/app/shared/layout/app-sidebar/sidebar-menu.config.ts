@@ -85,7 +85,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
         permissionCode: 'nav.conjuntos_packs',
       },
       { name: 'Servicios', path: '/servicios', permissionCode: 'nav.servicios' },
-      { name: 'Categorias', path: '/categorias', permissionCode: 'nav.categorias' },
+      { name: 'Categorías', path: '/categorias', permissionCode: 'nav.categorias' },
       { name: 'Marcas', path: '/marcas', permissionCode: 'nav.marcas' },
       { name: 'Laboratorios', path: '/laboratorios', permissionCode: 'nav.laboratorios' },
       { name: 'Unidades', path: '/unidades', permissionCode: 'nav.unidades' },
@@ -130,15 +130,15 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       { name: 'Caja chica POS', path: '/caja-chica-pos', permissionCode: 'nav.caja_chica_pos' },
       { name: 'Historial de cajas', path: '/historial-cajas', permissionCode: 'nav.historial_cajas' },
       {
-        name: 'Comprobante electronico',
+        name: 'Comprobante electrónico',
         path: '/comprobante-electronico',
         permissionCode: 'nav.comprobante_electronico',
       },
       { name: 'Notas de venta', path: '/notas-venta', permissionCode: 'nav.notas_venta' },
       {
-        name: 'Resumenes - Anulaciones',
+        name: 'Resúmenes y anulaciones',
         subItems: [
-          { name: 'Resumenes', path: '/resumenes', permissionCode: 'nav.resumenes' },
+          { name: 'Resúmenes', path: '/resumenes', permissionCode: 'nav.resumenes' },
           { name: 'Anulaciones', path: '/anulaciones', permissionCode: 'nav.anulaciones' },
         ],
       },
@@ -159,7 +159,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       },
       { name: 'Traslados', path: '/traslados', permissionCode: 'nav.traslados' },
       {
-        name: 'Devolucion-retiro',
+        name: 'Devolución / retiro',
         path: '/devolucion-retiro',
         permissionCode: 'nav.devolucion_retiro',
       },
@@ -190,7 +190,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     subItems: [
       { name: 'Retenciones', path: '/retenciones', permissionCode: 'nav.retenciones' },
       { name: 'Percepciones', path: '/percepciones', permissionCode: 'nav.percepciones' },
-      { name: 'Ordenes de pedido', path: '/ordenes-pedido', permissionCode: 'nav.ordenes_pedido' },
+      { name: 'Órdenes de pedido', path: '/ordenes-pedido', permissionCode: 'nav.ordenes_pedido' },
     ],
   },
   {
@@ -206,7 +206,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       },
       { name: 'Transportistas', path: '/transportistas', permissionCode: 'nav.transportistas' },
       { name: 'Conductores', path: '/conductores', permissionCode: 'nav.conductores' },
-      { name: 'Vehiculos', path: '/vehiculos', permissionCode: 'nav.vehiculos' },
+      { name: 'Vehículos', path: '/vehiculos', permissionCode: 'nav.vehiculos' },
       {
         name: 'Direcciones de partida',
         path: '/direcciones-partida',
@@ -288,17 +288,17 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     key: 'farmacos',
     name: 'Farmacos',
     subItems: [
-      { name: 'Reporte Digemid', path: '/reporte-digemid', permissionCode: 'nav.reporte_digemid' },
+      { name: 'Reporte DIGEMID', path: '/reporte-digemid', permissionCode: 'nav.reporte_digemid' },
       { name: 'Recetas', path: '/recetas', permissionCode: 'nav.recetas' },
-      { name: 'Medicos', path: '/medicos', permissionCode: 'nav.medicos' },
+      { name: 'Médicos', path: '/medicos', permissionCode: 'nav.medicos' },
       { name: 'CIE 10', path: '/cie-10', permissionCode: 'nav.cie_10' },
       {
-        name: 'Reporte de psicotropicos y estupefacientes',
+        name: 'Psicotrópicos y estupefacientes',
         path: '/reporte-psicotropicos-estupefacientes',
         permissionCode: 'nav.reporte_psicotropicos',
       },
       {
-        name: 'Recepcion de productos farmaceuticos',
+        name: 'Recepción de productos farmacéuticos',
         path: '/recepcion-productos-farmaceuticos',
         permissionCode: 'nav.recepcion_productos_farmaceuticos',
       },
