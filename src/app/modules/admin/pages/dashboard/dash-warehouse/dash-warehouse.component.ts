@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
 import { BreadcrumbInlineComponent } from '../../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../../shared/components/common/component-card/component-card.component';
+import { KpiTileComponent } from '../../../../../shared/components/common/dashboard/kpi-tile.component';
 import { PageToolbarComponent } from '../../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PageStateComponent } from '../../../../../shared/components/common/page-state/page-state.component';
 import { DirectoryApiService } from '../../../services/directory-api.service';
@@ -15,64 +14,27 @@ import { DirectoryApiService } from '../../../services/directory-api.service';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    KpiTileComponent,
     PageStateComponent,
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Dashboard' }, { label: 'Almacén' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Panel almacén</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Panel almacén</h1>
     </app-page-toolbar>
     <app-page-state [loading]="query.isPending()" [error]="error()" skeleton="kpi-grid" [skeletonCount]="8" (retry)="query.refetch()">
       @if (query.data(); as d) {
-        <div class="mt-4 grid gap-4 md:grid-cols-3">
-          <a routerLink="/productos" class="block transition hover:opacity-90">
-            <app-component-card title="Stock bajo mínimo">
-              <p class="text-2xl font-semibold text-amber-600">{{ d.stockBajo }}</p>
-            </app-component-card>
-          </a>
-          <a routerLink="/lotes" [queryParams]="{ expiry: 'expired' }" class="block transition hover:opacity-90">
-            <app-component-card title="Lotes vencidos">
-              <p class="text-2xl font-semibold text-red-600">{{ d.lotesVencidos }}</p>
-            </app-component-card>
-          </a>
-          <a routerLink="/lotes" [queryParams]="{ expiry: '30' }" class="block transition hover:opacity-90">
-            <app-component-card title="Por vencer (30 días)">
-              <p class="text-2xl font-semibold">{{ d.porVencer30 }}</p>
-            </app-component-card>
-          </a>
-        </div>
-        <div class="mt-4 grid gap-4 md:grid-cols-3">
-          <a routerLink="/inventario-movimientos" class="block transition hover:opacity-90">
-            <app-component-card title="Ajustes pendientes">
-              <p class="text-2xl font-semibold text-amber-600">{{ d.ajustesPendientes }}</p>
-            </app-component-card>
-          </a>
-          <a routerLink="/traslados" class="block transition hover:opacity-90">
-            <app-component-card title="Traslados en tránsito">
-              <p class="text-2xl font-semibold">{{ d.transferenciasEnTransito }}</p>
-            </app-component-card>
-          </a>
-          <a routerLink="/ordenes-compra" class="block transition hover:opacity-90">
-            <app-component-card title="OC por recibir">
-              <p class="text-2xl font-semibold">{{ d.ordenesPendientesRecepcion }}</p>
-            </app-component-card>
-          </a>
-        </div>
-        <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <a routerLink="/recepcion-mercaderia" class="block transition hover:opacity-90">
-            <app-component-card title="Recepciones hoy">
-              <p class="text-2xl font-semibold">{{ d.recepcionesHoy }}</p>
-            </app-component-card>
-          </a>
-          <a routerLink="/cadena-frio" class="block transition hover:opacity-90">
-            <app-component-card title="Zonas frío sin log hoy">
-              <p class="text-2xl font-semibold text-blue-600">{{ d.zonasFrioSinLogHoy }}</p>
-            </app-component-card>
-          </a>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+          <app-kpi-tile label="Stock bajo mínimo" icon="lucide:trending-down" tone="warning" [value]="'' + d.stockBajo" sub="productos" link="/productos" />
+          <app-kpi-tile label="Lotes vencidos" icon="lucide:calendar-x" tone="error" [value]="'' + d.lotesVencidos" sub="con stock" link="/lotes" [queryParams]="{ expiry: 'expired' }" />
+          <app-kpi-tile label="Vencen en 30 días" icon="lucide:calendar-clock" tone="warning" [value]="'' + d.porVencer30" sub="lotes" link="/lotes" [queryParams]="{ expiry: '30' }" />
+          <app-kpi-tile label="Ajustes pendientes" icon="lucide:scale" tone="warning" [value]="'' + d.ajustesPendientes" sub="por aprobar" link="/inventario-movimientos" />
+          <app-kpi-tile label="Traslados en tránsito" icon="lucide:truck" tone="info" [value]="'' + d.transferenciasEnTransito" sub="entre sedes" link="/traslados" />
+          <app-kpi-tile label="OC por recibir" icon="lucide:clipboard-list" tone="info" [value]="'' + d.ordenesPendientesRecepcion" sub="órdenes de compra" link="/ordenes-compra" />
+          <app-kpi-tile label="Recepciones hoy" icon="lucide:package-check" tone="success" [value]="'' + d.recepcionesHoy" sub="mercadería" link="/recepcion-mercaderia" />
+          <app-kpi-tile label="Zonas frío sin registro" icon="lucide:thermometer-snowflake" tone="info" [value]="'' + d.zonasFrioSinLogHoy" sub="registrar temperatura hoy" link="/cadena-frio" />
         </div>
       }
     </app-page-state>

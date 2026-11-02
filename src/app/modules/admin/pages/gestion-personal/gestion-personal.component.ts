@@ -39,7 +39,7 @@ const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Gestión de personal</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Gestión de personal</h1>
     </app-page-toolbar>
 
     <div class="mt-4 flex flex-wrap items-end gap-3">

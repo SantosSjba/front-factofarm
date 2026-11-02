@@ -11,7 +11,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Compras' }, { label: 'Recepción farmacéutica' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Recepción de productos farmacéuticos</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Recepción de productos farmacéuticos</h1>
     </app-page-toolbar>
     <app-component-card className="mt-4">
       <p class="text-sm text-gray-600 dark:text-gray-300">

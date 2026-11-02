@@ -13,6 +13,7 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { UserListItemDto, UserRoleDto } from '../../models/directory.models';
+import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
 import { UsuarioFormModalComponent } from './usuario-form-modal/usuario-form-modal.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { NotifyService } from '../../../../core/services/notify.service';
@@ -36,6 +37,7 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
     IconComponent,
     ButtonComponent,
     UsuarioFormModalComponent,
+    AvatarTextComponent,
     HasPermissionDirective,
   ],
   templateUrl: './usuarios.component.html',
@@ -120,6 +122,10 @@ export class UsuariosComponent {
         this.currentPage.set(1);
       }
     });
+  }
+
+  protected userPhoto(u: UserListItemDto): string | null {
+    return u.profile?.fotoUrl ?? (u.profile?.fotoArchivoId ? `/api/v1/files/${u.profile.fotoArchivoId}` : null);
   }
 
   protected roleLabel(role: string): string {

@@ -38,7 +38,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Convenios y seguros</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Convenios y seguros</h1>
       <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nuevo convenio</app-button>
     </app-page-toolbar>
     <app-page-state [loading]="listQuery.isPending()" [error]="listError()" (retry)="listQuery.refetch()">

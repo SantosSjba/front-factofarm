@@ -40,7 +40,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Guías' }, { label: 'Direcciones de partida' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Direcciones de partida</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Direcciones de partida</h1>
       <app-button startIconName="mdi:plus" *appHasPermission="'shipping.write'" size="sm" (btnClick)="openCreate()">Nueva dirección</app-button>
     </app-page-toolbar>
     <app-component-card title="Filtros" className="mt-4">

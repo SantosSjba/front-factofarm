@@ -3,7 +3,7 @@
 <app-page-toolbar>
   <h1
     data-toolbar-title
-    class="text-title-sm font-semibold text-gray-800 dark:text-white/90 sm:text-title-md"
+    class="text-lg font-semibold text-gray-800 dark:text-white/90"
   >
     Productos
   </h1>
@@ -118,7 +118,6 @@
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
-            <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">ID</th>
             @if (isVisible('codigoInterno')) {
               <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Cód. Interno</th>
             }
@@ -177,7 +176,6 @@
             <tr [class.bg-red-50/40]="!row.habilitado" [class.dark:bg-red-500/10]="!row.habilitado">
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
-              <td class="hidden px-5 py-4 font-mono text-theme-xs text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.id }}</td>
               @if (isVisible('codigoInterno')) {
                 <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.codigoInterno || '—' }}</td>
               }

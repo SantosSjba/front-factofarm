@@ -23,7 +23,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'Exportar formatos PLE' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Exportar formatos PLE</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Exportar formatos PLE</h1>
     </app-page-toolbar>
     <app-component-card title="Libros electrónicos SUNAT (TXT)">
       <div class="mb-4 flex flex-wrap items-end gap-4">

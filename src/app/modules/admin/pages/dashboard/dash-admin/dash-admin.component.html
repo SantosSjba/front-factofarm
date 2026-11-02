@@ -1,186 +1,187 @@
-<div class="mb-6">
-  <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white/90">
-    {{ isChainAdmin() ? 'Dashboard cadena' : 'Dashboard administrador' }}
-  </h1>
-  <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-    {{
-      isChainAdmin()
-        ? 'Consolidado multi-sucursal y alertas del cliente SaaS'
-        : 'Resumen operativo de tu farmacia'
-    }}
-  </p>
+<div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+  <div class="min-w-0">
+    <h1 class="text-lg font-semibold text-gray-900 dark:text-white/90">
+      {{ isChainAdmin() ? 'Dashboard cadena' : 'Dashboard' }}
+    </h1>
+    <p class="text-theme-xs text-gray-500 dark:text-gray-400">
+      Resumen de {{ periodLabel() }}@if (systemLine()) {<span class="hidden sm:inline"> · {{ systemLine() }}</span>}
+    </p>
+  </div>
+  <app-chart-tab ariaLabel="Periodo del dashboard" [options]="periods" [value]="'' + days()" (valueChange)="setDays($event)" />
 </div>
 
 <app-onboarding-banner />
 
 <app-page-state
-  [loading]="statsQuery.isPending()"
-  [error]="statsErrorMessage()"
+  [loading]="overviewQuery.isPending()"
+  [error]="errorMessage()"
   skeleton="kpi-grid"
-  [skeletonCount]="4"
-  (retry)="statsQuery.refetch()"
+  [skeletonCount]="6"
+  (retry)="overviewQuery.refetch()"
 >
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
-    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-      <div class="flex items-center gap-4">
-        <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"
-        >
-          <app-icon name="lucide:users" width="24" height="24" />
-        </div>
-        <div>
-          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Usuarios activos</p>
-          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-            {{ formatCount(statsQuery.data()?.usersActive) }}
-          </p>
-        </div>
+  @if (data(); as d) {
+    <div class="space-y-3" [class.opacity-60]="overviewQuery.isFetching()">
+      <!-- Ventas -->
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+        <app-kpi-tile
+          label="Ventas de hoy"
+          icon="lucide:shopping-cart"
+          [value]="money(d.today.total)"
+          [delta]="delta(d.today.total, d.today.yesterdayTotal)"
+          [sub]="ventas(d.today.count) + ' · ayer ' + money(d.today.yesterdayTotal)"
+          hint="Comparado con ayer a la misma fecha."
+          link="/notas-venta"
+        />
+        <app-kpi-tile
+          [label]="days() === 1 ? 'Unidades vendidas hoy' : 'Ventas ' + days() + ' días'"
+          icon="lucide:trending-up"
+          [value]="days() === 1 ? num(d.period.unitsSold) : money(d.period.total)"
+          [delta]="days() === 1 ? null : delta(d.period.total, d.period.prevTotal)"
+          [sub]="days() === 1 ? num(d.period.newCustomers) + ' clientes nuevos' : ventas(d.period.count) + ' · antes ' + money(d.period.prevTotal)"
+          hint="Comparado con el periodo anterior de la misma duración."
+        />
+        <app-kpi-tile
+          label="Ticket promedio"
+          icon="lucide:receipt"
+          tone="info"
+          [value]="money(d.period.avgTicket)"
+          [sub]="num(d.period.unitsSold) + ' unidades vendidas'"
+        />
+        <app-kpi-tile
+          label="Margen estimado"
+          icon="lucide:percent"
+          tone="success"
+          [value]="money(d.period.grossMargin)"
+          [sub]="d.period.grossMarginPct ? d.period.grossMarginPct + '% · base ' + d.period.marginCoveragePct + '% de ventas' : 'Registra el costo de tus productos'"
+          hint="Venta menos costo unitario. Solo incluye productos con costo registrado."
+        />
+        <app-kpi-tile
+          label="Anuladas"
+          icon="lucide:ban"
+          tone="error"
+          [value]="money(d.period.voidedTotal)"
+          [sub]="ventas(d.period.voidedCount) + ' anuladas'"
+          link="/anulaciones"
+        />
+        <app-kpi-tile
+          label="Efectivo en caja"
+          icon="lucide:wallet"
+          tone="warning"
+          [value]="money(d.cash.expectedCash)"
+          [sub]="d.cash.open ? num(d.cash.open) + (d.cash.open === 1 ? ' caja abierta' : ' cajas abiertas') : 'Sin cajas abiertas'"
+          hint="Efectivo que debería haber ahora en las gavetas abiertas."
+          link="/caja-chica-pos"
+        />
       </div>
-    </app-component-card>
 
-    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-      <div class="flex items-center gap-4">
-        <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400"
-        >
-          <app-icon name="lucide:building-2" width="24" height="24" />
-        </div>
-        <div>
-          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Establecimientos</p>
-          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-            {{ formatCount(statsQuery.data()?.establishmentsActive) }}
-          </p>
-        </div>
+      <!-- Tendencia + medios de pago -->
+      <div class="grid gap-3 lg:grid-cols-3">
+        <app-dash-panel class="lg:col-span-2" [title]="'Ventas por día · ' + periodLabel()" hint="Pasa el cursor por el gráfico para ver el monto y la cantidad de ventas de cada día.">
+          <app-dashboard-sales-chart [points]="d.trend" [height]="200" />
+        </app-dash-panel>
+        <app-dash-panel title="Medios de pago" hint="Monto cobrado por cada medio. Una venta con dos medios suma en ambos." link="/ingresos-egresos-medio-pago" linkText="Detalle">
+          <app-bar-list [rows]="rows(d.payments, 'pago')" ariaLabel="Cobros por medio de pago" />
+        </app-dash-panel>
       </div>
-    </app-component-card>
 
-    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-      <div class="flex items-center gap-4">
-        <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400"
-        >
-          <app-icon name="lucide:users-round" width="24" height="24" />
-        </div>
-        <div>
-          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Clientes activos</p>
-          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-            {{ formatCount(statsQuery.data()?.customersActive) }}
-          </p>
-        </div>
+      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <app-dash-panel title="Horas pico" hint="Monto vendido por hora del día en el periodo.">
+          <app-hour-columns [hours]="d.hours" [format]="moneyFn" />
+        </app-dash-panel>
+        <app-dash-panel title="Por comprobante" link="/comprobante-electronico" linkText="Comprobantes">
+          <app-bar-list [rows]="rows(d.documents)" ariaLabel="Ventas por tipo de comprobante" />
+        </app-dash-panel>
+        <app-dash-panel title="Por vendedor" class="md:col-span-2 xl:col-span-1">
+          <app-bar-list [rows]="rows(d.sellers)" ariaLabel="Ventas por vendedor" />
+        </app-dash-panel>
       </div>
-    </app-component-card>
 
-    <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-      <div class="flex items-center gap-4">
-        <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/10 dark:text-blue-light-400"
-        >
-          <app-icon name="lucide:package" width="24" height="24" />
-        </div>
-        <div>
-          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Productos habilitados</p>
-          <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-            {{ formatCount(statsQuery.data()?.productsActive) }}
-          </p>
-        </div>
-      </div>
-    </app-component-card>
-  </div>
-</app-page-state>
-
-<div class="mt-10 mb-4">
-  <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Ventas — últimos 14 días</h2>
-  <p class="mt-1 text-theme-sm text-gray-500">Monto vendido y cantidad de transacciones por día</p>
-</div>
-
-<app-page-state
-  [loading]="salesTrendQuery.isPending()"
-  [error]="salesTrendErrorMessage()"
-  skeleton="chart"
-  [skeletonCount]="12"
-  (retry)="salesTrendQuery.refetch()"
->
-  <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-    <app-dashboard-sales-chart [trend]="salesTrendQuery.data()" />
-  </app-component-card>
-</app-page-state>
-
-@if (statsQuery.data()?.inventoryAlerts; as alerts) {
-  <div class="mt-8 mb-4">
-    <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Alertas de inventario</h2>
-    <p class="mt-1 text-theme-sm text-gray-500">Stock, vencimientos y cadena de frío (BPA)</p>
-  </div>
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-6">
-    <a routerLink="/productos" class="block transition hover:opacity-90">
-      <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-        <p class="text-theme-sm text-gray-500">Stock bajo mínimo</p>
-        <p class="mt-1 text-title-sm font-bold text-warning-600">{{ formatCount(alerts.stockBajo) }}</p>
-        <p class="mt-1 text-theme-xs text-brand-600">Ver productos →</p>
-      </app-component-card>
-    </a>
-    <a routerLink="/lotes" [queryParams]="{ expiry: 'expired' }" class="block transition hover:opacity-90">
-      <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-        <p class="text-theme-sm text-gray-500">Lotes vencidos</p>
-        <p class="mt-1 text-title-sm font-bold text-error-600">{{ formatCount(alerts.lotesVencidos) }}</p>
-        <p class="mt-1 text-theme-xs text-brand-600">Ver lotes vencidos →</p>
-      </app-component-card>
-    </a>
-    <a routerLink="/lotes" [queryParams]="{ expiry: '30' }" class="block transition hover:opacity-90">
-      <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-        <p class="text-theme-sm text-gray-500">Por vencer (30 / 60 / 90 días)</p>
-        <p class="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
-          {{ formatCount(alerts.porVencer30) }} / {{ formatCount(alerts.porVencer60) }} /
-          {{ formatCount(alerts.porVencer90) }}
-        </p>
-        <p class="mt-1 text-theme-xs text-brand-600">Ver por vencer 30d →</p>
-      </app-component-card>
-    </a>
-    <a routerLink="/cadena-frio" class="block transition hover:opacity-90">
-      <app-component-card className="p-0" [bodyClass]="'p-5 md:p-6'">
-        <p class="text-theme-sm text-gray-500">Zonas frío sin registro hoy</p>
-        <p class="mt-1 text-title-sm font-bold text-blue-light-600">{{ formatCount(alerts.zonasFrioSinLogHoy) }}</p>
-        <p class="mt-1 text-theme-xs text-brand-600">Registrar temperatura →</p>
-      </app-component-card>
-    </a>
-  </div>
-}
-
-<div class="mt-10 mb-4">
-  <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Cadena multi-sucursal</h2>
-  <p class="mt-1 text-theme-sm text-gray-500">Consolidado últimos {{ chainQuery.data()?.periodDays ?? 30 }} días</p>
-</div>
-
-<app-page-state
-  [loading]="chainQuery.isPending()"
-  [error]="chainErrorMessage()"
-  [empty]="!chainQuery.isPending() && !chainQuery.isError() && (chainQuery.data()?.establishments?.length ?? 0) === 0"
-  emptyTitle="Sin sucursales activas"
-  skeleton="table"
-  [skeletonCount]="4"
-  (retry)="chainQuery.refetch()"
->
-  <app-component-card className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-left">
-        <caption class="sr-only">Consolidado de ventas y stock por sucursal en los últimos 30 días</caption>
-        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
-          <tr>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Sucursal</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Ventas (30d)</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Total vendido</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Unidades stock</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of chainQuery.data()?.establishments ?? []; track row.establishmentId) {
-            <tr class="border-b border-gray-50 dark:border-white/[0.03]">
-              <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white">{{ row.nombre }}</td>
-              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ formatCount(row.ventas30d) }}</td>
-              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ formatMoney(row.totalVentas30d) }}</td>
-              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ formatCount(parseCount(row.unidadesStock)) }}</td>
-            </tr>
+      <div class="grid gap-3 lg:grid-cols-3">
+        <app-dash-panel class="lg:col-span-2" title="Productos más vendidos" link="/reportes" linkText="Reportes">
+          <app-bar-list [rows]="productRows()" ariaLabel="Productos más vendidos por monto" />
+        </app-dash-panel>
+        <app-dash-panel title="Cajas abiertas" link="/historial-cajas" linkText="Historial">
+          @if (d.cash.sessions.length) {
+            <ul class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (s of d.cash.sessions; track s.id) {
+                <li class="flex items-center justify-between gap-2 py-1.5 text-theme-xs">
+                  <div class="min-w-0">
+                    <p class="truncate font-medium text-gray-800 dark:text-white/90">{{ s.caja }}</p>
+                    <p class="truncate text-gray-500">{{ s.usuario }} · desde {{ s.openedAt | appDate: 'short' }}</p>
+                  </div>
+                  <span class="shrink-0 font-medium tabular-nums text-gray-800 dark:text-white/90">{{ money(s.efectivoEsperado) }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="py-3 text-center text-theme-xs text-gray-500">No hay cajas abiertas.</p>
           }
-        </tbody>
-      </table>
+        </app-dash-panel>
+      </div>
+
+      <!-- Inventario y finanzas -->
+      <div>
+        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y finanzas</h2>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+          <app-kpi-tile
+            label="Valor inventario"
+            icon="lucide:boxes"
+            tone="info"
+            [value]="money(d.inventory.costValue)"
+            [sub]="'A precio venta ' + money(d.inventory.saleValue)"
+            hint="Stock actual × costo unitario (o precio de compra)."
+            link="/reporte-inventario"
+          />
+          <app-kpi-tile label="Stock bajo mínimo" icon="lucide:trending-down" tone="warning" [value]="num(d.inventory.lowStock)" sub="productos" link="/productos" />
+          <app-kpi-tile label="Agotados" icon="lucide:package-x" tone="error" [value]="num(d.inventory.outOfStock)" sub="sin stock" link="/productos" />
+          <app-kpi-tile label="Lotes vencidos" icon="lucide:calendar-x" tone="error" [value]="num(d.inventory.expiredLots)" sub="con stock" link="/lotes" [queryParams]="{ expiry: 'expired' }" />
+          <app-kpi-tile label="Vencen en 30 días" icon="lucide:calendar-clock" tone="warning" [value]="num(d.inventory.expiringLots30)" sub="lotes" link="/lotes" [queryParams]="{ expiry: '30' }" />
+          <app-kpi-tile
+            label="Por cobrar"
+            icon="lucide:hand-coins"
+            tone="brand"
+            [value]="money(d.finance.receivable)"
+            [sub]="num(d.finance.receivableCount) + ' cuentas · ' + num(d.finance.receivableOverdue) + ' vencidas'"
+            link="/cuentas-cobrar"
+          />
+          <app-kpi-tile
+            label="Por pagar"
+            icon="lucide:landmark"
+            tone="gray"
+            [value]="money(d.finance.payable)"
+            [sub]="num(d.finance.payableCount) + ' cuentas · ' + num(d.finance.payableOverdue) + ' vencidas'"
+            link="/cuentas-pagar"
+          />
+        </div>
+      </div>
+
+      @if (showChain()) {
+        <app-dash-panel [title]="'Sucursales · últimos ' + (chainQuery.data()?.periodDays ?? 30) + ' días'">
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-theme-xs">
+              <caption class="sr-only">Ventas y stock por sucursal</caption>
+              <thead class="text-gray-500">
+                <tr>
+                  <th class="py-1.5 pr-3 font-medium">Sucursal</th>
+                  <th class="py-1.5 pr-3 text-right font-medium">Ventas</th>
+                  <th class="py-1.5 pr-3 text-right font-medium">Total</th>
+                  <th class="py-1.5 text-right font-medium">Unidades en stock</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                @for (row of chainQuery.data()?.establishments ?? []; track row.establishmentId) {
+                  <tr>
+                    <td class="py-1.5 pr-3 font-medium text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
+                    <td class="py-1.5 pr-3 text-right tabular-nums">{{ num(row.ventas30d) }}</td>
+                    <td class="py-1.5 pr-3 text-right tabular-nums">{{ money(row.totalVentas30d) }}</td>
+                    <td class="py-1.5 text-right tabular-nums">{{ num(row.unidadesStock) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </app-dash-panel>
+      }
     </div>
-  </app-component-card>
+  }
 </app-page-state>

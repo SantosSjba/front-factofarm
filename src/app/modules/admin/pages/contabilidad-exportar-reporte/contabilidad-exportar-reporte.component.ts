@@ -18,7 +18,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'Exportar reporte' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Exportar reporte</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Exportar reporte</h1>
     </app-page-toolbar>
     <app-component-card title="Exportación contable (Contasis / SISCONT / Excel)" className="mt-4">
       <div class="mb-4 flex flex-wrap items-end gap-4">

@@ -139,6 +139,26 @@ export class AuthService {
     return this.http.patch<AuthUser>(`${environment.apiBaseUrl}/auth/me`, body).pipe(tap(user => this.persistUser(user)));
   }
 
+  /** Sube o reemplaza la foto de perfil propia y la refleja en la sesión. */
+  uploadProfilePhoto(file: File): Observable<{ fotoUrl: string | null }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http
+      .post<{ fotoUrl: string | null }>(`${environment.apiBaseUrl}/auth/me/photo`, form)
+      .pipe(tap((res) => this.patchUser({ fotoUrl: res.fotoUrl })));
+  }
+
+  removeProfilePhoto(): Observable<{ fotoUrl: null }> {
+    return this.http
+      .delete<{ fotoUrl: null }>(`${environment.apiBaseUrl}/auth/me/photo`)
+      .pipe(tap(() => this.patchUser({ fotoUrl: null })));
+  }
+
+  private patchUser(changes: Partial<AuthUser>): void {
+    const current = this.userSignal();
+    if (current) this.persistUser({ ...current, ...changes });
+  }
+
   changePassword(currentPassword: string, newPassword: string): Observable<{ ok: true }> {
     return this.http.post<{ ok: true }>(`${environment.apiBaseUrl}/auth/change-password`, { currentPassword, newPassword });
   }

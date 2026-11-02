@@ -23,7 +23,7 @@ const REPORT_LINKS = [
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Reportes' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Panel de reportes</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Panel de reportes</h1>
     </app-page-toolbar>
     <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       @for (link of links; track link.path) {

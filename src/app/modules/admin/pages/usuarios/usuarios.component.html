@@ -3,7 +3,7 @@
 <app-page-toolbar>
   <h1
     data-toolbar-title
-    class="text-title-sm font-semibold text-gray-800 dark:text-white/90"
+    class="text-lg font-semibold text-gray-800 dark:text-white/90"
   >
     Usuarios
   </h1>
@@ -87,7 +87,10 @@
                 {{ u.email }}
               </td>
               <td class="px-3 py-2.5 text-theme-xs text-gray-800 dark:text-white/90">
-                {{ u.nombre }}
+                <span class="inline-flex items-center gap-2">
+                  <app-avatar-text [name]="u.nombre" [photoUrl]="userPhoto(u)" size="sm" />
+                  <span>{{ u.nombre }}</span>
+                </span>
               </td>
               <td class="px-3 py-2.5 text-theme-xs text-gray-700 dark:text-gray-300">
                 {{ roleLabel(u.role) }}

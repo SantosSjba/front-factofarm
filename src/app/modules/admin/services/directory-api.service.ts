@@ -142,6 +142,8 @@ import type {
   WarehouseDashboardDto,
   AccountantDashboardDto,
   PlatformDashboardDto,
+  DashboardOverviewDto,
+  PlatformOverviewDto,
   RoleTemplateDto,
   StaffWorkScheduleRowDto,
   StaffAttendanceItemDto,
@@ -338,6 +340,14 @@ export class DirectoryApiService {
 
   getDashboardSalesTrend() {
     return this.http.get<DashboardSalesTrendDto>(`${this.base}/dashboard/sales-trend`);
+  }
+
+  getDashboardOverview(days: number) {
+    return this.http.get<DashboardOverviewDto>(`${this.base}/dashboard/overview`, { params: { days: String(days) } });
+  }
+
+  getPlatformOverview() {
+    return this.http.get<PlatformOverviewDto>(`${this.base}/dashboard/platform/overview`);
   }
 
   getManagerDashboard() {

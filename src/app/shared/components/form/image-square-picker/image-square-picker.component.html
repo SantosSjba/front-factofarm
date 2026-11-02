@@ -2,19 +2,20 @@
   <div [class]="'relative shrink-0 ' + sizeClass">
     <button
       type="button"
-      class="flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-gray-300 text-2xl text-gray-400 hover:border-brand-400 hover:text-brand-500 dark:border-gray-600"
+      class="flex h-full w-full items-center justify-center overflow-hidden text-2xl hover:border-brand-400 hover:text-brand-500"
+      [class]="rounded + ' ' + (emptyClass || 'border-2 border-dashed border-gray-300 text-gray-400 dark:border-gray-600')"
       (click)="inp.click()"
       [attr.aria-label]="ariaLabel"
     >
       @let state = preview$ | async;
       @if (state?.src; as src) {
-        <img [src]="src" alt="" class="h-full w-full rounded-[10px] object-cover" />
+        <img [src]="src" alt="" class="h-full w-full object-cover" />
       } @else if (state?.failed) {
         <span class="px-2 text-center text-theme-xs leading-tight">Imagen no disponible<br />Toca para subir otra</span>
       } @else if (previewUrl) {
         <span class="size-5 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
       } @else {
-        +
+        <span class="font-semibold">{{ placeholder }}</span>
       }
     </button>
     <input #inp type="file" [accept]="accept" class="sr-only" (change)="onChange($event)" />

@@ -39,7 +39,7 @@ import type { PromotionType } from '../../models/directory.models';
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Promociones y cupones</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Promociones y cupones</h1>
       <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nueva campaña</app-button>
     </app-page-toolbar>
     <app-page-state [loading]="listQuery.isPending()" [error]="listError()" (retry)="listQuery.refetch()">

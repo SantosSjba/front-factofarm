@@ -3,7 +3,7 @@
 </div>
 
 <app-page-toolbar>
-  <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 sm:text-title-md dark:text-white/90">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
     Productos compuestos
   </h1>
   <div data-toolbar-actions class="flex items-center gap-2">
@@ -67,7 +67,6 @@
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">#</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">ID</th>
             @if (isVisible('codigoInterno')) {
               <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Cód. Interno</th>
             }
@@ -99,7 +98,6 @@
           @for (row of rows(); track row.id; let i = $index) {
             <tr>
               <td class="px-5 py-4 text-theme-sm">{{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
-              <td class="px-5 py-4 font-mono text-theme-xs">{{ row.id }}</td>
               @if (isVisible('codigoInterno')) {
                 <td class="px-5 py-4 text-theme-sm">{{ row.codigoInterno || '—' }}</td>
               }

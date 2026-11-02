@@ -25,7 +25,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Productos' }, { label: 'Precios regulados DIGEMID' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Precios regulados DIGEMID</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Precios regulados DIGEMID</h1>
     </app-page-toolbar>
     <app-component-card title="Catálogo precios máximos" [loading]="listQuery.isPending()">
       <div class="mb-6 grid gap-4 md:grid-cols-4">

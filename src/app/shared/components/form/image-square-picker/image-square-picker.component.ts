@@ -34,6 +34,11 @@ export class ImageSquarePickerComponent {
   @Input() sizeClass = 'h-24 w-24';
   @Input() accept = 'image/*';
   @Input() ariaLabel = 'Seleccionar imagen';
+  /** Contenido sin imagen (p. ej. iniciales del usuario). */
+  @Input() placeholder = '+';
+  /** Clase del recuadro vacío (por defecto, borde punteado). */
+  @Input() emptyClass = '';
+  @Input() rounded = 'rounded-xl';
   @Output() fileSelected = new EventEmitter<File>();
 
   protected onChange(ev: Event) {

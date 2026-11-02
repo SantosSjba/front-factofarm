@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DropdownItemTwoComponent } from '../../ui/dropdown/dropdown-item/dropdown-item.component-two';
 import { AuthService } from '../../../../core/services/auth.service';
+import { AvatarTextComponent } from '../../ui/avatar/avatar-text.component';
 import { TourService } from '../../../../core/tour/tour.service';
 import type { TourId } from '../../../../core/tour/tour.definitions';
 import { IconComponent } from '../../ui/icon/icon.component';
@@ -12,7 +13,7 @@ import { IconComponent } from '../../ui/icon/icon.component';
 @Component({
   selector: 'app-user-dropdown',
   templateUrl: './user-dropdown.component.html',
-  imports: [CommonModule, RouterModule, DropdownComponent, DropdownItemTwoComponent, IconComponent],
+  imports: [CommonModule, RouterModule, DropdownComponent, DropdownItemTwoComponent, IconComponent, AvatarTextComponent],
 })
 export class UserDropdownComponent {
   private readonly router = inject(Router);

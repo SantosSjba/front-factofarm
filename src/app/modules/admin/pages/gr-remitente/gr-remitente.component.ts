@@ -30,7 +30,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Guía de remisión remitente</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Guía de remisión remitente</h1>
     </app-page-toolbar>
     <p class="mt-2 text-sm text-gray-500">
       Emite guías electrónicas desde traslados en tránsito entre almacenes.

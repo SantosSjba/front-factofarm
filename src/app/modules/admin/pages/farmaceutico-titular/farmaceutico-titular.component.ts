@@ -25,7 +25,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'Farmacéutico titular' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Farmacéutico titular</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Farmacéutico titular</h1>
     </app-page-toolbar>
     <app-component-card title="Licencias farmacéuticas (CQP)" [loading]="listQuery.isPending()" [error]="listQuery.isError() ? 'No se pudieron cargar las licencias' : null" (retry)="listQuery.refetch()">
       <div class="mb-6 grid gap-4 md:grid-cols-3">

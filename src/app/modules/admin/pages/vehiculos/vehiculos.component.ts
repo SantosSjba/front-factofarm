@@ -45,7 +45,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Guías' }, { label: 'Vehículos' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Vehículos</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Vehículos</h1>
       <app-button startIconName="mdi:plus" *appHasPermission="'shipping.write'" size="sm" (btnClick)="openCreate()">Nuevo vehículo</app-button>
     </app-page-toolbar>
     <app-component-card title="Filtros" className="mt-4">

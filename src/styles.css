@@ -1127,6 +1127,18 @@ pre[class*="language-"].line-numbers {
   min-width: 0;
 }
 
+/* Densidad compacta en modo tabla (escritorio): filas más bajas y texto de 13 px
+   en todos los listados, aunque cada página traiga py-3 / py-4 en sus celdas. */
+table.ff-table-cards:not(.ff-table-is-cards) > thead > tr > th,
+table.ff-table-cards:not(.ff-table-is-cards) > tbody > tr > td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+table.ff-table-cards:not(.ff-table-is-cards) > tbody > tr > td {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
 .ff-table-host.ff-table-is-cards {
   overflow: visible !important;
 }
@@ -1562,7 +1574,7 @@ table.ff-usuarios-list.ff-table-is-cards > tbody > tr > td.ff-table-title {
    <app-page-toolbar>. Fuera de @layer para prevalecer sobre las utilidades
    (text-title-sm / sm:text-title-md) que cada página trae en su <h1>. */
 [data-page-toolbar] [data-toolbar-title] {
-  font-size: 1.5rem;
-  line-height: 2rem;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
   font-weight: 600;
 }

@@ -41,7 +41,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Guías' }, { label: 'GR transportista' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Guía de remisión transportista</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Guía de remisión transportista</h1>
     </app-page-toolbar>
     <app-component-card className="mt-4" title="Emitir guía transportista">
       <p class="mb-4 text-sm text-gray-500">

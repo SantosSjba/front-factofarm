@@ -295,8 +295,17 @@ export interface PharmacistDashboardDto {
 export interface CashierDashboardDto {
   ventasHoy: string;
   ventasHoyCount: number;
+  ticketPromedio: string;
+  anuladasHoy: number;
+  pagosHoy: DashboardBreakdownDto[];
   cajaAbierta: boolean;
-  sesionCaja: { id: string; openedAt: string; montoApertura: string } | null;
+  sesionCaja: {
+    id: string;
+    caja: string;
+    openedAt: string;
+    montoApertura: string;
+    efectivoEsperado: string;
+  } | null;
 }
 
 export interface WarehouseDashboardDto {
@@ -345,6 +354,93 @@ export interface PlatformDashboardDto {
     status: string;
     createdAt: string;
     activatedAt: string | null;
+  }>;
+}
+
+/** Fila de un desglose (medio de pago, comprobante, vendedor…). */
+export interface DashboardBreakdownDto {
+  key: string;
+  label: string;
+  total: string;
+  count: number;
+}
+
+export interface DashboardOverviewDto {
+  days: number;
+  timeZone: string;
+  today: { total: string; count: number; avgTicket: string; yesterdayTotal: string; yesterdayCount: number };
+  period: {
+    total: string;
+    count: number;
+    avgTicket: string;
+    prevTotal: string;
+    prevCount: number;
+    voidedTotal: string;
+    voidedCount: number;
+    unitsSold: string;
+    newCustomers: number;
+    grossMargin: string;
+    grossMarginPct: string | null;
+    marginCoveragePct: string | null;
+  };
+  trend: DashboardSalesTrendPointDto[];
+  payments: DashboardBreakdownDto[];
+  documents: DashboardBreakdownDto[];
+  hours: Array<{ hour: number; total: string; count: number }>;
+  sellers: DashboardBreakdownDto[];
+  topProducts: Array<{ id: string; nombre: string; total: string; cantidad: string }>;
+  cash: {
+    open: number;
+    expectedCash: string;
+    sessions: Array<{ id: string; caja: string; usuario: string; openedAt: string; efectivoEsperado: string }>;
+  };
+  inventory: {
+    units: string;
+    costValue: string;
+    saleValue: string;
+    lowStock: number;
+    outOfStock: number;
+    expiredLots: number;
+    expiringLots30: number;
+  };
+  finance: {
+    receivable: string;
+    receivableCount: number;
+    receivableOverdue: number;
+    payable: string;
+    payableCount: number;
+    payableOverdue: number;
+  };
+}
+
+export interface PlatformOverviewDto {
+  sales: {
+    todayTotal: string;
+    todayCount: number;
+    total30d: string;
+    count30d: number;
+    avgTicket30d: string;
+    activeTenants30d: number;
+  };
+  trend: DashboardSalesTrendPointDto[];
+  payments: DashboardBreakdownDto[];
+  plans: DashboardBreakdownDto[];
+  leads: DashboardBreakdownDto[];
+  tenantActivity: Array<{
+    id: string;
+    nombre: string;
+    slug: string;
+    plan: string;
+    status: string;
+    users: number;
+    maxUsers: number;
+    establishments: number;
+    maxEstablishments: number;
+    products: number;
+    customers: number;
+    sales30d: number;
+    total30d: string;
+    lastSaleAt: string | null;
   }>;
 }
 

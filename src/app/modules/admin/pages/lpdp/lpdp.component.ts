@@ -14,7 +14,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'LPDP / ARCO' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">LPDP / ARCO</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">LPDP / ARCO</h1>
     </app-page-toolbar>
     <app-component-card title="Matriz de tratamiento LPDP" className="mt-4" [loading]="matrixQuery.isPending()" [error]="matrixQuery.isError() ? 'No se pudo cargar la matriz de tratamiento' : null" (retry)="matrixQuery.refetch()">
       @if (matrixQuery.data(); as matrix) {

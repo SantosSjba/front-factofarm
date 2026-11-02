@@ -34,7 +34,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Facturación' }, { label: 'Retenciones' }]" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Retenciones</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Retenciones</h1>
     </app-page-toolbar>
 
     <app-component-card title="Retenciones SUNAT" [loading]="recordsQuery.isPending()">

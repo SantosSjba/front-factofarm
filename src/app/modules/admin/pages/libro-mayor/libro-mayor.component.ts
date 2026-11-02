@@ -33,7 +33,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Libro mayor</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Libro mayor</h1>
     </app-page-toolbar>
     <app-component-card title="Filtros" className="mt-4">
       <div class="flex flex-wrap items-end gap-3">

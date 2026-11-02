@@ -32,7 +32,7 @@ type OnboardingStep = {
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Configuración inicial</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Configuración inicial</h1>
     </app-page-toolbar>
 
     <app-component-card className="mt-4" title="Asistente de primera configuración">

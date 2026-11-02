@@ -28,7 +28,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-title-sm font-semibold">Transacciones bancarias</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold">Transacciones bancarias</h1>
     </app-page-toolbar>
     <app-page-state [loading]="listQuery.isPending()" [error]="listError()" (retry)="listQuery.refetch()">
       <app-component-card className="mt-4">
