@@ -1274,7 +1274,18 @@ export interface ProductStockPriceRowDto {
   precioDefecto: PresentationDefaultPriceDto;
 }
 
+export interface ProductStockLotDto {
+  id: string;
+  codigoLote: string;
+  almacen: string;
+  stock: string;
+  fechaVencimiento: string | null;
+}
+
 export interface ProductStockSummaryDto {
+  manejaLotes?: boolean;
+  /** Lotes con stock, los que vencen primero arriba. */
+  lots?: ProductStockLotDto[];
   stockByLocation: ProductStockByLocationDto[];
   priceList: ProductStockPriceRowDto[];
 }

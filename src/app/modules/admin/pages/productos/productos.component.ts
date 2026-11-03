@@ -343,6 +343,19 @@ export class ProductosComponent {
   protected readonly historyPurchasesTotal = computed(() => this.historyPurchasesQuery.data()?.total ?? 0);
   protected readonly stockRows = computed(() => this.stockSummaryQuery.data()?.stockByLocation ?? []);
   protected readonly stockPriceRows = computed(() => this.stockSummaryQuery.data()?.priceList ?? []);
+  protected readonly stockLots = computed(() => this.stockSummaryQuery.data()?.lots ?? []);
+
+  /** "uuid:2" → "Presentación 2": la clave interna no le dice nada al usuario. */
+  protected presentationLabel(key: string): string {
+    const order = key.includes(':') ? key.split(':').pop() : '';
+    return order && /^\d+$/.test(order) ? `Presentación ${order}` : 'Presentación';
+  }
+
+  /** Estado de un lote por su vencimiento: vencido, por vencer (≤ 30 días) o vigente. */
+  protected lotStatus(iso: string): 'expired' | 'soon' | 'ok' {
+    const days = (new Date(iso).getTime() - Date.now()) / 86_400_000;
+    return days < 0 ? 'expired' : days <= 30 ? 'soon' : 'ok';
+  }
 
   protected readonly columns: ColumnConfig[] = [
     { key: 'codigoInterno', label: 'Cód. Interno' },

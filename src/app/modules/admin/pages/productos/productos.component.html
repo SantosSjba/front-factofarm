@@ -130,7 +130,7 @@
             @if (isVisible('descripcion')) {
               <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Descripción</th>
             }
-            <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Historial</th>
+            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Historial</th>
             <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Stock</th>
             @if (isVisible('stockMinimo')) {
               <th class="hidden px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400 lg:table-cell">Stock Mínimo</th>
@@ -199,7 +199,7 @@
               @if (isVisible('descripcion')) {
                 <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.descripcion || '—' }}</td>
               }
-              <td class="hidden px-5 py-4 lg:table-cell">
+              <td class="px-5 py-4">
                 <app-button size="sm" variant="primary" [iconOnly]="true" startIconName="mdi:history" [tooltip]="'Historial de ' + row.nombre" (btnClick)="openHistoryModal(row)"></app-button>
               </td>
               <td class="px-5 py-4">
@@ -209,7 +209,14 @@
                 <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.stockMinimo }}</td>
               }
               @if (isVisible('totalStock')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.totalStock }}</td>
+                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+                  <button
+                    type="button"
+                    class="font-medium tabular-nums text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+                    [attr.aria-label]="'Ver stock por almacén y lote de ' + row.nombre"
+                    (click)="openStockModal(row)"
+                  >{{ row.totalStock }}</button>
+                </td>
               }
               @if (isVisible('precioVenta')) {
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ formatSalePrice(row) }}</td>
@@ -363,7 +370,7 @@
                     @if (item.warehouseNombre) {
                       {{ item.warehouseNombre }}
                     } @else if (item.presentationKey) {
-                      Presentación {{ item.presentationKey }}
+                      {{ presentationLabel(item.presentationKey) }}
                     } @else {
                       —
                     }
@@ -469,6 +476,118 @@
     <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
   </div>
 </app-modal>
+
+<app-modal [isOpen]="stockOpen()" (closed)="closeStockModal()" className="w-full max-w-3xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-6">
+    <h3 class="pr-12 text-base font-semibold text-gray-800 dark:text-white/90">Stock de {{ stockProduct()?.nombre }}</h3>
+    <p class="text-theme-xs text-gray-500">Total: <span class="font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ stockProduct()?.totalStock }}</span> unidades</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-6">
+    @if (stockSummaryQuery.isPending()) {
+      <p class="py-6 text-center text-theme-sm text-gray-500">Cargando stock…</p>
+    } @else if (stockSummaryQuery.isError()) {
+      <p class="py-6 text-center text-theme-sm text-error-600">No se pudo cargar el stock del producto.</p>
+    } @else {
+      <section>
+        <h4 class="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">Por almacén</h4>
+        <table class="w-full text-left text-theme-sm">
+          <thead class="text-theme-xs text-gray-500">
+            <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+              <th class="py-1.5 pr-3 font-medium">Ubicación</th>
+              <th class="py-1.5 text-right font-medium">Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of stockRows(); track item.warehouseId) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                <td class="py-1.5 pr-3 text-gray-800 dark:text-white/90">{{ item.ubicacion }}</td>
+                <td class="py-1.5 text-right font-medium tabular-nums text-gray-800 dark:text-white/90">{{ item.stock }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="2" class="py-4 text-center text-gray-500">No hay stock registrado.</td></tr>
+            }
+          </tbody>
+        </table>
+      </section>
+
+      @if (stockLots().length || stockSummaryQuery.data()?.manejaLotes) {
+        <section>
+          <h4 class="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">Lotes <span class="font-normal text-gray-500">(se vende primero el que vence antes)</span></h4>
+          <table class="w-full text-left text-theme-sm">
+            <thead class="text-theme-xs text-gray-500">
+              <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+                <th class="py-1.5 pr-3 font-medium">Lote</th>
+                <th class="py-1.5 pr-3 font-medium">Almacén</th>
+                <th class="py-1.5 pr-3 font-medium">Vence</th>
+                <th class="py-1.5 text-right font-medium">Stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (lot of stockLots(); track lot.id) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                  <td class="py-1.5 pr-3 font-medium text-gray-800 dark:text-white/90">{{ lot.codigoLote }}</td>
+                  <td class="py-1.5 pr-3 text-gray-600 dark:text-gray-400">{{ lot.almacen }}</td>
+                  <td class="py-1.5 pr-3">
+                    @if (lot.fechaVencimiento) {
+                      <span class="tabular-nums">{{ lot.fechaVencimiento | appDate: 'dd/MM/yyyy' }}</span>
+                      @switch (lotStatus(lot.fechaVencimiento)) {
+                        @case ('expired') { <span class="ml-1 rounded bg-error-50 px-1.5 py-0.5 text-[10px] font-medium text-error-700 dark:bg-error-500/15 dark:text-error-400">Vencido</span> }
+                        @case ('soon') { <span class="ml-1 rounded bg-warning-50 px-1.5 py-0.5 text-[10px] font-medium text-warning-700 dark:bg-warning-500/15 dark:text-warning-400">Vence pronto</span> }
+                      }
+                    } @else {
+                      <span class="text-gray-400">—</span>
+                    }
+                  </td>
+                  <td class="py-1.5 text-right font-medium tabular-nums text-gray-800 dark:text-white/90">{{ lot.stock }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="py-4 text-center text-gray-500">Sin lotes con stock.</td></tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+
+      @if (stockPriceRows().length) {
+        <section>
+          <h4 class="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">Precios por presentación</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[520px] text-left text-theme-sm">
+              <thead class="text-theme-xs text-gray-500">
+                <tr class="border-b border-gray-100 dark:border-white/[0.05]">
+                  <th class="py-1.5 pr-3 font-medium">Unidad</th>
+                  <th class="py-1.5 pr-3 font-medium">Descripción</th>
+                  <th class="py-1.5 pr-3 text-right font-medium">Factor</th>
+                  <th class="py-1.5 pr-3 text-right font-medium">Precio 1</th>
+                  <th class="py-1.5 pr-3 text-right font-medium">Precio 2</th>
+                  <th class="py-1.5 pr-3 text-right font-medium">Precio 3</th>
+                  <th class="py-1.5 text-right font-medium">Por defecto</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of stockPriceRows(); track p.id) {
+                  <tr class="border-b border-gray-100 last:border-b-0 dark:border-white/[0.05]">
+                    <td class="py-1.5 pr-3 text-gray-800 dark:text-white/90">{{ p.unidad }}</td>
+                    <td class="py-1.5 pr-3 text-gray-600 dark:text-gray-400">{{ p.descripcion || '—' }}</td>
+                    <td class="py-1.5 pr-3 text-right tabular-nums">{{ p.factor }}</td>
+                    <td class="py-1.5 pr-3 text-right tabular-nums">{{ p.precio1 }}</td>
+                    <td class="py-1.5 pr-3 text-right tabular-nums">{{ p.precio2 }}</td>
+                    <td class="py-1.5 pr-3 text-right tabular-nums">{{ p.precio3 }}</td>
+                    <td class="py-1.5 text-right">{{ precioDefectoLabel(p.precioDefecto) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="closeStockModal()">Cerrar</app-button>
+  </div>
+</app-modal>
+
 <app-modal [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
