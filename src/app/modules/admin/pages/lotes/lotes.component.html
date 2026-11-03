@@ -88,7 +88,23 @@
                 class="px-5 py-4 text-theme-sm"
                 [class.text-error-600]="isExpired(row.fechaVencimiento)"
               >
-                {{ row.fechaVencimiento ? (row.fechaVencimiento | appDate: 'yyyy-MM-dd') : '—' }}
+                {{ row.fechaVencimiento ? row.fechaVencimiento.slice(0, 10) : '—' }}
+                <ng-container *appHasPermission="'inventory.write'">
+                  @if (editingLotId() === row.id) {
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                      <app-input-field type="date" ariaLabel="Fecha de vencimiento"
+                        [value]="expiryDraft()" [disabled]="savingExpiry()"
+                        (valueChange)="expiryDraft.set('' + $event)" />
+                      <app-button size="sm" variant="link" [loading]="savingExpiry()" [disabled]="!expiryDraft()"
+                        (btnClick)="saveExpiry(row.id)">Guardar</app-button>
+                      <app-button size="sm" variant="link" [disabled]="savingExpiry()"
+                        (btnClick)="editingLotId.set(null)">Cancelar</app-button>
+                    </div>
+                  } @else {
+                    <app-button size="sm" variant="link" className="ms-2" [disabled]="savingExpiry()"
+                      (btnClick)="editExpiry(row.id, row.fechaVencimiento)">Editar</app-button>
+                  }
+                </ng-container>
               </td>
             </tr>
         } @empty {

@@ -1,3 +1,4 @@
+import { matchesTextSearch } from '../../../../core/utils/text-search';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
@@ -44,15 +45,15 @@ export class PermissionMenuTreeComponent {
   }
 
   protected filteredForest(): PermissionMenuNode[] {
-    const q = this.filterQuery().trim().toLowerCase();
+    const q = this.filterQuery().trim();
     if (!q) {
       return this.forest;
     }
     return this.forest
       .map((node) => {
-        const parentHit = (node.label ?? node.code).toLowerCase().includes(q);
+        const parentHit = matchesTextSearch(node.label ?? node.code, q);
         const kids = node.children.filter((c) =>
-          (c.label ?? c.code).toLowerCase().includes(q),
+          matchesTextSearch(c.label ?? c.code, q),
         );
         if (parentHit) {
           return node;

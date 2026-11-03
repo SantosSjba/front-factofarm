@@ -1,5 +1,5 @@
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { CommonModule } from '@angular/common';
-import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -15,15 +15,21 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { NotifyService } from '../../../../core/services/notify.service';
+import { httpErrorMessage } from '../../../../core/http/http-error-message';
 
 @Component({
   selector: 'app-lotes',
   standalone: true,
   imports: [
     LabelComponent,
+    HasPermissionDirective,
+    InputFieldComponent,
+    ButtonComponent,
     QueryPageStatePipe,
     CommonModule,
-    AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     ComponentCardComponent,
@@ -37,6 +43,7 @@ import { LabelComponent } from '../../../../shared/components/form/label/label.c
 export class LotesComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly notify = inject(NotifyService);
   protected readonly locale = inject(LocaleService);
 
   constructor() {
@@ -50,6 +57,31 @@ export class LotesComponent {
     { label: 'Inventario' },
     { label: 'Lotes' },
   ];
+
+  protected readonly editingLotId = signal<string | null>(null);
+  protected readonly expiryDraft = signal('');
+  protected readonly savingExpiry = signal(false);
+
+  protected editExpiry(id: string, expiry: string | null) {
+    this.expiryDraft.set(expiry?.slice(0, 10) ?? '');
+    this.editingLotId.set(id);
+  }
+
+  protected async saveExpiry(id: string) {
+    if (this.savingExpiry() || !this.expiryDraft()) return;
+
+    this.savingExpiry.set(true);
+    try {
+      await firstValueFrom(this.api.updateInventoryLotExpiry(id, this.expiryDraft()));
+      this.editingLotId.set(null);
+      this.notify.success('Fecha de vencimiento actualizada');
+      await this.lotsQuery.refetch();
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo guardar la fecha de vencimiento'));
+    } finally {
+      this.savingExpiry.set(false);
+    }
+  }
 
   protected readonly searchTerm = signal('');
   protected readonly filterField = signal<'all' | 'producto' | 'lote' | 'almacen'>('producto');

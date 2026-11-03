@@ -1419,6 +1419,13 @@ export class DirectoryApiService {
     });
   }
 
+  updateInventoryLotExpiry(id: string, fechaVencimiento: string) {
+    return this.http.patch<{ fechaVencimiento: string }>(
+      `${this.base}/inventory-movements/lots/${id}/expiry`,
+      { fechaVencimiento },
+    );
+  }
+
   listInventoryLots(filters?: InventoryLotListFiltersRequest) {
     const params: Record<string, string> = {};
     if (filters?.search?.trim()) params['search'] = filters.search.trim();

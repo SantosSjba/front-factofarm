@@ -1,3 +1,4 @@
+import { matchesTextSearch } from '../../../../core/utils/text-search';
 import { CommonModule } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
@@ -65,11 +66,9 @@ export class ZonasComponent {
 
   protected readonly rows = computed(() => {
     const source = this.zonesQuery.data() ?? [];
-    const search = this.searchTerm().trim().toLowerCase();
-    const field = this.filterField();
+    const search = this.searchTerm().trim();
     if (!search) return source;
-    if (field === 'nombre') return source.filter((x) => x.nombre.toLowerCase().includes(search));
-    return source.filter((x) => x.nombre.toLowerCase().includes(search));
+    return source.filter((x) => matchesTextSearch(x.nombre, search));
   });
   protected readonly totalRows = computed(() => this.rows().length);
   protected readonly pageStart = computed(() =>

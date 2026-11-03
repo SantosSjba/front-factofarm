@@ -1,3 +1,4 @@
+import { matchesTextSearch } from '../../../core/utils/text-search';
 import {
   AfterViewInit,
   Component,
@@ -235,10 +236,10 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
   }
 
   get filteredSearchOptions(): SearchMenuOption[] {
-    const query = this.searchTerm.trim().toLowerCase();
+    const query = this.searchTerm.trim();
     if (!query) return this.searchOptions.slice(0, 10);
     return this.searchOptions
-      .filter((option) => `${option.section} ${option.name}`.toLowerCase().includes(query))
+      .filter((option) => matchesTextSearch(`${option.section} ${option.name}`, query))
       .slice(0, 12);
   }
 
