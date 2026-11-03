@@ -244,7 +244,7 @@ const BIENVENIDA: TourDef = {
       title: 'Primer paso: configura tu farmacia',
       description:
         'Antes de vender, completa la <b>configuración inicial</b>: establecimiento y RUC, series SUNAT, facturación electrónica (opcional), tu primer producto y la apertura de caja.<br><br>Puedes repetir este tutorial desde <b>tu cuenta › Tutoriales</b>.',
-      permissions: ['nav.dashboard_admin'],
+      permissions: ['nav.establecimientos'],
       audience: 'tenant',
       action: { label: 'Ir a configuración inicial', kind: 'route', route: '/onboarding' },
     },

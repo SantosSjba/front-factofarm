@@ -53,7 +53,7 @@ import { LocaleService } from '../../../../../core/services/locale.service';
             hint="Apertura + ventas en efectivo + ingresos − egresos. Compáralo con lo que cuentas al cerrar."
             link="/caja-chica-pos"
           />
-          <app-kpi-tile label="Anuladas hoy" icon="lucide:ban" tone="error" [value]="'' + d.anuladasHoy" sub="ventas anuladas" link="/anulaciones" />
+          <app-kpi-tile label="Anuladas hoy" icon="lucide:ban" tone="error" [value]="'' + d.anuladasHoy" sub="ventas anuladas" link="/notas-venta" />
         </div>
         <app-dash-panel class="mt-3 block" title="Mis cobros de hoy por medio de pago" hint="Úsalo para cuadrar tu caja: el efectivo va a la gaveta; Yape, tarjeta y transferencias se revisan en su app o voucher.">
           <app-bar-list [rows]="payRows(d.pagosHoy)" ariaLabel="Mis cobros por medio de pago" emptyText="Aún no registras cobros hoy." />

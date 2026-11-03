@@ -1,7 +1,9 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../ui/icon/icon.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { canOpenRoute } from '../../../../core/utils/route-access';
 
 export type KpiTone = 'brand' | 'success' | 'warning' | 'error' | 'info' | 'gray';
 
@@ -23,8 +25,8 @@ const TONES: Record<KpiTone, string> = {
   standalone: true,
   imports: [IconComponent, RouterLink, NgTemplateOutlet],
   template: `
-    @if (link()) {
-      <a [routerLink]="link()" [queryParams]="queryParams()" class="block h-full rounded-xl focus-visible:outline-2 focus-visible:outline-brand-500">
+    @if (allowedLink()) {
+      <a [routerLink]="allowedLink()" [queryParams]="queryParams()" class="block h-full rounded-xl focus-visible:outline-2 focus-visible:outline-brand-500">
         <ng-container [ngTemplateOutlet]="body" />
       </a>
     } @else {
@@ -33,7 +35,7 @@ const TONES: Record<KpiTone, string> = {
     <ng-template #body>
       <div
         class="flex h-full items-start gap-2.5 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]"
-        [class.hover:border-brand-300]="!!link()"
+        [class.hover:border-brand-300]="!!allowedLink()"
         [attr.title]="hint() || null"
       >
         @if (icon()) {
@@ -70,6 +72,13 @@ export class KpiTileComponent {
   readonly hint = input<string | null>(null);
   readonly link = input<string | null>(null);
   readonly queryParams = input<Record<string, string> | null>(null);
+
+  private readonly auth = inject(AuthService);
+  /** Enlace solo si el usuario tiene acceso a la pantalla (evita "no tienes acceso"). */
+  protected readonly allowedLink = computed(() => {
+    const link = this.link();
+    return link && canOpenRoute(link, (code) => this.auth.hasPermission(code)) ? link : null;
+  });
 
   protected readonly toneClass = computed(() => TONES[this.tone()]);
 

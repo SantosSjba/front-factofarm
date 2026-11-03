@@ -40,7 +40,8 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'onboarding',
-        ...guarded(P.dashboard),
+        // Configuración inicial: solo quien administra el local (la cajera no la necesita).
+        ...guarded(P.establecimientos),
         loadComponent: () =>
           import('./pages/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
         title: 'FactoFarm | Configuración inicial',
