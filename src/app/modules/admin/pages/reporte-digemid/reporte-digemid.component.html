@@ -23,7 +23,7 @@
     (retry)="adverseQuery.refetch()">
     <div class="mb-4 flex flex-wrap gap-2">
       <app-button startIconName="mdi:content-save-outline" (btnClick)="openCreate()">Registrar evento</app-button>
-      <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportFarmacovigilancia()">Exportar Excel DIGEMID</app-button>
+      <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportFarmacovigilancia()"><app-excel-icon /> Exportar Excel DIGEMID</app-button>
     </div>
 
     <div class="overflow-x-auto">

@@ -14,10 +14,13 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-importar-precios',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     LabelComponent,
     FileInputComponent,
     CommonModule,

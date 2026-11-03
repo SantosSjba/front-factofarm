@@ -14,17 +14,19 @@ import { PaginationComponent } from '../../../../shared/components/common/pagina
 import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { ProductSerialStatus, SeriesListFiltersRequest, SeriesListItemDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-series',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
@@ -35,7 +37,6 @@ import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/me
     PaginationComponent,
     TableDropdownComponent,
     ButtonComponent,
-    IconComponent,
     ModalComponent,
   ],
   templateUrl: './series.component.html',

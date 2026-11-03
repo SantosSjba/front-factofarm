@@ -28,10 +28,13 @@ import { OptionItemComponent } from '../../../../shared/components/ui/option-lis
 
 type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos';
 
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-reporte-digemid',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     OptionItemComponent,
     OptionListComponent,
     QueryPageStatePipe,

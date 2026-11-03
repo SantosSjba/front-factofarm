@@ -10,10 +10,13 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-contabilidad-exportar-reporte',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     PageToolbarComponent,BreadcrumbInlineComponent, ComponentCardComponent, ButtonComponent, InputFieldComponent],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'Exportar reporte' }]" />
@@ -28,7 +31,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
       <div class="flex flex-wrap gap-3">
         <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="export('contasis')">Contasis</app-button>
         <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="export('siscont')">SISCONT</app-button>
-        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="export('excel')">Excel (CSV)</app-button>
+        <app-button variant="outline" [disabled]="exporting()" (btnClick)="export('excel')"><app-excel-icon /> Excel (CSV)</app-button>
       </div>
       <p class="mt-4 text-sm text-gray-500">
         Exporta ventas y compras del periodo en formato tabular para importar en su sistema contable.

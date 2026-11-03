@@ -7,6 +7,9 @@
   </div>
   <div class="flex max-w-full min-w-0 flex-wrap items-center gap-2">
     <ng-content select="[data-toolbar-actions]"></ng-content>
+    @if (showExcel() && scope(); as s) {
+      <app-excel-export-button [scope]="s" [fileName]="fileName()" />
+    }
     <!-- Hijos sin atributo de slot se tratan como acciones (evita botones "perdidos"). -->
     <ng-content></ng-content>
   </div>

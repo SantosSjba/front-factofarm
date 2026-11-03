@@ -37,7 +37,7 @@
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <app-input-field label="Desde" [isRequired]="true" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event)" />
       <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event)" />
-      <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportLedger()">Exportar Excel DIGEMID</app-button>
+      <app-button variant="outline" [disabled]="exporting()" (btnClick)="exportLedger()"><app-excel-icon /> Exportar Excel DIGEMID</app-button>
     </div>
 
     <div class="overflow-x-auto">

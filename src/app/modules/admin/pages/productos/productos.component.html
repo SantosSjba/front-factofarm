@@ -1,6 +1,6 @@
 <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
+<app-page-toolbar [excel]="false">
   <h1
     data-toolbar-title
     class="text-lg font-semibold text-gray-800 dark:text-white/90"
@@ -13,11 +13,10 @@
         <app-button
           size="sm"
           variant="outline"
-          startIconName="mdi:download"
           endIconName="mdi:chevron-down"
           (btnClick)="noopAction()"
         >
-          Exportar
+          <app-excel-icon /> Exportar
         </app-button>
       </div>
       <div dropdown-content>
@@ -27,8 +26,8 @@
     <ng-container *appHasPermission="'products.write'">
       <app-table-dropdown>
         <div dropdown-button>
-          <app-button size="sm" variant="outline" startIconName="mdi:upload" endIconName="mdi:chevron-down">
-            Importar
+          <app-button size="sm" variant="outline" endIconName="mdi:chevron-down">
+            <app-excel-icon /> Importar
           </app-button>
         </div>
         <div dropdown-content>

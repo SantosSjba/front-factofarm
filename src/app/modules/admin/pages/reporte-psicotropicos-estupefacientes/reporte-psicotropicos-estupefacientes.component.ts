@@ -18,10 +18,13 @@ import { LocaleService } from '../../../../core/services/locale.service';
 type Tab = 'ledger' | 'monthly';
 
 import { TabStripComponent, type TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-reporte-psicotropicos-estupefacientes',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     TabStripComponent,
     QueryPageStatePipe,
     CommonModule,

@@ -133,10 +133,13 @@ const barcodeSchema = yup.object({
 });
 
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-productos',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     QuickCreateComponent,
     FileInputComponent,
     OptionItemComponent,

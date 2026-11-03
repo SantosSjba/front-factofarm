@@ -2,13 +2,13 @@
   <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 </div>
 
-<app-page-toolbar>
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
     Series
   </h1>
   <div data-toolbar-actions>
     <app-button size="sm" variant="outline" (btnClick)="exportRows()">
-      <app-icon name="mdi:file-excel-outline" width="16" height="16" />
+      <app-excel-icon />
       <span>Exportar</span>
     </app-button>
   </div>

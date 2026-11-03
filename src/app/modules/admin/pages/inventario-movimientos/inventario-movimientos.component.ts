@@ -38,10 +38,13 @@ import { FileInputComponent } from '../../../../shared/components/form/input/fil
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-inventario-movimientos',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     QuickCreateComponent,
     TextAreaComponent,
     FileInputComponent,

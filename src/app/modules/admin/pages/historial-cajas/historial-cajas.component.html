@@ -1,8 +1,8 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Historial de cajas</h1>
   <div data-toolbar-actions class="flex flex-wrap gap-2">
-    <app-button size="sm" variant="outline" startIconName="mdi:microsoft-excel" [loading]="exporting() === 'xlsx'" [disabled]="!!exporting()" (btnClick)="exportList('xlsx')">Excel</app-button>
+    <app-button size="sm" variant="outline" [loading]="exporting() === 'xlsx'" [disabled]="!!exporting()" (btnClick)="exportList('xlsx')"><app-excel-icon /> Excel</app-button>
     <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" [loading]="exporting() === 'pdf'" [disabled]="!!exporting()" (btnClick)="exportList('pdf')">PDF</app-button>
   </div>
 </app-page-toolbar>

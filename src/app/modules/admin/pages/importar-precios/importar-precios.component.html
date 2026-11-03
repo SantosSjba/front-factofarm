@@ -38,7 +38,7 @@
     <app-button startIconName="mdi:close" variant="outline" [disabled]="uploadMutation.isPending()" (btnClick)="clearFile()">
       Cancelar
     </app-button>
-    <app-button startIconName="mdi:upload" [disabled]="!canUpload()" (btnClick)="submitUpload()">
+    <app-button [disabled]="!canUpload()" (btnClick)="submitUpload()"><app-excel-icon /> 
       {{ uploadMutation.isPending() ? 'Subiendo…' : 'Subir' }}
     </app-button>
   </div>

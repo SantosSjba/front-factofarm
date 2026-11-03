@@ -66,10 +66,13 @@ const formSchema = yup.object({
   precioUnitarioCompra: yup.number().min(0, 'Precio unitario de compra debe ser >= 0').required(),
 });
 
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-conjuntos-packs-promociones',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     FileInputComponent,
     CheckboxComponent,
     MenuItemComponent,

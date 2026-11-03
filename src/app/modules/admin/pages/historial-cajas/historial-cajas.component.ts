@@ -43,10 +43,13 @@ const MOVEMENT_LABELS: Record<string, string> = {
 };
 
 /** Historial y supervisión de sesiones de caja: KPIs, filtros, detalle, cierre forzado y exportación. */
+import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+
 @Component({
   selector: 'app-historial-cajas',
   standalone: true,
   imports: [
+    ExcelIconComponent,
     CommonModule,
     CurrencyPipe,
     AppDatePipe,
