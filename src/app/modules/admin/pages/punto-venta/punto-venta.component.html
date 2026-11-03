@@ -523,6 +523,30 @@
             <app-label required>Referencia de la receta</app-label>
             <app-input-field placeholder="N° de receta, médico o CMP" [maxLength]="300" [value]="prescriptionNote()" (valueChange)="prescriptionNote.set('' + $event)" />
           }
+          @if (canEditProducts() || canEditPosSettings()) {
+            <div class="mt-2 border-t border-rose-200 pt-2 dark:border-rose-900">
+              <p class="mb-1 text-xs text-rose-800/80 dark:text-rose-200/80">¿El producto no necesita receta?</p>
+              <div class="flex flex-col items-start gap-1">
+                @if (canEditProducts()) {
+                  @for (line of rxCartLines(); track line.productId) {
+                    <app-button
+                      variant="link"
+                      startIconName="mdi:prescription"
+                      [disabled]="rxRemovingProductId() === line.productId"
+                      (btnClick)="removeProductPrescription(line)"
+                    >
+                      Quitar receta a {{ line.nombre }}
+                    </app-button>
+                  }
+                }
+                @if (canEditPosSettings()) {
+                  <app-validation-bypass-action [disabled]="posSettingsSaving()" (action)="disablePrescriptionRequirement()">
+                    No exigir receta en este local
+                  </app-validation-bypass-action>
+                }
+              </div>
+            </div>
+          }
         </div>
       }
 
@@ -534,6 +558,11 @@
           </p>
           <app-label required>Farmacéutico que autoriza</app-label>
           <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
+          @if (canEditPosSettings()) {
+            <app-validation-bypass-action className="mt-2" [disabled]="posSettingsSaving()" (action)="disableControlledApproval()">
+              No exigir farmacéutico autorizador en este local
+            </app-validation-bypass-action>
+          }
         </div>
       }
 
@@ -692,14 +721,24 @@
                 />
               </app-form-field>
             </app-form-row>
-            @if (requiresPaymentReference(line.metodo)) {
-              <app-form-field label="Código / N° operación" className="mt-4" required>
+            @if (acceptsPaymentReference(line.metodo)) {
+              @let refRequired = requiresPaymentReference(line.metodo);
+              <app-form-field
+                [label]="refRequired ? 'Código / N° operación' : 'Código / N° operación (opcional)'"
+                className="mt-4"
+                [required]="refRequired"
+              >
                 <app-input-field [maxLength]="120"
                   placeholder="Ingrese el código de la operación"
                   [value]="line.referencia"
                   (valueChange)="updatePaymentLine(line.localId, { referencia: '' + $event })"
                 />
               </app-form-field>
+              @if (refRequired && canEditPosSettings()) {
+                <app-validation-bypass-action className="mt-1" [disabled]="posSettingsSaving()" (action)="disablePaymentReference(line.metodo)">
+                  No exigir código para {{ paymentMethodLabel(line.metodo) }}
+                </app-validation-bypass-action>
+              }
             }
             <div class="mt-4 flex gap-3">
               @if (paymentRemaining() > 0) {
@@ -731,6 +770,11 @@
         <app-form-field label="Autorización farmacéutico titular (controlados)" required>
           <app-form-select [options]="approverOptions()" [value]="controlledApprovedById()" (valueChange)="controlledApprovedById.set('' + $event)" />
         </app-form-field>
+        @if (canEditPosSettings()) {
+          <app-validation-bypass-action className="mt-2" [disabled]="posSettingsSaving()" (action)="disableControlledApproval()">
+            No exigir farmacéutico autorizador en este local
+          </app-validation-bypass-action>
+        }
       </div>
     }
     <div class="flex justify-end gap-3 pt-2">

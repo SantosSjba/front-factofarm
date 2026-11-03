@@ -131,6 +131,9 @@ export interface EstablishmentOptionDto {
   adjustmentQtyThreshold?: string;
   posYapeNumero?: string | null;
   posPlinNumero?: string | null;
+  posRequirePrescription?: boolean;
+  posRequireControlledApproval?: boolean;
+  posPaymentReferenceMethods?: PaymentMethod[];
 }
 
 export interface EstablishmentListFiltersRequest {
@@ -147,7 +150,20 @@ export interface PosPaymentSettingsDto {
   nombre: string;
   posYapeNumero: string | null;
   posPlinNumero: string | null;
+  /** false: el POS no exige receta aunque el producto la marque. */
+  posRequirePrescription: boolean;
+  /** false: no se pide farmacéutico autorizador para controlados. */
+  posRequireControlledApproval: boolean;
+  /** Medios que exigen código / N° de operación. */
+  posPaymentReferenceMethods: PaymentMethod[];
 }
+
+export type UpdatePosSettingsRequest = Partial<
+  Pick<
+    PosPaymentSettingsDto,
+    'posRequirePrescription' | 'posRequireControlledApproval' | 'posPaymentReferenceMethods'
+  >
+>;
 
 export interface BillingProviderOptionDto {
   value: BillingProviderType;
@@ -596,6 +612,9 @@ export interface CreateEstablishmentRequest {
   adjustmentQtyThreshold?: number;
   posYapeNumero?: string;
   posPlinNumero?: string;
+  posRequirePrescription?: boolean;
+  posRequireControlledApproval?: boolean;
+  posPaymentReferenceMethods?: PaymentMethod[];
 }
 
 export type UpdateEstablishmentRequest = Partial<CreateEstablishmentRequest>;

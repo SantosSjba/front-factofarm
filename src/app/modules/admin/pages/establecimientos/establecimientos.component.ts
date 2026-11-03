@@ -28,7 +28,9 @@ import type {
   CreateEstablishmentRequest,
   CreateEstablishmentSeriesRequest,
   EstablishmentOptionDto,
+  PaymentMethod,
 } from '../../models/directory.models';
+import { CONFIGURABLE_REFERENCE_METHODS, POS_PAYMENT_OPTIONS } from '../../utils/pos-payment.util';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 @Component({
@@ -150,6 +152,12 @@ export class EstablecimientosComponent {
   protected readonly adjustmentQtyThreshold = signal(50);
   protected readonly posYapeNumero = signal('');
   protected readonly posPlinNumero = signal('');
+  protected readonly posRequirePrescription = signal(true);
+  protected readonly posRequireControlledApproval = signal(true);
+  protected readonly posPaymentReferenceMethods = signal<PaymentMethod[]>([...CONFIGURABLE_REFERENCE_METHODS]);
+  protected readonly referenceMethodOptions = POS_PAYMENT_OPTIONS.filter((o) =>
+    CONFIGURABLE_REFERENCE_METHODS.includes(o.value),
+  );
 
   protected readonly valuationMethodOptions = [
     { value: 'PEPS', label: 'PEPS (primeras entradas, primeras salidas)' },
@@ -314,6 +322,11 @@ export class EstablecimientosComponent {
         );
         this.posYapeNumero.set(current.posYapeNumero ?? '');
         this.posPlinNumero.set(current.posPlinNumero ?? '');
+        this.posRequirePrescription.set(current.posRequirePrescription ?? true);
+        this.posRequireControlledApproval.set(current.posRequireControlledApproval ?? true);
+        this.posPaymentReferenceMethods.set(
+          current.posPaymentReferenceMethods ?? [...CONFIGURABLE_REFERENCE_METHODS],
+        );
         return;
       }
       this.resetForm();
@@ -390,6 +403,9 @@ export class EstablecimientosComponent {
       adjustmentQtyThreshold: this.adjustmentQtyThreshold(),
       posYapeNumero: yapeDigits,
       posPlinNumero: plinDigits,
+      posRequirePrescription: this.posRequirePrescription(),
+      posRequireControlledApproval: this.posRequireControlledApproval(),
+      posPaymentReferenceMethods: this.posPaymentReferenceMethods(),
       activo: true,
     };
 
@@ -540,6 +556,15 @@ export class EstablecimientosComponent {
     this.adjustmentQtyThreshold.set(50);
     this.posYapeNumero.set('');
     this.posPlinNumero.set('');
+    this.posRequirePrescription.set(true);
+    this.posRequireControlledApproval.set(true);
+    this.posPaymentReferenceMethods.set([...CONFIGURABLE_REFERENCE_METHODS]);
+  }
+
+  protected toggleReferenceMethod(metodo: PaymentMethod, required: boolean) {
+    this.posPaymentReferenceMethods.update((list) =>
+      required ? [...new Set([...list, metodo])] : list.filter((m) => m !== metodo),
+    );
   }
 
   private normDigits(value: string): string | undefined {

@@ -8,10 +8,15 @@ export const POS_PAYMENT_OPTIONS: { value: PaymentMethod; label: string }[] = [
   { value: 'TRANSFERENCIA', label: 'Transferencia' },
 ];
 
-const METHODS_REQUIRING_REFERENCE: PaymentMethod[] = ['YAPE', 'PLIN', 'TARJETA', 'TRANSFERENCIA'];
+/** Medios que pueden exigir código de operación (y lo exigen por defecto). */
+export const CONFIGURABLE_REFERENCE_METHODS: PaymentMethod[] = ['YAPE', 'PLIN', 'TARJETA', 'TRANSFERENCIA'];
 
-export function paymentRequiresReference(metodo: PaymentMethod): boolean {
-  return METHODS_REQUIRING_REFERENCE.includes(metodo);
+/** `required`: lista configurada en el establecimiento (`posPaymentReferenceMethods`). */
+export function paymentRequiresReference(
+  metodo: PaymentMethod,
+  required: readonly PaymentMethod[] = CONFIGURABLE_REFERENCE_METHODS,
+): boolean {
+  return required.includes(metodo);
 }
 
 export type PosPaymentLine = {

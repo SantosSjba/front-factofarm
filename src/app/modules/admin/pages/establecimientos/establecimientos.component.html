@@ -302,6 +302,35 @@
         </div>
       </div>
 
+      <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">Validaciones del POS</h4>
+        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Active solo las validaciones que su farmacia necesita. Puede cambiarlas cuando quiera.
+        </p>
+        <div class="flex flex-col gap-2">
+          <app-checkbox
+            label="Exigir receta al vender productos marcados con receta"
+            [checked]="posRequirePrescription()"
+            (checkedChange)="posRequirePrescription.set($event)"
+          />
+          <app-checkbox
+            label="Exigir farmacéutico autorizador al vender medicamentos controlados"
+            [checked]="posRequireControlledApproval()"
+            (checkedChange)="posRequireControlledApproval.set($event)"
+          />
+        </div>
+        <p class="mt-3 mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Exigir código / N° de operación en:</p>
+        <div class="flex flex-wrap gap-x-6 gap-y-2">
+          @for (opt of referenceMethodOptions; track opt.value) {
+            <app-checkbox
+              [label]="opt.label"
+              [checked]="posPaymentReferenceMethods().includes(opt.value)"
+              (checkedChange)="toggleReferenceMethod(opt.value, $event)"
+            />
+          }
+        </div>
+      </div>
+
       <div class="md:col-span-2 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
         <h4 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y BPA</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -66,6 +66,7 @@ import type {
   UpsertSupplierProductRequest,
   EstablishmentOptionDto,
   PosPaymentSettingsDto,
+  UpdatePosSettingsRequest,
   PharmacyProfileDto,
   UpdatePharmacyProfileRequest,
   EstablishmentDocumentTypeOptionDto,
@@ -496,6 +497,10 @@ export class DirectoryApiService {
 
   getPosPaymentSettings() {
     return this.http.get<PosPaymentSettingsDto>(`${this.base}/establishments/pos-payment-settings`);
+  }
+
+  updatePosSettings(body: UpdatePosSettingsRequest) {
+    return this.http.patch<PosPaymentSettingsDto>(`${this.base}/establishments/pos-settings`, body);
   }
 
   getPharmacyProfile() {
@@ -1087,6 +1092,12 @@ export class DirectoryApiService {
 
   updateProduct(id: string, body: CreateProductRequest) {
     return this.http.patch<ProductDetailDto>(`${this.base}/products/${id}`, body);
+  }
+
+  updateProductPrescription(id: string, necesitaRecetaMedica: boolean) {
+    return this.http.patch<ProductListItemDto>(`${this.base}/products/${id}/prescription`, {
+      necesitaRecetaMedica,
+    });
   }
 
   deleteProduct(id: string) {

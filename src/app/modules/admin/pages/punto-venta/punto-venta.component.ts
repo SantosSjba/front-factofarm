@@ -19,6 +19,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
+import { ValidationBypassActionComponent } from '../../../../shared/components/ui/validation-bypass-action/validation-bypass-action.component';
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
@@ -48,8 +49,11 @@ import type {
   SunatDocumentStatus,
   SaleLineDiscountType,
   PromotionListItemDto,
+  PaymentMethod,
+  UpdatePosSettingsRequest,
 } from '../../models/directory.models';
 import {
+  CONFIGURABLE_REFERENCE_METHODS,
   createPaymentLine,
   paymentRequiresReference,
   POS_PAYMENT_OPTIONS,
@@ -143,6 +147,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
     CurrencyPipe,
     ButtonComponent,
     HelpHintComponent,
+    ValidationBypassActionComponent,
     IconComponent,
     FormSelectComponent,
     FormFieldComponent,
@@ -348,8 +353,30 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly paymentRemaining = computed(
     () => Math.round((this.payableTotal() - this.paymentPaidTotal()) * 100) / 100,
   );
-  protected readonly requiresRx = computed(() => this.cart().some((l) => l.necesitaRecetaMedica));
-  protected readonly requiresControlled = computed(() => this.cart().some((l) => l.esControlado));
+  /** El local puede desactivar la exigencia de receta (Establecimientos → POS). */
+  protected readonly posRequirePrescription = computed(
+    () => this.posPaymentSettingsQuery.data()?.posRequirePrescription ?? true,
+  );
+  protected readonly rxCartLines = computed(() => this.cart().filter((l) => l.necesitaRecetaMedica));
+  protected readonly requiresRx = computed(
+    () => this.posRequirePrescription() && this.rxCartLines().length > 0,
+  );
+  protected readonly requiredReferenceMethods = computed<readonly PaymentMethod[]>(
+    () => this.posPaymentSettingsQuery.data()?.posPaymentReferenceMethods ?? CONFIGURABLE_REFERENCE_METHODS,
+  );
+  protected readonly canEditProducts = computed(() => this.auth.hasPermission('products.write'));
+  protected readonly canEditPosSettings = computed(
+    () => this.auth.hasPermission('establishments.write') || this.auth.hasPermission('nav.establecimientos'),
+  );
+  protected readonly posSettingsSaving = signal(false);
+  protected readonly rxRemovingProductId = signal('');
+  /** El local puede desactivar el farmacéutico autorizador (Establecimientos → POS). */
+  protected readonly posRequireControlledApproval = computed(
+    () => this.posPaymentSettingsQuery.data()?.posRequireControlledApproval ?? true,
+  );
+  protected readonly requiresControlled = computed(
+    () => this.posRequireControlledApproval() && this.cart().some((l) => l.esControlado),
+  );
   protected readonly approverOptions = computed(() => [
     { value: '', label: 'Farmacéutico autorizador…' },
     ...this.pharmaApprovers().map((u) => ({ value: u.id, label: u.nombre })),
@@ -755,6 +782,7 @@ export class PuntoVentaComponent implements OnDestroy {
         }
       }
       this.catalog.set(rows);
+      this.syncCartRegulatoryFlags(rows);
       if (explicit && rows.length === 0) this.notify.info('Sin resultados');
     } catch (err) {
       this.catalog.set([]);
@@ -762,6 +790,22 @@ export class PuntoVentaComponent implements OnDestroy {
     } finally {
       this.catalogLoading.set(false);
     }
+  }
+
+  /** El carrito persistido puede tener marcas de receta/controlado ya cambiadas en el producto. */
+  private syncCartRegulatoryFlags(rows: PosCatalogItemDto[]) {
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const changed = this.cart().some((l) => {
+      const r = byId.get(l.productId);
+      return r && (r.necesitaRecetaMedica !== l.necesitaRecetaMedica || r.esControlado !== l.esControlado);
+    });
+    if (!changed) return;
+    this.cart.update((lines) =>
+      lines.map((l) => {
+        const r = byId.get(l.productId);
+        return r ? { ...l, necesitaRecetaMedica: r.necesitaRecetaMedica, esControlado: r.esControlado } : l;
+      }),
+    );
   }
 
   protected runSearch() {
@@ -1112,7 +1156,73 @@ export class PuntoVentaComponent implements OnDestroy {
     }
   }
 
-  protected readonly requiresPaymentReference = paymentRequiresReference;
+  protected requiresPaymentReference(metodo: PaymentMethod): boolean {
+    return paymentRequiresReference(metodo, this.requiredReferenceMethods());
+  }
+
+  /** Medios con campo de código (obligatorio u opcional según configuración). */
+  protected acceptsPaymentReference(metodo: PaymentMethod): boolean {
+    return CONFIGURABLE_REFERENCE_METHODS.includes(metodo);
+  }
+
+  protected paymentMethodLabel(metodo: PaymentMethod): string {
+    return this.paymentOptions.find((o) => o.value === metodo)?.label ?? metodo;
+  }
+
+  /** Producto mal configurado: quitarle la marca de receta desde el mismo POS. */
+  protected async removeProductPrescription(line: CartLine) {
+    this.rxRemovingProductId.set(line.productId);
+    try {
+      await firstValueFrom(this.api.updateProductPrescription(line.productId, false));
+      this.cart.update((lines) =>
+        lines.map((l) => (l.productId === line.productId ? { ...l, necesitaRecetaMedica: false } : l)),
+      );
+      this.catalog.update((items) =>
+        items.map((i) => (i.id === line.productId ? { ...i, necesitaRecetaMedica: false } : i)),
+      );
+      void this.queryClient.invalidateQueries({ queryKey: ['products'] });
+      this.notify.success(`${line.nombre} ya no requiere receta`);
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo quitar la marca de receta del producto'));
+    } finally {
+      this.rxRemovingProductId.set('');
+    }
+  }
+
+  protected disablePrescriptionRequirement() {
+    void this.savePosSettings(
+      { posRequirePrescription: false },
+      'Este local ya no exige receta en el POS. Puede reactivarlo en Establecimientos.',
+    );
+  }
+
+  protected disableControlledApproval() {
+    this.controlledApprovedById.set('');
+    void this.savePosSettings(
+      { posRequireControlledApproval: false },
+      'Este local ya no exige farmacéutico autorizador para controlados. Puede reactivarlo en Establecimientos.',
+    );
+  }
+
+  protected disablePaymentReference(metodo: PaymentMethod) {
+    void this.savePosSettings(
+      { posPaymentReferenceMethods: this.requiredReferenceMethods().filter((m) => m !== metodo) },
+      `El código de operación para ${this.paymentMethodLabel(metodo)} ahora es opcional. Puede reactivarlo en Establecimientos.`,
+    );
+  }
+
+  private async savePosSettings(body: UpdatePosSettingsRequest, successMessage: string) {
+    this.posSettingsSaving.set(true);
+    try {
+      const res = await firstValueFrom(this.api.updatePosSettings(body));
+      this.queryClient.setQueryData(['establishments', 'pos-payment-settings'], res);
+      this.notify.success(successMessage);
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo actualizar la configuración del POS'));
+    } finally {
+      this.posSettingsSaving.set(false);
+    }
+  }
 
   protected get paymentLineRows(): PosPaymentLine[] {
     return this.paymentLines();
@@ -1277,8 +1387,10 @@ export class PuntoVentaComponent implements OnDestroy {
         if (line.monto <= 0) {
           throw new Error('Cada pago debe tener un monto mayor a cero');
         }
-        if (paymentRequiresReference(line.metodo) && !line.referencia.trim()) {
-          throw new Error(`Ingrese el código de operación para ${line.metodo}`);
+        if (this.requiresPaymentReference(line.metodo) && !line.referencia.trim()) {
+          throw new Error(
+            `Ingrese el código de operación para ${this.paymentMethodLabel(line.metodo)} o márquelo como opcional`,
+          );
         }
       }
       // Reglas SUNAT/crédito: el API también las valida; aquí se avisa antes de cobrar.
