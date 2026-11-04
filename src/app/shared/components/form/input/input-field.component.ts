@@ -40,6 +40,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [attr.required]="isRequired ? true : null"
         [ngClass]="inputClasses"
         (input)="onInput($event)"
+        (click)="openNativePicker($event)"
       />
 
       @if (hint) {
@@ -103,6 +104,20 @@ export class InputFieldComponent {
       inputClasses += ` bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90  dark:focus:border-brand-800`;
     }
     return inputClasses;
+  }
+
+  /** Tipos con selector nativo del navegador (calendario / reloj). */
+  private static readonly PICKER_TYPES = new Set(['date', 'datetime-local', 'month', 'week', 'time']);
+
+  /** Al hacer clic en cualquier parte del campo de fecha se abre el calendario nativo. */
+  openNativePicker(event: Event) {
+    if (this.disabled || !InputFieldComponent.PICKER_TYPES.has(this.type)) return;
+    const input = event.target as HTMLInputElement & { showPicker?: () => void };
+    try {
+      input.showPicker?.();
+    } catch {
+      // Navegadores sin soporte o sin gesto de usuario: queda el ícono nativo.
+    }
   }
 
   onInput(event: Event) {
