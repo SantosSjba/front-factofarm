@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { HelpHintComponent } from '../../ui/help-hint/help-hint.component';
 
 /** Checkbox tal cual `default-checkbox` / `labeled-checkbox` de la plantilla TailAdmin. */
 @Component({
   selector: 'app-checkbox',
-  imports: [CommonModule],
+  imports: [CommonModule, HelpHintComponent],
   template: `
     <div
       role="group"
@@ -57,6 +58,9 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [class.cursor-pointer]="!disabled"
         ><ng-content
       /></label>
+      @if (helpText) {
+        <app-help-hint [text]="helpText" [iconSize]="16" />
+      }
     </div>
   `,
 })
@@ -71,6 +75,8 @@ export class CheckboxComponent {
   @Input() disabled = false;
   /** Nombre accesible cuando no hay label visible (p. ej. selección en tablas). */
   @Input() ariaLabel = '';
+  /** Ayuda en tooltip junto al texto. */
+  @Input() helpText = '';
   @Output() checkedChange = new EventEmitter<boolean>();
 
   /** El `id` estático también queda en el host: el botón necesita uno propio para el <label for>. */

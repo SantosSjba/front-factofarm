@@ -93,7 +93,7 @@
       <app-label>Almacén a contar</app-label>
       <div class="flex items-center gap-2">
         <app-form-select
-          className="mt-2 flex-1"
+          className="flex-1"
           [value]="countWarehouseId()"
           [options]="warehouseOptions()"
           (valueChange)="countWarehouseId.set($event)"
@@ -220,7 +220,7 @@
       <app-label>Almacén</app-label>
       <div class="flex items-center gap-2">
         <app-form-select
-          className="mt-2 flex-1"
+          className="flex-1"
           [value]="zoneWarehouseId()"
           [options]="warehouseOptions()"
           (valueChange)="zoneWarehouseId.set($event)"

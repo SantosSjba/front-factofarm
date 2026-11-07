@@ -11,7 +11,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   imports: [CommonModule, LabelComponent, IconComponent, InputDirective],
   template: `
     @if (label) {
-      <app-label [for]="id || undefined" [required]="isRequired">{{ label }}</app-label>
+      <app-label [for]="id || undefined" [required]="isRequired" [helpText]="helpText">{{ label }}</app-label>
     }
     <div class="relative">
       @if (icon) {
@@ -86,6 +86,8 @@ export class InputFieldComponent {
   @Input() isRequired = false;
   /** Label opcional encima del campo (con asterisco si `isRequired`). */
   @Input() label = '';
+  /** Ayuda en tooltip junto al label. */
+  @Input() helpText = '';
   /** Icono a la izquierda dentro del campo (p. ej. búsqueda). */
   @Input() icon = '';
   /** Debe coincidir con `@MaxLength` del DTO del backend. */

@@ -1,6 +1,11 @@
 <div [class]="hostClass()">
   @if (title()) {
-    <h3 [class]="titleClass()">{{ title() }}</h3>
+    <h3 class="pe-10" [class]="titleClass()">{{ title() }}</h3>
   }
-  <app-tab-strip [tabs]="tabs()" [activeId]="activeId()" (tabChange)="selectTab($event)" />
+  @if (description()) {
+    <p class="mt-1 pe-10 text-sm text-gray-500 dark:text-gray-400">{{ description() }}</p>
+  }
+  <div class="mt-4">
+    <app-tab-strip [tabs]="tabs()" [activeId]="activeId()" (tabChange)="selectTab($event)" />
+  </div>
 </div>

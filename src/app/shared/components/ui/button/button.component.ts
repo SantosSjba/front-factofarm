@@ -84,6 +84,9 @@ export class ButtonComponent {
   @Input() tooltip = '';
   /** Nombre accesible sin tooltip visual. */
   @Input() ariaLabel = '';
+  /** Estado de un panel que el botón abre o cierra. */
+  @Input() ariaExpanded: boolean | null = null;
+  @Input() ariaControls = '';
   /** id del <button> interno (p. ej. para devolver el foco tras cerrar un menú). */
   @Input() id = '';
 

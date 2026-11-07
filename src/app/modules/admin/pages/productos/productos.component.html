@@ -14,6 +14,7 @@
           size="sm"
           variant="outline"
           endIconName="mdi:chevron-down"
+          [loading]="exporting()"
           (btnClick)="noopAction()"
         >
           <app-excel-icon /> Exportar
@@ -45,49 +46,55 @@
 </app-page-toolbar>
 
 <app-list-filters
+  collapsible
+  [activeCount]="activeFilterCount()"
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
+  [selectShowPlaceholder]="false"
   searchPlaceholder="Buscar"
-  selectPlaceholder="Filtrar por"
+  selectLabel="Buscar por"
   clearLabel="Limpiar"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
-/>
-
-<div class="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+>
   <app-form-select
+    label="Categoría"
+    placeholder="Todas las categorías"
     [value]="filterCategoryId()"
     [options]="categoryFilterOptions()"
-    placeholder="Categoría"
     (valueChange)="filterCategoryId.set($event); currentPage.set(1)"
   />
   <app-form-select
+    label="Marca"
+    placeholder="Todas las marcas"
     [value]="filterBrandId()"
     [options]="brandFilterOptions()"
-    placeholder="Marca"
     (valueChange)="filterBrandId.set($event); currentPage.set(1)"
   />
   <app-form-select
+    label="Habilitado"
+    [showPlaceholder]="false"
     [value]="filterHabilitado()"
     [options]="boolFilterOptions"
-    placeholder="Habilitado"
     (valueChange)="onBoolFilterChange('habilitado', $event)"
   />
   <app-form-select
+    label="Genérico"
+    [showPlaceholder]="false"
     [value]="filterGenerico()"
     [options]="boolFilterOptions"
-    placeholder="Genérico"
     (valueChange)="onBoolFilterChange('generico', $event)"
   />
   <app-form-select
+    label="Requiere receta"
+    [showPlaceholder]="false"
     [value]="filterReceta()"
     [options]="boolFilterOptions"
-    placeholder="Requiere receta"
     (valueChange)="onBoolFilterChange('receta', $event)"
   />
-</div>
+</app-list-filters>
 
 @let listState = listQuery | queryPageState: totalRows();
 
@@ -97,7 +104,13 @@
   [empty]="listState.empty"
   emptyTitle="No hay productos registrados"
   (retry)="refetchRows()">
-  <div class="px-3 pt-3 sm:px-4">
+  <app-color-legend
+    data-card-header-end
+    ariaLabel="Leyenda de stock"
+    [items]="stockLegend"
+    helpText="El color depende del total en todos los almacenes y del stock mínimo de cada producto. Agotado: sin stock. Crítico: en el mínimo o menos. Bajo: hasta el doble del mínimo. El mínimo se cambia al editar el producto."
+  />
+  <div class="px-3 pt-3 sm:px-4" data-table-only>
     <div class="flex justify-end">
       <app-table-dropdown>
         <div dropdown-button>
@@ -172,7 +185,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of products(); track row.id; let i = $index) {
-            <tr [class.bg-red-50/40]="!row.habilitado" [class.dark:bg-red-500/10]="!row.habilitado">
+            <tr [attr.data-row-tone]="rowTone(row)">
               <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                 {{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
               @if (isVisible('codigoInterno')) {
@@ -196,7 +209,7 @@
                 </td>
               }
               @if (isVisible('descripcion')) {
-                <td class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.descripcion || '—' }}</td>
+                <td data-card-wide class="hidden px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300 lg:table-cell">{{ row.descripcion || '—' }}</td>
               }
               <td class="px-5 py-4">
                 <app-button size="sm" variant="primary" [iconOnly]="true" startIconName="mdi:history" [tooltip]="'Historial de ' + row.nombre" (btnClick)="openHistoryModal(row)"></app-button>
@@ -211,10 +224,14 @@
                 <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
                   <button
                     type="button"
-                    class="font-medium tabular-nums text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
-                    [attr.aria-label]="'Ver stock por almacén y lote de ' + row.nombre"
+                    class="cursor-pointer font-medium tabular-nums underline-offset-2 hover:underline"
+                    [class]="stockTextClass(row)"
+                    [attr.aria-label]="'Ver stock por almacén y lote de ' + row.nombre + ': ' + stockLabel(row)"
                     (click)="openStockModal(row)"
                   >{{ row.totalStock }}</button>
+                  @if (stockLabelVisible(row)) {
+                    <span class="block text-xs font-medium" [class]="stockTextClass(row)">{{ stockLabel(row) }}</span>
+                  }
                 </td>
               }
               @if (isVisible('precioVenta')) {
@@ -255,22 +272,22 @@
                     </div>
                     <div dropdown-content>
                       <ng-container *appHasPermission="'products.write'">
-                        <app-menu-item (itemClick)="openEditModal(row)">Editar</app-menu-item>
-                        <app-menu-item [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()" [loading]="duplicateMutation.isPending()" (itemClick)="duplicateProductRow(row)">{{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}</app-menu-item>
-                        <app-menu-item [disabled]="statusMutation.isPending() || deleteMutation.isPending()" [loading]="statusMutation.isPending()" (itemClick)="toggleProductStatus(row, 'product-actions-' + row.id)">{{
+                        <app-menu-item icon="mdi:pencil-outline" tooltip="Abre el producto para cambiar sus datos y precios." (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                        <app-menu-item icon="mdi:content-copy" tooltip="Crea al instante una copia con «(Copia)» en el nombre, sin stock ni códigos de barra o interno." [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()" [loading]="duplicateMutation.isPending()" (itemClick)="duplicateProductRow(row)">{{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}</app-menu-item>
+                        <app-menu-item [icon]="row.habilitado ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" [tooltip]="row.habilitado ? 'Deja de estar disponible para vender, sin borrarlo. Puedes habilitarlo después.' : 'Vuelve a estar disponible para vender.'" [disabled]="statusMutation.isPending() || deleteMutation.isPending()" [loading]="statusMutation.isPending()" (itemClick)="toggleProductStatus(row, 'product-actions-' + row.id)">{{
                             statusMutation.isPending()
                               ? 'Procesando...'
                               : (row.habilitado ? 'Inhabilitar' : 'Habilitar')
                           }}</app-menu-item>
-                        <app-menu-item (itemClick)="openBarcodeModal(row)">Cod. Barras</app-menu-item>
+                        <app-menu-item icon="mdi:barcode" tooltip="Registra el código de barras, mira cómo queda e imprímelo." (itemClick)="openBarcodeModal(row)">Código de barras</app-menu-item>
                       </ng-container>
                       <ng-container *appHasPermission="'products.delete'">
-                        <app-menu-item variant="danger" [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()" (itemClick)="deleteProductRow(row, 'product-actions-' + row.id)">{{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}</app-menu-item>
+                        <app-menu-item icon="mdi:trash-can-outline" tooltip="Quita el producto del listado. Te pedirá confirmación." variant="danger" [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()" (itemClick)="deleteProductRow(row, 'product-actions-' + row.id)">{{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}</app-menu-item>
                       </ng-container>
-                      <app-menu-item (itemClick)="printProductLabels(row, 'single')">Etiquetas</app-menu-item>
-                      <app-menu-item (itemClick)="printProductLabels(row, '1x1')">Etiquetas 1x1</app-menu-item>
-                      <app-menu-item (itemClick)="printProductLabels(row, '1x2')">Etiquetas 1x2</app-menu-item>
-                      <app-menu-item (itemClick)="printProductLabels(row, '3x3')">Etiquetas 3x3</app-menu-item>
+                      <app-menu-item icon="mdi:tag-outline" tooltip="Imprime una etiqueta con el código de barras. Necesita que el producto lo tenga." (itemClick)="printProductLabels(row, 'single')">Etiquetas</app-menu-item>
+                      <app-menu-item icon="mdi:tag-outline" tooltip="Imprime 1 etiqueta por hoja. Necesita código de barras." (itemClick)="printProductLabels(row, '1x1')">Etiquetas 1x1</app-menu-item>
+                      <app-menu-item icon="mdi:tag-multiple-outline" tooltip="Imprime 2 etiquetas en una fila. Necesita código de barras." (itemClick)="printProductLabels(row, '1x2')">Etiquetas 1x2</app-menu-item>
+                      <app-menu-item icon="mdi:tag-multiple-outline" tooltip="Imprime 9 etiquetas (3 por 3). Necesita código de barras." (itemClick)="printProductLabels(row, '3x3')">Etiquetas 3x3</app-menu-item>
                     </div>
                   </app-table-dropdown>
                 </div>
@@ -478,7 +495,7 @@
 
 <app-modal [isOpen]="stockOpen()" (closed)="closeStockModal()" className="w-full max-w-3xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-6">
-    <h3 class="pr-12 text-base font-semibold text-gray-800 dark:text-white/90">Stock de {{ stockProduct()?.nombre }}</h3>
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Stock de {{ stockProduct()?.nombre }}</h3>
     <p class="text-theme-xs text-gray-500">Total: <span class="font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ stockProduct()?.totalStock }}</span> unidades</p>
   </div>
   <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-6">
@@ -594,9 +611,11 @@
     </h3>
   </div>
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-    <p class="text-sm text-gray-600 dark:text-gray-300">
-      Cargue el archivo correspondiente a <strong>{{ importModeLabel(importMode()) }}</strong>.
-    </p>
+    <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
+      <li>Descarga la plantilla y llénala con tus datos de <strong>{{ importModeLabel(importMode()) }}</strong>, sin cambiar sus columnas.</li>
+      <li>Selecciona el archivo y revisa la vista previa: te dice qué se creará, qué se actualizará y qué filas tienen errores.</li>
+      <li>Si todo está bien, confirma la importación.</li>
+    </ol>
     <app-button variant="link" className="mt-3" (btnClick)="downloadImportTemplate()">Descargar plantilla</app-button>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
       <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
@@ -651,8 +670,7 @@
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
   </div>
   <div data-modal-body class="px-4 py-4 sm:px-6">
-    <app-label>Código</app-label>
-    <app-input-field [maxLength]="60" className="mt-2" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
+    <app-input-field label="Código" helpText="El código impreso en el empaque, o uno propio. Aquí ves cómo quedará la etiqueta antes de imprimirla." [maxLength]="60" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
     <div class="mt-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
       @if (barcodeSvg()) {
         <div class="flex justify-center overflow-x-auto" [innerHTML]="barcodeSvg()"></div>
@@ -676,66 +694,46 @@
 <app-modal
   [isOpen]="formOpen()"
   (closed)="closeFormModal()"
-  className="w-full max-w-6xl shadow-theme-lg"
+  className="w-full max-w-4xl"
   maxHeightClass="max-h-[min(95dvh,920px)]"
   bodyClass="custom-scrollbar"
 >
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
-      [title]="editingProductId() ? 'Editar Producto' : 'Nuevo Producto'"
-      [tabs]="visibleProductTabs()"
+      [title]="editingProductId() ? 'Editar producto' : 'Nuevo producto'"
+      [description]="
+        editingProductId()
+          ? (form().nombre || 'Cargando producto…')
+          : 'Completa «Datos principales» y guarda. Las demás pestañas son opcionales.'
+      "
+      [tabs]="productTabs"
       [activeId]="activeTab()"
       (tabChange)="setTab($event)"
     />
-    <div class="mt-2 flex justify-end px-4 sm:px-8">
-      <app-button startIconName="mdi:tune-variant" size="sm" variant="outline" (btnClick)="formDetailLevel.set(formDetailLevel() === 'basic' ? 'advanced' : 'basic')">
-        {{ formDetailLevel() === 'basic' ? 'Modo avanzado' : 'Modo básico' }}
-      </app-button>
-    </div>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
     @if (editLoading()) {
-      <p class="mb-3 text-sm text-gray-500">Cargando detalle del producto…</p>
+      <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">Cargando detalle del producto…</p>
     }
+
+    <!-- ========== DATOS PRINCIPALES ========== -->
     @if (activeTab() === 'general') {
       @if (generalCatalogsLoading()) {
-        <p class="mb-3 text-xs text-gray-500">Cargando catálogos de General...</p>
+        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Cargando catálogos…</p>
       }
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        @if (formDetailLevel() === 'advanced') {
-        <app-checkbox
-          [checked]="!!form().incluyeIgvVenta"
-          (checkedChange)="updateForm('incluyeIgvVenta', $event)"
-          label="Incluye Igv"
-        />
-        <app-checkbox [checked]="!!form().generico" (checkedChange)="updateForm('generico', $event)" label="Genérico?" />
-        <app-checkbox [checked]="!!form().esControlado" (checkedChange)="updateForm('esControlado', $event)" label="Controlado" />
-        <app-checkbox [checked]="!!form().esRefrigerado" (checkedChange)="updateForm('esRefrigerado', $event)" label="Refrigerado" />
-        <app-checkbox [checked]="!!form().esHospitalario" (checkedChange)="updateForm('esHospitalario', $event)" label="Hospitalario" />
-        <app-checkbox
-          [checked]="!!form().necesitaRecetaMedica"
-          (checkedChange)="updateForm('necesitaRecetaMedica', $event)"
-          label="Necesita receta médica?"
-        />
-        <app-checkbox
-          [checked]="!!form().calcularCantidadPorPrecio"
-          (checkedChange)="updateForm('calcularCantidadPorPrecio', $event)"
-          label="Calcular cantidad por precio"
-        />
-        }
-      </div>
-      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="md:col-span-2">
-          <app-label>Código</app-label>
-          <div class="relative mt-2">
+      <div class="space-y-8">
+        <app-form-section title="Producto" description="Cómo se llama y cómo se identifica al venderlo." [cols]="2">
+          <div class="relative md:col-span-2">
+            <app-label helpText="Escribe un código o parte de él: si ya existe un producto parecido te lo sugerimos y puedes copiar sus datos para no escribirlos otra vez.">Código de búsqueda</app-label>
             <div class="flex items-center gap-2">
-              <app-input-field [maxLength]="80"
+              <app-input-field
+                [maxLength]="80"
                 className="flex-1"
                 [value]="form().codigoBusqueda ?? ''"
                 placeholder="Ingresa el código a buscar"
                 (valueChange)="onCodigoBusquedaInput($event + '')"
               />
-              <app-button size="md" variant="outline" [iconOnly]="true" startIconName="mdi:magnify" tooltip="Buscar" [disabled]="codigoLookupLoading()" (btnClick)="buscarCodigoManual()"></app-button>
+              <app-button size="lg" variant="outline" [iconOnly]="true" startIconName="mdi:magnify" tooltip="Buscar" [disabled]="codigoLookupLoading()" (btnClick)="buscarCodigoManual()"></app-button>
             </div>
             @if (codigoSuggestions().length > 0) {
               <app-option-list [floating]="true" class="mt-1">
@@ -744,118 +742,181 @@
                 }
               </app-option-list>
             } @else if (codigoLookupDone() && !codigoLookupLoading() && (form().codigoBusqueda ?? '').trim().length >= 2) {
-              <div class="absolute left-0 right-0 z-20 mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-lg dark:bg-gray-900 dark:border-gray-800">
-                No se encontraron coincidencias para ese código.
-              </div>
+              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">No se encontraron coincidencias para ese código. Puedes seguir registrándolo como nuevo.</p>
+            }
+            @if (codigoLookupLoading()) {
+              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Buscando datos del producto…</p>
             }
           </div>
-          @if (codigoLookupLoading()) {
-            <p class="mt-1 text-xs text-gray-500">Buscando datos del producto...</p>
-          }
-        </div>
-        <div class="md:col-span-2">
-          <app-label required>Nombre</app-label>
-          <app-input-field [maxLength]="300" className="mt-2" [value]="form().nombre" (valueChange)="updateForm('nombre', $event + '')" />
-          @if (formErrors()['nombre']) {
-            <p class="mt-1 text-xs text-error-500">{{ formErrors()['nombre'] }}</p>
-          }
-        </div>
-        <div>
-          <app-label>Principio Activo</app-label>
-          <app-input-field [maxLength]="300"
-            className="mt-2"
-            [value]="form().principioActivo ?? ''"
-            (valueChange)="updateForm('principioActivo', $event + '')"
+          <app-input-field
+            class="md:col-span-2"
+            label="Nombre"
+            [isRequired]="true"
+            helpText="Es el nombre que verás al vender y en los comprobantes. Ej.: Paracetamol 500 mg x 100 tabletas."
+            [maxLength]="300"
+            [value]="form().nombre"
+            [error]="!!formErrors()['nombre']"
+            [hint]="formErrors()['nombre']"
+            (valueChange)="updateForm('nombre', $event + '')"
           />
-        </div>
-        <div>
-          <app-label>Concentración</app-label>
-          <app-input-field [maxLength]="120"
-            className="mt-2"
-            [value]="form().concentracion ?? ''"
-            (valueChange)="updateForm('concentracion', $event + '')"
-          />
-        </div>
-        <div>
-          <app-label>Registro Sanitario</app-label>
-          <app-input-field [maxLength]="120"
-            className="mt-2"
-            [value]="form().registroSanitario ?? ''"
-            (valueChange)="updateForm('registroSanitario', $event + '')"
-          />
-        </div>
-        <div>
-          <app-label>F.F. (Forma Farmacéutica)</app-label>
-          <app-input-field [maxLength]="120"
-            className="mt-2"
-            [value]="form().formaFarmaceutica ?? ''"
-            (valueChange)="updateForm('formaFarmaceutica', $event + '')"
-          />
-        </div>
-        <div>
-          <app-label required>Unidad</app-label>
           <app-form-select
-            className="mt-2"
+            label="Unidad"
+            [required]="true"
+            helpText="Unidad en la que controlas el stock y vendes por defecto (unidad, caja, frasco…). Para vender también por caja o blíster usa la pestaña Presentaciones."
             [value]="form().unitId"
             [options]="unitOptions()"
             placeholder="Seleccionar"
             [disabled]="unitsQuery.isPending()"
+            [error]="!!formErrors()['unitId']"
+            [hint]="formErrors()['unitId'] ?? ''"
             (valueChange)="updateForm('unitId', $event)"
           />
-          @if (formErrors()['unitId']) {
-            <p class="mt-1 text-xs text-error-500">{{ formErrors()['unitId'] }}</p>
-          }
-        </div>
-        <div class="md:col-span-2">
-          <app-label>Descripción</app-label>
-          <app-input-field [maxLength]="2000"
-            className="mt-2"
-            [value]="form().descripcion ?? ''"
-            (valueChange)="updateForm('descripcion', $event + '')"
+          <app-input-field
+            label="Código de barra"
+            helpText="El código impreso en el empaque. Con él encuentras el producto al escanearlo."
+            [maxLength]="60"
+            [value]="form().codigoBarra ?? ''"
+            (valueChange)="updateForm('codigoBarra', $event + '')"
           />
-        </div>
-        <div>
-          <app-label required>Moneda</app-label>
+          <app-select-quick-add
+            label="Categoría"
+            helpText="Agrupa productos parecidos para filtrarlos y ordenarlos. Opcional."
+            addLabel="Nueva categoría"
+            [value]="form().categoryId ?? ''"
+            [options]="categoryOptions()"
+            [disabled]="categoriesQuery.isPending()"
+            [open]="quickAddOpen() === 'category'"
+            [newValue]="newCategoryName()"
+            [saving]="creatingCategory()"
+            (valueChange)="updateForm('categoryId', $event || undefined)"
+            (openChange)="quickAddOpen.set($event ? 'category' : null)"
+            (newValueChange)="newCategoryName.set($event)"
+            (add)="createCategoryQuick()"
+          />
+          <app-select-quick-add
+            label="Marca / Laboratorio"
+            helpText="Fabricante o marca del producto. Opcional."
+            addLabel="Nueva marca"
+            [value]="form().brandId ?? ''"
+            [options]="brandOptions()"
+            [disabled]="brandsQuery.isPending()"
+            [open]="quickAddOpen() === 'brand'"
+            [newValue]="newBrandName()"
+            [saving]="creatingBrand()"
+            (valueChange)="updateForm('brandId', $event || undefined)"
+            (openChange)="quickAddOpen.set($event ? 'brand' : null)"
+            (newValueChange)="newBrandName.set($event)"
+            (add)="createBrandQuick()"
+          />
+        </app-form-section>
+
+        <app-form-section title="Precios" description="Lo que te cuesta y lo que cobras por cada unidad." [cols]="3">
           <app-form-select
-            className="mt-2"
+            label="Moneda"
+            [required]="true"
+            helpText="Moneda en la que están expresados los precios de este producto."
             [value]="form().currencyId"
             [options]="currencyOptions()"
             placeholder="Seleccionar"
             [disabled]="currenciesQuery.isPending()"
+            [error]="!!formErrors()['currencyId']"
+            [hint]="formErrors()['currencyId'] ?? ''"
             (valueChange)="updateForm('currencyId', $event)"
           />
-        </div>
-        <div>
-          <app-label required>Precio Unitario</app-label>
-          <app-input-field min="0"
-            className="mt-2"
-            type="number"
-            [value]="form().precioUnitarioVenta"
-            (valueChange)="updateForm('precioUnitarioVenta', +$event)"
-          />
-          @if (formErrors()['precioUnitarioVenta']) {
-            <p class="mt-1 text-xs text-error-500">{{ formErrors()['precioUnitarioVenta'] }}</p>
-          }
-        </div>
-        <div class="md:col-span-2">
-          <app-label required>Tipo de afectación</app-label>
+          <div class="space-y-3">
+            <app-input-field
+              label="Precio de compra"
+              helpText="Lo que le pagas a tu proveedor por una unidad. Se sugiere al hacer órdenes de compra y se actualiza solo cuando recibes mercadería."
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="form().precioUnitarioCompra ?? ''"
+              (valueChange)="updateForm('precioUnitarioCompra', +$event)"
+            />
+            <app-checkbox
+              [checked]="!!form().incluyeIgvCompra"
+              (checkedChange)="updateForm('incluyeIgvCompra', $event)"
+              label="Incluye IGV"
+              helpText="Márcalo si el precio de compra ya tiene el IGV dentro."
+            />
+          </div>
+          <div class="space-y-3">
+            <app-input-field
+              label="Precio de venta"
+              [isRequired]="true"
+              helpText="Lo que le cobras a tu cliente por una unidad. Es el precio que aparece en el Punto de Venta."
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="form().precioUnitarioVenta"
+              [error]="!!formErrors()['precioUnitarioVenta']"
+              [hint]="formErrors()['precioUnitarioVenta']"
+              (valueChange)="updateForm('precioUnitarioVenta', +$event)"
+            />
+            <app-checkbox
+              [checked]="!!form().incluyeIgvVenta"
+              (checkedChange)="updateForm('incluyeIgvVenta', $event)"
+              label="Incluye IGV"
+              helpText="Márcalo si el precio de venta ya tiene el IGV dentro, que es lo habitual."
+            />
+          </div>
           <app-form-select
-            className="mt-2"
+            class="md:col-span-2"
+            label="Tipo de afectación (venta)"
+            [required]="true"
+            helpText="Cómo se trata el IGV al vender este producto. Gravado es lo habitual; usa exonerado o inafecto solo si le corresponde. Si tienes dudas, consúltalo con tu contador."
             [value]="form().saleTaxAffectationId"
             [options]="taxOptions()"
             placeholder="Seleccionar"
             [disabled]="taxTypesQuery.isPending()"
+            [error]="!!formErrors()['saleTaxAffectationId']"
+            [hint]="formErrors()['saleTaxAffectationId'] ?? ''"
             (valueChange)="updateForm('saleTaxAffectationId', $event)"
           />
-          @if (formErrors()['saleTaxAffectationId']) {
-            <p class="mt-1 text-xs text-error-500">{{ formErrors()['saleTaxAffectationId'] }}</p>
+          @if (priceMargin(); as margin) {
+            <div
+              class="flex items-center self-end rounded-[10px] border px-4 py-2.5 text-sm"
+              [class]="margin.amount < 0
+                ? 'border-error-500 bg-error-50 text-error-600 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400'
+                : 'border-success-500 bg-success-50 text-success-600 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400'"
+            >
+              {{ margin.amount < 0 ? 'Pérdida' : 'Ganancia' }} por unidad: {{ margin.amount | number: '1.2-2' }}
+              @if (margin.percent !== null) {
+                ({{ margin.percent | number: '1.0-1' }}%)
+              }
+            </div>
           }
-        </div>
-        <div>
-          <app-label>Almacén</app-label>
-          <div class="flex items-center gap-2">
+          <div class="flex min-h-11 items-center self-end">
+            <app-checkbox
+              [checked]="!!form().aplicaGanancia"
+              (checkedChange)="updateForm('aplicaGanancia', $event)"
+              label="Aplica ganancia"
+              helpText="Guarda el porcentaje de ganancia del producto y calcula un precio a partir del precio de compra. El precio de venta no cambia solo: tú decides si usar el calculado."
+            />
+          </div>
+          @if (form().aplicaGanancia) {
+            <app-input-field
+              label="Porcentaje de ganancia (%)"
+              type="number"
+              min="0"
+              [value]="form().porcentajeGanancia ?? 0"
+              (valueChange)="updateForm('porcentajeGanancia', +$event)"
+            />
+            @if (suggestedSalePrice(); as suggested) {
+              <div class="flex h-11 items-center justify-between gap-3 self-end rounded-[10px] border border-gray-200 px-4 text-sm whitespace-nowrap text-gray-700 dark:border-gray-800 dark:text-gray-300">
+                <span>Calculado: <strong>{{ suggested | number: '1.2-2' }}</strong></span>
+                <app-button variant="link" (btnClick)="updateForm('precioUnitarioVenta', suggested)">Usar precio</app-button>
+              </div>
+            }
+          }
+        </app-form-section>
+
+        <app-form-section title="Stock" description="Cuánto tienes y dónde lo guardas." [cols]="3">
+          <div class="flex items-end gap-2">
             <app-form-select
-              className="mt-2 flex-1"
+              class="min-w-0 flex-1"
+              label="Almacén"
+              helpText="Almacén principal del producto. Si registras stock inicial, entra aquí."
               [value]="defaultWarehouseId()"
               [options]="warehouseSelectOptions()"
               placeholder="Seleccionar"
@@ -864,284 +925,191 @@
             />
             <app-quick-create entity="warehouse" [iconOnly]="true" (created)="defaultWarehouseId.set($event.id)" />
           </div>
-        </div>
-        <div>
           @if (editingProductId()) {
             <!-- El stock se mueve sólo con ingresos, ajustes o traslados (kardex). -->
-            <app-label>Stock actual (todos los almacenes)</app-label>
             <app-input-field
-              className="mt-2"
+              label="Stock actual (todos los almacenes)"
+              helpText="Aquí no se edita: cambia con compras, ingresos, ajustes o traslados de inventario, para que el kardex quede correcto."
               type="number"
               [value]="stockInicial()"
               [disabled]="true"
-              hint="Se modifica con ingresos, ajustes o traslados de inventario."
             />
           } @else {
-            <app-label>Stock Inicial</app-label>
-            <app-input-field min="0" className="mt-2" type="number" [value]="stockInicial()" (valueChange)="stockInicial.set(+$event)" />
+            <app-input-field
+              label="Stock inicial"
+              helpText="Las unidades que ya tienes hoy. Si escribes una cantidad, también debes elegir el almacén."
+              type="number"
+              min="0"
+              [value]="stockInicial()"
+              (valueChange)="stockInicial.set(+$event)"
+            />
           }
-        </div>
-        <div>
-          <app-label>Stock Mínimo</app-label>
-          <app-input-field min="0" step="1"
-            className="mt-2"
+          <app-input-field
+            label="Stock mínimo"
+            helpText="Cuando el stock baja de este número, el producto aparece en las alertas de stock bajo y como sugerido para comprar."
             type="number"
+            min="0"
+            step="1"
             [value]="form().stockMinimo ?? 1"
             (valueChange)="updateForm('stockMinimo', +$event)"
           />
-        </div>
-        <div>
-          <app-label>Stock Máximo</app-label>
-          <app-input-field min="0" step="1"
-            className="mt-2"
+          <app-input-field
+            label="Stock máximo"
+            helpText="Tope de referencia para no sobreabastecerte. Opcional."
             type="number"
+            min="0"
+            step="1"
             [value]="form().stockMaximo ?? ''"
             (valueChange)="updateForm('stockMaximo', $event === '' ? undefined : +$event)"
           />
-        </div>
-        <div>
-          <app-label>Código de barra</app-label>
-          <app-input-field [maxLength]="60"
-            className="mt-2"
-            [value]="form().codigoBarra ?? ''"
-            (valueChange)="updateForm('codigoBarra', $event + '')"
+          <app-select-quick-add
+            class="md:col-span-2"
+            label="Ubicación"
+            helpText="Dónde está físicamente: estante, vitrina, anaquel. Primero elige el almacén, porque las ubicaciones dependen de su establecimiento."
+            addLabel="Nueva ubicación"
+            [value]="form().productLocationId ?? ''"
+            [options]="locationOptions()"
+            [disabled]="locationsQuery.isPending()"
+            [open]="quickAddOpen() === 'location'"
+            [newValue]="newLocationName()"
+            [saving]="creatingLocation()"
+            (valueChange)="updateForm('productLocationId', $event || undefined)"
+            (openChange)="quickAddOpen.set($event ? 'location' : null)"
+            (newValueChange)="newLocationName.set($event)"
+            (add)="createLocationQuick()"
           />
-        </div>
-        <div>
-          <app-label>Código Interno</app-label>
-          <app-input-field [maxLength]="60"
-            className="mt-2"
-            [value]="form().codigoInterno ?? ''"
-            (valueChange)="updateForm('codigoInterno', $event + '')"
-          />
-        </div>
-        <div>
-          <app-label>Línea de producto</app-label>
-          <app-input-field [maxLength]="120"
-            className="mt-2"
-            [value]="form().lineaProducto ?? ''"
-            (valueChange)="updateForm('lineaProducto', $event + '')"
-          />
-        </div>
-        <div>
-          <app-label>Código Medicamento DIGEMID</app-label>
-          <app-input-field [maxLength]="80"
-            className="mt-2"
-            [value]="form().codigoMedicamentoDigemid ?? ''"
-            (valueChange)="updateForm('codigoMedicamentoDigemid', $event + '')"
-          />
-        </div>
-        <div>
-          <app-label>Cód. SUNAT</app-label>
-          <app-input-field [maxLength]="20"
-            className="mt-2"
-            [value]="form().codigoSunat ?? ''"
-            (valueChange)="updateForm('codigoSunat', $event + '')"
-          />
-        </div>
-        <div>
-          <app-label>Modelo</app-label>
-          <app-input-field [maxLength]="120" className="mt-2" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
-        </div>
-        <app-checkbox
-          [checked]="!!form().manejaLotes"
-          [disabled]="!!editingProductId()"
-          (checkedChange)="updateForm('manejaLotes', $event)"
-          label="¿Maneja lotes?"
-        />
-        @if (form().manejaLotes) {
-          <div>
-            <app-label>Código Lote</app-label>
-            <app-input-field [maxLength]="60"
-              className="mt-2"
+          <div class="flex items-center md:col-span-3">
+            <app-checkbox
+              [checked]="!!form().manejaLotes"
+              [disabled]="!!editingProductId()"
+              (checkedChange)="updateForm('manejaLotes', $event)"
+              label="¿Maneja lotes y vencimiento?"
+              helpText="Actívalo si controlas lotes con fecha de vencimiento: se vende primero el que vence antes. No se puede cambiar después de crear el producto."
+            />
+          </div>
+          @if (form().manejaLotes) {
+            <app-input-field
+              label="Código de lote"
+              helpText="Lote del stock inicial. Los siguientes lotes se registran al recibir mercadería."
+              [maxLength]="60"
               [value]="form().codigoLote ?? ''"
               [disabled]="!!editingProductId()"
               (valueChange)="updateForm('codigoLote', $event + '')"
             />
-          </div>
-          <div>
-            <app-label>Fecha Vencimiento</app-label>
             <app-input-field
-              className="mt-2"
+              label="Fecha de vencimiento"
+              helpText="Vencimiento del lote del stock inicial."
               type="date"
               [value]="form().fechaVencimientoLote ?? ''"
               [disabled]="!!editingProductId()"
               (valueChange)="updateForm('fechaVencimientoLote', $event + '')"
             />
-          </div>
-        }
-        <app-checkbox
-          [checked]="!!form().incluyeIscVenta"
-          (checkedChange)="updateForm('incluyeIscVenta', $event)"
-          label="Incluye ISC"
-        />
-        @if (form().incluyeIscVenta) {
-          <div>
-            <app-label required>Tipo de sistema ISC</app-label>
-            <app-form-select
-              className="mt-2"
-              [value]="form().tipoSistemaIscId ?? ''"
-              [options]="tipoSistemaIscOptions()"
-              placeholder="Seleccionar"
-              (valueChange)="updateForm('tipoSistemaIscId', $event || undefined)"
-            />
-          </div>
-          <div>
-            <app-label>Porcentaje ISC</app-label>
-            <app-input-field min="0"
-              className="mt-2"
-              type="number"
-              [value]="form().porcentajeIsc ?? 0"
-              (valueChange)="updateForm('porcentajeIsc', +$event)"
-            />
-          </div>
-        }
-        <app-checkbox
-          [checked]="!!form().sujetoDetraccion"
-          (checkedChange)="updateForm('sujetoDetraccion', $event)"
-          label="Sujeto a detracción"
-        />
-        <app-checkbox
-          [checked]="!!form().sePuedeCanjearPorPuntos"
-          (checkedChange)="updateForm('sePuedeCanjearPorPuntos', $event)"
-          label="¿Se puede canjear por puntos?"
-        />
+          }
+        </app-form-section>
       </div>
     }
 
-    @if (activeTab() === 'almacenes') {
-      <h3 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Precios por almacén</h3>
-      <div class="space-y-3">
-        @for (w of warehousesQuery.data() ?? []; track w.id) {
-          <div class="flex flex-col gap-2 rounded-lg border border-gray-100 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
-            <span class="text-sm text-gray-800 dark:text-white/90">{{ w.nombre }} · {{ w.establishment.nombre }}</span>
+    <!-- ========== FARMACIA ========== -->
+    @if (activeTab() === 'farmacia') {
+      <div class="space-y-8">
+        <app-form-section title="Datos del medicamento" description="Solo si el producto es un medicamento." [cols]="2">
+          <app-input-field label="Principio activo" helpText="Sustancia que produce el efecto. Ej.: Paracetamol." [maxLength]="300" [value]="form().principioActivo ?? ''" (valueChange)="updateForm('principioActivo', $event + '')" />
+          <app-input-field label="Concentración" helpText="Cantidad de principio activo. Ej.: 500 mg." [maxLength]="120" [value]="form().concentracion ?? ''" (valueChange)="updateForm('concentracion', $event + '')" />
+          <app-input-field label="Forma farmacéutica" helpText="Cómo se presenta: tableta, jarabe, crema, ampolla…" [maxLength]="120" [value]="form().formaFarmaceutica ?? ''" (valueChange)="updateForm('formaFarmaceutica', $event + '')" />
+          <app-input-field label="Registro sanitario" helpText="Número de registro sanitario que figura en el empaque." [maxLength]="120" [value]="form().registroSanitario ?? ''" (valueChange)="updateForm('registroSanitario', $event + '')" />
+          <app-input-field label="Código de medicamento DIGEMID" helpText="Código del producto en el catálogo de DIGEMID." [maxLength]="80" [value]="form().codigoMedicamentoDigemid ?? ''" (valueChange)="updateForm('codigoMedicamentoDigemid', $event + '')" />
+          <app-input-field label="Descripción" helpText="Detalle adicional del producto. Opcional." [maxLength]="2000" [value]="form().descripcion ?? ''" (valueChange)="updateForm('descripcion', $event + '')" />
+        </app-form-section>
+        <app-form-section title="Características" [cols]="3">
+          <app-checkbox [checked]="!!form().necesitaRecetaMedica" (checkedChange)="updateForm('necesitaRecetaMedica', $event)" label="Necesita receta médica" helpText="En el Punto de Venta se marca que este producto requiere receta." />
+          <app-checkbox [checked]="!!form().generico" (checkedChange)="updateForm('generico', $event)" label="Genérico" helpText="Medicamento genérico. También sirve para filtrar el listado." />
+          <app-checkbox [checked]="!!form().esControlado" (checkedChange)="updateForm('esControlado', $event)" label="Controlado" helpText="Medicamento sujeto a control especial." />
+          <app-checkbox [checked]="!!form().esRefrigerado" (checkedChange)="updateForm('esRefrigerado', $event)" label="Refrigerado" helpText="Requiere conservarse en frío." />
+          <app-checkbox [checked]="!!form().esHospitalario" (checkedChange)="updateForm('esHospitalario', $event)" label="Hospitalario" helpText="Producto de uso hospitalario." />
+        </app-form-section>
+      </div>
+    }
+
+    <!-- ========== PRESENTACIONES ========== -->
+    @if (activeTab() === 'presentaciones') {
+      <div class="space-y-8">
+        <section>
+          <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 class="text-base font-medium text-gray-800 dark:text-white/90">Presentaciones</h4>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Para vender el mismo producto en otras medidas: por caja, blíster o docena, cada una con su precio.</p>
+            </div>
+            <app-button variant="outline" size="sm" startIconName="mdi:plus" (btnClick)="addPresentationRow()">Agregar presentación</app-button>
+          </div>
+          @if (presentationRows().length === 0) {
+            <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              Sin presentaciones: el producto se vende solo en su unidad, al precio de venta de «Datos principales».
+            </p>
+          } @else {
+            <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+              <table class="min-w-[860px] text-start text-xs text-gray-700 dark:text-gray-300">
+                <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+                  <tr>
+                    <th class="px-2 py-2">Unidad</th>
+                    <th class="px-2 py-2">Descripción</th>
+                    <th class="px-2 py-2"><span class="inline-flex items-center gap-1">Factor <app-help-hint text="Cuántas unidades base contiene. Ej.: una caja de 100 tabletas tiene factor 100; al vender una caja, se descuentan 100 del stock." [iconSize]="14" /></span></th>
+                    <th class="px-2 py-2"><span class="inline-flex items-center gap-1">Precio 1 <app-help-hint text="Hasta tres precios para esta presentación, por ejemplo: público, mayorista y especial. Debes llenar al menos el que elijas por defecto." [iconSize]="14" /></span></th>
+                    <th class="px-2 py-2">Precio 2</th>
+                    <th class="px-2 py-2">Precio 3</th>
+                    <th class="px-2 py-2">Precio puntos</th>
+                    <th class="px-2 py-2"><span class="inline-flex items-center gap-1">Por defecto <app-help-hint text="Cuál de los tres precios se usa al vender esta presentación." [iconSize]="14" /></span></th>
+                    <th class="px-2 py-2">Código de barra</th>
+                    <th class="px-2 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (pr of presentationRows(); track pr.uid) {
+                    <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                      <td class="min-w-[130px] px-2 py-1"><app-form-select [value]="pr.unitId" [options]="presentationUnitOptions()" [ariaLabel]="'Unidad'" (valueChange)="patchPresentationRow(pr.uid, { unitId: $event })" /></td>
+                      <td class="min-w-[130px] px-2 py-1"><app-input-field ariaLabel="Descripción" [maxLength]="500" [value]="pr.descripcion" (valueChange)="patchPresentationRow(pr.uid, { descripcion: $event + '' })" /></td>
+                      <td class="min-w-[80px] px-2 py-1"><app-input-field ariaLabel="Factor" type="number" min="0" [value]="pr.factor" (valueChange)="patchPresentationRow(pr.uid, { factor: +$event })" /></td>
+                      <td class="min-w-[90px] px-2 py-1"><app-input-field ariaLabel="Precio 1" type="number" min="0" [value]="pr.precio1" (valueChange)="patchPresentationRow(pr.uid, { precio1: +$event })" /></td>
+                      <td class="min-w-[90px] px-2 py-1"><app-input-field ariaLabel="Precio 2" type="number" min="0" [value]="pr.precio2" (valueChange)="patchPresentationRow(pr.uid, { precio2: +$event })" /></td>
+                      <td class="min-w-[90px] px-2 py-1"><app-input-field ariaLabel="Precio 3" type="number" min="0" [value]="pr.precio3" (valueChange)="patchPresentationRow(pr.uid, { precio3: +$event })" /></td>
+                      <td class="min-w-[90px] px-2 py-1"><app-input-field ariaLabel="Precio en puntos" type="number" min="0" [value]="pr.precioPuntos" (valueChange)="patchPresentationRow(pr.uid, { precioPuntos: $event + '' })" /></td>
+                      <td class="min-w-[120px] px-2 py-1"><app-form-select [value]="pr.precioDefecto" [options]="precioDefectoOptions" ariaLabel="Precio por defecto" (valueChange)="onPresentationPrecioDefectoChange(pr.uid, $event)" /></td>
+                      <td class="min-w-[120px] px-2 py-1"><app-input-field ariaLabel="Código de barra" [maxLength]="60" [value]="pr.codigoBarra" (valueChange)="patchPresentationRow(pr.uid, { codigoBarra: $event + '' })" /></td>
+                      <td class="px-2 py-1"><app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:delete" tooltip="Quitar presentación" (btnClick)="removePresentationRow(pr.uid)"></app-button></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+
+        <app-form-section title="Precios por almacén" description="Precio de referencia por almacén. Se guarda con el producto, pero hoy el Punto de Venta no lo aplica: sigue usando el precio de venta o el de la presentación." [cols]="2">
+          @for (w of warehousesQuery.data() ?? []; track w.id) {
             <app-input-field
-              className="sm:max-w-[200px]"
+              [label]="w.nombre + ' · ' + w.establishment.nombre"
               type="number"
-              placeholder="Precio"
               min="0"
+              step="0.01"
+              placeholder="Precio"
               [value]="warehousePrecioInputs()[w.id] || ''"
               (valueChange)="setWarehousePrecio(w.id, $event + '')"
             />
-          </div>
-        } @empty {
-          <p class="text-sm text-gray-500">Cargando almacenes…</p>
-        }
+          } @empty {
+            <p class="text-sm text-gray-500 dark:text-gray-400">Cargando almacenes…</p>
+          }
+        </app-form-section>
       </div>
     }
 
-    @if (activeTab() === 'presentaciones') {
-      <div class="mb-2 flex items-center justify-between gap-2">
-        <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Listado de precios</h3>
-        <app-button variant="link" (btnClick)="addPresentationRow()">+ Agregar</app-button>
-      </div>
-      <div class="max-w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-white/[0.08]">
-        <table class="min-w-[720px] text-left text-xs text-gray-700 dark:text-gray-300">
-          <thead class="border-b border-gray-100 bg-gray-50 dark:border-white/[0.08] dark:bg-white/[0.04]">
-            <tr>
-              <th class="px-2 py-2">Código de barra</th>
-              <th class="px-2 py-2">Unidad</th>
-              <th class="px-2 py-2">Descripción</th>
-              <th class="px-2 py-2">Factor</th>
-              <th class="px-2 py-2">Precio 1</th>
-              <th class="px-2 py-2">Precio 2</th>
-              <th class="px-2 py-2">Precio 3</th>
-              <th class="px-2 py-2">Precio Puntos</th>
-              <th class="px-2 py-2">P. Defecto</th>
-              <th class="px-2 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (pr of presentationRows(); track pr.uid) {
-              <tr class="border-b border-gray-50 dark:border-white/[0.05]">
-                <td class="px-2 py-1">
-                  <app-input-field
-                    className="min-w-[100px]"
-                    [maxLength]="60"
-                    [value]="pr.codigoBarra"
-                    (valueChange)="patchPresentationRow(pr.uid, { codigoBarra: $event + '' })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-form-select
-                    [value]="pr.unitId"
-                    [options]="presentationUnitOptions()"
-                    (valueChange)="patchPresentationRow(pr.uid, { unitId: $event })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-input-field
-                    [maxLength]="500"
-                    [value]="pr.descripcion"
-                    (valueChange)="patchPresentationRow(pr.uid, { descripcion: $event + '' })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-input-field
-                    type="number"
-                    min="0"
-                    [value]="pr.factor"
-                    (valueChange)="patchPresentationRow(pr.uid, { factor: +$event })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-input-field
-                    type="number"
-                    min="0"
-                    [value]="pr.precio1"
-                    (valueChange)="patchPresentationRow(pr.uid, { precio1: +$event })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-input-field
-                    type="number"
-                    min="0"
-                    [value]="pr.precio2"
-                    (valueChange)="patchPresentationRow(pr.uid, { precio2: +$event })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-input-field
-                    type="number"
-                    min="0"
-                    [value]="pr.precio3"
-                    (valueChange)="patchPresentationRow(pr.uid, { precio3: +$event })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-input-field
-                    type="number"
-                    min="0"
-                    [value]="pr.precioPuntos"
-                    (valueChange)="patchPresentationRow(pr.uid, { precioPuntos: $event + '' })"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-form-select
-                    [value]="pr.precioDefecto"
-                    [options]="precioDefectoOptions"
-                    (valueChange)="onPresentationPrecioDefectoChange(pr.uid, $event)"
-                  />
-                </td>
-                <td class="px-2 py-1">
-                  <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:delete" (btnClick)="removePresentationRow(pr.uid)"></app-button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      <app-button variant="link" className="mt-2" (btnClick)="addPresentationRow()">+ Agregar</app-button>
-    }
-
-    @if (activeTab() === 'atributos') {
+    <!-- ========== MÁS DATOS ========== -->
+    @if (activeTab() === 'mas') {
       @if (atributosCatalogsLoading()) {
-        <p class="mb-3 text-xs text-gray-500">Cargando catálogos de Atributos...</p>
+        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Cargando catálogos…</p>
       }
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div>
-          <app-label>Imagen</app-label>
-          <div class="mt-2">
+      <div class="space-y-8">
+        <app-form-section title="Información adicional" [cols]="2">
+          <div class="md:row-span-2">
+            <app-label helpText="Foto del producto. Opcional.">Imagen</app-label>
             @if (productImageUploadError()) {
               <p class="mb-2 text-xs text-error-500">{{ productImageUploadError() }}</p>
             }
@@ -1152,264 +1120,139 @@
               }
             </div>
           </div>
-        </div>
-        <div>
-          <app-label>Categoría</app-label>
-          <app-form-select
-            className="mt-2"
-            [value]="form().categoryId ?? ''"
-            [options]="categoryOptions()"
-            [disabled]="categoriesQuery.isPending()"
-            (valueChange)="updateForm('categoryId', $event || undefined)"
-          />
-          <div class="mt-2 flex gap-2">
-            <app-input-field
-              className="flex-1"
-              [value]="newCategoryName()"
-              placeholder="Nueva categoría" [maxLength]="120"
-              (valueChange)="newCategoryName.set($event + '')"
-            />
-            <app-button startIconName="mdi:plus"
-              size="sm"
-              [disabled]="creatingCategory() || categoriesQuery.isPending()"
-              [loading]="creatingCategory()"
-              (btnClick)="createCategoryQuick()"
-            >
-              {{ creatingCategory() ? 'Guardando...' : 'Agregar' }}
-            </app-button>
-          </div>
-        </div>
-        <div>
-          <app-label>Marca/Laboratorio</app-label>
-          <app-form-select
-            className="mt-2"
-            [value]="form().brandId ?? ''"
-            [options]="brandOptions()"
-            [disabled]="brandsQuery.isPending()"
-            (valueChange)="updateForm('brandId', $event || undefined)"
-          />
-          <div class="mt-2 flex gap-2">
-            <app-input-field
-              className="flex-1"
-              [value]="newBrandName()"
-              placeholder="Nueva marca" [maxLength]="120"
-              (valueChange)="newBrandName.set($event + '')"
-            />
-            <app-button startIconName="mdi:plus"
-              size="sm"
-              [disabled]="creatingBrand() || brandsQuery.isPending()"
-              [loading]="creatingBrand()"
-              (btnClick)="createBrandQuick()"
-            >
-              {{ creatingBrand() ? 'Guardando...' : 'Agregar' }}
-            </app-button>
-          </div>
-        </div>
-        <div>
-          <app-label>Ubicación</app-label>
-          <app-form-select
-            className="mt-2"
-            [value]="form().productLocationId ?? ''"
-            [options]="locationOptions()"
-            [disabled]="locationsQuery.isPending()"
-            (valueChange)="updateForm('productLocationId', $event || undefined)"
-          />
-          <div class="mt-2 flex gap-2">
-            <app-input-field
-              className="flex-1"
-              [value]="newLocationName()"
-              placeholder="Nueva ubicación" [maxLength]="120"
-              (valueChange)="newLocationName.set($event + '')"
-            />
-            <app-button startIconName="mdi:plus"
-              size="sm"
-              [disabled]="creatingLocation() || locationsQuery.isPending()"
-              [loading]="creatingLocation()"
-              (btnClick)="createLocationQuick()"
-            >
-              {{ creatingLocation() ? 'Guardando...' : 'Agregar' }}
-            </app-button>
-          </div>
-        </div>
-      </div>
-      <div class="mt-6">
-        <div class="mb-2 flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">Listado</h3>
-          <app-button variant="link" (btnClick)="addAttributeRow()">+ Agregar</app-button>
-        </div>
-        <div class="space-y-2">
-          @for (ar of attributeRows(); track ar.uid) {
-            <div class="flex flex-wrap items-end gap-2">
-              <div class="min-w-[160px] flex-1">
-                <app-label required>Tipo</app-label>
-                <app-form-select
-                  className="mt-1"
-                  [value]="ar.attributeTypeId"
-                  [options]="attributeTypeOptions()"
-                  [disabled]="attributeTypesQuery.isPending()"
-                  (valueChange)="patchAttributeRow(ar.uid, { attributeTypeId: $event })"
-                />
-              </div>
-              <div class="min-w-[200px] flex-[2]">
-                <app-label required>Descripción</app-label>
-                <app-input-field [maxLength]="500"
-                  className="mt-1"
-                  [value]="ar.descripcion"
-                  (valueChange)="patchAttributeRow(ar.uid, { descripcion: $event + '' })"
-                />
-              </div>
-              <app-button size="sm" variant="danger" className="mb-0.5" [iconOnly]="true" startIconName="mdi:close" (btnClick)="removeAttributeRow(ar.uid)"></app-button>
-            </div>
-          }
-        </div>
-      </div>
-    }
+          <app-input-field label="Código interno" helpText="Tu propio código para este producto, si manejas uno." [maxLength]="60" [value]="form().codigoInterno ?? ''" (valueChange)="updateForm('codigoInterno', $event + '')" />
+          <app-input-field label="Cód. SUNAT" helpText="Código de producto del catálogo de SUNAT, para los comprobantes electrónicos." [maxLength]="20" [value]="form().codigoSunat ?? ''" (valueChange)="updateForm('codigoSunat', $event + '')" />
+          <app-input-field label="Línea de producto" helpText="Línea o familia comercial. Opcional." [maxLength]="120" [value]="form().lineaProducto ?? ''" (valueChange)="updateForm('lineaProducto', $event + '')" />
+          <app-input-field label="Modelo" helpText="Modelo, si aplica (equipos, dispositivos…). Opcional." [maxLength]="120" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
+        </app-form-section>
 
-    @if (activeTab() === 'compra') {
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <app-label>Tipo de afectación (compra)</app-label>
+        <app-form-section title="Costos, impuestos y otras opciones" description="La mayoría de productos no necesita cambiar nada aquí." [cols]="2">
+          <app-input-field
+            label="Costo para valorizar inventario"
+            helpText="Respaldo para valorizar el inventario y las mermas cuando todavía no hay compras con costo registrado. No es el precio de compra: ese va en «Datos principales». Al crear el producto, si lo dejas en 0 toma el precio de compra."
+            type="number"
+            min="0"
+            step="0.01"
+            [value]="form().costoUnitario ?? 0"
+            (valueChange)="updateForm('costoUnitario', +$event)"
+          />
           <app-form-select
-            className="mt-2"
+            label="Tipo de afectación (compra)"
+            helpText="Cómo se trata el IGV al comprar este producto. Si no eliges otro, se usa el mismo de la venta."
             [value]="form().purchaseTaxAffectationId ?? form().saleTaxAffectationId"
             [options]="taxOptions()"
             [disabled]="taxTypesQuery.isPending()"
             (valueChange)="updateForm('purchaseTaxAffectationId', $event)"
           />
-        </div>
-        <div>
-          <app-label>Costo Unitario</app-label>
-          <app-input-field min="0"
-            className="mt-2"
-            type="number"
-            [value]="form().costoUnitario ?? 0"
-            (valueChange)="updateForm('costoUnitario', +$event)"
-          />
-        </div>
-        <app-checkbox
-          [checked]="!!form().incluyeIgvCompra"
-          (checkedChange)="updateForm('incluyeIgvCompra', $event)"
-          label="Incluye Igv"
-        />
-        <app-checkbox
-          [checked]="!!form().aplicaGanancia"
-          (checkedChange)="updateForm('aplicaGanancia', $event)"
-          label="Aplica ganancia"
-        />
-        <app-checkbox
-          [checked]="!!form().incluyeIscCompra"
-          (checkedChange)="updateForm('incluyeIscCompra', $event)"
-          label="Incluye ISC"
-        />
-        @if (form().incluyeIscCompra) {
-          <div>
-            <app-label required>Tipo de sistema ISC</app-label>
-            <app-form-select
-              className="mt-2"
-              [value]="form().tipoSistemaIscId ?? ''"
-              [options]="tipoSistemaIscOptions()"
-              placeholder="Seleccionar"
-              (valueChange)="updateForm('tipoSistemaIscId', $event || undefined)"
-            />
+          <app-checkbox [checked]="!!form().incluyeIscVenta" (checkedChange)="updateForm('incluyeIscVenta', $event)" label="Incluye ISC en la venta" helpText="Impuesto Selectivo al Consumo. Márcalo solo si este producto está afecto." />
+          <app-checkbox [checked]="!!form().incluyeIscCompra" (checkedChange)="updateForm('incluyeIscCompra', $event)" label="Incluye ISC en la compra" helpText="Impuesto Selectivo al Consumo en la compra. Márcalo solo si este producto está afecto." />
+          @if (form().incluyeIscVenta || form().incluyeIscCompra) {
+            <app-form-select label="Tipo de sistema ISC" [required]="true" [value]="form().tipoSistemaIscId ?? ''" [options]="tipoSistemaIscOptions()" placeholder="Seleccionar" (valueChange)="updateForm('tipoSistemaIscId', $event || undefined)" />
+            <app-input-field label="Porcentaje ISC" type="number" min="0" [value]="form().porcentajeIsc ?? 0" (valueChange)="updateForm('porcentajeIsc', +$event)" />
+          }
+          <app-checkbox [checked]="!!form().sujetoDetraccion" (checkedChange)="updateForm('sujetoDetraccion', $event)" label="Sujeto a detracción" helpText="Marca el producto como sujeto al sistema de detracciones." />
+          <app-checkbox [checked]="!!form().calcularCantidadPorPrecio" (checkedChange)="updateForm('calcularCantidadPorPrecio', $event)" label="Calcular cantidad por precio" helpText="Indica que la cantidad se calcula a partir del precio." />
+          <app-checkbox [checked]="!!form().sePuedeCanjearPorPuntos" (checkedChange)="updateForm('sePuedeCanjearPorPuntos', $event)" label="Se puede canjear por puntos" helpText="Marca el producto como canjeable y define cuántos puntos cuesta." />
+          @if (form().sePuedeCanjearPorPuntos) {
+            <app-input-field label="Número de puntos" type="number" min="0" [value]="form().numeroPuntos ?? 0" (valueChange)="updateForm('numeroPuntos', +$event)" />
+          }
+        </app-form-section>
+
+        <section>
+          <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 class="text-base font-medium text-gray-800 dark:text-white/90">Atributos</h4>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Características libres del producto, como color o sabor.</p>
+            </div>
+            <app-button variant="outline" size="sm" startIconName="mdi:plus" (btnClick)="addAttributeRow()">Agregar atributo</app-button>
           </div>
-          <div>
-            <app-label>Porcentaje ISC</app-label>
-            <app-input-field min="0"
-              className="mt-2"
-              type="number"
-              [value]="form().porcentajeIsc ?? 0"
-              (valueChange)="updateForm('porcentajeIsc', +$event)"
-            />
+          <div class="space-y-3">
+            @for (ar of attributeRows(); track ar.uid) {
+              <div class="flex flex-wrap items-end gap-3">
+                <app-form-select class="min-w-[160px] flex-1" label="Tipo" [required]="true" [value]="ar.attributeTypeId" [options]="attributeTypeOptions()" [disabled]="attributeTypesQuery.isPending()" (valueChange)="patchAttributeRow(ar.uid, { attributeTypeId: $event })" />
+                <app-input-field class="min-w-[200px] flex-[2]" label="Descripción" [isRequired]="true" [maxLength]="500" [value]="ar.descripcion" (valueChange)="patchAttributeRow(ar.uid, { descripcion: $event + '' })" />
+                <app-button size="lg" variant="danger" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar atributo" (btnClick)="removeAttributeRow(ar.uid)"></app-button>
+              </div>
+            }
           </div>
-        }
-        <div>
-          <app-label>Porcentaje de ganancia (%)</app-label>
-          <app-input-field min="0"
-            className="mt-2"
-            type="number"
-            [value]="form().porcentajeGanancia ?? 0"
-            (valueChange)="updateForm('porcentajeGanancia', +$event)"
-          />
-        </div>
+        </section>
       </div>
     }
 
+    <!-- ========== PROVEEDORES ========== -->
     @if (activeTab() === 'proveedores') {
       @if (!editingProductId()) {
-        <p class="text-theme-sm text-gray-500">Guarde el producto primero para vincular proveedores.</p>
+        <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          Guarda primero el producto para poder vincular proveedores.
+        </p>
       } @else {
-        <ng-container *appHasPermission="'products.write'">
-          <div class="mb-4 rounded-lg border border-gray-100 p-4 dark:border-white/10">
-            <p class="mb-3 text-theme-sm font-medium">Vincular proveedor</p>
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div class="flex items-center gap-2">
-                <app-form-select className="flex-1"
-                  [value]="newSupplierId()"
-                  [options]="supplierSelectOptions()"
-                  placeholder="Proveedor"
-                  (valueChange)="newSupplierId.set($event)"
-                />
+        <div class="space-y-6">
+          <ng-container *appHasPermission="'products.write'">
+            <app-form-section title="Vincular proveedor" description="Quién te vende este producto y a qué precio." [cols]="4">
+              <div class="flex items-end gap-2">
+                <app-form-select class="min-w-0 flex-1" label="Proveedor" [value]="newSupplierId()" [options]="supplierSelectOptions()" placeholder="Seleccionar" (valueChange)="newSupplierId.set($event)" />
                 <app-quick-create entity="supplier" [iconOnly]="true" (created)="newSupplierId.set($event.id)" />
               </div>
-              <app-input-field placeholder="Cód. proveedor" [maxLength]="60" [value]="newSupplierCodigo()" (valueChange)="newSupplierCodigo.set($event + '')" />
-              <app-input-field type="number" min="0" placeholder="Precio compra" [value]="newSupplierPrecio()" (valueChange)="newSupplierPrecio.set($event + '')" />
-              <app-input-field type="number" min="0" step="1" placeholder="Plazo días" [value]="newSupplierPlazo()" (valueChange)="newSupplierPlazo.set($event + '')" />
-            </div>
-            <div class="mt-3">
-              <app-button startIconName="mdi:link-variant" size="sm" [disabled]="upsertProductSupplierMutation.isPending()" [loading]="upsertProductSupplierMutation.isPending()" (btnClick)="linkProductSupplier()">
-                Vincular
-              </app-button>
-            </div>
+              <app-input-field label="Código del proveedor" helpText="El código con el que tu proveedor identifica este producto." [maxLength]="60" [value]="newSupplierCodigo()" (valueChange)="newSupplierCodigo.set($event + '')" />
+              <app-input-field label="Precio de compra" helpText="Precio de este proveedor. Tiene prioridad sobre el precio de compra general al armar órdenes de compra." type="number" min="0" step="0.01" [value]="newSupplierPrecio()" (valueChange)="newSupplierPrecio.set($event + '')" />
+              <app-input-field label="Plazo (días)" helpText="Días que suele tardar o de crédito acordado con este proveedor." type="number" min="0" step="1" [value]="newSupplierPlazo()" (valueChange)="newSupplierPlazo.set($event + '')" />
+              <div class="md:col-span-2 lg:col-span-4">
+                <app-button startIconName="mdi:link-variant" size="sm" [disabled]="upsertProductSupplierMutation.isPending()" [loading]="upsertProductSupplierMutation.isPending()" (btnClick)="linkProductSupplier()">Vincular</app-button>
+              </div>
+            </app-form-section>
+          </ng-container>
+          <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+            <table class="min-w-full text-start">
+              <thead class="border-b border-gray-200 dark:border-gray-800">
+                <tr>
+                  <th class="px-4 py-2 text-theme-xs text-gray-500">Proveedor</th>
+                  <th class="px-4 py-2 text-theme-xs text-gray-500">Cód. proveedor</th>
+                  <th class="px-4 py-2 text-theme-xs text-gray-500">Precio compra</th>
+                  <th class="px-4 py-2 text-theme-xs text-gray-500">Plazo</th>
+                  <th class="px-4 py-2 text-end text-theme-xs text-gray-500">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                @for (link of productSupplierLinks(); track link.id) {
+                  <tr>
+                    <td class="px-4 py-2 text-theme-sm">{{ link.supplier.razonSocial }}</td>
+                    <td class="px-4 py-2 text-theme-sm">{{ link.codigoProveedor || '—' }}</td>
+                    <td class="px-4 py-2 text-theme-sm">{{ link.precioCompra ?? '—' }}</td>
+                    <td class="px-4 py-2 text-theme-sm">{{ link.plazoDias ?? '—' }}</td>
+                    <td class="px-4 py-2 text-end">
+                      <ng-container *appHasPermission="'products.write'">
+                        <app-button variant="link-danger" (btnClick)="unlinkProductSupplier(link.supplierId)">Quitar</app-button>
+                      </ng-container>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">Sin proveedores vinculados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
-        </ng-container>
-        <div class="overflow-x-auto rounded-lg border border-gray-100 dark:border-white/10">
-          <table class="min-w-full text-left">
-            <thead class="border-b border-gray-100 dark:border-white/10">
-              <tr>
-                <th class="px-4 py-2 text-theme-xs text-gray-500">Proveedor</th>
-                <th class="px-4 py-2 text-theme-xs text-gray-500">Cód. proveedor</th>
-                <th class="px-4 py-2 text-theme-xs text-gray-500">Precio compra</th>
-                <th class="px-4 py-2 text-theme-xs text-gray-500">Plazo</th>
-                <th class="px-4 py-2 text-end text-theme-xs text-gray-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-white/10">
-              @for (link of productSupplierLinks(); track link.id) {
-                <tr>
-                  <td class="px-4 py-2 text-theme-sm">{{ link.supplier.razonSocial }}</td>
-                  <td class="px-4 py-2 text-theme-sm">{{ link.codigoProveedor || '—' }}</td>
-                  <td class="px-4 py-2 text-theme-sm">{{ link.precioCompra ?? '—' }}</td>
-                  <td class="px-4 py-2 text-theme-sm">{{ link.plazoDias ?? '—' }}</td>
-                  <td class="px-4 py-2 text-end">
-                    <ng-container *appHasPermission="'products.write'">
-                      <app-button variant="link-danger" (btnClick)="unlinkProductSupplier(link.supplierId)">Quitar</app-button>
-                    </ng-container>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">Sin proveedores vinculados.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
         </div>
       }
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
-    <app-button startIconName="mdi:close" size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button startIconName="mdi:content-save-outline"
-      size="sm"
-      [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading()"
-      [loading]="saveMutation.isPending() || updateMutation.isPending()"
-      (btnClick)="submitProduct()"
-    >
-      {{
-        saveMutation.isPending() || updateMutation.isPending()
-          ? (editingProductId() ? 'Actualizando...' : 'Guardando...')
-          : (editingProductId() ? 'Actualizar' : 'Guardar')
-      }}
-    </app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button
+        startIconName="mdi:content-save-outline"
+        [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading() || editLoading()"
+        [loading]="saveMutation.isPending() || updateMutation.isPending()"
+        (btnClick)="submitProduct()"
+      >
+        {{
+          saveMutation.isPending() || updateMutation.isPending()
+            ? (editingProductId() ? 'Actualizando…' : 'Guardando…')
+            : (editingProductId() ? 'Guardar cambios' : 'Guardar producto')
+        }}
+      </app-button>
+    </div>
   </div>
 </app-modal>

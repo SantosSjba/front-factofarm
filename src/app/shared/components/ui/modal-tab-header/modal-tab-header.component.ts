@@ -18,8 +18,10 @@ import {
 })
 export class ModalTabHeaderComponent {
   readonly title = input('');
+  /** Texto de apoyo bajo el título. */
+  readonly description = input('');
   readonly titleClass = input(
-    'mb-4 text-lg font-semibold text-gray-800 dark:text-white/90',
+    'text-xl font-semibold text-gray-800 dark:text-white/90',
   );
   readonly hostClass = input(
     'shrink-0 border-b border-gray-100 px-4 pb-4 pt-4 dark:border-gray-800 sm:px-8 sm:pb-5 sm:pt-6',

@@ -9,6 +9,8 @@
   [disabled]="isDisabled"
   [attr.aria-busy]="loading || null"
   [attr.id]="id || null"
+  [attr.aria-expanded]="ariaExpanded"
+  [attr.aria-controls]="ariaControls || null"
   [attr.aria-label]="tooltip || ariaLabel || null"
   (click)="onClick($event)"
 >

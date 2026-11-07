@@ -1053,11 +1053,11 @@ export class DirectoryApiService {
     );
   }
 
-  listProducts(filters?: ProductListFiltersRequest) {
+  private productListParams(filters?: ProductListFiltersRequest): Record<string, string> {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
-    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.field) params['field'] = filters.field;
     if (filters?.categoryId) params['categoryId'] = filters.categoryId;
     if (filters?.brandId) params['brandId'] = filters.brandId;
     if (filters?.habilitado !== undefined) params['habilitado'] = String(filters.habilitado);
@@ -1067,7 +1067,13 @@ export class DirectoryApiService {
     }
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
-    return this.http.get<ProductListResponseDto>(`${this.base}/products`, { params });
+    return params;
+  }
+
+  listProducts(filters?: ProductListFiltersRequest) {
+    return this.http.get<ProductListResponseDto>(`${this.base}/products`, {
+      params: this.productListParams(filters),
+    });
   }
 
   listProductSuppliers(productId: string) {
@@ -1159,8 +1165,12 @@ export class DirectoryApiService {
     return this.http.post<ProductImportResultDto>(`${this.base}/products/import`, body);
   }
 
-  exportProducts() {
-    return this.http.post(`${this.base}/products/export`, {}, { responseType: 'blob' });
+  /** Una sola solicitud: el API arma el Excel con todas las filas que cumplen los filtros. */
+  exportProducts(filters?: ProductListFiltersRequest) {
+    return this.http.post(`${this.base}/products/export`, {}, {
+      params: this.productListParams(filters),
+      responseType: 'blob',
+    });
   }
 
   listProductEquivalents(productId: string) {

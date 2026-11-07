@@ -42,18 +42,36 @@ import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/me
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
+import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import { STOCK_LEVEL_LABELS, stockLevel, type StockLevel } from '../../../../core/utils/stock-level';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
+import { SelectQuickAddComponent } from '../../../../shared/components/form/select-quick-add/select-quick-add.component';
+import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
 
-type ProductTab = 'general' | 'almacenes' | 'presentaciones' | 'atributos' | 'compra' | 'proveedores';
+type ProductTab = 'general' | 'farmacia' | 'presentaciones' | 'mas' | 'proveedores';
 type HistoryTab = 'stock' | 'prices' | 'sales' | 'purchases';
 
 const PRODUCT_TABS: TabStripItem[] = [
-  { id: 'general', label: 'General' },
-  { id: 'almacenes', label: 'Almacenes' },
+  { id: 'general', label: 'Datos principales' },
+  { id: 'farmacia', label: 'Farmacia' },
   { id: 'presentaciones', label: 'Presentaciones' },
-  { id: 'atributos', label: 'Atributos' },
-  { id: 'compra', label: 'Compra' },
+  { id: 'mas', label: 'Más datos' },
   { id: 'proveedores', label: 'Proveedores' },
 ];
+
+const STOCK_TONES: Record<StockLevel, LegendTone | null> = {
+  normal: null,
+  bajo: 'warning',
+  critico: 'error-light',
+  agotado: 'error',
+};
+
+const STOCK_TEXT_CLASSES: Record<StockLevel, string> = {
+  normal: 'text-success-600 dark:text-success-500',
+  bajo: 'text-warning-700 dark:text-warning-400',
+  critico: 'text-error-600 dark:text-error-400',
+  agotado: 'text-error-700 dark:text-error-400',
+};
 
 const HISTORY_TABS: TabStripItem[] = [
   { id: 'stock', label: 'Ver stock' },
@@ -161,6 +179,10 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     ImageSquarePickerComponent,
     InputFieldComponent,
     LabelComponent,
+    FormSectionComponent,
+    ColorLegendComponent,
+    SelectQuickAddComponent,
+    HelpHintComponent,
     IconComponent,
     CheckboxComponent,
     HasPermissionDirective,
@@ -176,6 +198,14 @@ export class ProductosComponent {
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [{ label: 'Productos' }, { label: 'Productos' }];
 
+  protected readonly exporting = signal(false);
+  protected readonly stockLegend: LegendItem[] = [
+    { label: STOCK_LEVEL_LABELS.normal, tone: 'success' },
+    { label: STOCK_LEVEL_LABELS.bajo, tone: 'warning' },
+    { label: STOCK_LEVEL_LABELS.critico, tone: 'error-light' },
+    { label: STOCK_LEVEL_LABELS.agotado, tone: 'error' },
+    { label: 'Inhabilitado', tone: 'muted' },
+  ];
   protected readonly searchTerm = signal('');
   protected readonly filterField = signal<NonNullable<ProductListFiltersRequest['field']>>('nombre');
   protected readonly currentPage = signal(1);
@@ -201,11 +231,12 @@ export class ProductosComponent {
     { value: 'false', label: 'No' },
   ];
 
-  protected readonly listQuery = injectQuery(() => {
+  /** Filtros activos, sin paginación: los comparten el listado y la exportación. */
+  private activeFilters(): ProductListFiltersRequest {
     const hab = this.filterHabilitado();
     const gen = this.filterGenerico();
     const rec = this.filterReceta();
-    const filters: ProductListFiltersRequest = {
+    return {
       search: this.searchTerm().trim() || undefined,
       field: this.filterField(),
       categoryId: this.filterCategoryId() || undefined,
@@ -213,6 +244,12 @@ export class ProductosComponent {
       habilitado: hab === 'all' ? undefined : hab === 'true',
       generico: gen === 'all' ? undefined : gen === 'true',
       necesitaRecetaMedica: rec === 'all' ? undefined : rec === 'true',
+    };
+  }
+
+  protected readonly listQuery = injectQuery(() => {
+    const filters: ProductListFiltersRequest = {
+      ...this.activeFilters(),
       page: this.currentPage(),
       pageSize: this.itemsPerPage,
     };
@@ -441,12 +478,21 @@ export class ProductosComponent {
   protected readonly barcodeOpen = signal(false);
   protected readonly importOpen = signal(false);
   protected readonly activeTab = signal<ProductTab>('general');
-  protected readonly formDetailLevel = signal<'basic' | 'advanced'>('basic');
-  protected readonly visibleProductTabs = computed(() =>
-    this.formDetailLevel() === 'basic'
-      ? PRODUCT_TABS.filter((tab) => tab.id === 'general')
-      : PRODUCT_TABS,
-  );
+  protected readonly productTabs = PRODUCT_TABS;
+  /** Alta rápida de categoría, marca o ubicación abierta en el formulario. */
+  protected readonly quickAddOpen = signal<'category' | 'brand' | 'location' | null>(null);
+  /** Ganancia por unidad según los precios del formulario. */
+  protected readonly priceMargin = computed(() => {
+    const { precioUnitarioCompra: compra, precioUnitarioVenta: venta } = this.form();
+    if (!compra || !venta) return null;
+    return { amount: venta - compra, percent: ((venta - compra) / compra) * 100 };
+  });
+  /** Precio de venta según el porcentaje de ganancia; solo se aplica si el usuario lo elige. */
+  protected readonly suggestedSalePrice = computed(() => {
+    const { precioUnitarioCompra: compra, porcentajeGanancia: pct } = this.form();
+    if (!compra || !pct) return null;
+    return Math.round(compra * (1 + pct / 100) * 100) / 100;
+  });
   protected readonly historyTabs = HISTORY_TABS;
   protected readonly importMode = signal<ProductImportMode>('PRODUCTOS');
   protected readonly importFile = signal<File | null>(null);
@@ -714,6 +760,43 @@ export class ProductosComponent {
     void this.listQuery.refetch();
   }
 
+  /** Filtros del panel plegable aplicados (la búsqueda queda siempre visible). */
+  protected readonly activeFilterCount = computed(
+    () =>
+      [
+        this.filterField() !== 'nombre',
+        !!this.filterCategoryId(),
+        !!this.filterBrandId(),
+        this.filterHabilitado() !== 'all',
+        this.filterGenerico() !== 'all',
+        this.filterReceta() !== 'all',
+      ].filter(Boolean).length,
+  );
+
+  private stockLevelOf(row: ProductListItemDto): StockLevel {
+    return stockLevel(row.totalStock, row.stockMinimo);
+  }
+
+  /** Inhabilitado no se vende: va en gris, sin aviso de stock. */
+  protected rowTone(row: ProductListItemDto): LegendTone | null {
+    return row.habilitado ? STOCK_TONES[this.stockLevelOf(row)] : 'muted';
+  }
+
+  protected stockTextClass(row: ProductListItemDto): string {
+    return row.habilitado
+      ? STOCK_TEXT_CLASSES[this.stockLevelOf(row)]
+      : 'text-gray-500 dark:text-gray-400';
+  }
+
+  protected stockLabel(row: ProductListItemDto): string {
+    return STOCK_LEVEL_LABELS[this.stockLevelOf(row)];
+  }
+
+  /** El color no basta: fuera de lo normal también se escribe el nivel. */
+  protected stockLabelVisible(row: ProductListItemDto): boolean {
+    return row.habilitado && this.stockLevelOf(row) !== 'normal';
+  }
+
   protected onSearchChange(v: string) {
     this.searchTerm.set(v);
     this.currentPage.set(1);
@@ -891,7 +974,6 @@ export class ProductosComponent {
 
   protected openCreateModal() {
     this.activeTab.set('general');
-    this.formDetailLevel.set('basic');
     this.editingProductId.set(null);
     this.formOpen.set(true);
     this.resetForm();
@@ -899,7 +981,6 @@ export class ProductosComponent {
   }
 
   protected async openEditModal(row: ProductListItemDto) {
-    this.formDetailLevel.set('advanced');
     this.activeTab.set('general');
     this.formOpen.set(true);
     this.resetForm();
@@ -1268,12 +1349,16 @@ export class ProductosComponent {
   }
 
   protected async exportProducts() {
+    if (this.exporting()) return;
+    this.exporting.set(true);
     try {
-      const blob = await firstValueFrom(this.api.exportProducts());
+      const blob = await firstValueFrom(this.api.exportProducts(this.activeFilters()));
       this.downloadBlob(blob, 'productos-export.xlsx');
       this.notify.success('Exportación descargada');
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'No se pudo exportar productos'));
+    } finally {
+      this.exporting.set(false);
     }
   }
 
@@ -1302,6 +1387,7 @@ export class ProductosComponent {
   private resetForm() {
     this.editingProductId.set(null);
     this.formErrors.set({});
+    this.quickAddOpen.set(null);
     this.stockInicial.set(0);
     this.defaultWarehouseId.set('');
     this.warehousePrecioInputs.set({});
@@ -1555,6 +1641,7 @@ export class ProductosComponent {
     try {
       const row = await firstValueFrom(this.api.createCategory({ nombre }));
       this.newCategoryName.set('');
+      this.quickAddOpen.set(null);
       await this.categoriesQuery.refetch();
       this.updateForm('categoryId', row.id);
       this.notify.success('Categoría creada correctamente');
@@ -1576,6 +1663,7 @@ export class ProductosComponent {
     try {
       const row = await firstValueFrom(this.api.createBrand({ nombre }));
       this.newBrandName.set('');
+      this.quickAddOpen.set(null);
       await this.brandsQuery.refetch();
       this.updateForm('brandId', row.id);
       this.notify.success('Marca creada correctamente');
@@ -1603,6 +1691,7 @@ export class ProductosComponent {
     try {
       const row = await firstValueFrom(this.api.createProductLocation({ establishmentId, nombre }));
       this.newLocationName.set('');
+      this.quickAddOpen.set(null);
       await this.locationsQuery.refetch();
       this.updateForm('productLocationId', row.id);
       this.notify.success('Ubicación creada correctamente');
@@ -1632,16 +1721,16 @@ export class ProductosComponent {
       return { message: 'El stock máximo debe ser un número entero mayor o igual a 0.', tab: 'general' };
     if (f.stockMaximo != null && f.stockMinimo != null && f.stockMaximo > 0 && f.stockMaximo < f.stockMinimo)
       return { message: 'El stock máximo no puede ser menor que el stock mínimo.', tab: 'general' };
-    if (neg(f.porcentajeIsc)) return { message: 'El porcentaje ISC no puede ser negativo.', tab: 'compra' };
-    if (neg(f.numeroPuntos)) return { message: 'El número de puntos no puede ser negativo.', tab: 'general' };
-    if (neg(f.costoUnitario)) return { message: 'El costo unitario no puede ser negativo.', tab: 'compra' };
+    if (neg(f.porcentajeIsc)) return { message: 'El porcentaje ISC no puede ser negativo.', tab: 'mas' };
+    if (neg(f.numeroPuntos)) return { message: 'El número de puntos no puede ser negativo.', tab: 'mas' };
+    if (neg(f.costoUnitario)) return { message: 'El costo para valorizar inventario no puede ser negativo.', tab: 'mas' };
     if (neg(f.porcentajeGanancia))
-      return { message: 'El porcentaje de ganancia no puede ser negativo.', tab: 'compra' };
+      return { message: 'El porcentaje de ganancia no puede ser negativo.', tab: 'general' };
     const incompleteAttr = this.attributeRows().some(
       (r) => !!r.attributeTypeId !== !!r.descripcion.trim(),
     );
     if (incompleteAttr)
-      return { message: 'En Atributos, complete el tipo y la descripción de cada fila (o elimine la fila).', tab: 'atributos' };
+      return { message: 'En Atributos, complete el tipo y la descripción de cada fila (o elimine la fila).', tab: 'mas' };
     return null;
   }
   protected async submitProduct() {
@@ -1665,7 +1754,8 @@ export class ProductosComponent {
           if (x.path) err[x.path] = x.message;
         }
         this.formErrors.set(err);
-        this.notify.warning('Revise los campos obligatorios en la pestaña General.');
+        this.notify.warning('Revisa los campos obligatorios en «Datos principales».');
+        this.activeTab.set('general');
       }
       return;
     }
@@ -1690,7 +1780,7 @@ export class ProductosComponent {
       )
     ) {
       this.notify.warning('Los precios por almacén no pueden ser negativos.');
-      this.activeTab.set('almacenes');
+      this.activeTab.set('presentaciones');
       return;
     }
 
@@ -1762,7 +1852,7 @@ export class ProductosComponent {
 
     if ((f.incluyeIscVenta || f.incluyeIscCompra) && !f.tipoSistemaIscId) {
       this.notify.warning('Seleccione el tipo de sistema ISC.');
-      this.activeTab.set('compra');
+      this.activeTab.set('mas');
       return;
     }
 
@@ -1793,6 +1883,8 @@ export class ProductosComponent {
       presentations: editingId || presentations.length ? presentations : undefined,
       attributes: editingId || attributes.length ? attributes : undefined,
       purchaseTaxAffectationId: f.purchaseTaxAffectationId || f.saleTaxAffectationId,
+      // Al crear, el costo de respaldo para valorizar inventario parte del precio de compra.
+      costoUnitario: editingId ? f.costoUnitario : f.costoUnitario || f.precioUnitarioCompra,
     };
 
     if (editingId) {

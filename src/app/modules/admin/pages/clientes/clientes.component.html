@@ -303,7 +303,7 @@
         <div>
           <app-label>Tipo de cliente</app-label>
           <div class="flex items-center gap-2">
-            <app-form-select className="mt-2 flex-1" [value]="form().customerTypeId ?? ''" [options]="customerTypeOptions()" (valueChange)="updateFormField('customerTypeId', $event || null)" />
+            <app-form-select className="flex-1" [value]="form().customerTypeId ?? ''" [options]="customerTypeOptions()" (valueChange)="updateFormField('customerTypeId', $event || null)" />
             <app-quick-create entity="customerType" [iconOnly]="true" (created)="updateFormField('customerTypeId', $event.id || null)" />
           </div>
         </div>
@@ -397,7 +397,7 @@
         <div>
           <app-label>Zona</app-label>
           <div class="flex items-center gap-2">
-            <app-form-select className="mt-2 flex-1" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
+            <app-form-select className="flex-1" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
             <app-quick-create entity="customerZone" [iconOnly]="true" (created)="updateFormField('zoneId', $event.id || null)" />
           </div>
         </div>

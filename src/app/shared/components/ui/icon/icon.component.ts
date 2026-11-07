@@ -18,9 +18,10 @@ import { CUSTOM_ELEMENTS_SCHEMA, Component, Input } from '@angular/core';
     }
 
     iconify-icon {
-      display: block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
-      vertical-align: middle;
     }
   `,
 })
@@ -29,4 +30,17 @@ export class IconComponent {
   @Input() width: string | number = '1em';
   @Input() height: string | number = '1em';
   @Input() iconClass = '';
+
+  /** Con `size-*` o `w-*` en `iconClass` el SVG llena esa caja; a 1em quedaría más chico y corrido. */
+  private get fillsBox(): boolean {
+    return /(^|\s)(size|w)-/.test(this.iconClass);
+  }
+
+  protected get svgWidth(): string | number {
+    return this.width === '1em' && this.fillsBox ? '100%' : this.width;
+  }
+
+  protected get svgHeight(): string | number {
+    return this.height === '1em' && this.fillsBox ? '100%' : this.height;
+  }
 }

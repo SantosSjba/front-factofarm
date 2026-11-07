@@ -1154,6 +1154,11 @@ pre[class*="language-"].line-numbers {
   min-width: 0;
 }
 
+/* En tarjetas no hay columnas: los controles de la tabla (p. ej. "Columnas") se ocultan. */
+app-component-card:has(table.ff-table-is-cards) [data-table-only] {
+  display: none;
+}
+
 /* Densidad compacta en modo tabla (escritorio): filas más bajas y texto de 13 px
    en todos los listados, aunque cada página traiga py-3 / py-4 en sus celdas. */
 table.ff-table-cards:not(.ff-table-is-cards) > thead > tr > th,
@@ -1182,11 +1187,20 @@ table.ff-table-is-cards > thead {
 }
 
 table.ff-table-is-cards > tbody {
+  /* Banda de cabecera: título, casilla y menú comparten esta altura y se centran en ella. */
+  --ff-card-header: 2.75rem;
+  --ff-card-padding: 1rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-  align-items: start;
+  align-items: stretch;
   gap: 0.75rem;
   padding: 0.75rem;
+}
+
+/* Todas las tarjetas a la misma altura. Con filas de detalle (colspan) sólo se igualan por
+   fila: si no, un detalle expandido estiraría todas las tarjetas del listado. */
+table.ff-table-is-cards > tbody:not(:has(> tr:not(.ff-table-empty-row) > td[colspan])) {
+  grid-auto-rows: 1fr;
 }
 
 table.ff-table-is-cards > tbody.divide-y > :not([hidden]) ~ :not([hidden]) {
@@ -1198,9 +1212,10 @@ table.ff-table-is-cards > tbody > tr {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 7rem), 1fr));
   align-items: start;
+  align-content: start;
   gap: 0.75rem;
   min-width: 0;
-  padding: 1rem;
+  padding: var(--ff-card-padding);
   border: 1px solid var(--color-gray-200);
   border-radius: 0.875rem;
   box-shadow: var(--shadow-theme-xs);
@@ -1241,6 +1256,9 @@ table.ff-table-is-cards > tbody > tr > td.ff-table-index {
 table.ff-table-is-cards > tbody > tr > td.ff-table-title {
   grid-column: 1 / -1;
   order: -2;
+  box-sizing: content-box;
+  min-height: var(--ff-card-header);
+  align-content: center;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--color-gray-100);
   font-size: 0.9375rem;
@@ -1250,7 +1268,7 @@ table.ff-table-is-cards > tbody > tr > td.ff-table-title {
 }
 
 table.ff-table-is-cards > tbody > tr:has(> td.ff-table-actions[data-actions-layout='header']) > td.ff-table-title {
-  padding-right: 2.75rem;
+  padding-right: 3.25rem;
 }
 
 table.ff-table-is-cards > tbody > tr:has(> td.ff-table-select) > td.ff-table-title {
@@ -1286,8 +1304,11 @@ table.ff-table-is-cards > tbody > tr > td.ff-table-title .truncate {
 /* Cabecera: casilla de selección (arriba a la izquierda) */
 table.ff-table-is-cards > tbody > tr > td.ff-table-select {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
+  top: var(--ff-card-padding);
+  left: var(--ff-card-padding);
+  display: flex;
+  align-items: center;
+  height: var(--ff-card-header);
   line-height: 1;
 }
 
@@ -1364,8 +1385,11 @@ table.ff-table-is-cards > tbody > tr > td.ff-table-field :is(input:not([type='ch
 /* Acciones */
 table.ff-table-is-cards > tbody > tr > td.ff-table-actions[data-actions-layout='header'] {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: var(--ff-card-padding);
+  right: var(--ff-card-padding);
+  display: flex;
+  align-items: center;
+  height: var(--ff-card-header);
 }
 
 table.ff-table-is-cards > tbody > tr > td.ff-table-actions[data-actions-layout='footer'] {
@@ -1455,15 +1479,56 @@ table.ff-table-is-cards > tfoot > tr > td:empty {
   display: none;
 }
 
+/* Filas o tarjetas pintadas por estado: tinte suave, en la tabla y en las tarjetas. */
+table.ff-table-cards > tbody > tr[data-row-tone='warning'] {
+  background-color: var(--color-warning-50);
+}
+table.ff-table-cards > tbody > tr[data-row-tone='error-light'] {
+  background-color: var(--color-error-50);
+}
+table.ff-table-cards > tbody > tr[data-row-tone='error'] {
+  background-color: color-mix(in srgb, var(--color-error-100) 70%, white);
+}
+table.ff-table-cards > tbody > tr[data-row-tone='muted'] {
+  background-color: var(--color-gray-100);
+}
+.dark table.ff-table-cards > tbody > tr[data-row-tone='warning'] {
+  background-color: color-mix(in srgb, var(--color-warning-500) 12%, transparent);
+}
+.dark table.ff-table-cards > tbody > tr[data-row-tone='error-light'] {
+  background-color: color-mix(in srgb, var(--color-error-500) 12%, transparent);
+}
+.dark table.ff-table-cards > tbody > tr[data-row-tone='error'] {
+  background-color: color-mix(in srgb, var(--color-error-500) 24%, transparent);
+}
+.dark table.ff-table-cards > tbody > tr[data-row-tone='muted'] {
+  background-color: rgb(255 255 255 / 0.05);
+}
+table.ff-table-is-cards > tbody > tr[data-row-tone='warning'] {
+  border-color: var(--color-warning-200);
+}
+table.ff-table-is-cards > tbody > tr[data-row-tone='error-light'] {
+  border-color: var(--color-error-200);
+}
+table.ff-table-is-cards > tbody > tr[data-row-tone='error'] {
+  border-color: var(--color-error-300);
+}
+.dark table.ff-table-is-cards > tbody > tr[data-row-tone='warning'] {
+  border-color: color-mix(in srgb, var(--color-warning-500) 35%, transparent);
+}
+.dark table.ff-table-is-cards > tbody > tr:is([data-row-tone='error-light'], [data-row-tone='error']) {
+  border-color: color-mix(in srgb, var(--color-error-500) 40%, transparent);
+}
+
 /* Usuarios: tarjetas más densas (QA-UI-10) */
 table.ff-usuarios-list.ff-table-is-cards > tbody {
+  --ff-card-padding: 0.75rem;
   gap: 0.5rem;
   padding: 0.5rem;
 }
 
 table.ff-usuarios-list.ff-table-is-cards > tbody > tr {
   gap: 0.5rem 0.75rem;
-  padding: 0.75rem;
 }
 
 table.ff-usuarios-list.ff-table-is-cards > tbody > tr > td.ff-table-title {

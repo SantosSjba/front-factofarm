@@ -120,7 +120,7 @@
         <app-label required>Almacén origen</app-label>
         <div class="flex items-center gap-2">
           <app-form-select
-            className="mt-2 flex-1"
+            className="flex-1"
             [value]="fromWarehouseId()"
             [options]="warehouseOptions()"
             [disabled]="createPending()"
@@ -133,7 +133,7 @@
         <app-label required>Almacén destino</app-label>
         <div class="flex items-center gap-2">
           <app-form-select
-            className="mt-2 flex-1"
+            className="flex-1"
             [value]="toWarehouseId()"
             [options]="warehouseOptions()"
             [disabled]="createPending()"

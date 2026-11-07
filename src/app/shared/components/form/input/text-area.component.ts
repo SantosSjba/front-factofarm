@@ -10,7 +10,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   imports: [CommonModule, LabelComponent, TextareaDirective],
   template: `
     @if (label) {
-      <app-label [for]="id || undefined" [required]="required">{{ label }}</app-label>
+      <app-label [for]="id || undefined" [required]="required" [helpText]="helpText">{{ label }}</app-label>
     }
     <div class="relative">
       <textarea
@@ -50,6 +50,8 @@ export class TextAreaComponent {
   @Input() name = '';
   @Input() ariaLabel = '';
   @Input() label = '';
+  /** Ayuda en tooltip junto al label. */
+  @Input() helpText = '';
   @Input() required = false;
   /** Debe coincidir con `@MaxLength` del DTO del backend. */
   @Input() maxLength?: number;

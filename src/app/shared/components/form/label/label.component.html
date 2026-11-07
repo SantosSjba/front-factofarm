@@ -1,14 +1,19 @@
-<label
-  data-slot="field-label"
-  [attr.for]="for"
-  [ngClass]="
-    'group/field-label peer/field-label mb-2 flex w-fit gap-1 text-sm leading-snug font-medium text-gray-700 select-none group-data-[disabled=true]/field:opacity-50 dark:text-gray-400 ' +
-    className
-  "
->
-  <span><ng-content></ng-content></span>
-  @if (required) {
-    <span class="text-error-500 dark:text-error-400" aria-hidden="true">*</span>
-    <span class="sr-only">(obligatorio)</span>
+<div class="flex items-center gap-1.5" [class.mb-2]="!hasCustomMargin">
+  <label
+    data-slot="field-label"
+    [attr.for]="for"
+    [ngClass]="
+      'group/field-label peer/field-label flex w-fit gap-1 text-sm leading-snug font-medium text-gray-700 select-none group-data-[disabled=true]/field:opacity-50 dark:text-gray-400 ' +
+      className
+    "
+  >
+    <span><ng-content></ng-content></span>
+    @if (required) {
+      <span class="text-error-500 dark:text-error-400" aria-hidden="true">*</span>
+      <span class="sr-only">(obligatorio)</span>
+    }
+  </label>
+  @if (helpText) {
+    <app-help-hint [text]="helpText" [iconSize]="16" />
   }
-</label>
+</div>

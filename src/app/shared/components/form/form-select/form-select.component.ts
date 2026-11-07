@@ -31,6 +31,8 @@ export class FormSelectComponent {
   @Input() className = '';
   /** Label opcional encima del select. */
   @Input() label = '';
+  /** Ayuda en tooltip junto al label. */
+  @Input() helpText = '';
   @Input() required = false;
   @Output() valueChange = new EventEmitter<string>();
 

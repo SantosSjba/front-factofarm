@@ -38,6 +38,8 @@ export class TableDropdownComponent implements AfterViewInit, OnDestroy {
         this.contentRef.nativeElement,
         {
           placement: 'bottom-end',
+          // Fijo: las tablas y tarjetas tienen overflow oculto y recortarían el menú.
+          strategy: 'fixed',
           modifiers: [
             {
               name: 'offset',
@@ -61,9 +63,8 @@ export class TableDropdownComponent implements AfterViewInit, OnDestroy {
 
   toggle() {
     this.isOpen = !this.isOpen;
-    if (this.popperInstance) {
-      this.popperInstance.update();
-    }
+    // Se mide cuando el panel ya está visible; oculto mide 0 y queda mal ubicado.
+    if (this.isOpen) requestAnimationFrame(() => void this.popperInstance?.update());
   }
 
   close(event: MouseEvent) {

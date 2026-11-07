@@ -92,13 +92,14 @@ const opt = (v: string) => v.trim() || undefined;
   template: `
     <app-button
       *appHasPermission="config().permission"
-      [size]="iconOnly ? 'md' : 'sm'"
+      [size]="iconOnly ? 'lg' : 'sm'"
+      [iconOnly]="iconOnly"
       variant="outline"
       [startIconName]="config().icon"
       [tooltip]="iconOnly ? config().button : ''"
       [ariaLabel]="config().button"
       (btnClick)="open()"
-      >{{ iconOnly ? 'Nuevo' : config().button }}</app-button
+      >{{ iconOnly ? '' : config().button }}</app-button
     >
     <app-modal [isOpen]="isOpen()" (closed)="isOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">

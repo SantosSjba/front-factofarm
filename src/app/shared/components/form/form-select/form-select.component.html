@@ -1,5 +1,5 @@
 @if (label) {
-  <app-label [for]="triggerId || undefined" [required]="required">{{ label }}</app-label>
+  <app-label [for]="triggerId || undefined" [required]="required" [helpText]="helpText">{{ label }}</app-label>
 }
 <app-select-field
   [buttonId]="triggerId"
