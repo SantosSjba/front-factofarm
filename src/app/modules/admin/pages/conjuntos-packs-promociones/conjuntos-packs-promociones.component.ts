@@ -1,6 +1,6 @@
 ﻿﻿import { CommonModule } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import * as yup from 'yup';
@@ -19,7 +19,6 @@ import { ImageSquarePickerComponent } from '../../../../shared/components/form/i
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import type {
@@ -67,12 +66,29 @@ const formSchema = yup.object({
 });
 
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
+import { QuantityStepperComponent } from '../../../../shared/components/form/quantity-stepper/quantity-stepper.component';
+import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
+import { SelectQuickAddComponent } from '../../../../shared/components/form/select-quick-add/select-quick-add.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { ModalTabHeaderComponent } from '../../../../shared/components/ui/modal-tab-header/modal-tab-header.component';
+import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 
 @Component({
   selector: 'app-conjuntos-packs-promociones',
   standalone: true,
   imports: [
     ExcelIconComponent,
+    AlertComponent,
+    FormSectionComponent,
+    HelpHintComponent,
+    HelpPanelComponent,
+    ModalTabHeaderComponent,
+    QuantityStepperComponent,
+    SearchSelectComponent,
+    SelectQuickAddComponent,
     FileInputComponent,
     CheckboxComponent,
     MenuItemComponent,
@@ -89,7 +105,6 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     InputFieldComponent,
     LabelComponent,
     FormSelectComponent,
-    IconComponent,
     ImageSquarePickerComponent,
   ],
   templateUrl: './conjuntos-packs-promociones.component.html',
@@ -102,7 +117,7 @@ export class ConjuntosPacksPromocionesComponent {
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
     { label: 'Productos' },
-    { label: 'Conjuntos/Packs/Promociones' },
+    { label: 'Conjuntos, packs y promociones' },
   ];
   protected readonly itemsPerPage = 10;
   protected readonly searchTerm = signal('');
@@ -120,9 +135,9 @@ export class ConjuntosPacksPromocionesComponent {
     { key: 'unidad', label: 'Unidad' },
     { key: 'nombre', label: 'Nombre' },
     { key: 'descripcion', label: 'Descripción' },
-    { key: 'precioVenta', label: 'P.Unitario (Venta)' },
-    { key: 'tieneIgvVenta', label: 'Tiene Igv' },
-    { key: 'codigoSunat', label: 'Cod. SUNAT' },
+    { key: 'precioVenta', label: 'Precio de venta' },
+    { key: 'tieneIgvVenta', label: 'Incluye IGV' },
+    { key: 'codigoSunat', label: 'Cód. SUNAT' },
     { key: 'modelo', label: 'Modelo' },
   ];
 
@@ -174,10 +189,27 @@ export class ConjuntosPacksPromocionesComponent {
     queryKey: ['brands', 'list', '', 'all'],
     queryFn: () => firstValueFrom(this.api.listBrands({ field: 'nombre' })),
   }));
-  protected readonly productsForDetailQuery = injectQuery(() => ({
-    queryKey: ['products', 'selector'],
-    queryFn: () => firstValueFrom(this.api.listProducts({ field: 'all', page: 1, pageSize: 100 })),
-  }));
+  /** Busca en el servidor: el catálogo puede tener miles de productos. */
+  protected readonly pickerTerm = signal('');
+  protected readonly formOpen = signal(false);
+  protected readonly pickerQuery = injectQuery(() => {
+    const search = this.pickerTerm();
+    return {
+      queryKey: ['products', 'pack-picker', search],
+      enabled: this.formOpen(),
+      queryFn: () =>
+        firstValueFrom(
+          this.api.listProducts({ search: search || undefined, field: 'all', habilitado: true, page: 1, pageSize: 10 }),
+        ),
+    };
+  });
+  protected readonly pickerOptions = computed(() =>
+    (this.pickerQuery.data()?.items ?? []).map((x) => ({
+      value: x.id,
+      label: x.nombre,
+      meta: `S/ ${(Number.parseFloat(x.precioUnitarioVenta) || 0).toFixed(2)}`,
+    })),
+  );
 
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
@@ -202,19 +234,20 @@ export class ConjuntosPacksPromocionesComponent {
     { value: '', label: 'Seleccionar' },
     ...(this.brandsQuery.data() ?? []).map((x) => ({ value: x.id, label: x.nombre })),
   ]);
-  protected readonly productAddOptions = computed(() =>
-    (this.productsForDetailQuery.data()?.items ?? []).map((x) => ({
-      value: x.id,
-      label: `${x.codigoInterno ?? 'S/C'} - ${x.nombre}`,
-    })),
-  );
-
-  protected readonly formOpen = signal(false);
+  protected readonly formTabs: TabStripItem[] = [
+    { id: 'general', label: 'Datos principales' },
+    { id: 'mas', label: 'Más datos' },
+  ];
+  protected readonly activeTab = signal<'general' | 'mas'>('general');
+  protected readonly exporting = signal(false);
+  protected readonly detailLoading = signal(false);
+  protected readonly quickAddOpen = signal<'category' | 'brand' | null>(null);
+  protected readonly pickerProductId = signal('');
+  protected readonly pickerReset = signal(0);
   protected readonly importOpen = signal(false);
   protected readonly importMode = signal<CompoundProductImportMode>('PRODUCTOS_COMPUESTOS');
   protected readonly importFile = signal<File | null>(null);
   protected readonly importResult = signal<ProductImportResultDto | null>(null);
-  protected readonly addProductOpen = signal(false);
   protected readonly confirmOpen = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly deleteTarget = signal<CompoundProductListItemDto | null>(null);
@@ -238,39 +271,38 @@ export class ConjuntosPacksPromocionesComponent {
   });
   protected readonly detailRows = signal<CompoundItemRow[]>([]);
 
-  protected readonly addProductId = signal('');
   protected readonly addProductQty = signal(1);
 
   protected readonly createMutation = injectMutation(() => ({
     mutationFn: (body: CreateCompoundProductRequest) => firstValueFrom(this.api.createCompoundProduct(body)),
     onSuccess: () => {
-      this.notify.success('Producto compuesto creado correctamente');
+      this.notify.success('Pack creado correctamente');
       this.formOpen.set(false);
       this.resetForm();
       void this.queryClient.invalidateQueries({ queryKey: compoundProductQueryKeys.all });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear el producto compuesto')),
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo crear el pack')),
   }));
   protected readonly updateMutation = injectMutation(() => ({
     mutationFn: ({ id, body }: { id: string; body: CreateCompoundProductRequest }) =>
       firstValueFrom(this.api.updateCompoundProduct(id, body)),
     onSuccess: () => {
-      this.notify.success('Producto compuesto actualizado correctamente');
+      this.notify.success('Pack actualizado correctamente');
       this.formOpen.set(false);
       this.resetForm();
       void this.queryClient.invalidateQueries({ queryKey: compoundProductQueryKeys.all });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el producto compuesto')),
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar el pack')),
   }));
   protected readonly deleteMutation = injectMutation(() => ({
     mutationFn: (id: string) => firstValueFrom(this.api.deleteCompoundProduct(id)),
     onSuccess: () => {
-      this.notify.success('Producto compuesto eliminado');
+      this.notify.success('Pack eliminado');
       this.confirmOpen.set(false);
       this.deleteTarget.set(null);
       void this.queryClient.invalidateQueries({ queryKey: compoundProductQueryKeys.all });
     },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el registro')),
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo eliminar el pack')),
   }));
 
   protected readonly importMutation = injectMutation(() => ({
@@ -281,13 +313,47 @@ export class ConjuntosPacksPromocionesComponent {
       this.notify.success(
         `Importación finalizada. Creados: ${result.created}, actualizados: ${result.updated}, errores: ${result.errors.length}`,
       );
-      this.importOpen.set(false);
+      // Queda abierto con el resultado, para poder leer las filas con errores.
+      if (!result.errors.length) this.importOpen.set(false);
       this.importFile.set(null);
       void this.queryClient.invalidateQueries({ queryKey: compoundProductQueryKeys.all });
     },
     onError: (err) =>
       this.notify.error(httpErrorMessage(err, 'No se pudo procesar la importación de conjuntos')),
   }));
+
+  constructor() {
+    // Los catálogos pueden llegar después de abrir el formulario.
+    effect(() => {
+      if (!this.formOpen() || this.editingId()) return;
+      if (this.unitsQuery.data() && this.currenciesQuery.data() && this.taxesQuery.data()) {
+        this.applyCatalogDefaults();
+      }
+    });
+  }
+
+  protected async exportRows() {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      const blob = await firstValueFrom(
+        this.api.exportCompoundProducts({
+          search: this.searchTerm().trim() || undefined,
+          field: this.filterField(),
+        }),
+      );
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'conjuntos-export.xlsx';
+      link.click();
+      URL.revokeObjectURL(link.href);
+      this.notify.success('Exportación descargada');
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo exportar los packs'));
+    } finally {
+      this.exporting.set(false);
+    }
+  }
 
   protected refetchRows() {
     void this.listQuery.refetch();
@@ -356,8 +422,8 @@ export class ConjuntosPacksPromocionesComponent {
 
   protected importModeLabel(mode: CompoundProductImportMode): string {
     return mode === 'DETALLE_PRODUCTOS_COMPUESTOS'
-      ? 'Detalle de productos compuestos'
-      : 'Productos compuestos';
+      ? 'Productos de cada pack'
+      : 'Packs';
   }
 
   protected isVisible(key: CompoundColumnKey) {
@@ -373,6 +439,7 @@ export class ConjuntosPacksPromocionesComponent {
   }
 
   protected openCreateModal() {
+    this.activeTab.set('general');
     this.formOpen.set(true);
     this.editingId.set(null);
     this.resetForm();
@@ -380,15 +447,18 @@ export class ConjuntosPacksPromocionesComponent {
   }
 
   protected async openEditModal(row: CompoundProductListItemDto) {
+    this.activeTab.set('general');
     this.formOpen.set(true);
     this.editingId.set(row.id);
     this.resetForm();
-    this.applyCatalogDefaults();
+    this.detailLoading.set(true);
     try {
       const detail = await firstValueFrom(this.api.getCompoundProduct(row.id));
       this.applyDetailToForm(detail);
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'No se pudo cargar el detalle'));
+    } finally {
+      this.detailLoading.set(false);
     }
   }
 
@@ -415,55 +485,25 @@ export class ConjuntosPacksPromocionesComponent {
     this.resetForm();
   }
 
-  protected openAddProductModal() {
-    this.addProductOpen.set(true);
+  private resetPicker() {
+    this.pickerProductId.set('');
+    this.pickerTerm.set('');
+    this.pickerReset.update((n) => n + 1);
     this.addProductQty.set(1);
-    const first = this.productAddOptions()[0];
-    this.addProductId.set(first?.value ?? '');
-  }
-
-  protected closeAddProductModal() {
-    this.addProductOpen.set(false);
-    this.addProductQty.set(1);
-    this.addProductId.set('');
-  }
-
-  protected addProductQtyStep(step: number) {
-    const next = Math.max(1, this.addProductQty() + step);
-    this.addProductQty.set(next);
-  }
-
-  protected addProductQtyChange(v: string | number) {
-    const parsed = Number(v);
-    this.addProductQty.set(Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1);
   }
 
   protected addDetailProduct() {
-    const productId = this.addProductId();
-    if (!productId) {
-      this.notify.warning('Seleccione un producto.');
-      return;
-    }
-    const product = (this.productsForDetailQuery.data()?.items ?? []).find((x) => x.id === productId);
-    if (!product) {
-      this.notify.warning('Producto no encontrado en el listado.');
+    const productId = this.pickerProductId();
+    const product = (this.pickerQuery.data()?.items ?? []).find((x) => x.id === productId);
+    if (!productId || !product) {
+      this.notify.warning('Busca y elige un producto de la lista.');
       return;
     }
     const qty = this.addProductQty();
     const price = Number.parseFloat(product.precioUnitarioVenta || '0') || 0;
     const existing = this.detailRows().find((x) => x.productId === productId);
     if (existing) {
-      this.detailRows.update((rows) =>
-        rows.map((r) =>
-          r.productId === productId
-            ? {
-                ...r,
-                cantidad: r.cantidad + qty,
-                total: (r.cantidad + qty) * r.precioUnitario,
-              }
-            : r,
-        ),
-      );
+      this.setRowQty(existing.uid, existing.cantidad + qty);
     } else {
       this.detailRows.update((rows) => [
         ...rows,
@@ -477,16 +517,17 @@ export class ConjuntosPacksPromocionesComponent {
         },
       ]);
     }
-    this.closeAddProductModal();
+    this.formErrors.update((errors) => {
+      const rest = { ...errors };
+      delete rest['items'];
+      return rest;
+    });
+    this.resetPicker();
   }
 
-  protected patchRowQty(uid: string, step: number) {
+  protected setRowQty(uid: string, cantidad: number) {
     this.detailRows.update((rows) =>
-      rows.map((r) => {
-        if (r.uid !== uid) return r;
-        const cantidad = Math.max(1, r.cantidad + step);
-        return { ...r, cantidad, total: cantidad * r.precioUnitario };
-      }),
+      rows.map((r) => (r.uid === uid ? { ...r, cantidad, total: cantidad * r.precioUnitario } : r)),
     );
   }
 
@@ -499,6 +540,14 @@ export class ConjuntosPacksPromocionesComponent {
       .reduce((acc, row) => acc + row.total, 0)
       .toFixed(2),
   );
+
+  /** Precio del pack frente a vender sus productos por separado. */
+  protected readonly packComparison = computed(() => {
+    const separado = Number.parseFloat(this.detailTotal());
+    const venta = this.form().precioUnitarioVenta;
+    if (!separado || !venta || separado === venta) return null;
+    return { amount: separado - venta, percent: ((separado - venta) / separado) * 100 };
+  });
 
   protected formatCurrencyAmount(value: string): string {
     const n = Number.parseFloat(value || '0');
@@ -539,6 +588,7 @@ export class ConjuntosPacksPromocionesComponent {
     try {
       const row = await firstValueFrom(this.api.createCategory({ nombre }));
       this.newCategoryName.set('');
+      this.quickAddOpen.set(null);
       await this.categoriesQuery.refetch();
       this.updateForm('categoryId', row.id);
       this.notify.success('Categoría creada');
@@ -557,6 +607,7 @@ export class ConjuntosPacksPromocionesComponent {
     try {
       const row = await firstValueFrom(this.api.createBrand({ nombre }));
       this.newBrandName.set('');
+      this.quickAddOpen.set(null);
       await this.brandsQuery.refetch();
       this.updateForm('brandId', row.id);
       this.notify.success('Marca creada');
@@ -589,6 +640,8 @@ export class ConjuntosPacksPromocionesComponent {
           if (x.path) err[x.path] = x.message;
         }
         this.formErrors.set(err);
+        this.activeTab.set('general');
+        this.notify.warning('Revisa los campos marcados en «Datos principales».');
       }
       return;
     }
@@ -599,7 +652,9 @@ export class ConjuntosPacksPromocionesComponent {
       precioUnitario: r.precioUnitario,
     }));
     if (!items.length) {
-      this.notify.warning('Debe agregar al menos un producto al detalle.');
+      this.formErrors.set({ items: 'Agrega al menos un producto al pack.' });
+      this.activeTab.set('general');
+      this.notify.warning('Agrega al menos un producto al pack.');
       return;
     }
 
@@ -677,8 +732,8 @@ export class ConjuntosPacksPromocionesComponent {
     this.imageUploadError.set(null);
     this.newCategoryName.set('');
     this.newBrandName.set('');
-    this.addProductId.set('');
-    this.addProductQty.set(1);
+    this.quickAddOpen.set(null);
+    this.resetPicker();
     this.detailRows.set([]);
     this.form.set({
       nombre: '',

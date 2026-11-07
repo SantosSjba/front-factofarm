@@ -1287,14 +1287,28 @@ export class DirectoryApiService {
     );
   }
 
-  listCompoundProducts(filters?: CompoundProductListFiltersRequest) {
+  private compoundListParams(filters?: CompoundProductListFiltersRequest): Record<string, string> {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
-    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.field) params['field'] = filters.field;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
-    return this.http.get<CompoundProductListResponseDto>(`${this.base}/compound-products`, { params });
+    return params;
+  }
+
+  listCompoundProducts(filters?: CompoundProductListFiltersRequest) {
+    return this.http.get<CompoundProductListResponseDto>(`${this.base}/compound-products`, {
+      params: this.compoundListParams(filters),
+    });
+  }
+
+  /** Una sola solicitud: el API arma el Excel con todas las filas que cumplen los filtros. */
+  exportCompoundProducts(filters?: CompoundProductListFiltersRequest) {
+    return this.http.post(`${this.base}/compound-products/export`, {}, {
+      params: this.compoundListParams(filters),
+      responseType: 'blob',
+    });
   }
 
   getCompoundProduct(id: string) {

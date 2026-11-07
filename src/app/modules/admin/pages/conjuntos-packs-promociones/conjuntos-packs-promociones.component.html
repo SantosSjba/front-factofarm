@@ -1,37 +1,52 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Productos compuestos
+    Conjuntos, packs y promociones
   </h1>
-  <div data-toolbar-actions class="flex items-center gap-2">
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <app-table-dropdown>
       <div dropdown-button>
-        <app-button size="sm" variant="outline">
-          <app-excel-icon />
-          <span>Importar</span>
+        <app-button size="sm" variant="outline" endIconName="mdi:chevron-down" [loading]="exporting()">
+          <app-excel-icon /> Exportar
         </app-button>
       </div>
       <div dropdown-content>
-        <app-menu-item (itemClick)="openImportModal('PRODUCTOS_COMPUESTOS')">Productos compuestos</app-menu-item>
-        <app-menu-item (itemClick)="openImportModal('DETALLE_PRODUCTOS_COMPUESTOS')">Detalle productos compuestos</app-menu-item>
+        <app-menu-item tooltip="Descarga en Excel todo lo que coincide con los filtros aplicados." (itemClick)="exportRows()">Exportar Excel</app-menu-item>
       </div>
     </app-table-dropdown>
-    <app-button size="sm" (btnClick)="openCreateModal()">
-      <app-icon name="mdi:plus" width="16" height="16" />
-      <span>Nuevo</span>
-    </app-button>
+    <app-table-dropdown>
+      <div dropdown-button>
+        <app-button size="sm" variant="outline" endIconName="mdi:chevron-down">
+          <app-excel-icon /> Importar
+        </app-button>
+      </div>
+      <div dropdown-content>
+        <app-menu-item tooltip="Crea o actualiza los packs desde un archivo. Hazlo primero." (itemClick)="openImportModal('PRODUCTOS_COMPUESTOS')">Packs</app-menu-item>
+        <app-menu-item tooltip="Indica qué productos lleva cada pack. El pack ya debe existir." (itemClick)="openImportModal('DETALLE_PRODUCTOS_COMPUESTOS')">Productos de cada pack</app-menu-item>
+      </div>
+    </app-table-dropdown>
+    <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">Nuevo</app-button>
   </div>
 </app-page-toolbar>
 
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="conjuntos-packs">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Aquí juntas varios productos en uno solo para venderlos a un precio, por ejemplo un kit o una promoción 2x1.</li>
+    <li>Al crearlo eliges qué productos lleva y cuántos de cada uno, y le pones su propio precio de venta.</li>
+    <li>En el Punto de Venta se busca por su nombre o código. Al venderlo se descuenta el stock de cada producto, y solo se puede vender hasta donde alcance el que tenga menos.</li>
+  </ol>
+</app-help-panel>
+
 <app-list-filters
+  collapsible
+  [activeCount]="filterField() !== 'nombre' ? 1 : 0"
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
+  [selectShowPlaceholder]="false"
   searchPlaceholder="Buscar"
-  selectPlaceholder="Filtrar por"
+  selectLabel="Buscar por"
   clearLabel="Limpiar"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
@@ -40,17 +55,22 @@
 
 @let listState = listQuery | queryPageState: totalRows();
 
-<app-component-card title="Productos compuestos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+<app-component-card
+  title="Listado de packs"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay conjuntos o promociones registrados"
-  (retry)="refetchRows()">
-  <div class="px-4 pt-4">
+  emptyTitle="Aún no hay conjuntos, packs ni promociones"
+  emptyHint="Usa «Nuevo» para crear el primero."
+  (retry)="refetchRows()"
+>
+  <div class="px-3 pt-3 sm:px-4" data-table-only>
     <div class="flex justify-end">
       <app-table-dropdown>
         <div dropdown-button>
-          <app-button size="sm" variant="primary" endIconName="mdi:chevron-down">Mostrar/Ocultar columnas</app-button>
+          <app-button size="sm" variant="outline" endIconName="mdi:chevron-down">Columnas</app-button>
         </div>
         <div dropdown-content>
           @for (col of columns; track col.key) {
@@ -63,35 +83,35 @@
 
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
-      <table class="min-w-full text-left text-gray-700 dark:text-gray-300">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">#</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">#</th>
             @if (isVisible('codigoInterno')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Cód. Interno</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cód. Interno</th>
             }
             @if (isVisible('unidad')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Unidad</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Unidad</th>
             }
             @if (isVisible('nombre')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Nombre</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nombre</th>
             }
             @if (isVisible('descripcion')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Descripción</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
             }
             @if (isVisible('precioVenta')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">P.Unitario (Venta)</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Precio de venta</th>
             }
             @if (isVisible('tieneIgvVenta')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Tiene Igv</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Incluye IGV</th>
             }
             @if (isVisible('codigoSunat')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Cod_SUNAT</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cód. SUNAT</th>
             }
             @if (isVisible('modelo')) {
-              <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Modelo</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Modelo</th>
             }
-            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500">Acciones</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -108,10 +128,10 @@
                 <td class="px-5 py-4 text-theme-sm">{{ row.nombre }}</td>
               }
               @if (isVisible('descripcion')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.descripcion || '—' }}</td>
+                <td data-card-wide class="px-5 py-4 text-theme-sm">{{ row.descripcion || '—' }}</td>
               }
               @if (isVisible('precioVenta')) {
-                <td class="px-5 py-4 text-theme-sm">{{ formatCurrencyAmount(row.precioUnitarioVenta) }}</td>
+                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ formatCurrencyAmount(row.precioUnitarioVenta) }}</td>
               }
               @if (isVisible('tieneIgvVenta')) {
                 <td class="px-5 py-4 text-theme-sm">{{ siNo(row.incluyeIgvVenta) }}</td>
@@ -123,15 +143,17 @@
                 <td class="px-5 py-4 text-theme-sm">{{ row.modelo || '—' }}</td>
               }
               <td class="px-5 py-4 text-end">
-                <app-table-dropdown>
-                  <div dropdown-button>
-                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + row.nombre"></app-button>
-                  </div>
-                  <div dropdown-content>
-                    <app-menu-item (itemClick)="openEditModal(row)">Editar</app-menu-item>
-                    <app-menu-item variant="danger" (itemClick)="askDelete(row)">Eliminar</app-menu-item>
-                  </div>
-                </app-table-dropdown>
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + row.nombre"></app-button>
+                    </div>
+                    <div dropdown-content>
+                      <app-menu-item icon="mdi:pencil-outline" tooltip="Cambia sus datos, precio o los productos que lleva." (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                      <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Quita el pack del listado. Los productos que lleva no se borran. Te pedirá confirmación." (itemClick)="askDelete(row)">Eliminar</app-menu-item>
+                    </div>
+                  </app-table-dropdown>
+                </div>
               </td>
             </tr>
           } @empty {
@@ -154,263 +176,346 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-5xl shadow-theme-lg">
+<app-modal [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-2xl">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Importar {{ importModeLabel(importMode()) }}
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      Importar: {{ importModeLabel(importMode()) }}
     </h3>
   </div>
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-    <app-button variant="link" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
-    <div class="mt-10 flex items-center justify-center">
+    <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
+      <li>Descarga el formato y llénalo sin cambiar sus columnas.</li>
+      @if (importMode() === 'DETALLE_PRODUCTOS_COMPUESTOS') {
+        <li>Los packs ya deben existir: si no, impórtalos primero con la opción «Packs».</li>
+      }
+      <li>Selecciona el archivo y pulsa «Procesar». Las filas con errores se listan aquí abajo.</li>
+    </ol>
+    <app-button variant="link" className="mt-3" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
+    <div class="mt-6 flex items-center justify-center">
       <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
     </div>
     @if (importResult(); as result) {
-      <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-900">
-        <p class="font-semibold text-gray-800 dark:text-white/90">Último resultado</p>
-        <p class="mt-1 text-gray-700 dark:text-gray-300">
-          Filas: {{ result.totalRows }} | Creados: {{ result.created }} | Actualizados: {{ result.updated }} |
-          Errores: {{ result.errors.length }}
-        </p>
-      </div>
+      <app-alert class="mt-6" [variant]="result.errors.length ? 'warning' : 'success'" title="Último resultado" [message]="'Filas: ' + result.totalRows + ' · Creados: ' + result.created + ' · Actualizados: ' + result.updated + ' · Errores: ' + result.errors.length">
+        @if (result.errors.length) {
+          <ul class="mt-2 max-h-40 list-disc overflow-y-auto ps-5 text-xs text-gray-600 dark:text-gray-400">
+            @for (err of result.errors.slice(0, 20); track err) {
+              <li>{{ err }}</li>
+            }
+          </ul>
+        }
+      </app-alert>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="importMutation.isPending()" (btnClick)="closeImportModal()">
-      Cancelar
-    </app-button>
-    <app-button startIconName="mdi:play-circle-outline" [disabled]="importMutation.isPending()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
-      {{ importMutation.isPending() ? 'Procesando...' : 'Procesar' }}
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    <app-button variant="outline" [disabled]="importMutation.isPending()" (btnClick)="closeImportModal()">Cerrar</app-button>
+    <app-button startIconName="mdi:play-circle-outline" [disabled]="importMutation.isPending() || !importFile()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
+      {{ importMutation.isPending() ? 'Procesando…' : 'Procesar' }}
     </app-button>
   </div>
 </app-modal>
 
-<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
+<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Confirmar eliminación</h3>
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar pack</h3>
   </div>
-  <div data-modal-body class="px-4 py-4 text-theme-sm text-gray-700 sm:px-6 dark:text-gray-300">
-    ¿Desea eliminar el producto compuesto "{{ deleteTarget()?.nombre }}"?
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 sm:px-6 dark:text-gray-300">
+    ¿Eliminar «{{ deleteTarget()?.nombre }}»? Dejará de aparecer en el Punto de Venta. Los productos que lleva no se borran.
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
-    <app-button startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
-      {{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}
+    <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+      {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
-  </div>
-</app-modal>
-
-<app-modal [isOpen]="addProductOpen()" (closed)="closeAddProductModal()" className="w-full max-w-4xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Agregar Producto</h3>
-  </div>
-  <div data-modal-body class="px-4 py-4 sm:px-6">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-[1fr_280px]">
-      <div>
-        <app-label required>Producto</app-label>
-        <app-form-select
-          className="mt-2"
-          [value]="addProductId()"
-          [options]="productAddOptions()"
-          placeholder="Seleccionar"
-          (valueChange)="addProductId.set($event)"
-        />
-      </div>
-      <div>
-        <app-label required>Cantidad</app-label>
-        <div class="mt-2 flex items-center gap-2">
-          <app-button variant="outline" [iconOnly]="true" startIconName="mdi:minus" tooltip="Disminuir cantidad" (btnClick)="addProductQtyStep(-1)" />
-          <app-input-field min="1" step="1" className="flex-1" type="number" [value]="addProductQty()" (valueChange)="addProductQtyChange($event)" />
-          <app-button variant="outline" [iconOnly]="true" startIconName="mdi:plus" tooltip="Aumentar cantidad" (btnClick)="addProductQtyStep(1)" />
-        </div>
-      </div>
-    </div>
-  </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeAddProductModal()">Cerrar</app-button>
-    <app-button startIconName="mdi:plus" (btnClick)="addDetailProduct()">Agregar</app-button>
   </div>
 </app-modal>
 
 <app-modal
   [isOpen]="formOpen()"
   (closed)="closeFormModal()"
-  className="w-full max-w-7xl shadow-theme-lg"
+  className="w-full max-w-4xl"
   maxHeightClass="max-h-[min(95dvh,920px)]"
   bodyClass="custom-scrollbar"
 >
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      {{ editingId() ? 'Editar producto compuesto' : 'Nuevo producto compuesto' }}
-    </h3>
+  <div data-modal-header class="shrink-0">
+    <app-modal-tab-header
+      [title]="editingId() ? 'Editar pack' : 'Nuevo pack'"
+      [description]="
+        editingId()
+          ? (form().nombre || 'Cargando pack…')
+          : 'Completa «Datos principales» y guarda. «Más datos» es opcional.'
+      "
+      [tabs]="formTabs"
+      [activeId]="activeTab()"
+      (tabChange)="activeTab.set($any($event))"
+    />
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div>
-        <app-label required>Nombre</app-label>
-        <app-input-field [maxLength]="300" className="mt-2" [value]="form().nombre" (valueChange)="updateForm('nombre', $event + '')" />
-        @if (formErrors()['nombre']) { <p class="mt-1 text-xs text-error-500">{{ formErrors()['nombre'] }}</p> }
-      </div>
-      <div>
-        <app-label>Nombre secundario</app-label>
-        <app-input-field [maxLength]="300" className="mt-2" [value]="form().nombreSecundario ?? ''" (valueChange)="updateForm('nombreSecundario', $event + '')" />
-      </div>
-      <div>
-        <app-label>Descripción</app-label>
-        <app-input-field [maxLength]="2000" className="mt-2" [value]="form().descripcion ?? ''" (valueChange)="updateForm('descripcion', $event + '')" />
-      </div>
-      <div>
-        <app-label>Modelo</app-label>
-        <app-input-field [maxLength]="120" className="mt-2" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
-      </div>
-      <div>
-        <app-label required>Unidad</app-label>
-        <app-form-select className="mt-2" [value]="form().unitId" [options]="unitOptions()" placeholder="Seleccionar" (valueChange)="updateForm('unitId', $event)" />
-      </div>
-      <div>
-        <app-label required>Moneda</app-label>
-        <app-form-select className="mt-2" [value]="form().currencyId" [options]="currencyOptions()" placeholder="Seleccionar" (valueChange)="updateForm('currencyId', $event)" />
-      </div>
-      <div>
-        <app-label required>Precio Unitario (Venta)</app-label>
-        <app-input-field min="0" className="mt-2" type="number" [value]="form().precioUnitarioVenta" (valueChange)="updateForm('precioUnitarioVenta', +$event)" />
-      </div>
-      <div>
-        <app-label>Plataforma</app-label>
-        <div class="mt-2 flex gap-2">
-          <app-form-select className="flex-1" [value]="form().plataformaId ?? ''" [options]="platformOptions()" placeholder="Seleccionar" (valueChange)="updateForm('plataformaId', $event || undefined)" />
-          <app-button size="sm" (btnClick)="openAddProductModal()">
-            <app-icon name="mdi:plus" width="16" height="16" />
-            <span>Agregar productos</span>
-          </app-button>
-        </div>
-      </div>
-    </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    @if (detailLoading()) {
+      <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">Cargando detalle del pack…</p>
+    }
 
-    <div class="mt-5 overflow-hidden rounded-lg border border-gray-100 dark:border-white/[0.06]">
-      <div class="overflow-x-auto">
-      <table class="w-full min-w-[760px]">
-        <thead class="border-b border-gray-100 dark:border-white/[0.06]">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">#</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">Descripción</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">Precio Unitario</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">Cantidad</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">Total</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of detailRows(); track row.uid; let i = $index) {
-            <tr class="border-b border-gray-100 dark:border-white/[0.06]">
-              <td class="px-4 py-3 text-sm">{{ i + 1 }}</td>
-              <td class="px-4 py-3 text-sm">{{ row.descripcion }}</td>
-              <td class="px-4 py-3 text-right text-sm">{{ row.precioUnitario.toFixed(2) }}</td>
-              <td class="px-4 py-3">
-                <div class="flex items-center justify-end gap-1">
-                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:minus" tooltip="Disminuir cantidad" (btnClick)="patchRowQty(row.uid, -1)" />
-                  <span class="inline-flex h-8 min-w-[32px] items-center justify-center text-sm">{{ row.cantidad }}</span>
-                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:plus" tooltip="Aumentar cantidad" (btnClick)="patchRowQty(row.uid, 1)" />
-                </div>
-              </td>
-              <td class="px-4 py-3 text-right text-sm">{{ row.total.toFixed(2) }}</td>
-              <td class="px-4 py-3 text-right">
-                <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:close" (btnClick)="removeRow(row.uid)"></app-button>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500">No hay productos agregados.</td>
-            </tr>
-          }
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="4" class="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">Total</td>
-            <td class="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">{{ detailTotal() }}</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-      </div>
-    </div>
+    @if (activeTab() === 'general') {
+      <div class="space-y-8">
+        <app-form-section title="Pack" description="Cómo se llama y cómo se identifica al venderlo." [cols]="2">
+          <app-input-field
+            class="md:col-span-2"
+            label="Nombre"
+            [isRequired]="true"
+            helpText="Es el nombre que verás al buscarlo en el Punto de Venta. Ej.: Kit gripe, Promo 2x1 vitamina C."
+            [maxLength]="300"
+            [value]="form().nombre"
+            [error]="!!formErrors()['nombre']"
+            [hint]="formErrors()['nombre']"
+            (valueChange)="updateForm('nombre', $event + '')"
+          />
+          <app-input-field
+            label="Código interno"
+            helpText="Tu propio código. El Punto de Venta también encuentra el pack por este código."
+            [maxLength]="60"
+            [value]="form().codigoInterno ?? ''"
+            (valueChange)="updateForm('codigoInterno', $event + '')"
+          />
+          <app-form-select
+            label="Unidad"
+            [required]="true"
+            helpText="Unidad en la que se vende el pack. Normalmente, unidad."
+            [value]="form().unitId"
+            [options]="unitOptions()"
+            placeholder="Seleccionar"
+            [error]="!!formErrors()['unitId']"
+            [hint]="formErrors()['unitId'] ?? ''"
+            (valueChange)="updateForm('unitId', $event)"
+          />
+        </app-form-section>
 
-    <h4 class="mt-5 text-sm font-semibold text-gray-700 dark:text-gray-200">Campos adicionales</h4>
-    <div class="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
-      <div>
-        <app-label>Imagen</app-label>
-        <div class="mt-2">
-          @if (imageUploadError()) { <p class="mb-1 text-xs text-error-500">{{ imageUploadError() }}</p> }
-          <app-image-square-picker [previewUrl]="imagePreview()" (fileSelected)="onImageFile($event)" />
-          @if (form().imagenArchivoId) {
-            <app-button variant="link-danger" className="mt-2" (btnClick)="clearImage()">Quitar imagen</app-button>
+        <section>
+          <div class="mb-4">
+            <h4 class="text-base font-medium text-gray-800 dark:text-white/90">
+              Productos que lleva <span class="text-error-500" aria-hidden="true">*</span>
+            </h4>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Al vender un pack se descuenta del stock esta cantidad de cada producto.</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <app-search-select
+              class="min-w-60 flex-1"
+              label="Producto"
+              helpText="Busca entre tus productos habilitados, por nombre o código."
+              placeholder="Escribe para buscar"
+              emptyText="No se encontró ningún producto habilitado."
+              [resetToken]="pickerReset()"
+              [options]="pickerOptions()"
+              [loading]="pickerQuery.isFetching()"
+              (searchChange)="pickerTerm.set($event)"
+              (selected)="pickerProductId.set($event.value)"
+            />
+            <div>
+              <app-label helpText="Cuántas unidades de este producto lleva cada pack.">Cantidad</app-label>
+              <app-quantity-stepper [value]="addProductQty()" (valueChange)="addProductQty.set($event)" />
+            </div>
+            <app-button size="lg" startIconName="mdi:plus" (btnClick)="addDetailProduct()">Agregar</app-button>
+          </div>
+
+          @if (detailRows().length === 0) {
+            <p
+              class="mt-4 rounded-[10px] border border-dashed px-4 py-6 text-center text-sm"
+              [class]="formErrors()['items'] ? 'border-error-500 text-error-600 dark:text-error-400' : 'border-gray-300 text-gray-500 dark:border-gray-700 dark:text-gray-400'"
+            >
+              {{ formErrors()['items'] || 'Todavía no agregas productos.' }}
+            </p>
+          } @else {
+            <div class="mt-4 max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+              <table class="w-full min-w-[640px] text-sm text-gray-700 dark:text-gray-300">
+                <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+                  <tr>
+                    <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                    <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Precio de venta</th>
+                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+                    <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+                    <th class="px-4 py-2"><span class="sr-only">Acciones</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of detailRows(); track row.uid) {
+                    <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                      <td class="px-4 py-2">{{ row.descripcion }}</td>
+                      <td class="px-4 py-2 text-end tabular-nums">{{ row.precioUnitario | number: '1.2-2' }}</td>
+                      <td class="px-4 py-2 text-center">
+                        <app-quantity-stepper size="sm" [value]="row.cantidad" [ariaLabel]="'Cantidad de ' + row.descripcion" (valueChange)="setRowQty(row.uid, $event)" />
+                      </td>
+                      <td class="px-4 py-2 text-end tabular-nums">{{ row.total | number: '1.2-2' }}</td>
+                      <td class="px-4 py-2 text-end">
+                        <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:close" [tooltip]="'Quitar ' + row.descripcion" (btnClick)="removeRow(row.uid)" />
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot class="border-t border-gray-200 dark:border-gray-800">
+                  <tr>
+                    <td colspan="3" class="px-4 py-3 text-end font-medium text-gray-800 dark:text-white/90">
+                      <span class="inline-flex items-center gap-1.5">
+                        Valor por separado
+                        <app-help-hint text="Lo que costarían estos productos vendidos uno por uno, con el precio de venta que tenían al agregarlos." [iconSize]="15" />
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-end font-medium tabular-nums text-gray-800 dark:text-white/90">{{ detailTotal() }}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           }
-        </div>
+        </section>
+
+        <app-form-section title="Precios" description="Lo que cobras por el pack completo." [cols]="3">
+          <app-form-select
+            label="Moneda"
+            [required]="true"
+            helpText="Moneda en la que está expresado el precio."
+            [value]="form().currencyId"
+            [options]="currencyOptions()"
+            placeholder="Seleccionar"
+            [error]="!!formErrors()['currencyId']"
+            [hint]="formErrors()['currencyId'] ?? ''"
+            (valueChange)="updateForm('currencyId', $event)"
+          />
+          <div class="space-y-3">
+            <app-input-field
+              label="Precio de venta"
+              [isRequired]="true"
+              helpText="Lo que le cobras al cliente por un pack completo. No tiene que ser igual a la suma de sus productos."
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="form().precioUnitarioVenta"
+              [error]="!!formErrors()['precioUnitarioVenta']"
+              [hint]="formErrors()['precioUnitarioVenta']"
+              (valueChange)="updateForm('precioUnitarioVenta', +$event)"
+            />
+            <app-checkbox
+              [checked]="!!form().incluyeIgvVenta"
+              (checkedChange)="updateForm('incluyeIgvVenta', $event)"
+              label="Incluye IGV"
+              helpText="Márcalo si el precio de venta ya tiene el IGV dentro, que es lo habitual."
+            />
+          </div>
+          <app-input-field
+            label="Precio de compra"
+            helpText="Dato de referencia del pack. No se usa en ventas ni en inventario: el stock y los costos salen de cada producto."
+            type="number"
+            min="0"
+            step="0.01"
+            [value]="form().precioUnitarioCompra"
+            [error]="!!formErrors()['precioUnitarioCompra']"
+            [hint]="formErrors()['precioUnitarioCompra']"
+            (valueChange)="updateForm('precioUnitarioCompra', +$event)"
+          />
+          <app-form-select
+            class="md:col-span-2"
+            label="Tipo de afectación (venta)"
+            [required]="true"
+            helpText="Cómo se trata el IGV al vender este pack. Gravado es lo habitual; si tienes dudas, consúltalo con tu contador."
+            [value]="form().saleTaxAffectationId"
+            [options]="taxOptions()"
+            placeholder="Seleccionar"
+            [error]="!!formErrors()['saleTaxAffectationId']"
+            [hint]="formErrors()['saleTaxAffectationId'] ?? ''"
+            (valueChange)="updateForm('saleTaxAffectationId', $event)"
+          />
+          @if (packComparison(); as comparison) {
+            <div
+              class="flex min-h-11 items-center self-end rounded-[10px] border px-4 py-2 text-sm"
+              [class]="comparison.amount >= 0
+                ? 'border-success-500 bg-success-50 text-success-600 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400'
+                : 'border-warning-500 bg-warning-50 text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/15 dark:text-warning-400'"
+            >
+              @if (comparison.amount >= 0) {
+                El cliente ahorra {{ comparison.amount | number: '1.2-2' }} ({{ comparison.percent | number: '1.0-1' }}%)
+              } @else {
+                Cuesta {{ -comparison.amount | number: '1.2-2' }} más que por separado
+              }
+            </div>
+          }
+        </app-form-section>
       </div>
-      <div class="md:col-span-3">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div class="md:col-span-2">
-            <app-label required>Tipo de afectación (Venta)</app-label>
-            <app-form-select className="mt-2" [value]="form().saleTaxAffectationId" [options]="taxOptions()" placeholder="Seleccionar" (valueChange)="updateForm('saleTaxAffectationId', $event)" />
-          </div>
-          <div>
-            <app-label>Código Sunat</app-label>
-            <app-input-field [maxLength]="20" className="mt-2" [value]="form().codigoSunat ?? ''" (valueChange)="updateForm('codigoSunat', $event + '')" />
-          </div>
-          <div>
-            <app-label>Código Interno</app-label>
-            <app-input-field [maxLength]="60" className="mt-2" [value]="form().codigoInterno ?? ''" (valueChange)="updateForm('codigoInterno', $event + '')" />
-          </div>
-          <div>
-            <app-label>Total P. Compra (Referencia)</app-label>
-            <app-input-field className="mt-2" [value]="detailTotal()" [disabled]="true" />
-          </div>
-          <div>
-            <app-label required>Precio Unitario (Compra)</app-label>
-            <app-input-field min="0" className="mt-2" type="number" [value]="form().precioUnitarioCompra" (valueChange)="updateForm('precioUnitarioCompra', +$event)" />
-          </div>
-          <div class="md:col-span-2">
-            <app-label>Categoría</app-label>
-            <app-form-select className="mt-2" [value]="form().categoryId ?? ''" [options]="categoryOptions()" (valueChange)="updateForm('categoryId', $event || undefined)" />
-            <div class="mt-2 flex gap-2">
-              <app-input-field className="flex-1" [value]="newCategoryName()" placeholder="Nueva categoría" [maxLength]="120" (valueChange)="newCategoryName.set($event + '')" />
-              <app-button startIconName="mdi:plus"
-                size="sm"
-                [disabled]="creatingCategory()"
-                [loading]="creatingCategory()"
-                (btnClick)="createCategoryQuick()"
-              >
-                {{ creatingCategory() ? 'Guardando...' : 'Agregar' }}
-              </app-button>
+    }
+
+    @if (activeTab() === 'mas') {
+      <div class="space-y-8">
+        <app-form-section title="Organización" [cols]="2">
+          <app-select-quick-add
+            label="Categoría"
+            helpText="Agrupa productos parecidos. Opcional."
+            addLabel="Nueva categoría"
+            [value]="form().categoryId ?? ''"
+            [options]="categoryOptions()"
+            [open]="quickAddOpen() === 'category'"
+            [newValue]="newCategoryName()"
+            [saving]="creatingCategory()"
+            (valueChange)="updateForm('categoryId', $event || undefined)"
+            (openChange)="quickAddOpen.set($event ? 'category' : null)"
+            (newValueChange)="newCategoryName.set($event)"
+            (add)="createCategoryQuick()"
+          />
+          <app-select-quick-add
+            label="Marca / Laboratorio"
+            helpText="Marca del pack, si tiene. Opcional."
+            addLabel="Nueva marca"
+            [value]="form().brandId ?? ''"
+            [options]="brandOptions()"
+            [open]="quickAddOpen() === 'brand'"
+            [newValue]="newBrandName()"
+            [saving]="creatingBrand()"
+            (valueChange)="updateForm('brandId', $event || undefined)"
+            (openChange)="quickAddOpen.set($event ? 'brand' : null)"
+            (newValueChange)="newBrandName.set($event)"
+            (add)="createBrandQuick()"
+          />
+          <app-form-select
+            label="Plataforma"
+            helpText="Canal al que pertenece el pack, como dato informativo. No limita dónde se puede vender."
+            [value]="form().plataformaId ?? ''"
+            [options]="platformOptions()"
+            placeholder="Seleccionar"
+            (valueChange)="updateForm('plataformaId', $event || undefined)"
+          />
+        </app-form-section>
+        <app-form-section title="Información adicional" [cols]="2">
+          <div class="md:row-span-3">
+            <app-label helpText="Foto del pack. Opcional.">Imagen</app-label>
+            @if (imageUploadError()) {
+              <p class="mb-2 text-xs text-error-500">{{ imageUploadError() }}</p>
+            }
+            <div class="flex flex-wrap items-end gap-3">
+              <app-image-square-picker [previewUrl]="imagePreview()" (fileSelected)="onImageFile($event)" />
+              @if (form().imagenArchivoId) {
+                <app-button variant="danger" startIconName="mdi:image-remove-outline" (btnClick)="clearImage()">Quitar imagen</app-button>
+              }
             </div>
           </div>
-          <div>
-            <app-label>Marca/Laboratorio</app-label>
-            <app-form-select className="mt-2" [value]="form().brandId ?? ''" [options]="brandOptions()" (valueChange)="updateForm('brandId', $event || undefined)" />
-            <div class="mt-2 flex gap-2">
-              <app-input-field className="flex-1" [value]="newBrandName()" placeholder="Nueva marca" [maxLength]="120" (valueChange)="newBrandName.set($event + '')" />
-              <app-button startIconName="mdi:plus"
-                size="sm"
-                [disabled]="creatingBrand()"
-                [loading]="creatingBrand()"
-                (btnClick)="createBrandQuick()"
-              >
-                {{ creatingBrand() ? 'Guardando...' : 'Agregar' }}
-              </app-button>
-            </div>
-          </div>
-        </div>
+          <app-input-field label="Nombre secundario" helpText="Otro nombre con el que también lo conoces. Opcional." [maxLength]="300" [value]="form().nombreSecundario ?? ''" (valueChange)="updateForm('nombreSecundario', $event + '')" />
+          <app-input-field label="Descripción" helpText="Detalle adicional del pack. Opcional." [maxLength]="2000" [value]="form().descripcion ?? ''" (valueChange)="updateForm('descripcion', $event + '')" />
+          <app-input-field label="Cód. SUNAT" helpText="Código de producto del catálogo de SUNAT, para los comprobantes electrónicos." [maxLength]="20" [value]="form().codigoSunat ?? ''" (valueChange)="updateForm('codigoSunat', $event + '')" />
+          <app-input-field label="Modelo" helpText="Modelo, si aplica. Opcional." [maxLength]="120" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
+        </app-form-section>
       </div>
-    </div>
+    }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-3 dark:border-white/[0.08]">
-    <app-button startIconName="mdi:close" size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button startIconName="mdi:content-save-outline" size="sm" [disabled]="createMutation.isPending() || updateMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitForm()">
-      {{
-        createMutation.isPending() || updateMutation.isPending()
-          ? (editingId() ? 'Actualizando...' : 'Guardando...')
-          : (editingId() ? 'Actualizar' : 'Guardar')
-      }}
-    </app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button
+        startIconName="mdi:content-save-outline"
+        [disabled]="createMutation.isPending() || updateMutation.isPending() || detailLoading()"
+        [loading]="createMutation.isPending() || updateMutation.isPending()"
+        (btnClick)="submitForm()"
+      >
+        {{
+          createMutation.isPending() || updateMutation.isPending()
+            ? (editingId() ? 'Actualizando…' : 'Guardando…')
+            : (editingId() ? 'Guardar cambios' : 'Guardar pack')
+        }}
+      </app-button>
+    </div>
   </div>
 </app-modal>
