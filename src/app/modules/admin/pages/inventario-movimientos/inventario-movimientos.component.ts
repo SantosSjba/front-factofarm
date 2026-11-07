@@ -30,7 +30,6 @@ import type {
   CreateInventoryAdjustmentRequest,
   InventoryCreateInboundRequest,
   InventoryInboundPricingDto,
-  InventoryCreateOutboundRequest,
   InventoryImportMode,
   InventoryMovementListFiltersRequest,
   InventoryMovementListItemDto,
@@ -46,6 +45,7 @@ import { FileInputComponent } from '../../../../shared/components/form/input/fil
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
+import { WithdrawalModalComponent, type WithdrawalPreset } from '../../components/withdrawal-modal/withdrawal-modal.component';
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
 
 type InventoryColumnKey = 'codigoInterno' | 'marca' | 'almacen';
@@ -80,6 +80,7 @@ const STOCK_TEXT_CLASSES: Record<StockLevel, string> = {
     FormSectionComponent,
     HelpPanelComponent,
     QuickCreateComponent,
+    WithdrawalModalComponent,
     SearchSelectComponent,
     SuggestInputComponent,
     TextAreaComponent,
@@ -178,10 +179,6 @@ export class InventarioMovimientosComponent {
     queryKey: [...inventoryMovementQueryKeys.all, 'transfer-reasons'],
     queryFn: () => firstValueFrom(this.api.listInventoryMovementTransferReasons()),
   }));
-  protected readonly outputReasonsQuery = injectQuery(() => ({
-    queryKey: [...inventoryMovementQueryKeys.all, 'output-reasons'],
-    queryFn: () => firstValueFrom(this.api.listInventoryMovementOutputReasons()),
-  }));
 
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
@@ -196,9 +193,6 @@ export class InventarioMovimientosComponent {
   );
   protected readonly transferReasonOptions = computed(() =>
     (this.transferReasonsQuery.data() ?? []).map((row) => ({ value: row.id, label: row.nombre })),
-  );
-  protected readonly outputReasonOptions = computed(() =>
-    (this.outputReasonsQuery.data() ?? []).map((row) => ({ value: row.id, label: row.nombre })),
   );
 
   protected readonly importOpen = signal(false);
@@ -229,15 +223,9 @@ export class InventarioMovimientosComponent {
   protected readonly inboundComment = signal('');
   private inboundKeepOpen = false;
 
-  protected readonly outboundOpen = signal(false);
-  protected readonly outboundProduct = signal<StockTarget | null>(null);
-  protected readonly outboundWarehouseId = signal('');
-  protected readonly outboundQuantity = signal<number>(1);
-  protected readonly outboundLotCode = signal('');
-  protected readonly outboundLotSearch = signal('');
-  protected readonly outboundRegisteredAt = signal(this.nowForDatetimeLocal());
-  protected readonly outboundTransferReasonId = signal('');
-  protected readonly outboundComment = signal('');
+
+  protected readonly withdrawalOpen = signal(false);
+  protected readonly withdrawalPreset = signal<WithdrawalPreset | null>(null);
 
   protected readonly adjustmentOpen = signal(false);
   protected readonly adjustmentProduct = signal<StockTarget | null>(null);
@@ -275,12 +263,6 @@ export class InventarioMovimientosComponent {
     this.inboundWarehouseId,
     this.inboundLotSearch,
   );
-  protected readonly outboundLotsQuery = this.lotCodesQuery(
-    'OUTBOUND',
-    this.outboundProduct,
-    this.outboundWarehouseId,
-    this.outboundLotSearch,
-  );
   // INBOUND incluye los lotes en cero: también se puede ajustar un lote que figura sin stock.
   protected readonly adjustmentLotsQuery = this.lotCodesQuery(
     'INBOUND',
@@ -289,7 +271,6 @@ export class InventarioMovimientosComponent {
     this.adjustmentLotSearch,
   );
   protected readonly inboundLotOptions = computed(() => this.lotOptions(this.inboundLotsQuery.data()));
-  protected readonly outboundLotOptions = computed(() => this.lotOptions(this.outboundLotsQuery.data()));
   protected readonly adjustmentLotOptions = computed(() => this.lotOptions(this.adjustmentLotsQuery.data()));
 
   protected readonly minExpirationDate = computed(() => {
@@ -371,11 +352,6 @@ export class InventarioMovimientosComponent {
     const current = Number.parseFloat(product.stock) || 0;
     return `Stock actual: ${this.formatStock(current)} · Quedará: ${this.formatStock(current + (this.inboundQuantity() || 0))}`;
   });
-  protected readonly outboundStockHint = computed(() => {
-    const product = this.outboundProduct();
-    if (product?.stock == null || product.warehouseId !== this.outboundWarehouseId()) return '';
-    return `Disponible: ${this.formatStock(product.stock)}`;
-  });
   protected readonly adjustmentSystemStock = computed(
     () => this.adjustmentLotStock() ?? this.adjustmentProduct()?.stock ?? '0',
   );
@@ -420,17 +396,6 @@ export class InventarioMovimientosComponent {
   }));
   protected readonly inboundPending = computed(() => this.inboundMutation.isPending());
 
-  protected readonly outboundMutation = injectMutation(() => ({
-    mutationFn: (body: InventoryCreateOutboundRequest) =>
-      firstValueFrom(this.api.createInventoryOutboundMovement(body)),
-    onSuccess: () => {
-      this.notify.success('Salida registrada correctamente.');
-      this.closeOutboundModal(true);
-      void this.queryClient.invalidateQueries({ queryKey: inventoryMovementQueryKeys.all });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la salida')),
-  }));
-  protected readonly outboundPending = computed(() => this.outboundMutation.isPending());
 
   protected readonly adjustmentMutation = injectMutation(() => ({
     mutationFn: (body: CreateInventoryAdjustmentRequest) =>
@@ -774,55 +739,19 @@ export class InventarioMovimientosComponent {
     this.inboundMutation.mutate(body);
   }
 
+  /** «−»: abre el registro de devoluciones y retiros con el producto y almacén de la fila. */
   protected openOutboundModal(row: InventoryMovementListItemDto) {
-    this.outboundProduct.set(row);
-    this.outboundWarehouseId.set(row.warehouseId);
-    this.outboundQuantity.set(1);
-    this.outboundLotCode.set('');
-    this.outboundLotSearch.set('');
-    this.outboundRegisteredAt.set(this.nowForDatetimeLocal());
-    this.outboundTransferReasonId.set('');
-    this.outboundComment.set('');
-    this.outboundOpen.set(true);
-  }
-
-  protected closeOutboundModal(force = false) {
-    if (!force && this.outboundPending()) return;
-    this.outboundOpen.set(false);
-    this.outboundProduct.set(null);
-  }
-
-  protected processOutbound() {
-    const product = this.outboundProduct();
-    const quantity = this.outboundQuantity();
-    const warehouseId = this.outboundWarehouseId();
-    const transferReasonId = this.outboundTransferReasonId();
-    if (!product) {
-      this.notify.warning('Seleccione un producto.');
-      return;
-    }
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      this.notify.warning('La cantidad debe ser mayor a cero.');
-      return;
-    }
-    if (!warehouseId) {
-      this.notify.warning('Seleccione un almacén.');
-      return;
-    }
-    if (!transferReasonId) {
-      this.notify.warning('Seleccione un motivo de salida.');
-      return;
-    }
-    const body: InventoryCreateOutboundRequest = {
-      productId: product.productId,
-      warehouseId,
-      transferReasonId,
-      quantity,
-      lotCode: this.outboundLotCode().trim() || undefined,
-      registeredAt: this.outboundRegisteredAt() ? new Date(this.outboundRegisteredAt()).toISOString() : undefined,
-      comment: this.outboundComment().trim() || undefined,
-    };
-    this.outboundMutation.mutate(body);
+    this.withdrawalPreset.set({
+      warehouseId: row.warehouseId,
+      product: {
+        productId: row.productId,
+        producto: row.producto,
+        codigoInterno: row.codigoInterno ?? null,
+        manejaLotes: !!row.manejaLotes,
+        stock: row.stock,
+      },
+    });
+    this.withdrawalOpen.set(true);
   }
 
   protected onInboundLotInput(value: string) {

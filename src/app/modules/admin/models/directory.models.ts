@@ -1797,6 +1797,17 @@ export interface InventoryCreateOutboundRequest {
   lotCode?: string;
   registeredAt?: string;
   comment?: string;
+  /** Documento que respalda la salida, por ejemplo la guía o nota de crédito del proveedor. */
+  reference?: string;
+}
+
+/** Producto con stock en un almacén, candidato a retirarse. */
+export interface WithdrawalProductOptionDto {
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  manejaLotes: boolean;
+  stock: string;
 }
 
 export type InventoryImportMode = 'LOTES' | 'SERIES';

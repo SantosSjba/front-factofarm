@@ -78,7 +78,6 @@ const PATH_HELP: Record<string, string> = {
   '/convenios-seguros': 'Convenios con empresas y seguros para sus ventas.',
   '/inventario-movimientos': 'Registra y consulta entradas y salidas de stock.',
   '/traslados': 'Mueve mercadería de un almacén a otro.',
-  '/devolucion-retiro': 'Registra salidas de stock por devolución o retiro, con su motivo.',
   '/reporte-kardex': 'Historial de movimientos de stock de cada producto.',
   '/reporte-inventario': 'Stock actual por producto y almacén.',
   '/kardex-valorizado': 'Movimientos de stock con su valor en dinero.',

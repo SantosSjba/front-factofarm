@@ -1,0 +1,148 @@
+<app-modal [isOpen]="isOpen()" (closed)="close()" className="w-full max-w-3xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Registrar salida de stock</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Para lo que sale sin venderse: devoluciones, vencidos o dañados, mermas, destrucción o donaciones. Descuenta el stock y queda en el kardex.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+    <app-form-section title="Qué sale" [cols]="2">
+      <div class="flex items-end gap-2 sm:col-span-2">
+        <app-form-select
+          class="min-w-0 flex-1"
+          label="Almacén"
+          [required]="true"
+          helpText="De dónde sale la mercadería. Al cambiarlo se vuelve a elegir el producto."
+          placeholder="Seleccionar almacén"
+          [value]="warehouseId()"
+          [options]="warehouseOptions()"
+          [disabled]="saving() || warehousesQuery.isPending()"
+          (valueChange)="onWarehouseChange($event)"
+        />
+        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="onWarehouseChange($event.id)" />
+      </div>
+
+      <div class="sm:col-span-2">
+        @if (product(); as product) {
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-gray-800">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ product.producto }}</p>
+              <div class="mt-1 flex flex-wrap items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                @if (product.codigoInterno) {
+                  <span>Cód. {{ product.codigoInterno }}</span>
+                }
+                <span>Stock: {{ formatQty(product.stock) }}</span>
+                @if (product.manejaLotes) {
+                  <app-badge size="sm" color="info">Maneja lotes</app-badge>
+                }
+              </div>
+            </div>
+            <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" [disabled]="saving()" (btnClick)="clearProduct()">Cambiar</app-button>
+          </div>
+        } @else if (productLoading()) {
+          <p class="rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">Cargando el producto…</p>
+        } @else {
+          <!-- Altura para que la lista de resultados no se recorte en el modal aún vacío. -->
+          <app-search-select
+            class="block min-h-72"
+            label="Producto"
+            [required]="true"
+            helpText="Busca por nombre, código interno o código de barras. Solo aparecen productos con stock en el almacén elegido."
+            [placeholder]="warehouseId() ? 'Escribe para buscar' : 'Primero elige el almacén'"
+            emptyText="No hay productos con stock que coincidan en este almacén."
+            [disabled]="!warehouseId()"
+            [resetToken]="pickerReset()"
+            [options]="pickerOptions()"
+            [loading]="pickerQuery.isFetching()"
+            (searchChange)="pickerTerm.set($event)"
+            (selected)="selectProduct($event.value)"
+          />
+        }
+      </div>
+
+      @if (product(); as product) {
+        <app-input-field
+          label="Cantidad"
+          [isRequired]="true"
+          helpText="Unidades que salen. No puede superar el stock disponible del almacén o del lote elegido."
+          type="number"
+          min="0"
+          step="any"
+          [error]="!!quantityError()"
+          [hint]="quantityError() || quantityHint()"
+          [disabled]="saving()"
+          [value]="quantity()"
+          (valueChange)="quantity.set(+$event || 0)"
+        />
+        @if (product.manejaLotes) {
+          <app-suggest-input
+            label="Código de lote"
+            helpText="Elige el lote que sale; los vencidos también aparecen. Si lo dejas vacío, el sistema elige los lotes vendibles según el método del establecimiento."
+            emptyText="No se encontraron lotes con stock."
+            [maxLength]="120"
+            [disabled]="saving()"
+            [value]="lotCode()"
+            [options]="lotOptions()"
+            [loading]="lotsQuery.isFetching()"
+            (valueChange)="lotCode.set($event)"
+            (searchChange)="lotSearch.set($event)"
+          />
+        }
+      }
+    </app-form-section>
+
+    @if (product()) {
+      <app-form-section title="Datos del registro" [cols]="2">
+        <app-form-select
+          label="Motivo"
+          [required]="true"
+          helpText="Por qué sale la mercadería. Queda en el kardex y en los reportes: «Salida por devolución al proveedor» si vuelve al proveedor; «Retiro» o «Destrucción» si está vencida o dañada. Las ventas, los ajustes y los traslados se registran en sus propias pantallas."
+          placeholder="Seleccionar motivo"
+          [value]="reasonId()"
+          [options]="reasonOptions()"
+          [disabled]="saving() || reasonsQuery.isPending()"
+          (valueChange)="reasonId.set($event)"
+        />
+        <app-input-field
+          label="Fecha de registro"
+          helpText="Cuándo salió la mercadería."
+          type="datetime-local"
+          [disabled]="saving()"
+          [value]="registeredAt()"
+          (valueChange)="registeredAt.set($event + '')"
+        />
+        <app-input-field
+          label="Documento de referencia"
+          helpText="Por ejemplo, la guía de devolución, la nota de crédito del proveedor o el acta de destrucción."
+          placeholder="Ej. T001-123"
+          [maxLength]="120"
+          [disabled]="saving()"
+          [value]="reference()"
+          (valueChange)="reference.set($event + '')"
+        />
+        <app-text-area
+          label="Comentarios"
+          [maxLength]="500"
+          [rows]="2"
+          placeholder="Ej. Caja dañada en el traslado"
+          [disabled]="saving()"
+          [value]="comment()"
+          (valueChange)="comment.set($event)"
+        />
+      </app-form-section>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    <app-button startIconName="mdi:close" variant="outline" [disabled]="saving()" (btnClick)="close()">Cancelar</app-button>
+    <app-button
+      variant="outline"
+      startIconName="mdi:playlist-plus"
+      tooltip="Guarda esta salida y deja el formulario listo para otro producto, con el mismo almacén, motivo y documento."
+      [disabled]="saving() || !product()"
+      (btnClick)="save(true)"
+    >
+      Guardar y agregar otro
+    </app-button>
+    <app-button startIconName="mdi:check" [disabled]="saving() || !product()" [loading]="saving()" (btnClick)="save()">
+      Registrar salida
+    </app-button>
+  </div>
+</app-modal>

@@ -41,7 +41,6 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   cotizaciones: ['nav.cotizaciones'],
   inventarioMovimientos: ['nav.inventario_movimientos'],
   traslados: ['nav.traslados'],
-  devolucionRetiro: ['nav.devolucion_retiro'],
   reporteKardex: ['nav.reporte_kardex'],
   reporteInventario: ['nav.reporte_inventario'],
   kardexValorizado: ['nav.kardex_valorizado'],

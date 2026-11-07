@@ -84,6 +84,7 @@ import type {
   ProductImportMode,
   InventoryCreateInboundRequest,
   InventoryInboundPricingDto,
+  WithdrawalProductOptionDto,
   InventoryCreateOutboundRequest,
   ProductHistoryStockItemDto,
   ProductPriceHistoryListResponseDto,
@@ -1406,12 +1407,6 @@ export class DirectoryApiService {
     );
   }
 
-  listInventoryMovementOutputReasons() {
-    return this.http.get<InventoryTransferReasonOptionDto[]>(
-      `${this.base}/inventory-movements/catalogs/output-reasons`,
-    );
-  }
-
   getInventoryInboundPricing(productId: string, warehouseId: string) {
     return this.http.get<InventoryInboundPricingDto>(`${this.base}/inventory-movements/inbound-pricing`, {
       params: { productId, warehouseId },
@@ -1425,8 +1420,23 @@ export class DirectoryApiService {
     );
   }
 
-  createInventoryOutboundMovement(body: InventoryCreateOutboundRequest) {
-    return this.http.post<{ ok: boolean; message: string }>(`${this.base}/inventory-movements/outbound`, body);
+  listWithdrawalReasons() {
+    return this.http.get<InventoryTransferReasonOptionDto[]>(
+      `${this.base}/inventory-movements/withdrawals/catalogs/reasons`,
+    );
+  }
+
+  searchWithdrawalProducts(warehouseId: string, search?: string) {
+    return this.http.get<WithdrawalProductOptionDto[]>(`${this.base}/inventory-movements/withdrawals/catalogs/products`, {
+      params: { warehouseId, ...(search ? { search } : {}) },
+    });
+  }
+
+  createWithdrawal(body: InventoryCreateOutboundRequest) {
+    return this.http.post<{ ok: boolean; message: string; asignacionAutomatica?: boolean; lotes?: { codigoLote: string; cantidad: string }[] }>(
+      `${this.base}/inventory-movements/withdrawals`,
+      body,
+    );
   }
 
   searchInventoryLotCodes(params: {

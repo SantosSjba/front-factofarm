@@ -158,11 +158,6 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
         permissionCode: 'nav.inventario_movimientos',
       },
       { name: 'Traslados', path: '/traslados', permissionCode: 'nav.traslados' },
-      {
-        name: 'Devolución / retiro',
-        path: '/devolucion-retiro',
-        permissionCode: 'nav.devolucion_retiro',
-      },
       { name: 'Reporte Kardex', path: '/reporte-kardex', permissionCode: 'nav.reporte_kardex' },
       {
         name: 'Reporte Inventario',

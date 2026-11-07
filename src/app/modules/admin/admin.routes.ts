@@ -450,15 +450,8 @@ export const adminRoutes: Routes = [
           import('./pages/traslados/traslados.component').then((m) => m.TrasladosComponent),
         title: 'FactoFarm | Traslados',
       },
-      {
-        path: 'devolucion-retiro',
-        ...guarded(P.devolucionRetiro),
-        loadComponent: () =>
-          import('./pages/devolucion-retiro/devolucion-retiro.component').then(
-            (m) => m.DevolucionRetiroComponent,
-          ),
-        title: 'FactoFarm | Devolución-retiro',
-      },
+      // Las devoluciones y retiros se registran con el «−» de Movimientos.
+      { path: 'devolucion-retiro', redirectTo: 'inventario-movimientos', pathMatch: 'full' },
       {
         path: 'reporte-kardex',
         ...guarded(P.reporteKardex),

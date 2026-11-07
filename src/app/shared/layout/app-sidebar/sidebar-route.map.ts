@@ -44,7 +44,6 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.convenios': { path: '/convenios-seguros' },
   'nav.inventario_movimientos': { path: '/inventario-movimientos' },
   'nav.traslados': { path: '/traslados' },
-  'nav.devolucion_retiro': { path: '/devolucion-retiro' },
   'nav.reporte_kardex': { path: '/reporte-kardex' },
   'nav.reporte_inventario': { path: '/reporte-inventario' },
   'nav.kardex_valorizado': { path: '/kardex-valorizado' },

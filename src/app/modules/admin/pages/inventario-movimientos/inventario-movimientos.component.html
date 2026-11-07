@@ -39,7 +39,8 @@
   <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
     <li>Cuando llega mercadería, pulsa «Registrar ingreso», busca el producto e indica cuánto entra y a qué almacén. También puedes usar el botón + de cada fila.</li>
     <li>Si el producto maneja lotes, se piden el código de lote y el vencimiento. No se acepta mercadería vencida.</li>
-    <li>Usa «Ajustar» cuando el conteo físico no coincide con el sistema, y la salida para retiros que no son ventas. Las ventas descuentan el stock solas.</li>
+    <li>Usa «Ajustar» cuando el conteo físico no coincide con el sistema.</li>
+    <li>Usa el botón − para lo que sale sin venderse: devoluciones al proveedor, vencidos o dañados, mermas, destrucción o donaciones. Las ventas descuentan el stock solas.</li>
   </ol>
 </app-help-panel>
 
@@ -150,7 +151,7 @@
               <td class="px-5 py-4 text-end">
                 <div class="inline-flex items-center gap-1.5">
                   <app-button size="sm" [iconOnly]="true" startIconName="mdi:plus" tooltip="Registrar ingreso" (btnClick)="openInboundModal(row)" />
-                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:minus" tooltip="Registrar salida" (btnClick)="openOutboundModal(row)" />
+                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:minus" tooltip="Registrar salida: devolución, retiro, merma o destrucción" (btnClick)="openOutboundModal(row)" />
                   <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:tune-variant" tooltip="Ajustar según conteo físico" (btnClick)="openAdjustmentModal(row)" />
                 </div>
               </td>
@@ -367,93 +368,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="outboundOpen()" (closed)="closeOutboundModal()" className="w-full max-w-3xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Registrar salida de stock</h3>
-    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Para retiros que no son ventas. Las ventas descuentan el stock solas.</p>
-  </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
-    @if (outboundProduct(); as product) {
-      <ng-container [ngTemplateOutlet]="productSummary" [ngTemplateOutletContext]="{ $implicit: product, canChange: false }" />
-
-      <app-form-section title="Qué sale" [cols]="2">
-        <app-input-field
-          label="Cantidad"
-          [isRequired]="true"
-          helpText="Unidades que salen. No puede superar el stock disponible."
-          type="number"
-          min="0"
-          step="any"
-          [hint]="outboundStockHint()"
-          [disabled]="outboundPending()"
-          [value]="outboundQuantity()"
-          (valueChange)="outboundQuantity.set(+$event || 0)"
-        />
-        <app-form-select
-          label="Almacén"
-          [required]="true"
-          helpText="De dónde sale la mercadería."
-          [value]="outboundWarehouseId()"
-          [options]="warehouseOptions()"
-          [disabled]="outboundPending() || warehousesQuery.isPending()"
-          (valueChange)="outboundWarehouseId.set($event)"
-        />
-        @if (product.manejaLotes !== false) {
-          <app-suggest-input
-            class="sm:col-span-2"
-            label="Código de lote"
-            helpText="Opcional. Si lo dejas vacío, el sistema elige los lotes según el método configurado en el establecimiento."
-            emptyText="No se encontraron lotes con stock."
-            [maxLength]="120"
-            [disabled]="outboundPending()"
-            [value]="outboundLotCode()"
-            [options]="outboundLotOptions()"
-            [loading]="outboundLotsQuery.isFetching()"
-            (valueChange)="outboundLotCode.set($event)"
-            (searchChange)="outboundLotSearch.set($event)"
-          />
-        }
-      </app-form-section>
-
-      <app-form-section title="Datos del registro" [cols]="2">
-        <app-form-select
-          label="Motivo"
-          [required]="true"
-          helpText="Por qué sale la mercadería. Queda en el kardex."
-          [value]="outboundTransferReasonId()"
-          [options]="outputReasonOptions()"
-          [disabled]="outboundPending() || outputReasonsQuery.isPending()"
-          (valueChange)="outboundTransferReasonId.set($event)"
-        />
-        <app-input-field
-          label="Fecha de registro"
-          helpText="Cuándo salió la mercadería."
-          type="datetime-local"
-          [disabled]="outboundPending()"
-          [value]="outboundRegisteredAt()"
-          (valueChange)="outboundRegisteredAt.set($event + '')"
-        />
-        <app-text-area
-          class="sm:col-span-2"
-          label="Comentarios"
-          [maxLength]="500"
-          [rows]="2"
-          [disabled]="outboundPending()"
-          [value]="outboundComment()"
-          (valueChange)="outboundComment.set($event)"
-        />
-      </app-form-section>
-    }
-  </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="outboundPending()" (btnClick)="closeOutboundModal()">
-      Cancelar
-    </app-button>
-    <app-button startIconName="mdi:check" [disabled]="outboundPending()" [loading]="outboundPending()" (btnClick)="processOutbound()">
-      {{ outboundPending() ? 'Guardando…' : 'Guardar salida' }}
-    </app-button>
-  </div>
-</app-modal>
+<app-withdrawal-modal [open]="withdrawalOpen()" [preset]="withdrawalPreset()" (closed)="withdrawalOpen.set(false)" />
 
 <app-modal [isOpen]="adjustmentOpen()" (closed)="closeAdjustmentModal()" className="w-full max-w-3xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
