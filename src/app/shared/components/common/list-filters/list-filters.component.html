@@ -31,7 +31,7 @@
     }
   } @else {
     <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-      <div class="md:col-span-7">
+      <div [class]="showSelect ? 'md:col-span-7' : 'md:col-span-10'">
         <ng-container [ngTemplateOutlet]="search" />
       </div>
       @if (showSelect) {

@@ -318,6 +318,12 @@
             [checked]="posRequireControlledApproval()"
             (checkedChange)="posRequireControlledApproval.set($event)"
           />
+          <app-checkbox
+            label="Bloquear ventas sobre el precio máximo regulado"
+            helpText="El Punto de Venta rechaza la venta si un producto supera el precio máximo registrado en Precios regulados DIGEMID para su código."
+            [checked]="blockSalesAboveRegulatedPrice()"
+            (checkedChange)="blockSalesAboveRegulatedPrice.set($event)"
+          />
         </div>
         <p class="mt-3 mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Exigir código / N° de operación en:</p>
         <div class="flex flex-wrap gap-x-6 gap-y-2">

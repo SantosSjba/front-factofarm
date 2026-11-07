@@ -17,10 +17,12 @@ import { Subscription } from 'rxjs';
 import { SidebarMenuService } from '../../../core/services/sidebar-menu.service';
 import { TenantBrandingService } from '../../../core/services/tenant-branding.service';
 import { NavItem, NavSubItem } from './sidebar-menu.config';
+import { sidebarHelp } from './sidebar-help';
+import { TooltipDirective } from '../../directives/tooltip.directive';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule, RouterModule, IconComponent],
+  imports: [CommonModule, RouterModule, IconComponent, TooltipDirective],
   templateUrl: './app-sidebar.component.html',
 })
 export class AppSidebarComponent implements OnInit, OnDestroy {
@@ -124,6 +126,8 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       (event.shiftKey ? last : first).focus();
     }
   }
+
+  protected readonly help = sidebarHelp;
 
   isActive(path: string): boolean {
     return this.router.url === path;

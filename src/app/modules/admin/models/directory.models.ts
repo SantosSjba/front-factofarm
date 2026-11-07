@@ -133,6 +133,7 @@ export interface EstablishmentOptionDto {
   posPlinNumero?: string | null;
   posRequirePrescription?: boolean;
   posRequireControlledApproval?: boolean;
+  blockSalesAboveRegulatedPrice?: boolean;
   posPaymentReferenceMethods?: PaymentMethod[];
 }
 
@@ -154,6 +155,7 @@ export interface PosPaymentSettingsDto {
   posRequirePrescription: boolean;
   /** false: no se pide farmacéutico autorizador para controlados. */
   posRequireControlledApproval: boolean;
+  blockSalesAboveRegulatedPrice?: boolean;
   /** Medios que exigen código / N° de operación. */
   posPaymentReferenceMethods: PaymentMethod[];
 }
@@ -615,6 +617,7 @@ export interface CreateEstablishmentRequest {
   posRequirePrescription?: boolean;
   posRequireControlledApproval?: boolean;
   posPaymentReferenceMethods?: PaymentMethod[];
+  blockSalesAboveRegulatedPrice?: boolean;
 }
 
 export type UpdateEstablishmentRequest = Partial<CreateEstablishmentRequest>;
@@ -2951,6 +2954,9 @@ export interface RegulatedPriceDto {
   codigoDigemid: string | null;
   nombre: string;
   precioMaximo: string;
+  vigenteDesde: string | null;
+  vigenteHasta: string | null;
+  fuente: string;
 }
 
 export interface UpsertRegulatedPriceRequest {

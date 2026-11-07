@@ -73,6 +73,8 @@
             <li [attr.data-tour-nav]="nav.key" [attr.data-tour-label]="nav.name">
               @if (nav.subItems) {
                 <button
+                  [appTooltip]="help(nav)"
+                  appTooltipPlacement="right"
                   (click)="toggleSubmenu('main',i)"
                   class="menu-item group min-w-0 cursor-pointer"
                   [class.menu-item-active]="isGroupActive(nav, 'main', i)"
@@ -150,6 +152,8 @@
                       @if (subItem.subItems?.length) {
                         <button
                           type="button"
+                          [appTooltip]="help(subItem)"
+                          appTooltipPlacement="right"
                           class="menu-dropdown-item w-full min-w-0"
                           [ngClass]="{
                             'menu-dropdown-item-inactive': !isSubItemActive(subItem),
@@ -173,6 +177,8 @@
                               @if (childItem.path) {
                                 <li>
                                   <a
+                                    [appTooltip]="help(childItem)"
+                                    appTooltipPlacement="right"
                                     [routerLink]="childItem.path"
                                     routerLinkActive=""
                                     (click)="onSubmenuClick()"
@@ -191,6 +197,8 @@
                         }
                       } @else if (subItem.path) {
                         <a
+                          [appTooltip]="help(subItem)"
+                          appTooltipPlacement="right"
                           [routerLink]="subItem.path"
                           routerLinkActive=""
                           (click)="onSubmenuClick()"
@@ -234,6 +242,8 @@
               } @else {
                 @if (nav.path) {
                 <a
+                  [appTooltip]="help(nav)"
+                  appTooltipPlacement="right"
                   [routerLink]="nav.path"
                   routerLinkActive="menu-item-active"
                   class="menu-item group min-w-0"
@@ -298,6 +308,8 @@
             <li>
               @if (nav.subItems) {
                 <button
+                  [appTooltip]="help(nav)"
+                  appTooltipPlacement="right"
                   (click)="toggleSubmenu('others',i)"
                   class="menu-item group min-w-0 cursor-pointer"
                   [ngClass]="{
@@ -376,6 +388,8 @@
                       @if (subItem.subItems?.length) {
                         <button
                           type="button"
+                          [appTooltip]="help(subItem)"
+                          appTooltipPlacement="right"
                           class="menu-dropdown-item w-full min-w-0"
                           [ngClass]="{
                             'menu-dropdown-item-inactive': !isSubItemActive(subItem),
@@ -399,6 +413,8 @@
                               @if (childItem.path) {
                                 <li>
                                   <a
+                                    [appTooltip]="help(childItem)"
+                                    appTooltipPlacement="right"
                                     [routerLink]="childItem.path"
                                     routerLinkActive=""
                                     (click)="onSubmenuClick()"
@@ -417,6 +433,8 @@
                         }
                       } @else if (subItem.path) {
                         <a
+                          [appTooltip]="help(subItem)"
+                          appTooltipPlacement="right"
                           [routerLink]="subItem.path"
                           routerLinkActive=""
                           (click)="onSubmenuClick()"
@@ -460,6 +478,8 @@
               } @else {
                 @if (nav.path) {
                 <a
+                  [appTooltip]="help(nav)"
+                  appTooltipPlacement="right"
                   [routerLink]="nav.path"
                   routerLinkActive="menu-item-active"
                   class="menu-item group min-w-0"

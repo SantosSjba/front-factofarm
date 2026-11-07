@@ -153,6 +153,7 @@ export class EstablecimientosComponent {
   protected readonly posYapeNumero = signal('');
   protected readonly posPlinNumero = signal('');
   protected readonly posRequirePrescription = signal(true);
+  protected readonly blockSalesAboveRegulatedPrice = signal(false);
   protected readonly posRequireControlledApproval = signal(true);
   protected readonly posPaymentReferenceMethods = signal<PaymentMethod[]>([...CONFIGURABLE_REFERENCE_METHODS]);
   protected readonly referenceMethodOptions = POS_PAYMENT_OPTIONS.filter((o) =>
@@ -324,6 +325,7 @@ export class EstablecimientosComponent {
         this.posPlinNumero.set(current.posPlinNumero ?? '');
         this.posRequirePrescription.set(current.posRequirePrescription ?? true);
         this.posRequireControlledApproval.set(current.posRequireControlledApproval ?? true);
+        this.blockSalesAboveRegulatedPrice.set(current.blockSalesAboveRegulatedPrice ?? false);
         this.posPaymentReferenceMethods.set(
           current.posPaymentReferenceMethods ?? [...CONFIGURABLE_REFERENCE_METHODS],
         );
@@ -405,6 +407,7 @@ export class EstablecimientosComponent {
       posPlinNumero: plinDigits,
       posRequirePrescription: this.posRequirePrescription(),
       posRequireControlledApproval: this.posRequireControlledApproval(),
+      blockSalesAboveRegulatedPrice: this.blockSalesAboveRegulatedPrice(),
       posPaymentReferenceMethods: this.posPaymentReferenceMethods(),
       activo: true,
     };
@@ -558,6 +561,7 @@ export class EstablecimientosComponent {
     this.posPlinNumero.set('');
     this.posRequirePrescription.set(true);
     this.posRequireControlledApproval.set(true);
+    this.blockSalesAboveRegulatedPrice.set(false);
     this.posPaymentReferenceMethods.set([...CONFIGURABLE_REFERENCE_METHODS]);
   }
 
