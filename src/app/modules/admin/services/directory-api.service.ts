@@ -345,8 +345,16 @@ export class DirectoryApiService {
     return this.http.get<DashboardSalesTrendDto>(`${this.base}/dashboard/sales-trend`);
   }
 
-  getDashboardOverview(days: number) {
-    return this.http.get<DashboardOverviewDto>(`${this.base}/dashboard/overview`, { params: { days: String(days) } });
+  /** Últimos `days` días, o un día / rango concreto (AAAA-MM-DD) si se indica `from`. */
+  getDashboardOverview(period: { days?: number; from?: string; to?: string }) {
+    const params: Record<string, string> = {};
+    if (period.from) {
+      params['from'] = period.from;
+      if (period.to) params['to'] = period.to;
+    } else {
+      params['days'] = String(period.days ?? 7);
+    }
+    return this.http.get<DashboardOverviewDto>(`${this.base}/dashboard/overview`, { params });
   }
 
   getPlatformOverview() {

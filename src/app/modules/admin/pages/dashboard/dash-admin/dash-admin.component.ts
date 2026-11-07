@@ -15,13 +15,30 @@ import { BarListComponent, type BarListRow } from '../../../../../shared/compone
 import { HourColumnsComponent } from '../../../../../shared/components/common/dashboard/hour-columns.component';
 import { AppDatePipe } from '../../../../../shared/pipes/app-date.pipe';
 import { DashboardSalesChartComponent } from './dashboard-sales-chart.component';
+import { InputFieldComponent } from '../../../../../shared/components/form/input/input-field.component';
 
 const PERIODS = [
   { id: '1', label: 'Hoy' },
   { id: '7', label: '7 días' },
   { id: '30', label: '30 días' },
   { id: '90', label: '90 días' },
+  { id: 'dia', label: 'Día' },
+  { id: 'rango', label: 'Rango' },
 ];
+
+type PeriodMode = 'preset' | 'dia' | 'rango';
+
+/** Fecha local del navegador en AAAA-MM-DD. */
+function todayYmd(): string {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
+/** «2026-11-05» → «05/11/2026». */
+function dmy(ymd: string): string {
+  return ymd.split('-').reverse().join('/');
+}
 
 @Component({
   selector: 'app-dash-admin',
@@ -34,6 +51,7 @@ const PERIODS = [
     BarListComponent,
     HourColumnsComponent,
     DashboardSalesChartComponent,
+    InputFieldComponent,
     AppDatePipe,
   ],
   templateUrl: './dash-admin.component.html',
@@ -44,14 +62,79 @@ export class DashAdminComponent {
   protected readonly locale = inject(LocaleService);
 
   protected readonly periods = PERIODS;
-  protected readonly days = signal(7);
-  protected readonly periodLabel = computed(() => (this.days() === 1 ? 'hoy' : `últimos ${this.days()} días`));
+  protected readonly today = todayYmd();
+  protected readonly mode = signal<PeriodMode>('preset');
+  protected readonly presetDays = signal(7);
+  protected readonly day = signal(this.today);
+  protected readonly rangeFrom = signal(this.today.slice(0, 8) + '01');
+  protected readonly rangeTo = signal(this.today);
+
+  /** Valor del selector: los días del atajo, o «dia» / «rango». */
+  protected readonly periodValue = computed(() => (this.mode() === 'preset' ? String(this.presetDays()) : this.mode()));
+
+  /** Error de las fechas elegidas; mientras haya uno no se consulta. */
+  protected readonly dateError = computed(() => {
+    if (this.mode() === 'dia') {
+      if (!this.day()) return 'Elige un día.';
+      if (this.day() > this.today) return 'Elige un día hasta hoy.';
+    }
+    if (this.mode() === 'rango') {
+      const from = this.rangeFrom();
+      const to = this.rangeTo();
+      if (!from || !to) return 'Elige las dos fechas.';
+      if (from > to) return '«Desde» no puede ser posterior a «Hasta».';
+      if (to > this.today) return '«Hasta» no puede ser posterior a hoy.';
+      if ((Date.parse(to) - Date.parse(from)) / 86_400_000 + 1 > 366) return 'El rango puede ser de hasta 366 días.';
+    }
+    return '';
+  });
+
+  /** Lo que se pide al API: atajo de días, un día o un rango. */
+  private readonly period = computed(() => {
+    switch (this.mode()) {
+      case 'dia':
+        return { from: this.day() };
+      case 'rango':
+        return { from: this.rangeFrom(), to: this.rangeTo() };
+      default:
+        return { days: this.presetDays() };
+    }
+  });
+
+  /** Días del periodo mostrado (los datos traen el valor real del API). */
+  protected readonly days = computed(() => this.overviewQuery.data()?.days ?? this.presetDays());
+  protected readonly isSingleDay = computed(() => this.days() === 1);
+  protected readonly isToday = computed(() => {
+    const d = this.overviewQuery.data();
+    return d ? d.from === this.today && d.to === this.today : this.mode() === 'preset' && this.presetDays() === 1;
+  });
+
+  protected readonly periodLabel = computed(() => {
+    const d = this.overviewQuery.data();
+    if (!d?.custom) return this.days() === 1 ? 'hoy' : `últimos ${this.days()} días`;
+    if (d.from === d.to) return d.from === this.today ? 'hoy' : `el ${dmy(d.from)}`;
+    return `del ${dmy(d.from)} al ${dmy(d.to)}`;
+  });
+
+  /** Texto tras «Resumen» en la cabecera. */
+  protected readonly headerPeriod = computed(() => {
+    const label = this.periodLabel();
+    return label.startsWith('del ') || label.startsWith('el ') ? label.replace(/^el /, 'del ') : `de ${label}`;
+  });
+
+  /** Título del segundo indicador según el periodo. */
+  protected readonly periodKpiLabel = computed(() => {
+    const d = this.overviewQuery.data();
+    if (this.isSingleDay()) return this.isToday() ? 'Unidades vendidas hoy' : `Ventas del ${dmy(d?.from ?? this.today).slice(0, 5)}`;
+    return `Ventas ${this.days()} días`;
+  });
 
   protected readonly isChainAdmin = computed(() => this.auth.user()?.role === 'ADMIN_CADENA');
 
   protected readonly overviewQuery = injectQuery(() => ({
-    queryKey: ['dashboard', 'overview', this.days()] as const,
-    queryFn: () => firstValueFrom(this.api.getDashboardOverview(this.days())),
+    queryKey: ['dashboard', 'overview', this.period()] as const,
+    enabled: !this.dateError(),
+    queryFn: () => firstValueFrom(this.api.getDashboardOverview(this.period())),
     // Al cambiar de periodo se mantienen los datos anteriores mientras carga.
     placeholderData: keepPreviousData,
   }));
@@ -114,8 +197,13 @@ export class DashAdminComponent {
 
   protected readonly showChain = computed(() => (this.chainQuery.data()?.establishments?.length ?? 0) > 1);
 
-  protected setDays(id: string) {
-    this.days.set(Number(id));
+  protected setPeriod(id: string) {
+    if (id === 'dia' || id === 'rango') {
+      this.mode.set(id);
+      return;
+    }
+    this.mode.set('preset');
+    this.presetDays.set(Number(id));
   }
 
   protected errorMessage(): string | null {

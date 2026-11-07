@@ -385,6 +385,11 @@ export interface DashboardBreakdownDto {
 
 export interface DashboardOverviewDto {
   days: number;
+  /** Periodo efectivo (AAAA-MM-DD) en la zona horaria de la sede. */
+  from: string;
+  to: string;
+  /** true si es un día o rango elegido por el usuario. */
+  custom: boolean;
   timeZone: string;
   today: { total: string; count: number; avgTicket: string; yesterdayTotal: string; yesterdayCount: number };
   period: {

@@ -4,11 +4,52 @@
       {{ isChainAdmin() ? 'Dashboard cadena' : 'Dashboard' }}
     </h1>
     <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-      Resumen de {{ periodLabel() }}@if (systemLine()) {<span class="hidden sm:inline"> · {{ systemLine() }}</span>}
+      Resumen {{ headerPeriod() }}@if (systemLine()) {<span class="hidden sm:inline"> · {{ systemLine() }}</span>}
     </p>
   </div>
-  <app-chart-tab ariaLabel="Periodo del dashboard" [options]="periods" [value]="'' + days()" (valueChange)="setDays($event)" />
+  <app-chart-tab ariaLabel="Periodo del dashboard" [options]="periods" [value]="periodValue()" (valueChange)="setPeriod($event)" />
 </div>
+
+@if (mode() !== 'preset') {
+  <div class="mb-3 flex flex-wrap items-start justify-end gap-2">
+    @if (mode() === 'dia') {
+      <app-input-field
+        class="w-full sm:w-48"
+        label="Día"
+        helpText="Muestra las ventas de ese día y las compara con el día anterior."
+        type="date"
+        [max]="today"
+        [error]="!!dateError()"
+        [hint]="dateError()"
+        [value]="day()"
+        (valueChange)="day.set($event + '')"
+      />
+    } @else {
+      <app-input-field
+        class="w-full sm:w-48"
+        label="Desde"
+        helpText="Primer día del rango. Se compara con el periodo anterior de la misma duración."
+        type="date"
+        [max]="rangeTo() || today"
+        [error]="!!dateError()"
+        [value]="rangeFrom()"
+        (valueChange)="rangeFrom.set($event + '')"
+      />
+      <app-input-field
+        class="w-full sm:w-48"
+        label="Hasta"
+        helpText="Último día del rango, incluido. Hasta 366 días en total."
+        type="date"
+        [min]="rangeFrom()"
+        [max]="today"
+        [error]="!!dateError()"
+        [hint]="dateError()"
+        [value]="rangeTo()"
+        (valueChange)="rangeTo.set($event + '')"
+      />
+    }
+  </div>
+}
 
 <app-onboarding-banner />
 
@@ -33,11 +74,11 @@
           link="/notas-venta"
         />
         <app-kpi-tile
-          [label]="days() === 1 ? 'Unidades vendidas hoy' : 'Ventas ' + days() + ' días'"
+          [label]="periodKpiLabel()"
           icon="lucide:trending-up"
-          [value]="days() === 1 ? num(d.period.unitsSold) : money(d.period.total)"
-          [delta]="days() === 1 ? null : delta(d.period.total, d.period.prevTotal)"
-          [sub]="days() === 1 ? num(d.period.newCustomers) + ' clientes nuevos' : ventas(d.period.count) + ' · antes ' + money(d.period.prevTotal)"
+          [value]="isSingleDay() && isToday() ? num(d.period.unitsSold) : money(d.period.total)"
+          [delta]="isSingleDay() && isToday() ? null : delta(d.period.total, d.period.prevTotal)"
+          [sub]="isSingleDay() && isToday() ? num(d.period.newCustomers) + ' clientes nuevos' : ventas(d.period.count) + (isSingleDay() ? ' · día anterior ' : ' · antes ') + money(d.period.prevTotal)"
           hint="Comparado con el periodo anterior de la misma duración."
         />
         <app-kpi-tile
@@ -76,22 +117,31 @@
 
       <!-- Tendencia + medios de pago -->
       <div class="grid gap-3 lg:grid-cols-3">
-        <app-dash-panel class="lg:col-span-2" [title]="'Ventas por día · ' + periodLabel()" hint="Pasa el cursor por el gráfico para ver el monto y la cantidad de ventas de cada día.">
-          <app-dashboard-sales-chart [points]="d.trend" [height]="200" />
-        </app-dash-panel>
+        @if (isSingleDay()) {
+          <!-- Un solo día no forma una línea: se ve mejor por hora. -->
+          <app-dash-panel class="lg:col-span-2" [title]="'Ventas por hora · ' + periodLabel()" hint="Monto vendido en cada hora del día elegido.">
+            <app-hour-columns [hours]="d.hours" [format]="moneyFn" />
+          </app-dash-panel>
+        } @else {
+          <app-dash-panel class="lg:col-span-2" [title]="'Ventas por día · ' + periodLabel()" hint="Pasa el cursor por el gráfico para ver el monto y la cantidad de ventas de cada día.">
+            <app-dashboard-sales-chart [points]="d.trend" [height]="200" />
+          </app-dash-panel>
+        }
         <app-dash-panel title="Medios de pago" hint="Monto cobrado por cada medio. Una venta con dos medios suma en ambos." link="/ingresos-egresos-medio-pago" linkText="Detalle">
           <app-bar-list [rows]="rows(d.payments, 'pago')" ariaLabel="Cobros por medio de pago" />
         </app-dash-panel>
       </div>
 
       <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <app-dash-panel title="Horas pico" hint="Monto vendido por hora del día en el periodo.">
-          <app-hour-columns [hours]="d.hours" [format]="moneyFn" />
-        </app-dash-panel>
+        @if (!isSingleDay()) {
+          <app-dash-panel title="Horas pico" hint="Monto vendido por hora del día en el periodo.">
+            <app-hour-columns [hours]="d.hours" [format]="moneyFn" />
+          </app-dash-panel>
+        }
         <app-dash-panel title="Por comprobante" link="/comprobante-electronico" linkText="Comprobantes">
           <app-bar-list [rows]="rows(d.documents)" ariaLabel="Ventas por tipo de comprobante" />
         </app-dash-panel>
-        <app-dash-panel title="Por vendedor" class="md:col-span-2 xl:col-span-1">
+        <app-dash-panel title="Por vendedor" [class]="isSingleDay() ? '' : 'md:col-span-2 xl:col-span-1'">
           <app-bar-list [rows]="rows(d.sellers)" ariaLabel="Ventas por vendedor" />
         </app-dash-panel>
       </div>
