@@ -138,6 +138,7 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
     void this.router.navigateByUrl('/auth/signin');
   }
 
+  isApplicationMenuOpen = false;
   isMobileSearchOpen = false;
   readonly isMobileOpen$;
   /** Drawer móvil abierto (logo del header se oculta: el drawer ya lo muestra). */
@@ -165,6 +166,10 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
     } else {
       this.sidebarService.toggleMobileOpen();
     }
+  }
+
+  toggleApplicationMenu() {
+    this.isApplicationMenuOpen = !this.isApplicationMenuOpen;
   }
 
   toggleMobileSearch() {
@@ -209,7 +214,7 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
     }
     if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
       event.preventDefault();
-      if (window.innerWidth < 768) {
+      if (window.innerWidth < 1280) {
         this.isMobileSearchOpen = true;
         this.isSearchDropdownOpen = true;
         setTimeout(() => this.mobileSearchInput?.nativeElement.focus(), 0);

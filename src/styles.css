@@ -2,7 +2,9 @@
 layer(base);
 
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "swiper/css/bundle";
+@import "@angular/cdk/overlay-prebuilt.css";
 @import "driver.js/dist/driver.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -21,16 +23,28 @@ layer(base);
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
 
+  --text-heading-one: 64px;
+  --text-heading-one--line-height: 80px;
+  --text-heading-two: 56px;
+  --text-heading-two--line-height: 72px;
+  --text-heading-three: 48px;
+  --text-heading-three--line-height: 60px;
+  --text-heading-four: 40px;
+  --text-heading-four--line-height: 48px;
+  --text-heading-five: 32px;
+  --text-heading-five--line-height: 40px;
+  --text-heading-six: 24px;
+  --text-heading-six--line-height: 32px;
   --text-title-2xl: 72px;
   --text-title-2xl--line-height: 90px;
   --text-title-xl: 60px;
   --text-title-xl--line-height: 72px;
-  --text-title-lg: 48px;
-  --text-title-lg--line-height: 60px;
+  --text-title-lg: 20px;
+  --text-title-lg--line-height: 30px;
   --text-title-md: 36px;
   --text-title-md--line-height: 44px;
-  --text-title-sm: 30px;
-  --text-title-sm--line-height: 38px;
+  --text-title-sm: 18px;
+  --text-title-sm--line-height: 28px;
   --text-theme-xl: 20px;
   --text-theme-xl--line-height: 30px;
   --text-theme-sm: 14px;
@@ -149,7 +163,7 @@ layer(base);
   --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08),
     0px 8px 8px -4px rgba(16, 24, 40, 0.03);
   --shadow-datepicker: -5px 0 0 #262d3c, 5px 0 0 #262d3c;
-  --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
+  --shadow-focus-ring: 0px 0px 0px 4px rgba(48, 160, 56, 0.12);
   --shadow-slider-navigation: 0px 1px 2px 0px rgba(16, 24, 40, 0.1),
     0px 1px 3px 0px rgba(16, 24, 40, 0.1);
   --shadow-tooltip: 0px 4px 6px -2px rgba(16, 24, 40, 0.05),
@@ -256,7 +270,7 @@ layer(base);
 }
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm;
 }
 
 /* Skeleton shimmer (listas, paneles, KPIs) */
@@ -326,7 +340,7 @@ layer(base);
 }
 
 @utility menu-dropdown-item {
-  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium;
 }
 @utility menu-dropdown-item-active {
   @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
@@ -1590,4 +1604,13 @@ table.ff-usuarios-list.ff-table-is-cards > tbody > tr > td.ff-table-title {
   font-size: 1.125rem;
   line-height: 1.5rem;
   font-weight: 600;
+}
+
+/* Plantilla: overlays de spartan (select). Por encima de los modales (z-99999). */
+.cdk-overlay-container {
+  z-index: 1000000;
+}
+
+.cdk-overlay-pane {
+  background: transparent !important;
 }

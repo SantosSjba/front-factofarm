@@ -126,7 +126,7 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
       return `flex h-full w-full flex-col overflow-hidden bg-white dark:bg-gray-900 ${this.className}`.trim();
     }
     return [
-      'relative w-full flex flex-col overflow-hidden rounded-3xl bg-white shadow-theme-lg dark:bg-gray-900',
+      'relative w-full flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-dark',
       this.maxHeightClass,
       this.className,
     ]

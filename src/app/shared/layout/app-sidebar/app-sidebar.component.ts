@@ -134,6 +134,14 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     return (subItem.subItems ?? []).some((child) => this.isSubItemActive(child));
   }
 
+  /** Como la plantilla: el grupo se resalta abierto o con una ruta hija activa. */
+  isGroupActive(nav: NavItem, section: string, index: number): boolean {
+    return (
+      this.openSubmenu === `${section}-${index}` ||
+      (nav.subItems ?? []).some((subItem) => this.isSubItemActive(subItem))
+    );
+  }
+
   isNestedSubmenuOpen(parentKey: string, index: number): boolean {
     return this.nestedSubmenuOpen[this.getNestedSubmenuKey(parentKey, index)] ?? false;
   }

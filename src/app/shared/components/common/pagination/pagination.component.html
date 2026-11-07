@@ -1,4 +1,4 @@
-<div class="flex items-center flex-col sm:flex-row justify-between border-t border-gray-200 px-5 py-4 dark:border-gray-800">
+<div class="flex flex-col items-center justify-between border-t border-gray-200 px-5 py-4 sm:flex-row sm:px-6 dark:border-gray-800">
   <div class="pb-3 sm:pb-0">
     <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">
       Mostrando <span class="text-gray-800 dark:text-white/90">{{ startEntry }}</span> a
@@ -7,34 +7,33 @@
     </span>
   </div>
 
-  <div class="flex items-center justify-between p-4 sm:p-0 rounded-lg w-full sm:w-auto bg-gray-50 dark:bg-white/[0.03] dark:sm:bg-transparent sm:bg-transparent gap-2 sm:justify-normal">
+  <div class="flex w-full items-center justify-between gap-1.5 sm:w-auto sm:justify-normal">
     <button
       type="button"
-      class="shadow-theme-xs flex items-center gap-2 rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 hover:text-gray-800 sm:p-2.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-      [ngClass]="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
+      class="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-theme-xs transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5"
       [disabled]="currentPage === 1"
       aria-label="Página anterior"
       (click)="previousPage()"
     >
-      <app-icon name="lucide:chevron-left" width="20" height="20" />
+      <app-icon name="lucide:chevron-left" iconClass="size-4 rtl:rotate-180" />
     </button>
 
     <span class="block text-sm font-medium text-gray-700 sm:hidden dark:text-gray-400">
       Página {{ currentPage }} de {{ totalPages }}
     </span>
 
-    <ul class="hidden items-center gap-0.5 sm:flex">
+    <ul class="hidden items-center gap-1.5 sm:flex">
       @for (page of visiblePages; track page) {
         <li>
           <button
             type="button"
             (click)="goToPage(page)"
-            class="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium"
+            class="flex size-9 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium transition"
             [attr.aria-label]="'Ir a página ' + page"
             [attr.aria-current]="page === currentPage ? 'page' : null"
             [ngClass]="{
-              'bg-brand-500 text-white': page === currentPage,
-              'hover:bg-brand-500 text-gray-700 hover:text-white dark:text-gray-400 dark:hover:text-white': page !== currentPage
+              'border-brand-500 bg-brand-500 text-white shadow-theme-xs dark:border-brand-500 dark:bg-brand-500': page === currentPage,
+              'border-gray-300 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5': page !== currentPage
             }"
           >
             {{ page }}
@@ -43,13 +42,13 @@
       }
       @if (visiblePages.length > 0 && visiblePages[visiblePages.length - 1] < totalPages) {
         <li>
-          <span class="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium text-gray-700 dark:text-gray-400">...</span>
+          <span class="flex size-9 items-center justify-center text-sm text-gray-500 dark:text-gray-400">...</span>
         </li>
         <li>
           <button
             type="button"
             (click)="goToPage(totalPages)"
-            class="hover:bg-brand-500 flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium text-gray-700 hover:text-white dark:text-gray-400 dark:hover:text-white"
+            class="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5"
             [attr.aria-label]="'Ir a página ' + totalPages"
           >
             {{ totalPages }}
@@ -60,13 +59,12 @@
 
     <button
       type="button"
-      class="shadow-theme-xs flex items-center gap-2 rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 hover:text-gray-800 sm:p-2.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-      [ngClass]="{ 'opacity-50 cursor-not-allowed': currentPage === totalPages }"
+      class="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-theme-xs transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5"
       [disabled]="currentPage === totalPages"
       aria-label="Página siguiente"
       (click)="nextPage()"
     >
-      <app-icon name="lucide:chevron-right" width="20" height="20" />
+      <app-icon name="lucide:chevron-right" iconClass="size-4 rtl:rotate-180" />
     </button>
   </div>
 </div>

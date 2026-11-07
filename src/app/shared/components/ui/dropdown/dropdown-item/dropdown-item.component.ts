@@ -8,12 +8,25 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, RouterModule]
 })
 export class DropdownItemComponent {
-  @Input() to?: string;
-  @Input() baseClassName = 'block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white';
+  @Input() baseClassName =
+    'flex w-full cursor-pointer items-center rounded-lg px-3 py-2.5 text-start text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300';
   @Input() className = '';
+  @Input() variant: 'default' | 'destructive' = 'default';
   @Output() itemClick = new EventEmitter<void>();
 
+  private static readonly DESTRUCTIVE =
+    'text-error-500 hover:bg-error-50 hover:text-error-600 focus-visible:bg-error-50 focus-visible:text-error-600 dark:text-error-400 dark:hover:bg-error-500/10 dark:hover:text-error-400';
+
   get combinedClasses(): string {
+    if (this.variant === 'destructive') {
+      // destructive owns the colours: drop text-/bg- colour utilities coming from the base and className
+      const strip = (v: string) =>
+        v
+          .split(/\s+/)
+          .filter((c) => c && !/^(dark:)?(hover:|focus-visible:)?(text|bg)-(gray|white|red|black)/.test(c))
+          .join(' ');
+      return `${strip(this.baseClassName)} ${strip(this.className)} ${DropdownItemComponent.DESTRUCTIVE}`.trim();
+    }
     return `${this.baseClassName} ${this.className}`.trim();
   }
 

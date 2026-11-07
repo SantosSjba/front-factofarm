@@ -9,7 +9,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     <div
       role="listbox"
       [attr.aria-label]="ariaLabel || null"
-      class="max-h-48 overflow-auto rounded-lg border border-gray-200 bg-white text-sm shadow-theme-xs dark:border-gray-800 dark:bg-gray-900"
+      class="max-h-60 overflow-auto rounded-2xl border border-gray-200 bg-white p-3 text-sm shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
       [class.absolute]="floating"
       [class.z-30]="floating"
       [class.mt-1]="floating"

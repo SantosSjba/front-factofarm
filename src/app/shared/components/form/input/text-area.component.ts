@@ -1,18 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { LabelComponent } from '../label/label.component';
+import { TextareaDirective } from '../../ui/textarea/textarea.directive';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 
 @Component({
   selector: 'app-text-area',
   standalone: true,
-  imports: [CommonModule, LabelComponent],
+  imports: [CommonModule, LabelComponent, TextareaDirective],
   template: `
     @if (label) {
       <app-label [for]="id || undefined" [required]="required">{{ label }}</app-label>
     }
     <div class="relative">
       <textarea
+        app-textarea
+        unstyled
+        [className]="textareaClasses"
         [id]="id"
         [attr.name]="name || null"
         [attr.maxlength]="maxLength ?? null"
@@ -23,15 +27,15 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [value]="value"
         (input)="onInput($event)"
         [disabled]="disabled"
-        [ngClass]="textareaClasses"
       ></textarea>
       @if (maxLength && (value?.length ?? 0) > maxLength * 0.8) {
-      <p class="mt-1 text-right text-xs text-gray-400">{{ value?.length ?? 0 }}/{{ maxLength }}</p>
+      <p class="mt-1 text-end text-xs text-gray-400">{{ value?.length ?? 0 }}/{{ maxLength }}</p>
       }
       @if (hint) {
       <p
-        class="mt-2 text-sm"
-        [ngClass]="error ? 'text-error-500' : 'text-gray-500 dark:text-gray-400'">
+        class="mt-2 text-xs"
+        [attr.role]="error ? 'alert' : null"
+        [ngClass]="error ? 'text-error-500 dark:text-error-400' : 'text-gray-500 dark:text-gray-400'">
         {{ hint }}
       </p>
       }
@@ -63,15 +67,11 @@ export class TextAreaComponent {
     this.valueChange.emit(val);
   }
 
+  /** Clases tal cual `default-textarea` / `error-textarea` de la plantilla TailAdmin. */
   get textareaClasses(): string {
-    let base = `w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs focus:outline-hidden ${this.className} `;
-    if (this.disabled) {
-      base += 'bg-gray-100 opacity-50 text-gray-500 border-gray-300 cursor-not-allowed opacity40 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
-    } else if (this.error) {
-      base += 'bg-transparent border-error-500 focus:border-error-300 focus:ring-3 focus:ring-error-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-error-800';
-    } else {
-      base += 'bg-transparent text-gray-900 dark:text-gray-300 text-gray-900 border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800';
-    }
-    return base;
+    const state = this.error
+      ? 'border border-error-500 ring-3 ring-error-500/20 focus:border-error-500 focus:ring-3 focus:ring-error-500/20 dark:border-error-500/50 dark:ring-error-500/40'
+      : 'border border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100/50 disabled:text-gray-400 disabled:shadow-none dark:border-gray-700 dark:focus:border-brand-500/40 dark:disabled:border-gray-800 dark:disabled:bg-gray-800/50';
+    return `flex min-h-20 w-full min-w-0 rounded-[10px] bg-white py-2.5 text-sm font-normal text-gray-800 shadow-theme-xs outline-hidden transition-colors placeholder:text-gray-400 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500 ps-4 pe-4 ${state} ${this.className}`.trim();
   }
 }

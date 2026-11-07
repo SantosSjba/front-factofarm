@@ -4,13 +4,13 @@ export type StatusTone = 'success' | 'error' | 'warning' | 'info' | 'brand' | 'p
 
 /** Clases por tono, válidas en tema claro y oscuro. */
 const TONE_CLASSES: Record<StatusTone, string> = {
-  success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400',
-  error: 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-400',
-  warning: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-400',
-  info: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-400',
-  brand: 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400',
-  purple: 'bg-purple-100 text-purple-800 dark:bg-purple-500/15 dark:text-purple-400',
-  neutral: 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300',
+  success: 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500',
+  error: 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500',
+  warning: 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400',
+  info: 'bg-blue-light-50 text-blue-light-500 dark:bg-blue-light-500/15 dark:text-blue-light-500',
+  brand: 'bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400',
+  purple: 'bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400',
+  neutral: 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-white/80',
 };
 
 /** Estados de dominio (SUNAT, OC, CxP, delivery, ventas…) → tono visual. */
@@ -66,7 +66,8 @@ export function statusToneClasses(status: string | null | undefined, tone?: Stat
   host: { class: 'inline-flex' },
   template: `
     <span
-      class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium"
+      data-slot="badge"
+      class="group/badge inline-flex h-5.5 w-fit shrink-0 items-center justify-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-colors select-none"
       [class]="classes"
     >
       <ng-content />{{ text }}

@@ -1,80 +1,68 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
+/** Checkbox tal cual `default-checkbox` / `labeled-checkbox` de la plantilla TailAdmin. */
 @Component({
   selector: 'app-checkbox',
   imports: [CommonModule],
   template: `
-  <label
-  class="flex items-start gap-3 group cursor-pointer"
-  [ngClass]="{ 'cursor-not-allowed opacity-60': disabled }"
->
-  <div class="relative w-5 h-5 shrink-0">
-    <input
-      [id]="id"
-      type="checkbox"
-      class="w-5 h-5 appearance-none cursor-pointer dark:border-gray-700 border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60"
-      [ngClass]="className"
-      [checked]="checked"
-      [attr.aria-label]="ariaLabel || null"
-      (change)="onChange($event)"
-      [disabled]="disabled"
-    />
-    @if (checked) {
-    <ng-container>
-      <svg
-        class="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none top-1/2 left-1/2"
-        xmlns="http://www.w3.org/2000/svg"
-        width="14"
-        height="14"
-        viewBox="0 0 14 14"
-        fill="none"
-      >
-        <path
-          d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-          stroke="white"
-          stroke-width="1.94437"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </ng-container>
-    }
-    @if (disabled) {
-    <ng-container>
-      <svg
-        class="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none top-1/2 left-1/2"
-        xmlns="http://www.w3.org/2000/svg"
-        width="14"
-        height="14"
-        viewBox="0 0 14 14"
-        fill="none"
-      >
-        <path
-          d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-          stroke="#E4E7EC"
-          stroke-width="2.33333"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </ng-container>
-    }
-  </div>
-  @if (label) {
-  <span
-    class="text-sm font-medium text-gray-800 dark:text-gray-200"
+    <div
+      role="group"
+      data-slot="field"
+      data-orientation="horizontal"
+      class="group/field flex w-auto items-center gap-2.5"
     >
-      {{ label }}
-  </span>
-  }
-  <!-- Texto enriquecido (p. ej. con enlaces) cuando no basta con label. -->
-  <span class="text-sm text-gray-700 empty:hidden dark:text-gray-300"><ng-content /></span>
-</label>
+      <button
+        type="button"
+        role="checkbox"
+        [id]="controlId"
+        [attr.aria-checked]="checked"
+        [attr.aria-label]="ariaLabel || null"
+        [disabled]="disabled"
+        (click)="toggle()"
+        class="peer relative flex size-4 shrink-0 items-center justify-center rounded-md border shadow-theme-xs outline-hidden transition-colors focus-visible:ring-3 focus-visible:ring-brand-500/20"
+        [ngClass]="[stateClasses, className]"
+      >
+        @if (checked) {
+          <svg
+            class="size-3"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        }
+      </button>
+      @if (label) {
+        <label
+          data-slot="field-label"
+          [attr.for]="controlId"
+          class="text-sm font-medium select-none"
+          [ngClass]="disabled ? 'cursor-not-allowed text-gray-400 dark:text-gray-600' : 'cursor-pointer text-gray-700 dark:text-gray-300'"
+        >
+          {{ label }}
+        </label>
+      }
+      <!-- Texto enriquecido (p. ej. con enlaces) cuando no basta con label. -->
+      <label
+        [attr.for]="controlId"
+        class="text-sm text-gray-700 select-none empty:hidden dark:text-gray-300"
+        [class.cursor-pointer]="!disabled"
+        ><ng-content
+      /></label>
+    </div>
   `,
-  styles: ``
 })
 export class CheckboxComponent {
+  private static nextId = 0;
+  private readonly autoId = `app-checkbox-${CheckboxComponent.nextId++}`;
 
   @Input() label?: string;
   @Input() checked = false;
@@ -85,8 +73,24 @@ export class CheckboxComponent {
   @Input() ariaLabel = '';
   @Output() checkedChange = new EventEmitter<boolean>();
 
-  onChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.checkedChange.emit(input.checked);
+  /** El `id` estático también queda en el host: el botón necesita uno propio para el <label for>. */
+  protected get controlId(): string {
+    return this.id ? `${this.id}-control` : this.autoId;
   }
+
+  protected get stateClasses(): string {
+    if (this.disabled) {
+      return 'cursor-not-allowed border-gray-200 bg-transparent text-gray-300 shadow-none dark:border-gray-800 dark:text-gray-600';
+    }
+    return this.checked
+      ? 'cursor-pointer border-brand-500 bg-brand-500 text-white hover:border-brand-600 hover:bg-brand-600 dark:border-brand-500 dark:bg-brand-500'
+      : 'cursor-pointer border-gray-300 bg-white hover:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-brand-400';
+  }
+
+  protected toggle(): void {
+    if (this.disabled) return;
+    this.checked = !this.checked;
+    this.checkedChange.emit(this.checked);
+  }
+
 }

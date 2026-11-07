@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { LabelComponent } from '../label/label.component';
 import { IconComponent } from '../../ui/icon/icon.component';
+import { InputDirective } from '../../ui/input/input.directive';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-input-field',
   // `className="flex-1"` debe aplicar al host para que crezca dentro de filas flex.
   host: { class: 'block', '[class.flex-1]': 'hostFlex', '[class.min-w-0]': 'hostFlex' },
-  imports: [CommonModule, LabelComponent, IconComponent],
+  imports: [CommonModule, LabelComponent, IconComponent, InputDirective],
   template: `
     @if (label) {
       <app-label [for]="id || undefined" [required]="isRequired">{{ label }}</app-label>
@@ -16,12 +17,15 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       @if (icon) {
         <app-icon
           [name]="icon"
-          iconClass="pointer-events-none absolute left-3 top-[1.375rem] z-10 size-4 -translate-y-1/2 text-gray-400"
+          iconClass="pointer-events-none absolute start-3 top-[1.375rem] z-10 size-4 -translate-y-1/2 text-gray-400"
         />
       }
       <input
+        app-input
+        unstyled
+        [className]="inputClasses"
         [type]="type"
-        [id]="id"
+        [id]="id || ''"
         [name]="name"
         [placeholder]="placeholder"
         [value]="value"
@@ -38,17 +42,17 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
         [attr.aria-invalid]="error ? true : null"
         [attr.aria-describedby]="ariaDescribedBy"
         [attr.required]="isRequired ? true : null"
-        [ngClass]="inputClasses"
         (input)="onInput($event)"
         (click)="openNativePicker($event)"
       />
 
       @if (hint) {
-      <p class="mt-1.5 text-xs"
+      <p class="mt-2 text-xs"
+        [attr.role]="error ? 'alert' : null"
         [ngClass]="{
-          'text-error-500': error,
-          'text-success-500': success,
-          'text-gray-500': !error && !success
+          'text-error-500 dark:text-error-400': error,
+          'text-success-600 dark:text-success-400': success,
+          'text-gray-500 dark:text-gray-400': !error && !success
         }">
         {{ hint }}
       </p>
@@ -91,19 +95,15 @@ export class InputFieldComponent {
 
   @Output() valueChange = new EventEmitter<string | number>();
 
+  /** Clases tal cual los estados de input de la plantilla TailAdmin. */
   get inputClasses(): string {
-    let inputClasses = `h-11 w-full rounded-lg border appearance-none ${this.icon ? 'pl-9 pr-4' : 'px-4'} py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${this.className}`;
-
-    if (this.disabled) {
-      inputClasses += ` text-gray-500 border-gray-300 opacity-40 bg-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 opacity-40`;
-    } else if (this.error) {
-      inputClasses += ` border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:text-error-400 dark:border-error-500 dark:focus:border-error-800`;
-    } else if (this.success) {
-      inputClasses += ` border-success-500 focus:border-success-300 focus:ring-success-500/20 dark:text-success-400 dark:border-success-500 dark:focus:border-success-800`;
-    } else {
-      inputClasses += ` bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90  dark:focus:border-brand-800`;
-    }
-    return inputClasses;
+    const padding = this.icon ? 'ps-9 pe-4' : 'ps-4 pe-4';
+    const state = this.error
+      ? 'border border-error-500 ring-3 ring-error-500/20 focus:border-error-500 focus:ring-3 focus:ring-error-500/20 dark:border-error-500/50 dark:ring-error-500/40'
+      : this.success
+        ? 'border border-success-500 ring-3 ring-success-500/20 focus:border-success-500 focus:ring-3 focus:ring-success-500/20 dark:border-success-500/50 dark:ring-success-500/40'
+        : 'border border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100/50 disabled:text-gray-400 disabled:shadow-none dark:border-gray-700 dark:focus:border-brand-500/40 dark:disabled:border-gray-800 dark:disabled:bg-gray-800/50';
+    return `h-11 w-full min-w-0 rounded-[10px] bg-white py-2.5 text-sm font-normal text-gray-800 shadow-theme-xs outline-hidden transition-colors placeholder:text-gray-400 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500 ${padding} ${state} ${this.className}`.trim();
   }
 
   /** Tipos con selector nativo del navegador (calendario / reloj). */

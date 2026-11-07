@@ -1,26 +1,18 @@
-<nav class="mb-3 ml-auto flex w-full justify-end text-theme-sm text-gray-500 dark:text-gray-400" aria-label="Migas de pan">
-  <ol class="flex flex-wrap items-center justify-end gap-1.5 text-right">
+<nav class="mb-6 ms-auto flex w-full justify-end" aria-label="Migas de pan">
+  <ol class="flex flex-wrap items-center justify-end gap-1.5">
     @for (seg of segments; track $index; let last = $last) {
-    <li class="inline-flex items-center gap-1.5">
-      @if (!last && seg.link !== undefined && seg.link !== null && seg.link !== '') {
-        <a
-          class="hover:text-brand-500 dark:hover:text-brand-400"
-          [routerLink]="seg.link!"
-          >{{ seg.label }}</a
-        >
-      } @else {
-        <span
-          [class.font-medium]="last"
-          [class.text-gray-800]="last"
-          [class.dark:text-white/90]="last"
-        >
-          {{ seg.label }}
-        </span>
-      }
-      @if (!last) {
-        <span class="mx-1.5 text-gray-400" aria-hidden="true">/</span>
-      }
-    </li>
+      <li class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+        @if (!last && seg.link !== undefined && seg.link !== null && seg.link !== '') {
+          <a class="hover:text-gray-700 dark:hover:text-gray-300" [routerLink]="seg.link!">{{ seg.label }}</a>
+        } @else if (last) {
+          <span class="text-gray-800 dark:text-white/90">{{ seg.label }}</span>
+        } @else {
+          <span>{{ seg.label }}</span>
+        }
+        @if (!last) {
+          <svg class="stroke-current rtl:rotate-180" width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366" stroke="" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        }
+      </li>
     }
   </ol>
 </nav>

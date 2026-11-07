@@ -15,6 +15,4 @@ import { ThemeToggleTwoComponent } from '../../components/common/theme-toggle-tw
     }
   `,
 })
-export class AuthPageLayoutComponent {
-  protected readonly year = new Date().getFullYear();
-}
+export class AuthPageLayoutComponent {}

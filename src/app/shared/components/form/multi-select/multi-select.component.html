@@ -1,97 +1,105 @@
-<div class="w-full">
-  <span [id]="labelId" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-    {{ label }}
-    @if (required) {
-      <span class="ml-0.5 text-error-500" aria-hidden="true">*</span>
-    }
-  </span>
-  <div class="relative z-20 inline-block w-full">
-    <div class="relative flex flex-col items-center">
-      <div (click)="toggleDropdown()" role="combobox" [attr.tabindex]="disabled ? -1 : 0" [attr.aria-labelledby]="labelId" [attr.aria-expanded]="isOpen" [attr.aria-controls]="labelId + '-options'" [attr.aria-disabled]="disabled" (keydown.enter)="onTriggerKey($event)" (keydown.space)="onTriggerKey($event)" class="w-full">
-        <div class="mb-2 flex h-11 rounded-lg border border-gray-300 py-1.5 pl-3 pr-3 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300">
-          <div class="flex flex-wrap flex-auto gap-2">
-            @if (selectedValuesText.length > 0) {
-              @for (text of selectedValuesText; track $index; let i = $index) {
-              <div
-                class="group flex items-center justify-center rounded-full border-[0.7px] border-transparent bg-gray-100 py-1 pl-2.5 pr-2 text-sm text-gray-800 hover:border-gray-200 dark:bg-gray-800 dark:text-white/90 dark:hover:border-gray-800"
-              >
-                <span class="flex-initial max-w-full">{{ text }}</span>
-                <div class="flex flex-row-reverse flex-auto">
-                  <button type="button" [disabled]="disabled" [attr.aria-label]="'Quitar ' + text"
-                    (click)="removeOption(selectedOptions[i]); $event.stopPropagation()"
-                    class="pl-2 text-gray-500 cursor-pointer group-hover:text-gray-400 dark:text-gray-400"
-                  >
-                    <svg class="fill-current" aria-hidden="true" width="14" height="14" viewBox="0 0 14 14">
-                      <path
-                        fill-rule="evenodd"
-                        clip-rule="evenodd"
-                        d="M3.40717 4.46881C3.11428 4.17591 3.11428 3.70104 3.40717 3.40815C3.70006 3.11525 4.17494 3.11525 4.46783 3.40815L6.99943 5.93975L9.53095 3.40822C9.82385 3.11533 10.2987 3.11533 10.5916 3.40822C10.8845 3.70112 10.8845 4.17599 10.5916 4.46888L8.06009 7.00041L10.5916 9.53193C10.8845 9.82482 10.8845 10.2997 10.5916 10.5926C10.2987 10.8855 9.82385 10.8855 9.53095 10.5926L6.99943 8.06107L4.46783 10.5927C4.17494 10.8856 3.70006 10.8856 3.40717 10.5927C3.11428 10.2998 3.11428 9.8249 3.40717 9.53201L5.93877 7.00041L3.40717 4.46881Z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              }
-            } @else {
-              <input
-                [placeholder]="placeholder"
-                class="w-full h-full p-1 pr-2 text-sm bg-transparent border-0 outline-hidden appearance-none placeholder:text-gray-800 focus:border-0 focus:outline-hidden focus:ring-0 dark:placeholder:text-white/90"
-                readonly tabindex="-1"
-                [value]="placeholder"
-              />
-            }
-          </div>
-          <div class="flex items-center py-1 pl-1 pr-1 w-7">
-            <button
-              type="button"
-              [disabled]="disabled"
-              (click)="toggleDropdown(); $event.stopPropagation()"
-              aria-label="Abrir opciones"
-              class="w-5 h-5 text-gray-700 outline-hidden cursor-pointer focus:outline-hidden dark:text-gray-400"
-            >
-              <svg
-                class="stroke-current"
-                [ngClass]="{ 'rotate-180': isOpen }"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M4.79175 7.39551L10.0001 12.6038L15.2084 7.39551"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-      @if (isOpen) {
-      <div
-        [id]="labelId + '-options'" role="listbox" aria-multiselectable="true" class="absolute left-0 z-40 w-full overflow-y-auto bg-white rounded-lg shadow-sm top-full max-h-select dark:bg-gray-900"
-      >
-        <div class="flex flex-col">
-          @for (option of options; track $index) {
-          <button type="button" role="option" [disabled]="disabled" [attr.aria-selected]="selectedOptions.includes(option.value)"
-            class="hover:bg-primary/5 w-full cursor-pointer rounded-t border-b border-gray-200 dark:border-gray-800"
-            (click)="handleSelect(option.value)"
-          >
-            <div
-              class="relative flex w-full items-center p-2 pl-2"
-              [ngClass]="{ 'bg-primary/10': selectedOptions.includes(option.value) }"
-            >
-              <div class="mx-2 leading-6 text-gray-800 dark:text-white/90">
-                {{ option.text }}
-              </div>
-            </div>
-          </button>
-          }
-        </div>
-      </div>
+<div
+  role="group"
+  data-slot="field"
+  data-orientation="vertical"
+  class="group/field flex w-full flex-col gap-2 *:w-full [&>.sr-only]:w-auto"
+>
+  @if (label) {
+    <span
+      [id]="labelId"
+      data-slot="field-label"
+      class="flex w-fit gap-1 text-sm leading-snug font-medium text-gray-700 select-none dark:text-gray-400"
+    >
+      {{ label }}
+      @if (required) {
+        <span class="text-error-500 dark:text-error-400" aria-hidden="true">*</span>
       }
+    </span>
+  }
+  <div class="relative w-full" clickOutside [clickOutsideActive]="isOpen" (clickOutside)="isOpen = false">
+    <div
+      (click)="toggleDropdown()"
+      role="combobox"
+      [attr.tabindex]="disabled ? -1 : 0"
+      [attr.aria-labelledby]="labelId"
+      [attr.aria-expanded]="isOpen"
+      [attr.aria-controls]="labelId + '-options'"
+      [attr.aria-disabled]="disabled"
+      (keydown.enter)="onTriggerKey($event)"
+      (keydown.space)="onTriggerKey($event)"
+      class="group/select-trigger flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-[10px] border border-gray-300 bg-white py-1.5 ps-3 pe-3.5 text-sm font-normal text-gray-800 shadow-theme-xs outline-hidden transition-all duration-200 select-none hover:border-gray-400 hover:bg-gray-50/50 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:border-gray-600 dark:hover:bg-gray-800/50 dark:focus:border-brand-500/40"
+      [ngClass]="disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
+    >
+      <div class="flex flex-1 flex-wrap items-center gap-2">
+        @if (selectedValuesText.length === 0) {
+          <span class="text-gray-400 dark:text-gray-500">{{ placeholder }}</span>
+        } @else {
+          @for (text of selectedValuesText; track $index; let i = $index) {
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 py-1 ps-2.5 pe-1.5 text-sm font-normal text-gray-800 dark:border-gray-800 dark:bg-white/5 dark:text-white/90"
+            >
+              <span>{{ text }}</span>
+              <button
+                type="button"
+                [disabled]="disabled"
+                [attr.aria-label]="'Quitar ' + text"
+                (click)="removeOption(selectedOptions[i]); $event.stopPropagation()"
+                class="inline-flex size-3.5 cursor-pointer items-center justify-center rounded-full text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
+              >
+                <svg class="size-3" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          }
+        }
+      </div>
+      <button
+        type="button"
+        [disabled]="disabled"
+        (click)="toggleDropdown(); $event.stopPropagation()"
+        aria-label="Abrir opciones"
+        class="inline-flex shrink-0 cursor-pointer items-center justify-center outline-hidden"
+      >
+        <svg
+          class="size-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+          [class.rotate-180]="isOpen"
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path d="M4.792 7.396L10 12.604l5.208-5.208" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
     </div>
+    @if (isOpen) {
+      <div
+        [id]="labelId + '-options'"
+        role="listbox"
+        aria-multiselectable="true"
+        class="absolute start-0 z-50 mt-1.5 flex max-h-60 w-full flex-col gap-1 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+      >
+        @for (option of options; track $index) {
+          <button
+            type="button"
+            role="option"
+            [disabled]="disabled"
+            [attr.aria-selected]="selectedOptions.includes(option.value)"
+            (click)="handleSelect(option.value)"
+            class="flex w-full cursor-pointer items-center justify-between rounded-lg py-2 ps-3 pe-3 text-start text-sm font-medium text-gray-700 transition-colors select-none hover:bg-gray-100 hover:text-gray-900 aria-selected:bg-gray-100 aria-selected:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white dark:aria-selected:bg-white/5 dark:aria-selected:text-white"
+          >
+            <span>{{ option.text }}</span>
+            @if (selectedOptions.includes(option.value)) {
+              <svg class="size-4 text-brand-500 dark:text-brand-400" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            }
+          </button>
+        }
+      </div>
+    }
   </div>
 </div>

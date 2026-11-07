@@ -1,8 +1,8 @@
-<div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] {{ className }}">
+<div class="h-full rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] {{ className }}">
   <!-- Card Header -->
-  <div class="px-4 py-2.5 sm:px-5 sm:py-3">
+  <div class="px-6 py-5">
     <div class="flex items-center gap-1.5">
-      <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">
+      <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
         {{ title }}
       </h3>
       @if (helpText) {
@@ -10,7 +10,7 @@
       }
     </div>
     @if (desc) {
-      <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {{ desc }}
       </p>
     }
@@ -19,7 +19,7 @@
   <!-- Card Body -->
   <div
     class="border-t border-gray-100 dark:border-gray-800"
-    [ngClass]="bodyClass !== '' ? bodyClass : 'p-3 sm:p-4'"
+    [ngClass]="bodyClass !== '' ? bodyClass : 'p-4 sm:p-6'"
   >
     <app-page-state
       [loading]="loading"
@@ -34,7 +34,7 @@
       [skeletonCount]="skeletonCount"
       (retry)="retry.emit()"
     >
-      <div class="space-y-4">
+      <div class="space-y-6">
         <ng-content></ng-content>
       </div>
     </app-page-state>

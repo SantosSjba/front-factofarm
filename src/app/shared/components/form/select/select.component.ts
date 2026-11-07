@@ -1,5 +1,6 @@
 
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { SelectFieldComponent } from '../../ui/select/select-field.component';
 
 export interface Option {
   value: string;
@@ -8,7 +9,7 @@ export interface Option {
 
 @Component({
   selector: 'app-select',
-  imports: [],
+  imports: [SelectFieldComponent],
   templateUrl: './select.component.html',
 })
 export class SelectComponent implements OnInit {
@@ -26,8 +27,7 @@ export class SelectComponent implements OnInit {
     }
   }
 
-  onChange(event: Event) {
-    const value = (event.target as HTMLSelectElement).value;
+  onChange(value: string) {
     this.value = value;
     this.valueChange.emit(value);
   }

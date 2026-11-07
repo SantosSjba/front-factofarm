@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { ClickOutsideDirective } from '../../../directives/click-outside.directive';
 
 export interface Option {
   value: string;
@@ -10,6 +11,7 @@ export interface Option {
   selector: 'app-multi-select',
   imports: [
     CommonModule,
+    ClickOutsideDirective,
   ],
   templateUrl: './multi-select.component.html',
   styles: ``

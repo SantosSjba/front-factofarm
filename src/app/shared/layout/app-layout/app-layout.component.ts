@@ -62,8 +62,8 @@ export class AppLayoutComponent implements OnInit {
       'transition-all',
       'duration-300',
       'ease-in-out',
-      this.isExpanded$ || this.isHovered$ ? 'xl:ml-[290px]' : 'xl:ml-[90px]',
-      this.isMobileOpen$ ? 'ml-0' : '',
+      this.isExpanded$ || this.isHovered$ ? 'xl:ms-[290px]' : 'xl:ms-[90px]',
+      this.isMobileOpen$ ? 'ms-0' : '',
     ];
   }
 }

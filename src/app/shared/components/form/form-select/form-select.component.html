@@ -1,34 +1,21 @@
 @if (label) {
-  <app-label [for]="id || undefined" [required]="required">{{ label }}</app-label>
+  <app-label [for]="triggerId || undefined" [required]="required">{{ label }}</app-label>
 }
-<div class="relative">
-  <select
-    [id]="id || null"
-    [name]="name || null"
-    [attr.aria-label]="ariaLabel || (id ? null : effectivePlaceholder)"
-    [attr.aria-invalid]="error ? true : null"
-    [disabled]="disabled"
-    [ngClass]="selectClass"
-    (change)="onChange($event)"
-  >
-    @if (showPlaceholder && effectivePlaceholder) {
-      <option value="" [selected]="value === ''">{{ effectivePlaceholder }}</option>
-    }
-    @for (opt of renderedOptions; track opt.value) {
-      <option [value]="opt.value" [selected]="opt.value === value">{{ opt.label }}</option>
-    }
-  </select>
-
-  <span
-    class="pointer-events-none absolute bottom-0 right-0 flex h-11 w-11 items-center justify-center text-gray-500 dark:text-gray-400"
-  >
-    <app-icon name="mdi:chevron-down" width="18" height="18" iconClass="translate-y-px" />
-  </span>
-</div>
+<app-select-field
+  [buttonId]="triggerId"
+  [ariaLabel]="ariaLabel || (id ? '' : effectivePlaceholder)"
+  [value]="value || ''"
+  [options]="renderedOptions"
+  [placeholder]="effectivePlaceholder"
+  [disabled]="disabled"
+  [triggerClass]="triggerClass"
+  (valueChange)="valueChange.emit($event)"
+/>
 @if (hint) {
   <p
-    class="mt-1.5 text-xs"
-    [ngClass]="error ? 'text-error-500' : 'text-gray-500'"
+    class="mt-2 text-xs"
+    [attr.role]="error ? 'alert' : null"
+    [ngClass]="error ? 'text-error-500 dark:text-error-400' : 'text-gray-500 dark:text-gray-400'"
   >
     {{ hint }}
   </p>

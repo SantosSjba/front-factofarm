@@ -1,17 +1,11 @@
 <button
   [attr.type]="type"
+  data-slot="button"
   [appTooltip]="tooltip"
   appTooltipPlacement="top"
-  [ngClass]="
-    'inline-flex items-center justify-center gap-2 rounded-lg transition ' +
-    className +
-    ' ' +
-    sizeClasses +
-    ' ' +
-    variantClasses +
-    ' ' +
-    disabledClasses
-  "
+  [class]="buttonClasses"
+  [class.pointer-events-none]="isDisabled && variant !== 'unstyled'"
+  [class.opacity-50]="isDisabled && variant !== 'unstyled'"
   [disabled]="isDisabled"
   [attr.aria-busy]="loading || null"
   [attr.id]="id || null"
@@ -23,7 +17,7 @@
   } @else if (startIconName) {
     <app-icon [name]="startIconName" [iconClass]="iconSizeClass" />
   } @else if (startIcon) {
-    <span class="flex items-center" [innerHTML]="startIcon | safeHtml"></span>
+    <span class="inline-flex shrink-0 items-center" [innerHTML]="startIcon | safeHtml"></span>
   }
   @if (!(loading && iconOnly)) {
     <ng-content></ng-content>
@@ -31,6 +25,6 @@
   @if (!loading && endIconName) {
     <app-icon [name]="endIconName" [iconClass]="iconSizeClass" />
   } @else if (!loading && endIcon) {
-    <span class="flex items-center" [innerHTML]="endIcon | safeHtml"></span>
+    <span class="inline-flex shrink-0 items-center" [innerHTML]="endIcon | safeHtml"></span>
   }
 </button>

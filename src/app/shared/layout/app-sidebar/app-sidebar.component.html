@@ -1,7 +1,7 @@
 <aside
   id="app-sidebar"
   aria-label="Navegación principal"
-  class="fixed top-0 left-0 z-50 flex h-dvh max-w-[calc(100vw-2rem)] flex-col overflow-hidden border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 dark:text-white/90"
+  class="fixed start-0 top-0 z-50 flex h-dvh max-w-[calc(100vw-2rem)] flex-col border-e border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 xl:translate-x-0"
   [ngClass]="{
     'w-[290px]':
       (isExpanded$ | async) || (isMobileOpen$ | async) || (isHovered$ | async),
@@ -11,17 +11,14 @@
       (isHovered$ | async)
     ),
     'translate-x-0': isMobileOpen$ | async,
-    '-translate-x-full': (isMobileOpen$ | async) !== true,
-    'invisible': (isMobileOpen$ | async) !== true,
-    'xl:visible': true,
-    'xl:translate-x-0': true
+    'max-xl:-translate-x-full max-xl:rtl:translate-x-full max-xl:invisible': (isMobileOpen$ | async) !== true
   }"
   (mouseenter)="onSidebarMouseEnter()"
   (mouseleave)="sidebarService.setHovered(false)"
 >
   @if (isMobileOpen$ | async) {
     <button type="button" aria-label="Cerrar menú lateral" (click)="sidebarService.setMobileOpen(false)"
-      class="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-lg hover:bg-gray-100 xl:hidden dark:hover:bg-gray-800">
+      class="absolute end-3 top-3 inline-flex size-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 xl:hidden dark:text-gray-400 dark:hover:bg-gray-800">
       <app-icon name="lucide:x" iconClass="size-5" />
     </button>
   }
@@ -49,7 +46,7 @@
     </a>
   </div>
 
-  <div class="-mr-4 flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pr-2 duration-300 ease-linear sidebar-scrollbar">
+  <div class="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto duration-300 ease-linear no-scrollbar">
     <nav class="mb-6">
       <div class="flex flex-col gap-4">
         <!-- Menu Section -->
@@ -78,8 +75,8 @@
                 <button
                   (click)="toggleSubmenu('main',i)"
                   class="menu-item group min-w-0 cursor-pointer"
-                  [class.menu-item-active]="openSubmenu === 'main-' + i"
-                  [class.menu-item-inactive]="openSubmenu !== 'main-' + i"
+                  [class.menu-item-active]="isGroupActive(nav, 'main', i)"
+                  [class.menu-item-inactive]="!isGroupActive(nav, 'main', i)"
                   [attr.aria-label]="
                     (isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)
                       ? null
@@ -95,11 +92,11 @@
                   }"
                 >
                   <span
-                    class="menu-item-icon-size"
-                    [class.menu-item-icon-active]="openSubmenu === 'main-' + i"
-                    [class.menu-item-icon-inactive]="openSubmenu !== 'main-' + i"
+                    class="menu-item-icon-size flex shrink-0 items-center"
+                    [class.menu-item-icon-active]="isGroupActive(nav, 'main', i)"
+                    [class.menu-item-icon-inactive]="!isGroupActive(nav, 'main', i)"
                   >
-                    <app-icon [name]="nav.icon" iconClass="size-5" />
+                    <app-icon [name]="nav.icon" iconClass="size-6" />
                   </span>
                   @if ((isExpanded$ | async) || (isHovered$ | async) ||
                   (isMobileOpen$ | async)) {
@@ -111,7 +108,7 @@
                   @if (nav.new && ((isExpanded$ | async) || (isHovered$ |
                   async) || (isMobileOpen$ | async))) {
                   <span
-                    class="ml-auto absolute right-10 menu-dropdown-badge"
+                    class="ms-auto absolute end-10 menu-dropdown-badge"
                     [ngClass]="{
                       'menu-dropdown-badge-active': openSubmenu === 'main-' + i,
                       'menu-dropdown-badge-inactive': openSubmenu !== 'main-' + i
@@ -127,7 +124,7 @@
                     [ngClass]="{
                       'rotate-180 text-brand-500': openSubmenu === 'main-' + i
                     }"
-                    class="ml-auto w-5 h-5 transition-transform duration-200"
+                    class="ms-auto size-5 transition-transform duration-200"
                   />
                   }
                 </button>
@@ -147,7 +144,7 @@
                         : '0px'
                   }"
                 >
-                  <ul class="mt-2 space-y-1 ml-9">
+                  <ul class="mt-2 space-y-1 ms-9">
                     @for (subItem of nav.subItems; track $index; let j = $index) {
                     <li>
                       @if (subItem.subItems?.length) {
@@ -161,17 +158,17 @@
                           [attr.aria-expanded]="isNestedSubmenuOpen('main-' + i, j)"
                           (click)="toggleNestedSubmenu('main-' + i, j)"
                         >
-                          <span class="truncate">- {{ subItem.name }}</span>
+                          <span class="truncate">{{ subItem.name }}</span>
                           <app-icon
                             name="lucide:chevron-down"
-                            class="ml-auto h-4 w-4 transition-transform duration-200"
+                            class="ms-auto size-4 transition-transform duration-200"
                             [ngClass]="{
                               'rotate-180 text-brand-500': isNestedSubmenuOpen('main-' + i, j)
                             }"
                           />
                         </button>
                         @if (isNestedSubmenuOpen('main-' + i, j)) {
-                          <ul class="ml-4 mt-1 space-y-1">
+                          <ul class="ms-4 mt-1 space-y-1">
                             @for (childItem of subItem.subItems; track $index) {
                               @if (childItem.path) {
                                 <li>
@@ -185,7 +182,7 @@
                                       'menu-dropdown-item-active': isSubItemActive(childItem)
                                     }"
                                   >
-                                    <span class="truncate">- {{ childItem.name }}</span>
+                                    <span class="truncate">{{ childItem.name }}</span>
                                   </a>
                                 </li>
                               }
@@ -203,8 +200,8 @@
                             'menu-dropdown-item-active': isSubItemActive(subItem)
                           }"
                         >
-                          <span class="truncate">- {{ subItem.name }}</span>
-                          <span class="flex items-center gap-1 ml-auto">
+                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="flex items-center gap-1 ms-auto">
                             @if (subItem.new) {
                             <span
                               class="menu-dropdown-badge"
@@ -218,7 +215,7 @@
                             }
                             @if (subItem.pro) {
                             <span
-                              class="ml-auto menu-dropdown-badge-pro"
+                              class="ms-auto menu-dropdown-badge-pro"
                               [ngClass]="{
                                 'menu-dropdown-badge-pro-active': isSubItemActive(subItem),
                                 'menu-dropdown-badge-pro-inactive': !isSubItemActive(subItem)
@@ -248,13 +245,13 @@
                   "
                 >
                   <span
-                    class="menu-item-icon-size"
+                    class="menu-item-icon-size flex shrink-0 items-center"
                     [ngClass]="{
                       'menu-item-icon-active': isActive(nav.path),
                       'menu-item-icon-inactive': !isActive(nav.path)
                     }"
                   >
-                    <app-icon [name]="nav.icon" iconClass="size-5" />
+                    <app-icon [name]="nav.icon" iconClass="size-6" />
                   </span>
                   <span class="menu-item-text truncate">
                     @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
@@ -304,8 +301,8 @@
                   (click)="toggleSubmenu('others',i)"
                   class="menu-item group min-w-0 cursor-pointer"
                   [ngClass]="{
-                     'menu-item-active': openSubmenu === 'others-' + i,
-                     'menu-item-inactive': openSubmenu !== 'others-' + i,
+                     'menu-item-active': isGroupActive(nav, 'others', i),
+                     'menu-item-inactive': !isGroupActive(nav, 'others', i),
                     'xl:justify-center': !(
                       (isExpanded$ | async) || (isHovered$ | async)
                     ),
@@ -320,13 +317,13 @@
                   [attr.aria-expanded]="openSubmenu === 'others-' + i"
                 >
                   <span
-                    class="menu-item-icon-size"
+                    class="menu-item-icon-size flex shrink-0 items-center"
                     [ngClass]="{
-                      'menu-item-icon-active': openSubmenu === 'others-' + i,
-                      'menu-item-icon-inactive': openSubmenu !== 'others-' + i,
+                      'menu-item-icon-active': isGroupActive(nav, 'others', i),
+                      'menu-item-icon-inactive': !isGroupActive(nav, 'others', i),
                     }"
                   >
-                    <app-icon [name]="nav.icon" iconClass="size-5" />
+                    <app-icon [name]="nav.icon" iconClass="size-6" />
                   </span>
                   @if ((isExpanded$ | async) || (isHovered$ | async) ||
                   (isMobileOpen$ | async)) {
@@ -338,7 +335,7 @@
                   @if (nav.new && ((isExpanded$ | async) || (isHovered$ |
                   async) || (isMobileOpen$ | async))) {
                   <span
-                    class="ml-auto absolute right-10 menu-dropdown-badge"
+                    class="ms-auto absolute end-10 menu-dropdown-badge"
                     [ngClass]="{
                       'menu-dropdown-badge-active': openSubmenu === 'others-' + i,
                       'menu-dropdown-badge-inactive': openSubmenu !== 'others-' + i
@@ -354,7 +351,7 @@
                     [ngClass]="{
                       'rotate-180 text-brand-500': openSubmenu === 'others-' + i
                     }"
-                    class="ml-auto w-5 h-5 transition-transform duration-200"
+                    class="ms-auto size-5 transition-transform duration-200"
                   />
                   }
                 </button>
@@ -373,7 +370,7 @@
                         : '0px'
                   }"
                 >
-                  <ul class="mt-2 space-y-1 ml-9">
+                  <ul class="mt-2 space-y-1 ms-9">
                     @for (subItem of nav.subItems; track $index; let j = $index) {
                     <li>
                       @if (subItem.subItems?.length) {
@@ -387,17 +384,17 @@
                           [attr.aria-expanded]="isNestedSubmenuOpen('others-' + i, j)"
                           (click)="toggleNestedSubmenu('others-' + i, j)"
                         >
-                          <span class="truncate">- {{ subItem.name }}</span>
+                          <span class="truncate">{{ subItem.name }}</span>
                           <app-icon
                             name="lucide:chevron-down"
-                            class="ml-auto h-4 w-4 transition-transform duration-200"
+                            class="ms-auto size-4 transition-transform duration-200"
                             [ngClass]="{
                               'rotate-180 text-brand-500': isNestedSubmenuOpen('others-' + i, j)
                             }"
                           />
                         </button>
                         @if (isNestedSubmenuOpen('others-' + i, j)) {
-                          <ul class="ml-4 mt-1 space-y-1">
+                          <ul class="ms-4 mt-1 space-y-1">
                             @for (childItem of subItem.subItems; track $index) {
                               @if (childItem.path) {
                                 <li>
@@ -429,8 +426,8 @@
                             'menu-dropdown-item-active': isSubItemActive(subItem)
                           }"
                         >
-                          <span class="truncate">- {{ subItem.name }}</span>
-                          <span class="flex items-center gap-1 ml-auto">
+                          <span class="truncate">{{ subItem.name }}</span>
+                          <span class="flex items-center gap-1 ms-auto">
                             @if (subItem.new) {
                             <span
                               class="menu-dropdown-badge"
@@ -444,7 +441,7 @@
                             }
                             @if (subItem.pro) {
                             <span
-                              class="ml-auto menu-dropdown-badge-pro"
+                              class="ms-auto menu-dropdown-badge-pro"
                               [ngClass]="{
                                 'menu-dropdown-badge-pro-active': isSubItemActive(subItem),
                                 'menu-dropdown-badge-pro-inactive': !isSubItemActive(subItem)
@@ -474,13 +471,13 @@
                   "
                 >
                   <span
-                    class="menu-item-icon-size"
+                    class="menu-item-icon-size flex shrink-0 items-center"
                     [ngClass]="{
                       'menu-item-icon-active': isActive(nav.path),
                       'menu-item-icon-inactive': !isActive(nav.path)
                     }"
                   >
-                    <app-icon [name]="nav.icon" iconClass="size-5" />
+                    <app-icon [name]="nav.icon" iconClass="size-6" />
                   </span>
                   <span class="menu-item-text truncate">
                     @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
