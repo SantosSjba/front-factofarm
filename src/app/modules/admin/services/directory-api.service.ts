@@ -83,6 +83,7 @@ import type {
   ProductCatalogWarehouseDto,
   ProductImportMode,
   InventoryCreateInboundRequest,
+  InventoryInboundPricingDto,
   InventoryCreateOutboundRequest,
   ProductHistoryStockItemDto,
   ProductPriceHistoryListResponseDto,
@@ -1370,14 +1371,29 @@ export class DirectoryApiService {
     });
   }
 
-  listInventoryMovements(filters?: InventoryMovementListFiltersRequest) {
+  private inventoryListParams(filters?: InventoryMovementListFiltersRequest) {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
-    if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.field) params['field'] = filters.field;
+    if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
+    if (filters?.categoryId) params['categoryId'] = filters.categoryId;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
-    return this.http.get<InventoryMovementListResponseDto>(`${this.base}/inventory-movements`, { params });
+    return params;
+  }
+
+  listInventoryMovements(filters?: InventoryMovementListFiltersRequest) {
+    return this.http.get<InventoryMovementListResponseDto>(`${this.base}/inventory-movements`, {
+      params: this.inventoryListParams(filters),
+    });
+  }
+
+  exportInventory(filters?: InventoryMovementListFiltersRequest) {
+    return this.http.post(`${this.base}/inventory-movements/export`, {}, {
+      params: this.inventoryListParams(filters),
+      responseType: 'blob',
+    });
   }
 
   listInventoryMovementWarehouses() {
@@ -1396,8 +1412,17 @@ export class DirectoryApiService {
     );
   }
 
+  getInventoryInboundPricing(productId: string, warehouseId: string) {
+    return this.http.get<InventoryInboundPricingDto>(`${this.base}/inventory-movements/inbound-pricing`, {
+      params: { productId, warehouseId },
+    });
+  }
+
   createInventoryInboundMovement(body: InventoryCreateInboundRequest) {
-    return this.http.post<{ ok: boolean; message: string }>(`${this.base}/inventory-movements/inbound`, body);
+    return this.http.post<{ ok: boolean; message: string; warning?: string }>(
+      `${this.base}/inventory-movements/inbound`,
+      body,
+    );
   }
 
   createInventoryOutboundMovement(body: InventoryCreateOutboundRequest) {

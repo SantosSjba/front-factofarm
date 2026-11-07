@@ -1167,6 +1167,7 @@ export interface ProductListItemDto {
   unit: ProductCatalogUnitDto;
   currency: ProductCatalogCurrencyDto;
   totalStock: string;
+  manejaLotes?: boolean;
 }
 
 export interface ProductListResponseDto {
@@ -1712,7 +1713,10 @@ export interface InventoryMovementListItemDto {
   codigoInterno: string | null;
   marca: string;
   almacen: string;
+  warehouseId: string;
   stock: string;
+  stockMinimo: number;
+  manejaLotes: boolean;
 }
 
 export interface InventoryMovementListResponseDto {
@@ -1726,6 +1730,8 @@ export interface InventoryMovementListResponseDto {
 export interface InventoryMovementListFiltersRequest {
   search?: string;
   field?: 'all' | 'producto' | 'marca' | 'almacen';
+  warehouseId?: string;
+  categoryId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -1764,6 +1770,23 @@ export interface InventoryCreateInboundRequest {
   expirationDate?: string;
   registeredAt?: string;
   comment?: string;
+  unitCost?: number;
+  reference?: string;
+  /** Nuevo precio de compra del producto; se omite si no cambió. */
+  purchasePrice?: number;
+  /** Nuevo precio de venta (del almacén si tiene uno propio); se omite si no cambió. */
+  salePrice?: number;
+}
+
+/** Precios vigentes del producto en un almacén, para corregirlos al ingresar stock. */
+export interface InventoryInboundPricingDto {
+  precioCompra: string | null;
+  precioVenta: string;
+  precioVentaOrigen: 'ALMACEN' | 'GENERAL';
+  precioMaximoDigemid: string | null;
+  codigoDigemid: string | null;
+  bloqueaSobreMaximo: boolean;
+  puedeEditarPrecios: boolean;
 }
 
 export interface InventoryCreateOutboundRequest {
