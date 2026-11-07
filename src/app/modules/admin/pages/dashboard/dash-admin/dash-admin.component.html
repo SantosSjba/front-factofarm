@@ -1,22 +1,23 @@
-<div class="mb-3 flex flex-wrap items-end justify-between gap-2">
-  <div class="min-w-0">
-    <h1 class="text-lg font-semibold text-gray-900 dark:text-white/90">
-      {{ isChainAdmin() ? 'Dashboard cadena' : 'Dashboard' }}
-    </h1>
-    <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-      Resumen {{ headerPeriod() }}@if (systemLine()) {<span class="hidden sm:inline"> · {{ systemLine() }}</span>}
-    </p>
-  </div>
-  <app-chart-tab ariaLabel="Periodo del dashboard" [options]="periods" [value]="periodValue()" (valueChange)="setPeriod($event)" />
+<div class="mb-3">
+  <h1 class="text-lg font-semibold text-gray-900 dark:text-white/90">
+    {{ isChainAdmin() ? 'Dashboard cadena' : 'Dashboard' }}
+  </h1>
+  @if (systemLine()) {
+    <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ systemLine() }}</p>
+  }
 </div>
 
-@if (mode() !== 'preset') {
-  <div class="mb-3 flex flex-wrap items-start justify-end gap-2">
-    @if (mode() === 'dia') {
+<!-- Un solo filtro para todo el dashboard -->
+<section class="mb-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Filtros del dashboard">
+  <div class="flex flex-wrap items-end gap-x-3 gap-y-2">
+    <div class="min-w-0">
+      <p class="mb-1.5 text-theme-xs font-medium text-gray-700 dark:text-gray-400">Periodo</p>
+      <app-chart-tab ariaLabel="Periodo del dashboard" [options]="periods" [value]="periodOption()" (valueChange)="setPeriod($event)" />
+    </div>
+    @if (periodOption() === 'dia') {
       <app-input-field
-        class="w-full sm:w-48"
+        class="w-full sm:w-44"
         label="Día"
-        helpText="Muestra las ventas de ese día y las compara con el día anterior."
         type="date"
         [max]="today"
         [error]="!!dateError()"
@@ -24,11 +25,11 @@
         [value]="day()"
         (valueChange)="day.set($event + '')"
       />
-    } @else {
+    }
+    @if (periodOption() === 'rango') {
       <app-input-field
-        class="w-full sm:w-48"
+        class="w-full sm:w-44"
         label="Desde"
-        helpText="Primer día del rango. Se compara con el periodo anterior de la misma duración."
         type="date"
         [max]="rangeTo() || today"
         [error]="!!dateError()"
@@ -36,9 +37,8 @@
         (valueChange)="rangeFrom.set($event + '')"
       />
       <app-input-field
-        class="w-full sm:w-48"
+        class="w-full sm:w-44"
         label="Hasta"
-        helpText="Último día del rango, incluido. Hasta 366 días en total."
         type="date"
         [min]="rangeFrom()"
         [max]="today"
@@ -48,8 +48,23 @@
         (valueChange)="rangeTo.set($event + '')"
       />
     }
+    <app-form-select
+      class="w-full sm:ms-auto sm:w-56"
+      label="Usuario"
+      helpText="Con un usuario: sus ventas como vendedor y los egresos de las cajas que abrió. Inventario, cajas abiertas y cuentas siempre son de toda la empresa."
+      [options]="userOptions()"
+      [showPlaceholder]="false"
+      [value]="userId()"
+      (valueChange)="userId.set($event || 'all')"
+    />
   </div>
-}
+  @if (data(); as d) {
+    <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+      <span class="font-medium text-gray-700 dark:text-gray-300">Periodo:</span> {{ periodDates() }} ·
+      <span class="font-medium text-gray-700 dark:text-gray-300">Vista:</span> {{ viewLabel() }}
+    </p>
+  }
+</section>
 
 <app-onboarding-banner />
 
@@ -62,39 +77,89 @@
 >
   @if (data(); as d) {
     <div class="space-y-3" [class.opacity-60]="overviewQuery.isFetching()">
-      <!-- Ventas -->
-      <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
-        <app-kpi-tile
-          label="Ventas de hoy"
-          icon="lucide:shopping-cart"
-          [value]="money(d.today.total)"
-          [delta]="delta(d.today.total, d.today.yesterdayTotal)"
-          [sub]="ventas(d.today.count) + ' · ayer ' + money(d.today.yesterdayTotal)"
-          hint="Comparado con ayer a la misma fecha."
-          link="/notas-venta"
-        />
-        <app-kpi-tile
-          [label]="periodKpiLabel()"
-          icon="lucide:trending-up"
-          [value]="isSingleDay() && isToday() ? num(d.period.unitsSold) : money(d.period.total)"
-          [delta]="isSingleDay() && isToday() ? null : delta(d.period.total, d.period.prevTotal)"
-          [sub]="isSingleDay() && isToday() ? num(d.period.newCustomers) + ' clientes nuevos' : ventas(d.period.count) + (isSingleDay() ? ' · día anterior ' : ' · antes ') + money(d.period.prevTotal)"
-          hint="Comparado con el periodo anterior de la misma duración."
-        />
+      <!-- Resumen financiero del periodo -->
+      <div>
+        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Resumen financiero · {{ periodLabel() }}</h2>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+          <app-kpi-tile
+            label="Ventas"
+            icon="lucide:shopping-cart"
+            [value]="money(d.period.total)"
+            [delta]="delta(d.period.total, d.period.prevTotal)"
+            [sub]="ventas(d.period.count) + ' · antes ' + money(d.period.prevTotal)"
+            hint="Ventas completadas del periodo, sin anuladas. Se compara con el periodo anterior de la misma duración."
+            link="/notas-venta"
+          />
+          <app-kpi-tile
+            label="Costo"
+            icon="lucide:package"
+            tone="gray"
+            [value]="money(d.period.cost)"
+            [sub]="d.period.marginCoveragePct ? 'Con costo: ' + d.period.marginCoveragePct + '% de lo vendido' : 'Sin ventas en el periodo'"
+            hint="Unidades vendidas por el costo unitario del producto (o su precio de compra). Los productos sin costo no suman."
+          />
+          <app-kpi-tile
+            label="Ganancia"
+            icon="lucide:trending-up"
+            tone="success"
+            [value]="money(d.period.profit)"
+            [sub]="profitPct() ? profitPct() + '% de las ventas' : 'Ventas − costo'"
+            hint="Ventas menos costo de lo vendido."
+          />
+          <app-kpi-tile
+            label="Gastos"
+            icon="lucide:wallet"
+            tone="error"
+            [value]="money(d.period.expenses)"
+            [sub]="num(d.period.expensesCount) + (d.period.expensesCount === 1 ? ' egreso' : ' egresos') + ' de caja'"
+            hint="Egresos registrados en caja durante el periodo."
+            link="/historial-cajas"
+          />
+          <app-kpi-tile
+            class="col-span-2 sm:col-span-1"
+            label="Neto"
+            icon="lucide:badge-dollar-sign"
+            [tone]="netNegative() ? 'error' : 'success'"
+            [value]="money(d.period.net)"
+            sub="Ganancia − gastos"
+            hint="Lo que queda del periodo después del costo de lo vendido y los gastos de caja."
+          />
+        </div>
+
+        @if (suspects().length) {
+          <div class="mt-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-theme-sm text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300">
+            <p class="font-medium">
+              Revisa el costo de {{ suspects().length === 1 ? 'este producto' : 'estos ' + suspects().length + ' productos' }}: es mayor al precio al que se vendió.
+            </p>
+            <p class="mt-0.5 text-theme-xs">
+              Suele pasar cuando se registra el precio de compra del paquete en un producto que se vende por unidad.
+              Sube el costo en {{ money(suspectsExcess()) }} y baja la ganancia en lo mismo.
+            </p>
+            <ul class="mt-1 space-y-0.5 text-theme-xs">
+              @for (p of suspects(); track p.id) {
+                <li><span class="font-medium">{{ p.nombre }}</span>: costo {{ money(p.costo) }}, vendido a {{ money(p.precio) }} · {{ p.cantidad }} und</li>
+              }
+            </ul>
+            <a routerLink="/productos" class="mt-1 inline-block text-theme-xs font-medium underline">Corregir en Productos</a>
+          </div>
+        }
+      </div>
+
+      <!-- Operación del periodo y caja de ahora -->
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <app-kpi-tile
           label="Ticket promedio"
           icon="lucide:receipt"
           tone="info"
           [value]="money(d.period.avgTicket)"
-          [sub]="num(d.period.unitsSold) + ' unidades vendidas'"
+          [sub]="'por venta en ' + periodLabel()"
         />
         <app-kpi-tile
-          label="Margen estimado"
-          icon="lucide:percent"
-          tone="success"
-          [value]="money(d.period.grossMargin)"
-          [sub]="d.period.grossMarginPct ? d.period.grossMarginPct + '% · base ' + d.period.marginCoveragePct + '% de ventas' : 'Registra el costo de tus productos'"
-          hint="Venta menos costo unitario. Solo incluye productos con costo registrado."
+          label="Unidades vendidas"
+          icon="lucide:boxes"
+          tone="info"
+          [value]="num(d.period.unitsSold)"
+          [sub]="num(d.period.newCustomers) + (d.period.newCustomers === 1 ? ' cliente nuevo' : ' clientes nuevos')"
         />
         <app-kpi-tile
           label="Anuladas"
@@ -105,12 +170,12 @@
           link="/anulaciones"
         />
         <app-kpi-tile
-          label="Efectivo en caja"
-          icon="lucide:wallet"
+          label="Efectivo en caja ahora"
+          icon="lucide:banknote"
           tone="warning"
           [value]="money(d.cash.expectedCash)"
           [sub]="d.cash.open ? num(d.cash.open) + (d.cash.open === 1 ? ' caja abierta' : ' cajas abiertas') : 'Sin cajas abiertas'"
-          hint="Efectivo que debería haber ahora en las gavetas abiertas."
+          hint="Efectivo que debería haber ahora en las gavetas abiertas. No depende del periodo."
           link="/caja-chica-pos"
         />
       </div>
@@ -171,7 +236,7 @@
 
       <!-- Inventario y finanzas -->
       <div>
-        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y finanzas</h2>
+        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y cuentas <span class="font-normal text-gray-500 dark:text-gray-400">· estado actual, no depende del periodo</span></h2>
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
           <app-kpi-tile
             label="Valor inventario"

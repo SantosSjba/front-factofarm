@@ -390,6 +390,12 @@ export interface DashboardOverviewDto {
   to: string;
   /** true si es un día o rango elegido por el usuario. */
   custom: boolean;
+  /** Usuario filtrado (null = toda la empresa) y lista para el selector. */
+  userId: string | null;
+  userName: string | null;
+  users: { id: string; nombre: string }[];
+  /** Productos vendidos con costo mayor al precio cobrado (suele ser el costo del paquete). */
+  costAboveSalePrice: { id: string; nombre: string; costo: string; precio: string; cantidad: string; exceso: string }[];
   timeZone: string;
   today: { total: string; count: number; avgTicket: string; yesterdayTotal: string; yesterdayCount: number };
   period: {
@@ -405,6 +411,12 @@ export interface DashboardOverviewDto {
     grossMargin: string;
     grossMarginPct: string | null;
     marginCoveragePct: string | null;
+    /** Costo de lo vendido, ganancia (ventas − costo), egresos de caja y neto (ganancia − gastos). */
+    cost: string;
+    profit: string;
+    expenses: string;
+    expensesCount: number;
+    net: string;
   };
   trend: DashboardSalesTrendPointDto[];
   payments: DashboardBreakdownDto[];

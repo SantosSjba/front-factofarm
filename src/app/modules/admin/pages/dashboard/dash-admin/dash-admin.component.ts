@@ -15,18 +15,21 @@ import { BarListComponent, type BarListRow } from '../../../../../shared/compone
 import { HourColumnsComponent } from '../../../../../shared/components/common/dashboard/hour-columns.component';
 import { AppDatePipe } from '../../../../../shared/pipes/app-date.pipe';
 import { DashboardSalesChartComponent } from './dashboard-sales-chart.component';
+import { FormSelectComponent } from '../../../../../shared/components/form/form-select/form-select.component';
+import { RouterLink } from '@angular/router';
 import { InputFieldComponent } from '../../../../../shared/components/form/input/input-field.component';
 
 const PERIODS = [
   { id: '1', label: 'Hoy' },
   { id: '7', label: '7 días' },
   { id: '30', label: '30 días' },
-  { id: '90', label: '90 días' },
+  { id: 'mes', label: 'Este mes' },
   { id: 'dia', label: 'Día' },
   { id: 'rango', label: 'Rango' },
 ];
 
-type PeriodMode = 'preset' | 'dia' | 'rango';
+/** Valor de «Todos» en el selector de usuario. */
+const ALL_USERS = 'all';
 
 /** Fecha local del navegador en AAAA-MM-DD. */
 function todayYmd(): string {
@@ -51,6 +54,8 @@ function dmy(ymd: string): string {
     BarListComponent,
     HourColumnsComponent,
     DashboardSalesChartComponent,
+    FormSelectComponent,
+    RouterLink,
     InputFieldComponent,
     AppDatePipe,
   ],
@@ -63,22 +68,21 @@ export class DashAdminComponent {
 
   protected readonly periods = PERIODS;
   protected readonly today = todayYmd();
-  protected readonly mode = signal<PeriodMode>('preset');
-  protected readonly presetDays = signal(7);
+  /** Opción elegida en el selector de periodo: '1', '7', '30', 'mes', 'dia' o 'rango'. */
+  protected readonly periodOption = signal('7');
   protected readonly day = signal(this.today);
   protected readonly rangeFrom = signal(this.today.slice(0, 8) + '01');
   protected readonly rangeTo = signal(this.today);
-
-  /** Valor del selector: los días del atajo, o «dia» / «rango». */
-  protected readonly periodValue = computed(() => (this.mode() === 'preset' ? String(this.presetDays()) : this.mode()));
+  protected readonly userId = signal(ALL_USERS);
 
   /** Error de las fechas elegidas; mientras haya uno no se consulta. */
   protected readonly dateError = computed(() => {
-    if (this.mode() === 'dia') {
+    const option = this.periodOption();
+    if (option === 'dia') {
       if (!this.day()) return 'Elige un día.';
       if (this.day() > this.today) return 'Elige un día hasta hoy.';
     }
-    if (this.mode() === 'rango') {
+    if (option === 'rango') {
       const from = this.rangeFrom();
       const to = this.rangeTo();
       if (!from || !to) return 'Elige las dos fechas.';
@@ -89,52 +93,65 @@ export class DashAdminComponent {
     return '';
   });
 
-  /** Lo que se pide al API: atajo de días, un día o un rango. */
-  private readonly period = computed(() => {
-    switch (this.mode()) {
+  /** Lo que se pide al API: atajo de días, este mes, un día o un rango; y el usuario. */
+  private readonly filters = computed(() => {
+    const userId = this.userId() === ALL_USERS ? undefined : this.userId();
+    switch (this.periodOption()) {
+      case 'mes':
+        return { from: this.today.slice(0, 8) + '01', to: this.today, userId };
       case 'dia':
-        return { from: this.day() };
+        return { from: this.day(), userId };
       case 'rango':
-        return { from: this.rangeFrom(), to: this.rangeTo() };
+        return { from: this.rangeFrom(), to: this.rangeTo(), userId };
       default:
-        return { days: this.presetDays() };
+        return { days: Number(this.periodOption()), userId };
     }
   });
 
   /** Días del periodo mostrado (los datos traen el valor real del API). */
-  protected readonly days = computed(() => this.overviewQuery.data()?.days ?? this.presetDays());
+  protected readonly days = computed(() => this.overviewQuery.data()?.days ?? 7);
   protected readonly isSingleDay = computed(() => this.days() === 1);
-  protected readonly isToday = computed(() => {
-    const d = this.overviewQuery.data();
-    return d ? d.from === this.today && d.to === this.today : this.mode() === 'preset' && this.presetDays() === 1;
-  });
 
   protected readonly periodLabel = computed(() => {
     const d = this.overviewQuery.data();
-    if (!d?.custom) return this.days() === 1 ? 'hoy' : `últimos ${this.days()} días`;
+    if (!d) return '';
     if (d.from === d.to) return d.from === this.today ? 'hoy' : `el ${dmy(d.from)}`;
+    if (this.periodOption() === 'mes') return 'este mes';
+    if (!d.custom) return `últimos ${d.days} días`;
     return `del ${dmy(d.from)} al ${dmy(d.to)}`;
   });
-
-  /** Texto tras «Resumen» en la cabecera. */
-  protected readonly headerPeriod = computed(() => {
-    const label = this.periodLabel();
-    return label.startsWith('del ') || label.startsWith('el ') ? label.replace(/^el /, 'del ') : `de ${label}`;
-  });
-
-  /** Título del segundo indicador según el periodo. */
-  protected readonly periodKpiLabel = computed(() => {
+  /** «01/11/2026 – 07/11/2026», siempre con las fechas reales. */
+  protected readonly periodDates = computed(() => {
     const d = this.overviewQuery.data();
-    if (this.isSingleDay()) return this.isToday() ? 'Unidades vendidas hoy' : `Ventas del ${dmy(d?.from ?? this.today).slice(0, 5)}`;
-    return `Ventas ${this.days()} días`;
+    if (!d) return '';
+    return d.from === d.to ? dmy(d.from) : `${dmy(d.from)} – ${dmy(d.to)}`;
   });
+  protected readonly viewLabel = computed(() => this.overviewQuery.data()?.userName ?? 'Toda la empresa');
+
+  protected readonly userOptions = computed(() => [
+    { value: ALL_USERS, label: 'Todos los usuarios' },
+    ...(this.overviewQuery.data()?.users ?? []).map((u) => ({ value: u.id, label: u.nombre })),
+  ]);
+
+  protected readonly profitPct = computed(() => {
+    const p = this.overviewQuery.data()?.period;
+    const sales = Number(p?.total ?? 0);
+    return sales ? ((Number(p?.profit ?? 0) / sales) * 100).toFixed(1) : null;
+  });
+  protected readonly netNegative = computed(() => Number(this.overviewQuery.data()?.period.net ?? 0) < 0);
+  protected readonly suspects = computed(() => this.overviewQuery.data()?.costAboveSalePrice ?? []);
+  protected readonly suspectsExcess = computed(() => this.suspects().reduce((a, p) => a + Number(p.exceso), 0));
+
+  protected setPeriod(id: string) {
+    this.periodOption.set(id);
+  }
 
   protected readonly isChainAdmin = computed(() => this.auth.user()?.role === 'ADMIN_CADENA');
 
   protected readonly overviewQuery = injectQuery(() => ({
-    queryKey: ['dashboard', 'overview', this.period()] as const,
+    queryKey: ['dashboard', 'overview', this.filters()] as const,
     enabled: !this.dateError(),
-    queryFn: () => firstValueFrom(this.api.getDashboardOverview(this.period())),
+    queryFn: () => firstValueFrom(this.api.getDashboardOverview(this.filters())),
     // Al cambiar de periodo se mantienen los datos anteriores mientras carga.
     placeholderData: keepPreviousData,
   }));
@@ -197,14 +214,6 @@ export class DashAdminComponent {
 
   protected readonly showChain = computed(() => (this.chainQuery.data()?.establishments?.length ?? 0) > 1);
 
-  protected setPeriod(id: string) {
-    if (id === 'dia' || id === 'rango') {
-      this.mode.set(id);
-      return;
-    }
-    this.mode.set('preset');
-    this.presetDays.set(Number(id));
-  }
 
   protected errorMessage(): string | null {
     return this.overviewQuery.isError()

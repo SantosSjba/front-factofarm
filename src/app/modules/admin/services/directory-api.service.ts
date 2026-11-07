@@ -345,9 +345,10 @@ export class DirectoryApiService {
     return this.http.get<DashboardSalesTrendDto>(`${this.base}/dashboard/sales-trend`);
   }
 
-  /** Últimos `days` días, o un día / rango concreto (AAAA-MM-DD) si se indica `from`. */
-  getDashboardOverview(period: { days?: number; from?: string; to?: string }) {
+  /** Últimos `days` días, o un día / rango (AAAA-MM-DD) si se indica `from`; opcionalmente de un usuario. */
+  getDashboardOverview(period: { days?: number; from?: string; to?: string; userId?: string }) {
     const params: Record<string, string> = {};
+    if (period.userId) params['userId'] = period.userId;
     if (period.from) {
       params['from'] = period.from;
       if (period.to) params['to'] = period.to;
