@@ -10,7 +10,7 @@ import { ListFiltersComponent } from '../../../../shared/components/common/list-
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
@@ -47,7 +47,7 @@ export function regulatedPriceStatus(
   standalone: true,
   imports: [
     DecimalPipe,
-    AlertComponent,
+    HelpPanelComponent,
     BreadcrumbInlineComponent,
     ButtonComponent,
     ComponentCardComponent,
@@ -66,13 +66,13 @@ export function regulatedPriceStatus(
       <app-button data-toolbar-actions size="sm" startIconName="mdi:plus" (btnClick)="openForm()">Nuevo precio</app-button>
     </app-page-toolbar>
 
-    <app-alert class="mb-5" variant="info" title="¿Para qué sirve esta pantalla?">
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="precios-regulados">
       <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
         <li>Aquí registras el <strong>precio máximo</strong> al que se puede vender un medicamento, con su código DIGEMID.</li>
         <li>En <strong>Productos → Farmacia</strong> pones ese mismo código en «Código de medicamento DIGEMID».</li>
         <li>Al vender, el sistema compara el precio con este máximo. Si activas «Bloquear ventas sobre el precio máximo regulado» en <strong>Establecimientos</strong>, rechaza la venta que lo supere; viene desactivado.</li>
       </ol>
-    </app-alert>
+    </app-help-panel>
 
     <app-list-filters
       [showSelect]="false"
