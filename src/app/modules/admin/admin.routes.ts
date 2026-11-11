@@ -645,7 +645,7 @@ export const adminRoutes: Routes = [
           import('./pages/finanzas-movimientos/finanzas-movimientos.component').then(
             (m) => m.FinanzasMovimientosComponent,
           ),
-        title: 'FactoFarm | Finanzas - Movimientos',
+        title: 'FactoFarm | Flujo de caja',
       },
       {
         path: 'transacciones',
@@ -654,7 +654,7 @@ export const adminRoutes: Routes = [
           import('./pages/transacciones/transacciones.component').then(
             (m) => m.TransaccionesComponent,
           ),
-        title: 'FactoFarm | Transacciones',
+        title: 'FactoFarm | Transacciones bancarias',
       },
       {
         path: 'finanzas-ingresos',
@@ -663,7 +663,7 @@ export const adminRoutes: Routes = [
           import('./pages/finanzas-ingresos/finanzas-ingresos.component').then(
             (m) => m.FinanzasIngresosComponent,
           ),
-        title: 'FactoFarm | Finanzas - Ingresos',
+        title: 'FactoFarm | Presupuesto de compras',
       },
       {
         path: 'cuentas-cobrar',
@@ -688,14 +688,14 @@ export const adminRoutes: Routes = [
         ...guarded(P.pagos),
         loadComponent: () =>
           import('./pages/pagos/pagos.component').then((m) => m.PagosComponent),
-        title: 'FactoFarm | Pagos',
+        title: 'FactoFarm | Pagos y cobros',
       },
       {
         path: 'balance',
         ...guarded(P.balance),
         loadComponent: () =>
           import('./pages/balance/balance.component').then((m) => m.BalanceComponent),
-        title: 'FactoFarm | Balance',
+        title: 'FactoFarm | Balance y margen',
       },
       {
         path: 'conciliacion-bancaria',
@@ -713,7 +713,7 @@ export const adminRoutes: Routes = [
           import('./pages/ingresos-egresos-medio-pago/ingresos-egresos-medio-pago.component').then(
             (m) => m.IngresosEgresosMedioPagoComponent,
           ),
-        title: 'FactoFarm | Ingresos y Egresos M. pago',
+        title: 'FactoFarm | Por medio de pago',
       },
       {
         path: 'reporte-digemid',

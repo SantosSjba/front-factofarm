@@ -155,6 +155,12 @@ import type {
   StaffLeaveStatusDto,
   StaffProductivityReportDto,
   SaleVoidRequestDto,
+  AccountPayableListResponseDto,
+  AccountReceivableListResponseDto,
+  BankMovementFilters,
+  BankMovementListResponseDto,
+  PurchaseBudgetMonthDto,
+  RecentPaymentListResponseDto,
   SoldItemsFilters,
   SoldItemsResponseDto,
   SaleListTotalsDto,
@@ -2011,12 +2017,14 @@ export class DirectoryApiService {
     );
   }
 
-  listAccountsPayable(filters?: { page?: number; pageSize?: number; supplierId?: string }) {
+  listAccountsPayable(filters?: { page?: number; pageSize?: number; supplierId?: string; estado?: string; search?: string }) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     if (filters?.supplierId) params['supplierId'] = filters.supplierId;
-    return this.http.get<PaginatedResponseDto<AccountPayableListItemDto>>(
+    if (filters?.estado) params['estado'] = filters.estado;
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    return this.http.get<AccountPayableListResponseDto>(
       `${this.base}/purchases/accounts-payable`,
       { params },
     );
@@ -2542,11 +2550,13 @@ export class DirectoryApiService {
     );
   }
 
-  listAccountsReceivable(filters?: { page?: number; pageSize?: number }) {
+  listAccountsReceivable(filters?: { page?: number; pageSize?: number; estado?: string; search?: string }) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
-    return this.http.get<PaginatedResponseDto<AccountReceivableListItemDto>>(
+    if (filters?.estado) params['estado'] = filters.estado;
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    return this.http.get<AccountReceivableListResponseDto>(
       `${this.base}/accounts-receivable`,
       { params },
     );
@@ -2575,15 +2585,28 @@ export class DirectoryApiService {
     return this.http.get<BankAccountDto[]>(`${this.base}/finance/bank-accounts`);
   }
 
-  listBankMovements(filters?: { page?: number; pageSize?: number; conciliado?: boolean }) {
+  listBankMovements(filters?: BankMovementFilters) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     if (filters?.conciliado !== undefined) params['conciliado'] = String(filters.conciliado);
-    return this.http.get<PaginatedResponseDto<BankMovementListItemDto>>(
+    if (filters?.bankAccountId) params['bankAccountId'] = filters.bankAccountId;
+    if (filters?.tipo) params['tipo'] = filters.tipo;
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    return this.http.get<BankMovementListResponseDto>(
       `${this.base}/finance/bank-movements`,
       { params },
     );
+  }
+
+  createBankAccount(body: { nombre: string; tipo?: 'BANCO' | 'CAJA'; banco?: string; numeroCuenta?: string }) {
+    return this.http.post<BankAccountDto>(`${this.base}/finance/bank-accounts`, body);
+  }
+
+  createBankMovement(body: { bankAccountId: string; tipo: 'INGRESO' | 'EGRESO'; monto: number; referencia?: string; descripcion?: string }) {
+    return this.http.post<{ id: string; monto: string }>(`${this.base}/finance/bank-movements`, body);
   }
 
   reconcileBankMovements(movementIds: string[]) {
@@ -2594,7 +2617,7 @@ export class DirectoryApiService {
   }
 
   getPurchaseBudgetVsActual(anio: number) {
-    return this.http.get<{ anio: number; months: Array<{ mes: number; presupuesto: string; actual: string; variacion: string; variacionPorcentaje: string }> }>(
+    return this.http.get<{ anio: number; months: PurchaseBudgetMonthDto[] }>(
       `${this.base}/finance/purchase-budgets/vs-actual`,
       { params: { anio: String(anio) } },
     );
@@ -2616,13 +2639,15 @@ export class DirectoryApiService {
     });
   }
 
-  listRecentPayments(filters?: { page?: number; pageSize?: number; from?: string; to?: string }) {
+  listRecentPayments(filters?: { page?: number; pageSize?: number; from?: string; to?: string; tipo?: string; metodo?: string }) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     if (filters?.from) params['from'] = filters.from;
     if (filters?.to) params['to'] = filters.to;
-    return this.http.get<PaginatedResponseDto<RecentPaymentListItemDto>>(
+    if (filters?.tipo) params['tipo'] = filters.tipo;
+    if (filters?.metodo) params['metodo'] = filters.metodo;
+    return this.http.get<RecentPaymentListResponseDto>(
       `${this.base}/finance/recent-payments`,
       { params },
     );

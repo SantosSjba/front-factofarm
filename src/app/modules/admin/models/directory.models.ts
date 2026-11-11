@@ -2651,7 +2651,7 @@ export interface AccountPayableListItemDto {
   fechaEmision: string;
   fechaVencimiento: string;
   estado: AccountPayableStatus;
-  supplier: { id: string; razonSocial: string };
+  supplier: { id: string; razonSocial: string; numeroDocumento?: string };
 }
 
 export interface ReplenishmentSuggestionDto {
@@ -3498,6 +3498,7 @@ export interface RecentPaymentListItemDto {
   metodo: string;
   referencia: string | null;
   descripcion: string;
+  contraparte?: string | null;
 }
 
 export interface GeneralLedgerListItemDto {
@@ -3665,4 +3666,52 @@ export interface SaleListTotalsDto {
   ventas: number;
   monto: string;
   anuladas: number;
+}
+
+
+/** Totales de todo el filtro en cuentas por cobrar / pagar. */
+export interface ReceivableTotalsDto {
+  porCobrar?: string;
+  porPagar?: string;
+  documentosAbiertos: number;
+  vencido: string;
+  documentosVencidos: number;
+}
+export type AccountReceivableListResponseDto = PaginatedResponseDto<AccountReceivableListItemDto> & { totales?: ReceivableTotalsDto };
+export type AccountPayableListResponseDto = PaginatedResponseDto<AccountPayableListItemDto> & { totales?: ReceivableTotalsDto };
+
+export interface BankMovementTotalsDto {
+  ingresos: string;
+  egresos: string;
+  neto: string;
+  pendientes: number;
+}
+export type BankMovementListResponseDto = PaginatedResponseDto<BankMovementListItemDto> & { totales?: BankMovementTotalsDto };
+export interface BankMovementFilters {
+  page?: number;
+  pageSize?: number;
+  bankAccountId?: string;
+  conciliado?: boolean;
+  tipo?: 'INGRESO' | 'EGRESO';
+  from?: string;
+  to?: string;
+  search?: string;
+}
+
+export interface RecentPaymentTotalsDto {
+  cobrosVentas: string;
+  cobrosClientes: string;
+  pagosProveedores: string;
+  neto: string;
+}
+export type RecentPaymentListResponseDto = PaginatedResponseDto<RecentPaymentListItemDto> & { totales?: RecentPaymentTotalsDto };
+
+export interface PurchaseBudgetMonthDto {
+  mes: number;
+  presupuesto: string;
+  tienePresupuesto?: boolean;
+  notas?: string | null;
+  actual: string;
+  variacion: string;
+  variacionPorcentaje: string;
 }

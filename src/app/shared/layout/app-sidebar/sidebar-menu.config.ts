@@ -254,23 +254,23 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     name: 'Finanzas',
     subItems: [
       {
-        name: 'Movimientos',
+        name: 'Flujo de caja',
         path: '/finanzas-movimientos',
         permissionCode: 'nav.finanzas_movimientos',
       },
       { name: 'Transacciones', path: '/transacciones', permissionCode: 'nav.transacciones' },
-      { name: 'Ingresos', path: '/finanzas-ingresos', permissionCode: 'nav.finanzas_ingresos' },
+      { name: 'Presupuesto de compras', path: '/finanzas-ingresos', permissionCode: 'nav.finanzas_ingresos' },
       { name: 'Cuentas por cobrar', path: '/cuentas-cobrar', permissionCode: 'nav.cuentas_cobrar' },
       { name: 'Cuentas por pagar', path: '/cuentas-pagar', permissionCode: 'nav.cuentas_pagar' },
-      { name: 'Pagos', path: '/pagos', permissionCode: 'nav.pagos' },
-      { name: 'Balance', path: '/balance', permissionCode: 'nav.balance' },
+      { name: 'Pagos y cobros', path: '/pagos', permissionCode: 'nav.pagos' },
+      { name: 'Balance y margen', path: '/balance', permissionCode: 'nav.balance' },
       {
         name: 'Conciliación bancaria',
         path: '/conciliacion-bancaria',
         permissionCode: 'nav.conciliacion_bancaria',
       },
       {
-        name: 'Ingresos y Egresos M. pago',
+        name: 'Por medio de pago',
         path: '/ingresos-egresos-medio-pago',
         permissionCode: 'nav.ingresos_egresos_medio_pago',
       },

@@ -1,99 +1,167 @@
-import { CommonModule, CurrencyPipe } from '@angular/common';
-import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
-import { Component, inject, signal } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
-import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { LocaleService } from '../../../../core/services/locale.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
+import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
-import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
-import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { PeriodFilterComponent, type Period } from '../../components/period-filter/period-filter.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import { LocaleService } from '../../../../core/services/locale.service';
+import { DEBT_PAYMENT_METHODS, financeMethodLabel, paymentTypeLabel, paymentTypeSign, paymentTypeTone, soles } from '../../utils/finance-labels';
 
+/** Pagos y cobros: cada movimiento de dinero (ventas, cobros a clientes y pagos a proveedores). */
 @Component({
   selector: 'app-pagos',
   standalone: true,
   imports: [
-    CommonModule,
-    AppDatePipe,
     CurrencyPipe,
+    AppDatePipe,
+    QueryPageStatePipe,
     BreadcrumbInlineComponent,
-    PageToolbarComponent,
     ComponentCardComponent,
+    FormSelectComponent,
+    HelpPanelComponent,
+    KpiTileComponent,
+    PageToolbarComponent,
     PaginationComponent,
-    InputFieldComponent,
-    ButtonComponent,
-    PageStateComponent,
+    PeriodFilterComponent,
+    StatusBadgeComponent,
   ],
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">Pagos y cobros</h1>
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Pagos y cobros</h1>
     </app-page-toolbar>
-    <app-component-card title="Filtros" className="mt-4">
-      <div class="flex flex-wrap items-end gap-3">
-        <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
-        <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
-        <app-button startIconName="mdi:filter-outline" variant="primary" (btnClick)="page.set(1); listQuery.refetch()">Filtrar</app-button>
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="pagos">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Lista cada pago: lo cobrado en ventas, los cobros a clientes con deuda y los pagos a proveedores, del más reciente al más antiguo.</li>
+        <li>Filtra por tipo o medio de pago para cuadrar, por ejemplo, todos los Yape del mes. Los totales suman todo lo filtrado.</li>
+      </ol>
+    </app-help-panel>
+
+    <app-period-filter [value]="period()" (change)="period.set($event); page.set(1)">
+      <div class="mt-3 grid gap-3 border-t border-gray-100 pt-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-gray-800">
+        <app-form-select label="Tipo" [showPlaceholder]="false" [options]="tipoOptions" [value]="tipo()" (valueChange)="tipo.set($event); page.set(1)" />
+        <app-form-select label="Medio de pago" [showPlaceholder]="false" [options]="metodoOptions" [value]="metodo()" (valueChange)="metodo.set($event); page.set(1)" />
       </div>
-    </app-component-card>
-    <app-page-state [loading]="listQuery.isPending()" [error]="listError()" (retry)="listQuery.refetch()">
-      <app-component-card className="mt-4">
-        @if (listQuery.data(); as list) {
-          <table class="min-w-full text-sm">
-            <thead>
-              <tr class="border-b text-gray-500">
-                <th class="py-2 text-left">Fecha</th>
-                <th class="py-2 text-left">Tipo</th>
-                <th class="py-2 text-left">Descripción</th>
-                <th class="py-2 text-left">Método</th>
-                <th class="py-2 text-right">Monto</th>
+    </app-period-filter>
+
+    @if (kpis(); as k) {
+      <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <app-kpi-tile label="Cobrado en ventas" [value]="k.ventas" icon="mdi:cart-check" tone="success" />
+        <app-kpi-tile label="Cobros a clientes" [value]="k.cobros" icon="mdi:account-cash-outline" tone="info" />
+        <app-kpi-tile label="Pagos a proveedores" [value]="k.pagos" icon="mdi:truck-outline" tone="warning" />
+        <app-kpi-tile label="Neto" [value]="k.neto" icon="mdi:scale-balance" [tone]="k.netoNegativo ? 'error' : 'brand'" sub="Cobrado − pagado" />
+      </div>
+    }
+
+    @let state = query | queryPageState: total();
+    <app-component-card
+      title="Movimientos"
+      [desc]="total() ? total() + ' en total' : ''"
+      className="overflow-hidden"
+      [bodyClass]="'p-0 sm:p-0'"
+      [loading]="state.loading"
+      [error]="state.error"
+      [empty]="state.empty"
+      emptyTitle="Sin pagos en el periodo"
+      emptyHint="Prueba con otras fechas o filtros."
+      (retry)="query.refetch()"
+    >
+      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Detalle</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Medio</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Monto</th>
               </tr>
             </thead>
-            <tbody>
-              @for (row of list.items; track row.id) {
-                <tr class="border-b border-gray-100 dark:border-gray-800">
-                  <td class="py-2">{{ row.fecha | appDate: 'short' }}</td>
-                  <td class="py-2">{{ row.tipo }}</td>
-                  <td class="py-2">{{ row.descripcion }}</td>
-                  <td class="py-2">{{ row.metodo }}</td>
-                  <td class="py-2 text-right">{{ row.monto | currency: 'PEN' }}</td>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (row of rows(); track row.tipo + row.id) {
+                <tr>
+                  <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.fecha | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.tipo" [tone]="typeTone(row.tipo)" [label]="typeLabel(row.tipo)" /></td>
+                  <td class="px-5 py-4 text-theme-sm">
+                    <span class="block text-gray-800 dark:text-white/90">{{ row.descripcion }}</span>
+                    <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.contraparte ?? '' }}{{ row.referencia ? (row.contraparte ? ' · ' : '') + 'Op. ' + row.referencia : '' }}</span>
+                  </td>
+                  <td class="px-5 py-4 text-theme-sm">{{ methodLabel(row.metodo) }}</td>
+                  <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums" [class]="sign(row.tipo) < 0 ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'">
+                    {{ sign(row.tipo) * +row.monto | currency: 'PEN' : 'symbol' : '1.2-2' }}
+                  </td>
                 </tr>
               } @empty {
-                <tr>
-                  <td colspan="5" class="py-6 text-center text-gray-500">Sin pagos en el periodo.</td>
-                </tr>
+                <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
               }
             </tbody>
           </table>
-          <app-pagination class="mt-4" [totalItems]="list.total" [currentPage]="page()" [pageSize]="20" (currentPageChange)="page.set($event)" />
-        }
-      </app-component-card>
-    </app-page-state>
-  ` })
+        </div>
+      </div>
+    </app-component-card>
+    <app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+  `,
+})
 export class PagosComponent {
   private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
 
-  protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Finanzas' }, { label: 'Pagos' }];
+  protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Finanzas' }, { label: 'Pagos y cobros' }];
+  protected readonly pageSize = 20;
   protected readonly page = signal(1);
-  protected readonly from = signal(this.locale.monthStartYmd());
-  protected readonly to = signal(this.locale.todayYmd());
+  protected readonly period = signal<Period>({ from: this.locale.monthStartYmd(), to: this.locale.todayYmd() });
+  protected readonly tipo = signal('');
+  protected readonly metodo = signal('');
+  protected readonly tipoOptions = [
+    { value: '', label: 'Todos' },
+    { value: 'VENTA', label: 'Cobros de ventas' },
+    { value: 'COBRO_CLIENTE', label: 'Cobros a clientes' },
+    { value: 'PAGO_PROVEEDOR', label: 'Pagos a proveedores' },
+  ];
+  protected readonly metodoOptions = [{ value: '', label: 'Todos los medios' }, ...DEBT_PAYMENT_METHODS];
+  protected readonly typeLabel = paymentTypeLabel;
+  protected readonly typeTone = paymentTypeTone;
+  protected readonly sign = paymentTypeSign;
+  protected readonly methodLabel = financeMethodLabel;
 
-  protected readonly listQuery = injectQuery(() => ({
-    queryKey: ['recent-payments', this.page(), this.from(), this.to()] as const,
+  protected readonly query = injectQuery(() => ({
+    queryKey: ['recent-payments', this.page(), this.period().from, this.period().to, this.tipo(), this.metodo()] as const,
     queryFn: () =>
       firstValueFrom(
-        this.api.listRecentPayments({ page: this.page(), pageSize: 20, from: this.from(), to: this.to() }),
-      ) }));
-
-  protected listError() {
-    const err = this.listQuery.error();
-    return err ? httpErrorMessage(err, 'No se pudo cargar pagos') : null;
-  }
+        this.api.listRecentPayments({
+          page: this.page(),
+          pageSize: this.pageSize,
+          from: this.period().from,
+          to: this.period().to,
+          tipo: this.tipo() || undefined,
+          metodo: this.metodo() || undefined,
+        }),
+      ),
+  }));
+  protected readonly rows = computed(() => this.query.data()?.items ?? []);
+  protected readonly total = computed(() => this.query.data()?.total ?? 0);
+  protected readonly kpis = computed(() => {
+    const t = this.query.data()?.totales;
+    if (!t) return null;
+    return {
+      ventas: soles(t.cobrosVentas),
+      cobros: soles(t.cobrosClientes),
+      pagos: soles(t.pagosProveedores),
+      neto: soles(t.neto),
+      netoNegativo: Number(t.neto) < 0,
+    };
+  });
 }

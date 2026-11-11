@@ -1,0 +1,124 @@
+<app-breadcrumb-inline [segments]="breadcrumb()" />
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ copy().title }}</h1>
+</app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" [storageKey]="copy().storageKey">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    @for (line of copy().help; track line) {
+      <li>{{ line }}</li>
+    }
+  </ol>
+</app-help-panel>
+
+<app-list-filters
+  collapsible
+  [showSelect]="false"
+  [searchPlaceholder]="copy().search"
+  [searchValue]="search()"
+  [activeCount]="activeFilterCount()"
+  clearLabel="Limpiar"
+  (searchValueChange)="setSearch($event)"
+  (clear)="clearFilters()"
+>
+  <app-form-select label="Estado" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions()" (valueChange)="setEstado($event)" />
+</app-list-filters>
+
+@if (kpis(); as k) {
+  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+    <app-kpi-tile [label]="copy().open" [value]="k.abierto" icon="mdi:cash-clock" tone="brand" [sub]="k.abiertos" />
+    <app-kpi-tile label="Vencido" [value]="k.vencido" icon="mdi:alert-circle-outline" [tone]="k.vencidos ? 'error' : 'gray'" [sub]="k.vencidos + ' documento(s) vencido(s)'" />
+    <app-kpi-tile class="col-span-2 lg:col-span-1" label="Documentos en la lista" [value]="'' + total()" icon="mdi:file-document-multiple-outline" tone="gray" sub="Con los filtros aplicados" />
+  </div>
+}
+
+@let state = listQuery | queryPageState: total();
+
+<app-component-card
+  title="Documentos"
+  [desc]="total() ? total() + ' en total' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="state.loading"
+  [error]="state.error"
+  [empty]="state.empty"
+  [emptyTitle]="search() || activeFilterCount() ? 'Sin documentos con esos filtros' : copy().empty"
+  emptyHint="Prueba con otro estado o búsqueda."
+  (retry)="listQuery.refetch()"
+>
+  <div data-card-header-end><app-color-legend [items]="legend" /></div>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Documento</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">{{ copy().party }}</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vence</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Saldo</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr [attr.data-row-tone]="rowTone(row)">
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.documento }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">Emitido {{ row.fechaEmision | appDate: 'dd/MM/yyyy' }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                {{ row.contraparte }}
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.contraparteDoc ?? '' }}{{ row.convenio ? ' · ' + row.convenio : '' }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.fechaVencimiento ? (row.fechaVencimiento | appDate: 'dd/MM/yyyy') : '—' }}</td>
+              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">
+                {{ row.montoTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}
+                @if (+row.montoPagado > 0) {
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">pagado {{ row.montoPagado | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ row.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-4 text-end">
+                @if (isOpen(row) && canPay()) {
+                  <app-button size="sm" variant="outline" startIconName="mdi:cash-check" (btnClick)="openPay(row)">{{ kind() === 'cobrar' ? 'Cobrar' : 'Pagar' }}</app-button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+
+<app-modal [isOpen]="!!payRow()" (closed)="payRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ copy().action }}</h3>
+    @if (payRow(); as r) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ r.contraparte }} · {{ r.documento }} · saldo {{ r.saldo | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+    }
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    <app-input-field label="Monto (S/)" [isRequired]="true" type="number" min="0" step="0.01" inputMode="decimal" helpText="Puede ser una parte del saldo." [value]="payAmount() ?? ''" [error]="!!payErrors().monto" [hint]="payErrors().monto || ''" (valueChange)="payAmount.set($event === '' ? null : +$event); payErrors.update(e => ({ ...e, monto: undefined }))" />
+    <app-form-select label="Medio de pago" [required]="true" [showPlaceholder]="false" [options]="methodOptions" [value]="payMetodo()" (valueChange)="payMetodo.set($event); payErrors.update(e => ({ ...e, ref: undefined }))" />
+    @if (payMetodo() === 'EFECTIVO' && kind() === 'cobrar') {
+      <p class="text-xs text-gray-500 dark:text-gray-400">El efectivo entra a tu caja abierta: ábrela antes si no lo está.</p>
+    }
+    <app-input-field label="N.º de operación" [isRequired]="payMetodo() !== 'EFECTIVO'" [maxLength]="120" [value]="payReferencia()" [error]="!!payErrors().ref" [hint]="payErrors().ref || ''" (valueChange)="payReferencia.set('' + $event); payErrors.update(e => ({ ...e, ref: undefined }))" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="payMutation.isPending()" (btnClick)="payRow.set(null)">Cancelar</app-button>
+      <app-button startIconName="mdi:cash-check" [loading]="payMutation.isPending()" [disabled]="payMutation.isPending()" (btnClick)="submitPay()">{{ copy().action }}</app-button>
+    </div>
+  </div>
+</app-modal>

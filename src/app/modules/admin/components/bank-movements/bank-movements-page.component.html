@@ -1,0 +1,187 @@
+<app-breadcrumb-inline [segments]="breadcrumb()" />
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ copy().title }}</h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    @if (canWrite) {
+      <app-button size="sm" variant="outline" startIconName="mdi:bank-plus" (btnClick)="openAccount()">Nueva cuenta</app-button>
+      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openMovement()">Nuevo movimiento</app-button>
+    }
+  </div>
+</app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" [storageKey]="copy().storageKey">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    @for (line of copy().help; track line) {
+      <li>{{ line }}</li>
+    }
+  </ol>
+</app-help-panel>
+
+@if (accounts().length) {
+  <section class="mb-4">
+    <h2 class="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">Saldo de tus cuentas</h2>
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      @for (a of accounts(); track a.id) {
+        <app-button variant="unstyled" className="block h-full w-full cursor-pointer text-start" [ariaLabel]="'Ver movimientos de ' + a.nombre" (btnClick)="setFilter('accountId', accountId() === a.id ? '' : a.id)">
+          <app-kpi-tile
+            class="h-full"
+            [label]="a.nombre"
+            [value]="soles(a.saldoLibro)"
+            [icon]="a.tipo === 'CAJA' ? 'mdi:safe' : 'mdi:bank-outline'"
+            [tone]="accountId() === a.id ? 'brand' : 'gray'"
+            [sub]="(a.banco ?? (a.tipo === 'CAJA' ? 'Caja' : 'Banco')) + (a.numeroCuenta ? ' · ' + a.numeroCuenta : '')"
+          />
+        </app-button>
+      }
+    </div>
+  </section>
+} @else if (accountsQuery.isSuccess()) {
+  <div class="mb-4 rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+    Aún no registras cuentas.
+    @if (canWrite) { Usa «Nueva cuenta» para empezar. }
+  </div>
+}
+
+<app-list-filters
+  collapsible
+  [showSelect]="false"
+  searchPlaceholder="Buscar por referencia o descripción"
+  [searchValue]="search()"
+  [activeCount]="activeFilterCount()"
+  clearLabel="Limpiar"
+  (searchValueChange)="setSearch($event)"
+  (clear)="clearFilters()"
+>
+  <app-form-select label="Cuenta" [showPlaceholder]="false" [value]="accountId()" [options]="accountOptions()" (valueChange)="setFilter('accountId', $event)" />
+  <app-form-select label="Tipo" [showPlaceholder]="false" [value]="tipo()" [options]="tipoOptions" (valueChange)="setFilter('tipo', $event)" />
+  <app-form-select label="Estado" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions" (valueChange)="setFilter('estado', $event)" />
+  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+</app-list-filters>
+
+@if (totals(); as t) {
+  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <app-kpi-tile label="Ingresos" [value]="soles(t.ingresos)" icon="mdi:arrow-down-bold-circle-outline" tone="success" sub="Todo lo filtrado" />
+    <app-kpi-tile label="Egresos" [value]="soles(t.egresos)" icon="mdi:arrow-up-bold-circle-outline" tone="error" sub="Todo lo filtrado" />
+    <app-kpi-tile label="Neto" [value]="soles(t.neto)" icon="mdi:scale-balance" [tone]="+t.neto < 0 ? 'warning' : 'brand'" sub="Ingresos − egresos" />
+    <app-kpi-tile label="Por conciliar" [value]="'' + t.pendientes" icon="mdi:check-decagram-outline" [tone]="t.pendientes ? 'warning' : 'gray'" sub="Movimientos sin conciliar" />
+  </div>
+}
+
+@let state = listQuery | queryPageState: total();
+
+<app-component-card
+  title="Movimientos"
+  [desc]="total() ? total() + ' en total' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="state.loading"
+  [error]="state.error"
+  [empty]="state.empty"
+  [emptyTitle]="mode() === 'conciliacion' && estado() === 'false' ? 'No hay movimientos por conciliar' : 'Sin movimientos'"
+  [emptyHint]="canWrite ? 'Registra depósitos y retiros con «Nuevo movimiento».' : 'Prueba con otros filtros.'"
+  (retry)="listQuery.refetch()"
+>
+  @if (canReconcile && selected().length) {
+    <div data-card-header-end class="flex flex-wrap items-center gap-2">
+      <span class="text-sm text-gray-500 dark:text-gray-400">{{ selected().length }} seleccionado(s) · {{ selectedTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+      <app-button size="sm" startIconName="mdi:check-decagram-outline" [loading]="reconcileMutation.isPending()" [disabled]="reconcileMutation.isPending()" (btnClick)="reconcileMutation.mutate(selected())">Conciliar</app-button>
+    </div>
+  }
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            @if (canReconcile) {
+              <th class="w-10 px-5 py-3"><app-checkbox ariaLabel="Seleccionar todos los pendientes de esta página" [checked]="allSelected()" [disabled]="!pendingRows().length" (checkedChange)="toggleAll($event)" /></th>
+            }
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cuenta</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Detalle</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Monto</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr>
+              @if (canReconcile) {
+                <td class="px-5 py-4">
+                  @if (!row.conciliado) {
+                    <app-checkbox [ariaLabel]="'Seleccionar movimiento ' + (row.referencia ?? '')" [checked]="selected().includes(row.id)" (checkedChange)="toggle(row.id)" />
+                  }
+                </td>
+              }
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.movimientoAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.bankAccount.nombre }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="block text-gray-800 dark:text-white/90">{{ row.descripcion || (row.tipo === 'INGRESO' ? 'Ingreso' : 'Egreso') }}</span>
+                @if (row.referencia) {
+                  <span class="text-theme-xs text-gray-500 dark:text-gray-400">Ref. {{ row.referencia }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                <app-status-badge [status]="row.conciliado ? 'CONCILIADO' : 'PENDIENTE'" [tone]="row.conciliado ? 'success' : 'warning'" [label]="row.conciliado ? 'Conciliado' : 'Por conciliar'" />
+                @if (row.conciliadoAt) {
+                  <span class="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.conciliadoAt | appDate: 'dd/MM/yyyy' }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums" [class]="signed(row) < 0 ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'">
+                {{ signed(row) | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event); selected.set([])" />
+
+<!-- ========== NUEVA CUENTA ========== -->
+<app-modal [isOpen]="accountOpen()" (closed)="accountOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva cuenta</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Empieza con saldo 0; el saldo sube y baja con cada movimiento.</p>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    <app-input-field label="Nombre" [isRequired]="true" placeholder="Ej. BCP soles" [maxLength]="120" [value]="accNombre()" [error]="!!accError()" [hint]="accError()" (valueChange)="accNombre.set('' + $event); accError.set('')" />
+    <app-form-select label="Tipo" [showPlaceholder]="false" [options]="accTipoOptions" [value]="accTipo()" (valueChange)="accTipo.set($any($event))" />
+    <app-input-field label="Banco" placeholder="Ej. BCP, Interbank, BBVA" [maxLength]="120" [value]="accBanco()" (valueChange)="accBanco.set('' + $event)" />
+    <app-input-field label="Número de cuenta" [maxLength]="40" [value]="accNumero()" (valueChange)="accNumero.set('' + $event)" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="accountMutation.isPending()" (btnClick)="accountOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [loading]="accountMutation.isPending()" [disabled]="accountMutation.isPending()" (btnClick)="submitAccount()">Guardar</app-button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- ========== NUEVO MOVIMIENTO ========== -->
+<app-modal [isOpen]="movOpen()" (closed)="movOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo movimiento</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se registra con la fecha y hora de ahora.</p>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    <app-form-select label="Cuenta" [required]="true" placeholder="Seleccionar" [options]="accountPickOptions()" [value]="movAccount()" [error]="!!movErrors().account" [hint]="movErrors().account || ''" (valueChange)="movAccount.set($event); movErrors.update(e => ({ ...e, account: undefined }))" />
+    <app-form-select label="Tipo" [required]="true" [showPlaceholder]="false" [options]="movTipoOptions" [value]="movTipo()" (valueChange)="movTipo.set($any($event))" />
+    <app-input-field label="Monto (S/)" [isRequired]="true" type="number" min="0" step="0.01" inputMode="decimal" [value]="movMonto() ?? ''" [error]="!!movErrors().monto" [hint]="movErrors().monto || ''" (valueChange)="movMonto.set($event === '' ? null : +$event); movErrors.update(e => ({ ...e, monto: undefined }))" />
+    <app-input-field label="Referencia" helpText="Número de operación del banco." [maxLength]="120" [value]="movRef()" (valueChange)="movRef.set('' + $event)" />
+    <app-text-area label="Descripción" placeholder="Ej. Depósito de ventas del día" [maxLength]="500" [rows]="2" [value]="movDesc()" (valueChange)="movDesc.set($event)" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="movementMutation.isPending()" (btnClick)="movOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [loading]="movementMutation.isPending()" [disabled]="movementMutation.isPending()" (btnClick)="submitMovement()">Registrar</app-button>
+    </div>
+  </div>
+</app-modal>
