@@ -1,446 +1,324 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
-import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
+import { AuthService } from '../../../../core/services/auth.service';
+import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
-import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
-import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
-import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
-import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
-import type { StaffLeaveStatusDto, StaffLeaveTypeDto, UserListItemDto } from '../../models/directory.models';
+import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
+import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
+import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
+import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
+import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
+import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
+import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
+import { TabStripComponent, type TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { PeriodFilterComponent, type Period } from '../../components/period-filter/period-filter.component';
+import type { StaffAttendanceItemDto, StaffLeaveItemDto, StaffLeaveStatusDto, StaffLeaveTypeDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
-import { LocaleService } from '../../../../core/services/locale.service';
+import { soles } from '../../utils/finance-labels';
+import { hasChainScope } from '../../utils/user-policy';
 
-const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+type Tab = 'asistencia' | 'licencias' | 'horarios' | 'productividad';
+type ScheduleRow = { dayOfWeek: number; startTime: string; endTime: string; activo: boolean };
 
+const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const LEAVE_TYPES: Record<StaffLeaveTypeDto, string> = {
+  VACACIONES: 'Vacaciones',
+  LICENCIA_MEDICA: 'Descanso médico',
+  PERMISO: 'Permiso',
+  OTRO: 'Otro',
+};
+const LEAVE_STATUS: Record<StaffLeaveStatusDto, { label: string; tone: StatusTone }> = {
+  SOLICITADO: { label: 'Por aprobar', tone: 'warning' },
+  APROBADO: { label: 'Aprobado', tone: 'success' },
+  RECHAZADO: { label: 'Rechazado', tone: 'error' },
+  CANCELADO: { label: 'Cancelado', tone: 'neutral' },
+};
+
+/** Personal: asistencia, licencias, horarios, comisiones y productividad. */
 @Component({
   selector: 'app-gestion-personal',
   standalone: true,
   imports: [
     CommonModule,
-    AppDatePipe,
     CurrencyPipe,
+    AppDatePipe,
+    QueryPageStatePipe,
     BreadcrumbInlineComponent,
-    PageToolbarComponent,
-    ComponentCardComponent,
-    PageStateComponent,
-    FormSelectComponent,
-    InputFieldComponent,
-    FormFieldComponent,
     ButtonComponent,
+    CheckboxComponent,
+    ComponentCardComponent,
+    FormSelectComponent,
+    HelpPanelComponent,
+    InputFieldComponent,
+    KpiTileComponent,
+    MenuItemComponent,
+    ModalComponent,
+    PageToolbarComponent,
+    PaginationComponent,
+    PeriodFilterComponent,
+    StatusBadgeComponent,
+    TabStripComponent,
+    TableDropdownComponent,
+    TextAreaComponent,
   ],
-  template: `
-    <app-breadcrumb-inline [segments]="breadcrumb" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">Gestión de personal</h1>
-    </app-page-toolbar>
-
-    <div class="mt-4 flex flex-wrap items-end gap-3">
-      <app-form-field label="Empleado" required className="w-full sm:w-64">
-        <app-form-select
-          placeholder="Seleccione un empleado"
-          [options]="userOptions()"
-          [value]="selectedUserId()"
-          (valueChange)="onUserChange($event)"
-        />
-      </app-form-field>
-      @if (selectedUserId()) {
-        <app-button startIconName="mdi:login-variant" variant="outline" (btnClick)="checkIn()">Check-in</app-button>
-        <app-button startIconName="mdi:logout-variant" variant="outline" (btnClick)="checkOut()">Check-out</app-button>
-      }
-    </div>
-
-    @if (selectedUserId()) {
-      <app-component-card title="Horario semanal" className="mt-4">
-        <div class="space-y-2">
-          @for (row of scheduleRows(); track row.dayOfWeek) {
-            <div class="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 py-1">
-              <span class="w-10 text-sm font-medium">{{ dayLabel(row.dayOfWeek) }}</span>
-              <app-input-field class="min-w-0" type="time" [ariaLabel]="dayLabel(row.dayOfWeek) + ' hora de entrada'" [value]="row.startTime" (valueChange)="updateScheduleRow(row.dayOfWeek, 'startTime', '' + $event)" />
-              <app-input-field class="min-w-0" type="time" [ariaLabel]="dayLabel(row.dayOfWeek) + ' hora de salida'" [value]="row.endTime" (valueChange)="updateScheduleRow(row.dayOfWeek, 'endTime', '' + $event)" />
-            </div>
-          }
-        </div>
-        <div class="mt-3">
-          <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="saveSchedule()">Guardar horario</app-button>
-        </div>
-      </app-component-card>
-
-      <app-component-card title="Comisión por ventas" className="mt-4">
-        <div class="flex flex-wrap items-end gap-3">
-          <app-form-field label="% de comisión" required>
-            <app-input-field
-              type="number"
-              min="0"
-              max="100"
-              placeholder="0 – 100"
-              [value]="commissionPercent()"
-              (valueChange)="setCommissionPercent($event)"
-            />
-          </app-form-field>
-          <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="saveCommission()">Guardar comisión</app-button>
-        </div>
-      </app-component-card>
-    }
-
-    <app-component-card title="Asistencia reciente" className="mt-4">
-      <app-page-state [loading]="attendanceQuery.isPending()" [error]="attendanceError()" (retry)="attendanceQuery.refetch()">
-        @if (attendanceQuery.data(); as data) {
-          <table class="min-w-full text-sm">
-            <thead>
-              <tr class="text-left text-gray-500">
-                <th class="py-2">Empleado</th>
-                <th>Entrada</th>
-                <th>Salida</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of data.items; track row.id) {
-                <tr class="border-t border-gray-100 dark:border-gray-800">
-                  <td class="py-2">{{ row.user.nombre }}</td>
-                  <td>{{ row.checkInAt | appDate: 'short' }}</td>
-                  <td>{{ row.checkOutAt ? (row.checkOutAt | appDate: 'short') : '—' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </app-page-state>
-    </app-component-card>
-
-    <app-component-card title="Productividad" className="mt-4">
-      <div class="mb-3 flex flex-wrap items-end gap-3">
-        <app-form-field label="Desde" required>
-          <app-input-field type="date" ariaLabel="Productividad desde" [value]="prodFrom()" (valueChange)="prodFrom.set('' + $event)" />
-        </app-form-field>
-        <app-form-field label="Hasta" required>
-          <app-input-field type="date" ariaLabel="Productividad hasta" [value]="prodTo()" (valueChange)="prodTo.set('' + $event)" />
-        </app-form-field>
-        <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="consultProductivity()">Consultar</app-button>
-      </div>
-      <app-page-state [loading]="productivityQuery.isPending()" [error]="productivityError()" (retry)="productivityQuery.refetch()">
-        @if (productivityQuery.data(); as report) {
-          <table class="min-w-full text-sm">
-            <thead>
-              <tr class="text-left text-gray-500">
-                <th class="py-2">Empleado</th>
-                <th>Ventas</th>
-                <th>Total</th>
-                <th>% comisión</th>
-                <th>Comisión est.</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (emp of report.employees; track emp.userId) {
-                <tr class="border-t border-gray-100 dark:border-gray-800">
-                  <td class="py-2">{{ emp.nombre }}</td>
-                  <td>{{ emp.ventasCount }}</td>
-                  <td>{{ emp.ventasTotal | currency: 'PEN' }}</td>
-                  <td>{{ emp.commissionPercent }}%</td>
-                  <td>{{ emp.comisionEstimada | currency: 'PEN' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </app-page-state>
-    </app-component-card>
-
-    <app-component-card title="Licencias y vacaciones" className="mt-4">
-      @if (selectedUserId()) {
-        <div class="mb-4 flex flex-wrap items-end gap-3">
-          <app-form-field label="Tipo" required>
-            <app-form-select
-              placeholder="Tipo"
-              [options]="leaveTypeOptions"
-              [value]="leaveTipo()"
-              (valueChange)="onLeaveTipoChange($event)"
-            />
-          </app-form-field>
-          <app-form-field label="Desde" required>
-            <app-input-field type="date" ariaLabel="Licencia desde" [value]="leaveFrom()" (valueChange)="leaveFrom.set('' + $event)" />
-          </app-form-field>
-          <app-form-field label="Hasta" required>
-            <app-input-field type="date" ariaLabel="Licencia hasta" [value]="leaveTo()" (valueChange)="leaveTo.set('' + $event)" />
-          </app-form-field>
-          <app-button startIconName="mdi:send-outline" variant="primary" (btnClick)="createLeave()">Solicitar</app-button>
-        </div>
-      }
-      <app-page-state [loading]="leavesQuery.isPending()" [error]="leavesError()" (retry)="leavesQuery.refetch()">
-        @if (leavesQuery.data(); as leaves) {
-          <table class="min-w-full text-sm">
-            <thead>
-              <tr class="text-left text-gray-500">
-                <th class="py-2">Empleado</th>
-                <th>Tipo</th>
-                <th>Periodo</th>
-                <th>Estado</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (leave of leaves; track leave.id) {
-                <tr class="border-t border-gray-100 dark:border-gray-800">
-                  <td class="py-2">{{ leave.user.nombre }}</td>
-                  <td>{{ leave.tipo }}</td>
-                  <td>{{ leave.fromDate | appDate: 'shortDate' }} – {{ leave.toDate | appDate: 'shortDate' }}</td>
-                  <td>{{ leave.estado }}</td>
-                  <td>
-                    @if (leave.estado === 'SOLICITADO') {
-                      <div class="flex flex-wrap items-center justify-end gap-1.5">
-                        <app-button
-                          size="sm"
-                          [iconOnly]="true"
-                          startIconName="mdi:check-circle-outline"
-                          tooltip="Aprobar"
-                          (btnClick)="updateLeave(leave.id, 'APROBADO')"
-                        />
-                        <app-button
-                          size="sm"
-                          variant="danger"
-                          [iconOnly]="true"
-                          startIconName="mdi:close-circle-outline"
-                          tooltip="Rechazar"
-                          (btnClick)="updateLeave(leave.id, 'RECHAZADO')"
-                        />
-                      </div>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </app-page-state>
-    </app-component-card>
-  ` })
+  templateUrl: './gestion-personal.component.html',
+})
 export class GestionPersonalComponent {
-  private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
+  private readonly auth = inject(AuthService);
+  private readonly locale = inject(LocaleService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
 
-  protected readonly breadcrumb: BreadcrumbSegment[] = [
-    { label: 'Usuarios & Establecimientos' },
-    { label: 'Gestión personal' },
+  protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Usuarios y establecimientos' }, { label: 'Gestión de personal' }];
+  protected readonly tabs: TabStripItem[] = [
+    { id: 'asistencia', label: 'Asistencia' },
+    { id: 'licencias', label: 'Licencias y vacaciones' },
+    { id: 'horarios', label: 'Horario y comisión' },
+    { id: 'productividad', label: 'Productividad' },
   ];
+  protected readonly tab = signal<Tab>('asistencia');
+  protected readonly days = DAYS;
+  protected readonly money = soles;
+  private readonly myId = this.auth.user()?.id ?? '';
+  private readonly isChain = hasChainScope(this.auth.user()?.role);
 
-  protected readonly leaveTypeOptions = [
-    { value: 'VACACIONES', label: 'Vacaciones' },
-    { value: 'LICENCIA_MEDICA', label: 'Licencia médica' },
-    { value: 'PERMISO', label: 'Permiso' },
-    { value: 'OTRO', label: 'Otro' },
+  // ---------- Empleados ----------
+  protected readonly usersQuery = injectQuery(() => ({
+    queryKey: ['staff', 'users'] as const,
+    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 100 })),
+  }));
+  protected readonly employeeOptions = computed(() =>
+    (this.usersQuery.data()?.items ?? []).map((u) => ({ value: u.id, label: u.nombre })),
+  );
+  protected readonly employeeFilterOptions = computed(() => [{ value: '', label: 'Todo el personal' }, ...this.employeeOptions()]);
+
+  // ---------- Asistencia ----------
+  protected readonly attendanceUser = signal('');
+  protected readonly attendancePage = signal(1);
+  protected readonly attendanceQuery = injectQuery(() => ({
+    queryKey: ['staff', 'attendance', this.attendanceUser(), this.attendancePage()] as const,
+    queryFn: () => firstValueFrom(this.api.listStaffAttendance({ page: this.attendancePage(), pageSize: 20, userId: this.attendanceUser() || undefined })),
+  }));
+  protected readonly attendanceRows = computed(() => this.attendanceQuery.data()?.items ?? []);
+  protected readonly attendanceTotal = computed(() => this.attendanceQuery.data()?.total ?? 0);
+  protected readonly openNow = computed(() => this.attendanceRows().filter((r) => !r.checkOutAt).length);
+
+  protected hours(row: StaffAttendanceItemDto): string {
+    const end = row.checkOutAt ? new Date(row.checkOutAt).getTime() : Date.now();
+    const mins = Math.max(0, Math.round((end - new Date(row.checkInAt).getTime()) / 60000));
+    return `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min`;
+  }
+
+  protected readonly punchMutation = injectMutation(() => ({
+    mutationFn: async (args: { userId: string; kind: 'in' | 'out' }): Promise<{ id: string }> =>
+      args.kind === 'in' ? firstValueFrom(this.api.staffCheckIn(args.userId)) : firstValueFrom(this.api.staffCheckOut(args.userId)),
+    onSuccess: (_r, args) => {
+      this.notify.success(args.kind === 'in' ? 'Entrada registrada' : 'Salida registrada');
+      void this.queryClient.invalidateQueries({ queryKey: ['staff', 'attendance'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la asistencia')),
+  }));
+  protected punch(kind: 'in' | 'out') {
+    const userId = this.attendanceUser();
+    if (!userId) {
+      this.notify.warning('Elige primero a la persona en «Empleado».');
+      return;
+    }
+    this.punchMutation.mutate({ userId, kind });
+  }
+
+  // ---------- Licencias ----------
+  protected readonly leaveStatusFilter = signal<'' | StaffLeaveStatusDto>('SOLICITADO');
+  protected readonly leaveStatusOptions = [
+    { value: 'SOLICITADO', label: 'Por aprobar' },
+    { value: 'APROBADO', label: 'Aprobadas' },
+    { value: 'RECHAZADO', label: 'Rechazadas' },
+    { value: '', label: 'Todas' },
   ];
+  protected readonly leavesQuery = injectQuery(() => ({
+    queryKey: ['staff', 'leaves'] as const,
+    queryFn: () => firstValueFrom(this.api.listStaffLeaves()),
+  }));
+  protected readonly leaves = computed(() => {
+    const f = this.leaveStatusFilter();
+    return (this.leavesQuery.data() ?? []).filter((l) => !f || l.estado === f);
+  });
+  protected readonly pendingLeaves = computed(() => (this.leavesQuery.data() ?? []).filter((l) => l.estado === 'SOLICITADO').length);
+  protected leaveTypeLabel(t: StaffLeaveTypeDto) {
+    return LEAVE_TYPES[t] ?? t;
+  }
+  protected leaveLabel(s: StaffLeaveStatusDto) {
+    return LEAVE_STATUS[s].label;
+  }
+  protected leaveTone(s: StaffLeaveStatusDto) {
+    return LEAVE_STATUS[s].tone;
+  }
+  protected leaveDays(l: StaffLeaveItemDto) {
+    return Math.round((new Date(l.toDate).getTime() - new Date(l.fromDate).getTime()) / 86_400_000) + 1;
+  }
+  /** La API no deja aprobar la licencia propia (salvo administradores). */
+  protected canDecide(l: StaffLeaveItemDto) {
+    return l.estado === 'SOLICITADO' && (this.isChain || l.user.id !== this.myId);
+  }
 
-  protected readonly selectedUserId = signal('');
-  protected readonly commissionPercent = signal(0);
-  protected readonly scheduleRows = signal(
-    Array.from({ length: 7 }, (_, dayOfWeek) => ({
-      dayOfWeek,
-      startTime: '09:00',
-      endTime: '18:00' })),
-  );
-  protected readonly prodFrom = signal(
-    this.locale.monthStartYmd(),
-  );
-  protected readonly prodTo = signal(this.locale.todayYmd());
+  protected readonly leaveOpen = signal(false);
+  protected readonly leaveUser = signal('');
   protected readonly leaveTipo = signal<StaffLeaveTypeDto>('VACACIONES');
   protected readonly leaveFrom = signal('');
   protected readonly leaveTo = signal('');
+  protected readonly leaveNotes = signal('');
+  protected readonly leaveErrors = signal<{ user?: string; from?: string; to?: string }>({});
+  protected readonly leaveTypeOptions = (Object.keys(LEAVE_TYPES) as StaffLeaveTypeDto[]).map((value) => ({ value, label: LEAVE_TYPES[value] }));
 
-  protected readonly usersQuery = injectQuery(() => ({
-    queryKey: ['staff', 'users'] as const,
-    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 100 })) }));
-
-  protected readonly userOptions = computed(() =>
-    (this.usersQuery.data()?.items ?? []).map((u: UserListItemDto) => ({
-      value: u.id,
-      label: u.nombre })),
-  );
-
-  protected readonly attendanceQuery = injectQuery(() => ({
-    queryKey: ['staff', 'attendance', this.selectedUserId()] as const,
-    queryFn: () =>
+  protected openLeave() {
+    this.leaveUser.set(this.attendanceUser());
+    this.leaveTipo.set('VACACIONES');
+    this.leaveFrom.set('');
+    this.leaveTo.set('');
+    this.leaveNotes.set('');
+    this.leaveErrors.set({});
+    this.leaveOpen.set(true);
+  }
+  protected submitLeave() {
+    const e: { user?: string; from?: string; to?: string } = {};
+    if (!this.leaveUser()) e.user = 'Elige a la persona.';
+    if (!this.leaveFrom()) e.from = 'Elige la fecha de inicio.';
+    if (!this.leaveTo()) e.to = 'Elige la fecha de fin.';
+    else if (this.leaveFrom() && this.leaveTo() < this.leaveFrom()) e.to = 'No puede ser antes del inicio.';
+    this.leaveErrors.set(e);
+    if (Object.keys(e).length) return;
+    this.leaveMutation.mutate();
+  }
+  protected readonly leaveMutation = injectMutation(() => ({
+    mutationFn: () =>
       firstValueFrom(
-        this.api.listStaffAttendance({
-          page: 1,
-          pageSize: 20,
-          userId: this.selectedUserId() || undefined }),
-      ) }));
+        this.api.createStaffLeave(this.leaveUser(), {
+          tipo: this.leaveTipo(),
+          fromDate: this.leaveFrom(),
+          toDate: this.leaveTo(),
+          notas: this.leaveNotes().trim() || undefined,
+        }),
+      ),
+    onSuccess: () => {
+      this.notify.success('Solicitud registrada: queda por aprobar.');
+      this.leaveOpen.set(false);
+      void this.queryClient.invalidateQueries({ queryKey: ['staff', 'leaves'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la licencia')),
+  }));
 
-  protected readonly productivityQuery = injectQuery(() => ({
-    queryKey: ['staff', 'productivity', this.prodFrom(), this.prodTo()] as const,
-    enabled: !!this.prodFrom() && !!this.prodTo() && this.prodFrom() <= this.prodTo(),
-    queryFn: () => firstValueFrom(this.api.getStaffProductivityReport(this.prodFrom(), this.prodTo())) }));
+  protected readonly decide = signal<{ leave: StaffLeaveItemDto; estado: StaffLeaveStatusDto } | null>(null);
+  protected readonly decideMutation = injectMutation(() => ({
+    mutationFn: (args: { id: string; estado: StaffLeaveStatusDto }) => firstValueFrom(this.api.updateStaffLeaveStatus(args.id, args.estado)),
+    onSuccess: (_r, args) => {
+      this.notify.success(args.estado === 'APROBADO' ? 'Licencia aprobada' : args.estado === 'RECHAZADO' ? 'Licencia rechazada' : 'Licencia cancelada');
+      this.decide.set(null);
+      void this.queryClient.invalidateQueries({ queryKey: ['staff', 'leaves'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar la licencia')),
+  }));
 
-  protected readonly leavesQuery = injectQuery(() => ({
-    queryKey: ['staff', 'leaves'] as const,
-    queryFn: () => firstValueFrom(this.api.listStaffLeaves()) }));
+  // ---------- Horario y comisión ----------
+  protected readonly scheduleUser = signal('');
+  protected readonly schedule = signal<ScheduleRow[]>(this.defaultSchedule());
+  protected readonly scheduleError = signal('');
+  protected readonly commission = signal<number | null>(null);
+  protected readonly commissionError = signal('');
+  protected readonly isSelf = computed(() => !this.isChain && this.scheduleUser() === this.myId);
 
-  protected dayLabel(dayOfWeek: number): string {
-    return DAY_LABELS[dayOfWeek] ?? String(dayOfWeek);
+  private defaultSchedule(): ScheduleRow[] {
+    return Array.from({ length: 7 }, (_, d) => ({ dayOfWeek: d, startTime: '09:00', endTime: '18:00', activo: d !== 0 }));
   }
 
-  protected onUserChange(value: string) {
-    this.selectedUserId.set(value);
-    if (!value) return;
-    void this.loadSchedule(value);
-  }
-
-  protected onLeaveTipoChange(value: string) {
-    this.leaveTipo.set(value as StaffLeaveTypeDto);
-  }
-
-  protected setCommissionPercent(value: string | number) {
-    this.commissionPercent.set(Number(value) || 0);
-  }
-
-  private async loadSchedule(userId: string) {
+  protected async pickScheduleUser(userId: string) {
+    this.scheduleUser.set(userId);
+    this.schedule.set(this.defaultSchedule());
+    this.scheduleError.set('');
+    this.commission.set(null);
+    if (!userId) return;
     try {
       const rows = await firstValueFrom(this.api.getStaffWorkSchedule(userId));
-      if (rows.length === 0) return;
-      this.scheduleRows.set(
-        Array.from({ length: 7 }, (_, dayOfWeek) => {
-          const found = rows.find((r) => r.dayOfWeek === dayOfWeek);
-          return {
-            dayOfWeek,
-            startTime: found?.startTime ?? '09:00',
-            endTime: found?.endTime ?? '18:00' };
-        }),
-      );
-    } catch {
-      // mantener valores por defecto
+      if (rows.length) {
+        this.schedule.set(
+          this.defaultSchedule().map((d) => {
+            const r = rows.find((x) => x.dayOfWeek === d.dayOfWeek);
+            return r ? { dayOfWeek: d.dayOfWeek, startTime: r.startTime, endTime: r.endTime, activo: r.activo } : { ...d, activo: false };
+          }),
+        );
+      }
+    } catch (err) {
+      this.notify.error(httpErrorMessage(err, 'No se pudo cargar el horario'));
     }
+    const emp = this.productivityQuery.data()?.employees.find((e) => e.userId === userId);
+    if (emp) this.commission.set(Number(emp.commissionPercent));
   }
-
-  protected updateScheduleRow(dayOfWeek: number, field: 'startTime' | 'endTime', value: string) {
-    this.scheduleRows.update((rows) =>
-      rows.map((row) => (row.dayOfWeek === dayOfWeek ? { ...row, [field]: value } : row)),
-    );
+  protected patchDay(day: number, patch: Partial<ScheduleRow>) {
+    this.schedule.update((rows) => rows.map((r) => (r.dayOfWeek === day ? { ...r, ...patch } : r)));
+    this.scheduleError.set('');
   }
-
-  protected attendanceError() {
-    const err = this.attendanceQuery.error();
-    return err ? httpErrorMessage(err, 'No se pudo cargar asistencia') : null;
-  }
-
-  protected productivityError() {
-    const err = this.productivityQuery.error();
-    return err ? httpErrorMessage(err, 'No se pudo cargar productividad') : null;
-  }
-
-  protected leavesError() {
-    const err = this.leavesQuery.error();
-    return err ? httpErrorMessage(err, 'No se pudieron cargar licencias') : null;
-  }
-
-  private readonly checkInMutation = injectMutation(() => ({
-    mutationFn: (userId: string) => firstValueFrom(this.api.staffCheckIn(userId)),
-    onSuccess: () => {
-      this.notify.success('Check-in registrado');
-      void this.queryClient.invalidateQueries({ queryKey: ['staff', 'attendance'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar check-in')) }));
-
-  private readonly checkOutMutation = injectMutation(() => ({
-    mutationFn: (userId: string) => firstValueFrom(this.api.staffCheckOut(userId)),
-    onSuccess: () => {
-      this.notify.success('Check-out registrado');
-      void this.queryClient.invalidateQueries({ queryKey: ['staff', 'attendance'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar check-out')) }));
-
-  protected checkIn() {
-    const userId = this.selectedUserId();
-    if (!userId) return;
-    this.checkInMutation.mutate(userId);
-  }
-
-  protected checkOut() {
-    const userId = this.selectedUserId();
-    if (!userId) return;
-    this.checkOutMutation.mutate(userId);
-  }
-
-  protected consultProductivity() {
-    if (!this.prodFrom() || !this.prodTo()) {
-      this.notify.warning('Indique las fechas desde y hasta.');
-      return;
-    }
-    if (this.prodFrom() > this.prodTo()) {
-      this.notify.warning('La fecha "desde" no puede ser posterior a "hasta".');
-      return;
-    }
-    void this.productivityQuery.refetch();
-  }
-
+  protected readonly scheduleMutation = injectMutation(() => ({
+    mutationFn: () => firstValueFrom(this.api.upsertStaffWorkSchedule(this.scheduleUser(), this.schedule())),
+    onSuccess: () => this.notify.success('Horario guardado'),
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar el horario')),
+  }));
   protected saveSchedule() {
-    const userId = this.selectedUserId();
-    if (!userId) return;
-    const bad = this.scheduleRows().find((r) => r.startTime && r.endTime && r.startTime >= r.endTime);
+    const bad = this.schedule().find((r) => r.activo && r.startTime >= r.endTime);
     if (bad) {
-      this.notify.warning(`En ${this.dayLabel(bad.dayOfWeek)}, la hora de salida debe ser posterior a la de entrada.`);
+      this.scheduleError.set(`El ${DAYS[bad.dayOfWeek].toLowerCase()} la salida debe ser después de la entrada.`);
       return;
     }
-    firstValueFrom(this.api.upsertStaffWorkSchedule(userId, this.scheduleRows()))
-      .then(() => {
-        this.notify.success('Horario guardado');
-      })
-      .catch((err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar horario')));
+    this.scheduleMutation.mutate();
   }
-
+  protected readonly commissionMutation = injectMutation(() => ({
+    mutationFn: () => firstValueFrom(this.api.upsertStaffCommissionRule(this.scheduleUser(), Number(this.commission()))),
+    onSuccess: () => {
+      this.notify.success('Comisión guardada');
+      void this.queryClient.invalidateQueries({ queryKey: ['staff', 'productivity'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar la comisión')),
+  }));
   protected saveCommission() {
-    const userId = this.selectedUserId();
-    if (!userId) return;
-    const pct = this.commissionPercent();
-    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
-      this.notify.warning('El porcentaje de comisión debe estar entre 0 y 100.');
+    const pct = Number(this.commission());
+    if (this.commission() == null || !Number.isFinite(pct) || pct < 0 || pct > 100) {
+      this.commissionError.set('Escribe un porcentaje entre 0 y 100.');
       return;
     }
-    firstValueFrom(this.api.upsertStaffCommissionRule(userId, this.commissionPercent()))
-      .then(() => {
-        this.notify.success('Comisión actualizada');
-        void this.productivityQuery.refetch();
-      })
-      .catch((err) => this.notify.error(httpErrorMessage(err, 'No se pudo guardar comisión')));
+    this.commissionError.set('');
+    this.commissionMutation.mutate();
   }
 
-  protected createLeave() {
-    const userId = this.selectedUserId();
-    if (!userId || !this.leaveFrom() || !this.leaveTo()) {
-      this.notify.warning('Seleccione empleado y fechas');
-      return;
-    }
-    if (this.leaveFrom() > this.leaveTo()) {
-      this.notify.warning('La fecha "desde" no puede ser posterior a "hasta".');
-      return;
-    }
-    firstValueFrom(
-      this.api.createStaffLeave(userId, {
-        tipo: this.leaveTipo(),
-        fromDate: this.leaveFrom(),
-        toDate: this.leaveTo() }),
-    )
-      .then(() => {
-        this.notify.success('Licencia registrada');
-        void this.leavesQuery.refetch();
-      })
-      .catch((err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar licencia')));
-  }
-
-  protected updateLeave(leaveId: string, estado: StaffLeaveStatusDto) {
-    firstValueFrom(this.api.updateStaffLeaveStatus(leaveId, estado))
-      .then(() => {
-        this.notify.success('Estado actualizado');
-        void this.leavesQuery.refetch();
-      })
-      .catch((err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar licencia')));
-  }
+  // ---------- Productividad ----------
+  protected readonly period = signal<Period>({ from: this.locale.monthStartYmd(), to: this.locale.todayYmd() });
+  protected readonly productivityQuery = injectQuery(() => ({
+    queryKey: ['staff', 'productivity', this.period().from, this.period().to] as const,
+    queryFn: () => firstValueFrom(this.api.getStaffProductivityReport(this.period().from, this.period().to)),
+  }));
+  protected readonly employees = computed(() =>
+    [...(this.productivityQuery.data()?.employees ?? [])].sort((a, b) => Number(b.ventasTotal) - Number(a.ventasTotal)),
+  );
+  protected readonly productivityKpis = computed(() => {
+    const e = this.employees();
+    const total = e.reduce((a, x) => a + Number(x.ventasTotal), 0);
+    return {
+      ventas: `${e.reduce((a, x) => a + x.ventasCount, 0)}`,
+      total: soles(total),
+      comision: soles(e.reduce((a, x) => a + Number(x.comisionEstimada), 0)),
+      top: e[0]?.ventasCount ? e[0].nombre : '—',
+    };
+  });
 }

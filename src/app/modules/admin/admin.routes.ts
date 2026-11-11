@@ -158,7 +158,7 @@ export const adminRoutes: Routes = [
         ...guarded(P.lpdp),
         loadComponent: () =>
           import('./pages/lpdp/lpdp.component').then((m) => m.LpdpComponent),
-        title: 'FactoFarm | LPDP / ARCO',
+        title: 'FactoFarm | Datos personales (LPDP)',
       },
       {
         path: 'farmaceutico-titular',

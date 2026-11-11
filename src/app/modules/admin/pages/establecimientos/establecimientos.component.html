@@ -1,27 +1,27 @@
 <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
 <app-page-toolbar>
-  <h1
-    data-toolbar-title
-    class="text-lg font-semibold text-gray-800 dark:text-white/90"
-  >
-    Establecimientos
-  </h1>
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Establecimientos</h1>
   <div data-toolbar-actions>
-    <app-button size="sm" (btnClick)="openCreateModal()">
-      <app-icon name="mdi:plus" width="18" height="18" />
-      <span class="leading-none">Nuevo</span>
-    </app-button>
+    <app-button size="sm" startIconName="mdi:store-plus-outline" (btnClick)="openCreateModal()">Nuevo establecimiento</app-button>
   </div>
 </app-page-toolbar>
 
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="establecimientos">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Cada local (botica, sucursal u hospital) es un establecimiento, con su dirección, almacenes y cajas.</li>
+    <li>Las <strong>series</strong> son los prefijos de boletas, facturas y notas de venta de cada local (por ejemplo B001).</li>
+    <li>Los datos de tu local actual, el logo y la facturación electrónica se configuran en <strong>Mi farmacia</strong>. Un local con ventas o stock no se puede eliminar.</li>
+  </ol>
+</app-help-panel>
+
 <app-list-filters
   [searchValue]="searchTerm()"
-  searchPlaceholder="Buscar por descripción, código o dirección"
+  searchPlaceholder="Buscar por nombre, código o dirección"
   [selectValue]="hospitalFilter()"
   [selectOptions]="hospitalFilterOptions"
-  selectPlaceholder="Filtrar por tipo"
-  clearLabel="Limpiar filtros"
+  selectPlaceholder="Todos los tipos"
+  clearLabel="Limpiar"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onHospitalFilterChange($event)"
   (clear)="clearFilters()"
@@ -29,77 +29,58 @@
 
 @let listState = establishmentsQuery | queryPageState: totalFiltered();
 
-<app-component-card title="Listado de establecimientos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+<app-component-card
+  title="Establecimientos"
+  [desc]="totalFiltered() ? totalFiltered() + ' en total' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   emptyTitle="No hay establecimientos registrados"
   skeleton="table"
   [skeletonCount]="6"
-  (retry)="refetchEstablishments()">
+  (retry)="refetchEstablishments()"
+>
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
-      <table class="min-w-full text-left">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-              Descripción
-            </th>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Código</th>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-              Hospital
-            </th>
-            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-              Acciones
-            </th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Establecimiento</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Dirección</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of paginatedEstablishments(); track row.id; let i = $index) {
-            <tr>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ pageStart() + i + 1 }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigo || '—' }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ row.esHospital ? 'Sí' : 'No' }}</td>
+          @for (row of paginatedEstablishments(); track row.id) {
+            <tr [attr.data-row-tone]="row.activo === false ? 'muted' : null">
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.nombre }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.codigo ? 'Código ' + row.codigo : 'Sin código' }}{{ row.telefono ? ' · ' + row.telefono : '' }}</span>
+              </td>
+              <td class="max-w-xs px-5 py-4 text-theme-sm">{{ row.direccionComercial || row.direccionFiscal || '—' }}</td>
+              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.esHospital ? 'HOSPITAL' : 'BOTICA'" [tone]="row.esHospital ? 'info' : 'neutral'" [label]="row.esHospital ? 'Hospital / clínica' : 'Farmacia / botica'" /></td>
+              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.activo === false ? 'INACTIVO' : 'ACTIVO'" [tone]="row.activo === false ? 'neutral' : 'success'" [label]="row.activo === false ? 'Inactivo' : 'Activo'" /></td>
               <td class="px-5 py-4 text-end">
-                <div class="flex flex-wrap justify-end gap-1.5">
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:pencil-outline"
-                    tooltip="Editar"
-                    (btnClick)="openEditModal(row)"
-                  />
-                  <app-button
-                    size="sm"
-                    variant="danger"
-                    [iconOnly]="true"
-                    startIconName="mdi:trash-can-outline"
-                    tooltip="Eliminar"
-                    [disabled]="deleteEstablishmentMutation.isPending()" [loading]="deleteEstablishmentMutation.isPending()"
-                    (btnClick)="openDeleteConfirm(row)"
-                  />
-                  <app-button
-                    size="sm"
-                    variant="ghost"
-                    [iconOnly]="true"
-                    startIconName="mdi:format-list-numbered"
-                    tooltip="Series"
-                    (btnClick)="openSeriesModal(row)"
-                  />
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones de ' + row.nombre"></app-button>
+                    </div>
+                    <div dropdown-content>
+                      <app-menu-item icon="mdi:pencil-outline" (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                      <app-menu-item icon="mdi:format-list-numbered" tooltip="Prefijos de boletas, facturas y notas de venta." (itemClick)="openSeriesModal(row)">Series de comprobantes</app-menu-item>
+                      <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Solo si no tiene ventas ni stock. Te pedirá confirmación." [disabled]="deleteEstablishmentMutation.isPending()" (itemClick)="openDeleteConfirm(row)">Eliminar</app-menu-item>
+                    </div>
+                  </app-table-dropdown>
                 </div>
               </td>
             </tr>
           } @empty {
-            <tr>
-              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-                No hay establecimientos registrados.
-              </td>
-            </tr>
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
           }
         </tbody>
       </table>
@@ -107,12 +88,7 @@
   </div>
 </app-component-card>
 
-<app-pagination
-  [totalItems]="totalFiltered()"
-  [currentPage]="currentPage()"
-  [pageSize]="itemsPerPage"
-  (currentPageChange)="onPageChange($event)"
-/>
+<app-pagination [totalItems]="totalFiltered()" [currentPage]="currentPage()" [pageSize]="itemsPerPage" (currentPageChange)="onPageChange($event)" />
 
 <app-modal
   [isOpen]="modalOpen()"
@@ -273,6 +249,12 @@
           [checked]="esHospital()"
           (checkedChange)="esHospital.set($event)"
         />
+      </div>
+
+      <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">Farmacéutico titular</h4>
+        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Químico farmacéutico responsable del local ante DIGEMID. Las colegiaturas se registran en «Farmacéutico titular».</p>
+        <app-form-select class="block md:max-w-md" ariaLabel="Farmacéutico titular" [showPlaceholder]="false" [options]="titularOptions()" [value]="titularLicenseId()" (valueChange)="titularLicenseId.set($event)" />
       </div>
 
       <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">

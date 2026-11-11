@@ -29,6 +29,14 @@
   </div>
 </app-page-toolbar>
 
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="mi-farmacia">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Aquí están los datos de tu local actual: logo y nombre que salen en los tickets, RUC, dirección fiscal y contacto.</li>
+    <li>En <strong>Facturación electrónica</strong> conectas tu proveedor (OSE) para emitir boletas y facturas a SUNAT.</li>
+    <li>Los demás locales, sus series y el farmacéutico titular se administran en <strong>Establecimientos</strong>. Pulsa «Guardar cambios» al terminar.</li>
+  </ol>
+</app-help-panel>
+
 @if (profileQuery.isError()) {
   <app-component-card
     title="No se pudo cargar"

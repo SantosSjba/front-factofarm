@@ -1,0 +1,212 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Datos personales (LPDP)</h1>
+  <div data-toolbar-actions>
+    @if (canWrite) {
+      <app-button size="sm" startIconName="mdi:file-document-plus-outline" (btnClick)="openNew()">Nueva solicitud ARCO</app-button>
+    }
+  </div>
+</app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="lpdp">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>La Ley 29733 da a tus clientes cuatro derechos (<strong>ARCO</strong>): conocer, corregir, borrar u oponerse al uso de sus datos. Registra aquí cada pedido.</li>
+    <li>Plazos: <strong>20 días hábiles</strong> para acceso y <strong>10</strong> para los demás. Las solicitudes fuera de plazo se marcan en rojo.</li>
+    <li>Al completar una <strong>cancelación</strong>, el cliente se da de baja: deja de aparecer en la lista y ya no se le puede vender a su nombre.</li>
+  </ol>
+</app-help-panel>
+
+<app-tab-strip class="mb-4 block" [tabs]="tabs" [activeId]="tab()" (tabChange)="tab.set($any($event))" />
+
+@switch (tab()) {
+  @case ('arco') {
+    @let k = kpis();
+    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <app-kpi-tile label="Por atender" [value]="k.abiertas" icon="mdi:inbox-arrow-down" tone="brand" />
+      <app-kpi-tile label="Fuera de plazo" [value]="'' + k.vencidas" icon="mdi:alarm" [tone]="k.vencidas ? 'error' : 'gray'" />
+      <app-kpi-tile label="Atendidas" [value]="k.atendidas" icon="mdi:check-circle-outline" tone="success" />
+      <app-kpi-tile label="Total" [value]="k.total" icon="mdi:file-document-multiple-outline" tone="gray" />
+    </div>
+
+    @let st = arcoQuery | queryPageState: requests().length;
+    <app-component-card
+      title="Solicitudes"
+      className="overflow-hidden"
+      [bodyClass]="'p-0 sm:p-0'"
+      [loading]="st.loading"
+      [error]="st.error"
+      [empty]="st.empty"
+      emptyTitle="No hay solicitudes ARCO"
+      emptyHint="Regístralas cuando un cliente lo pida en el local o por escrito."
+      (retry)="arcoQuery.refetch()"
+    >
+      <div data-card-header-end class="w-40">
+        <app-form-select ariaLabel="Filtrar solicitudes" [showPlaceholder]="false" [options]="statusOptions" [value]="statusFilter()" (valueChange)="statusFilter.set($any($event))" />
+      </div>
+      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Recibida</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Derecho</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Plazo</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (r of requests(); track r.id) {
+                <tr [attr.data-row-tone]="overdue(r) ? 'error-light' : null">
+                  <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ r.createdAt | appDate: 'dd/MM/yyyy' }}</td>
+                  <td class="px-5 py-4 text-theme-sm">
+                    <span class="block font-medium text-gray-800 dark:text-white/90">{{ r.customer?.nombre ?? '—' }}</span>
+                    <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ r.customer?.numeroDocumento ?? '' }}</span>
+                  </td>
+                  <td class="px-5 py-4 text-theme-sm">
+                    {{ typeLabel(r.requestType) }}
+                    @if (r.details) { <span class="block max-w-xs truncate text-theme-xs text-gray-500 dark:text-gray-400" [title]="r.details">{{ r.details }}</span> }
+                  </td>
+                  <td class="px-5 py-4 text-theme-sm">
+                    <app-status-badge [status]="r.status" [tone]="statusTone(r.status)" [label]="statusLabel(r.status)" />
+                    @if (r.processedBy) { <span class="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">{{ r.processedBy.nombre }}</span> }
+                  </td>
+                  <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                    @if (isOpen(r)) {
+                      <span [class]="overdue(r) ? 'font-medium text-error-600 dark:text-error-400' : ''">{{ elapsed(r) }} de {{ limit(r) }} días hábiles</span>
+                    } @else {
+                      <span class="text-gray-400">—</span>
+                    }
+                  </td>
+                  <td class="px-5 py-4 text-end">
+                    @if (canWrite && (isOpen(r) || r.requestType === 'ACCESO')) {
+                      <div class="inline-flex justify-end">
+                        <app-table-dropdown>
+                          <div dropdown-button>
+                            <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones de la solicitud"></app-button>
+                          </div>
+                          <div dropdown-content>
+                            @if (isOpen(r)) {
+                              <app-menu-item icon="mdi:clipboard-check-outline" (itemClick)="openProcess(r)">Atender</app-menu-item>
+                            }
+                            @if (r.requestType === 'ACCESO') {
+                              <app-menu-item icon="mdi:download-outline" tooltip="Descarga todo lo que tenemos del cliente para entregárselo." (itemClick)="exportData(r)">Descargar datos del cliente</app-menu-item>
+                            }
+                          </div>
+                        </app-table-dropdown>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin solicitudes con ese filtro.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </app-component-card>
+  }
+
+  @case ('tratamiento') {
+    <app-component-card title="Qué datos usamos y para qué" [desc]="matrixQuery.data() ? 'Versión ' + matrixQuery.data()!.version + ' · cifrado de datos de salud ' + (matrixQuery.data()!.encryptionEnabled ? 'activo' : 'no configurado') : ''" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'" [loading]="matrixQuery.isPending()" [error]="matrixQuery.isError() ? 'No se pudo cargar la información' : null" (retry)="matrixQuery.refetch()">
+      @if (matrixQuery.data(); as m) {
+        <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+          <div class="max-w-full overflow-x-auto">
+            <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+              <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+                <tr>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Proceso</th>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Datos</th>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Para qué</th>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Base legal</th>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Se guarda</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                @for (row of m.rows; track row.proceso) {
+                  <tr>
+                    <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ row.proceso }}</td>
+                    <td class="px-5 py-3 text-theme-sm">{{ row.datos.join(', ') }}</td>
+                    <td class="px-5 py-3 text-theme-sm">{{ row.finalidad }}</td>
+                    <td class="px-5 py-3 text-theme-sm">{{ row.baseLegal }}</td>
+                    <td class="px-5 py-3 text-theme-sm">{{ row.retencion }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </app-component-card>
+  }
+
+  @case ('conservacion') {
+    <app-component-card title="Clientes que ya no necesitamos conservar" [desc]="retentionQuery.data()?.policy ?? ''" [loading]="retentionQuery.isPending()" [error]="retentionQuery.isError() ? 'No se pudo cargar la información' : null" (retry)="retentionQuery.refetch()">
+      @if (retentionQuery.data(); as r) {
+        <ul class="divide-y divide-gray-100 text-sm dark:divide-white/[0.05]">
+          @for (c of r.candidates; track c.id) {
+            <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+              <span><span class="font-medium text-gray-800 dark:text-white/90">{{ c.nombre }}</span> <span class="text-gray-500">· {{ c.numeroDocumento }}</span></span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">Sin movimiento desde {{ c.updatedAt | appDate: 'dd/MM/yyyy' }}</span>
+            </li>
+          } @empty {
+            <li class="py-4 text-center text-gray-500">Ningún cliente supera el plazo de conservación.</li>
+          }
+        </ul>
+      }
+    </app-component-card>
+  }
+}
+
+<!-- ========== NUEVA SOLICITUD ========== -->
+<app-modal [isOpen]="newOpen()" (closed)="newOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva solicitud ARCO</h3>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    @if (customer(); as c) {
+      <div class="flex items-center justify-between gap-2 rounded-xl border border-gray-200 px-3 py-2 dark:border-gray-800">
+        <span class="text-sm"><span class="font-medium text-gray-800 dark:text-white/90">{{ c.label }}</span> <span class="text-gray-500">{{ c.meta }}</span></span>
+        <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="customer.set(null)">Cambiar</app-button>
+      </div>
+    } @else {
+      <app-search-select label="Cliente" [required]="true" placeholder="Nombre, DNI o RUC" emptyText="No se encontró el cliente." [options]="customerOptions()" [loading]="customersQuery.isFetching()" (searchChange)="customerTerm.set($event)" (selected)="customer.set($event); newError.set('')" />
+      @if (newError()) { <p class="text-xs font-medium text-error-600 dark:text-error-400">{{ newError() }}</p> }
+    }
+    <app-form-select label="Derecho que ejerce" [required]="true" [showPlaceholder]="false" [options]="typeOptions" [value]="newType()" [hint]="typeHint(newType())" (valueChange)="newType.set($any($event))" />
+    <app-text-area label="Detalle del pedido" placeholder="Qué pide exactamente y cómo lo hizo (presencial, correo…)" [maxLength]="1000" [rows]="3" [value]="newDetails()" (valueChange)="newDetails.set($event)" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="newOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [loading]="createMutation.isPending()" [disabled]="createMutation.isPending()" (btnClick)="submitNew()">Registrar</app-button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- ========== ATENDER ========== -->
+<app-modal [isOpen]="!!processing()" (closed)="processing.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Atender solicitud</h3>
+    @if (processing(); as p) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ typeLabel(p.requestType) }} · {{ p.customer?.nombre }}</p>
+    }
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    <app-form-select label="Estado" [required]="true" [showPlaceholder]="false" [options]="processOptions" [value]="processStatus()" (valueChange)="processStatus.set($any($event)); processError.set('')" />
+    @if (processing()?.requestType === 'CANCELACION' && processStatus() === 'COMPLETADA') {
+      <p class="rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+        Al marcarla como atendida el cliente se da de baja: deja de aparecer en la lista y ya no se le puede vender a su nombre.
+      </p>
+    }
+    <app-text-area label="Respuesta al cliente" [required]="processStatus() === 'RECHAZADA'" helpText="Queda guardada con la solicitud." [maxLength]="1000" [rows]="3" [value]="processNotes()" [error]="!!processError()" [hint]="processError()" (valueChange)="processNotes.set($event); processError.set('')" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="processMutation.isPending()" (btnClick)="processing.set(null)">Cancelar</app-button>
+    <app-button [variant]="processing()?.requestType === 'CANCELACION' && processStatus() === 'COMPLETADA' ? 'danger' : 'primary'" startIconName="mdi:content-save-outline" [loading]="processMutation.isPending()" [disabled]="processMutation.isPending()" (btnClick)="submitProcess()">Guardar</app-button>
+  </div>
+</app-modal>

@@ -155,6 +155,7 @@ import type {
   StaffLeaveStatusDto,
   StaffProductivityReportDto,
   SaleVoidRequestDto,
+  AuditFacetsDto,
   AccountPayableListResponseDto,
   AccountReceivableListResponseDto,
   BankMovementFilters,
@@ -287,6 +288,8 @@ import type {
   ValidateDniResponseDto,
   LpdTreatmentMatrixDto,
   ArcoRequestDto,
+  ArcoRequestStatus,
+  ArcoRequestType,
   LpdpRetentionDto,
   PharmacistLicenseDto,
   CreatePharmacistLicenseRequest,
@@ -489,6 +492,14 @@ export class DirectoryApiService {
 
   listAuditLogs(params?: Record<string, string>) {
     return this.http.get<AuditLogListResponseDto>(`${this.base}/audit-logs`, { params });
+  }
+
+  getAuditFacets() {
+    return this.http.get<AuditFacetsDto>(`${this.base}/audit-logs/facets`);
+  }
+
+  exportAuditLogs(params: Record<string, string>) {
+    return this.http.post(`${this.base}/audit-logs/export`, {}, { params, responseType: 'blob' });
   }
 
   listEstablishmentsAll(filters?: Omit<EstablishmentListFiltersRequest, 'page' | 'pageSize'>) {
@@ -2300,6 +2311,18 @@ export class DirectoryApiService {
     return this.http.get<ArcoRequestDto[]>(`${this.base}/compliance/lpdp/arco`, { params });
   }
 
+  createArcoRequest(body: { customerId: string; requestType: ArcoRequestType; details?: string }) {
+    return this.http.post<ArcoRequestDto>(`${this.base}/compliance/lpdp/arco`, body);
+  }
+
+  processArcoRequest(id: string, body: { status: ArcoRequestStatus; responseNotes?: string }) {
+    return this.http.patch<ArcoRequestDto>(`${this.base}/compliance/lpdp/arco/${id}`, body);
+  }
+
+  exportCustomerPersonalData(customerId: string) {
+    return this.http.get<unknown>(`${this.base}/compliance/lpdp/customers/${customerId}/export`);
+  }
+
   getLpdpRetentionCandidates() {
     return this.http.get<LpdpRetentionDto>(`${this.base}/compliance/lpdp/retention-candidates`);
   }
@@ -2312,6 +2335,14 @@ export class DirectoryApiService {
 
   createPharmacistLicense(body: CreatePharmacistLicenseRequest) {
     return this.http.post<PharmacistLicenseDto>(`${this.base}/compliance/pharmacist-licenses`, body);
+  }
+
+  updatePharmacistLicense(id: string, body: Partial<Omit<CreatePharmacistLicenseRequest, 'vigenciaHasta' | 'userId'>> & { vigenciaHasta?: string | null; userId?: string | null }) {
+    return this.http.patch<PharmacistLicenseDto>(`${this.base}/compliance/pharmacist-licenses/${id}`, body);
+  }
+
+  removePharmacistLicense(id: string) {
+    return this.http.post<{ ok: boolean }>(`${this.base}/compliance/pharmacist-licenses/${id}/remove`, {});
   }
 
   listRegulatedPrices(search?: string) {

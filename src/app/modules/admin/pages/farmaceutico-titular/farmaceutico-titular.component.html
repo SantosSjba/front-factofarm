@@ -1,0 +1,135 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Farmacéutico titular</h1>
+  <div data-toolbar-actions>
+    @if (canWrite) {
+      <app-button size="sm" startIconName="mdi:card-account-details-outline" (btnClick)="openCreate()">Nueva colegiatura</app-button>
+    }
+  </div>
+</app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="farmaceutico-titular">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Registra la colegiatura (CQP) de cada químico farmacéutico. DIGEMID exige un <strong>farmacéutico titular</strong> por local; se elige al editar el local en <a routerLink="/establecimientos" class="text-brand-600 underline dark:text-brand-400">Establecimientos</a>.</li>
+    <li>Vincúlala a su usuario: así puede autorizar la venta de medicamentos controlados en el Punto de venta.</li>
+    <li>Con la colegiatura vencida no se puede autorizar controlados. Las que vencen en 60 días salen en ámbar.</li>
+  </ol>
+</app-help-panel>
+
+@let k = kpis();
+<div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <app-kpi-tile label="Colegiaturas activas" [value]="k.activas" icon="mdi:card-account-details-outline" tone="brand" />
+  <app-kpi-tile label="Titulares de local" [value]="k.titulares" icon="mdi:store-check-outline" tone="success" />
+  <app-kpi-tile label="Por vencer" [value]="'' + k.porVencer" icon="mdi:calendar-clock" [tone]="k.porVencer ? 'warning' : 'gray'" sub="En 60 días" />
+  <app-kpi-tile label="Vencidas" [value]="'' + k.vencidas" icon="mdi:alert-circle-outline" [tone]="k.vencidas ? 'error' : 'gray'" />
+</div>
+
+@let state = listQuery | queryPageState: licenses().length;
+<app-component-card
+  title="Colegiaturas"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="state.loading"
+  [error]="state.error"
+  [empty]="state.empty"
+  emptyTitle="Aún no registras colegiaturas"
+  emptyHint="Usa «Nueva colegiatura» para registrar al químico farmacéutico."
+  (retry)="listQuery.refetch()"
+>
+  <div data-card-header-end><app-color-legend [items]="legend" /></div>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Farmacéutico</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Usuario</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Titular de</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vigencia</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (l of licenses(); track l.id) {
+            @let v = vigencia(l);
+            <tr [attr.data-row-tone]="v.row">
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ l.fullName }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">CQP {{ l.colegiaturaCqp }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">{{ l.user?.nombre ?? '—' }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                @for (e of l.titularEstablishments ?? []; track e.id; let last = $last) {{{ e.nombre }}{{ last ? '' : ', ' }}} @empty { <span class="text-gray-400">—</span> }
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                <app-status-badge [status]="v.label" [tone]="v.tone" [label]="v.label" />
+                @if (l.vigenciaHasta) { <span class="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">hasta {{ l.vigenciaHasta | appDate: 'dd/MM/yyyy' }}</span> }
+              </td>
+              <td class="px-5 py-4 text-end">
+                @if (canWrite) {
+                  <div class="inline-flex justify-end">
+                    <app-table-dropdown>
+                      <div dropdown-button>
+                        <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones de la colegiatura"></app-button>
+                      </div>
+                      <div dropdown-content>
+                        <app-menu-item icon="mdi:pencil-outline" (itemClick)="openEdit(l)">Editar</app-menu-item>
+                        <app-menu-item [icon]="l.activo ? 'mdi:toggle-switch-off-outline' : 'mdi:toggle-switch-outline'" [disabled]="toggleMutation.isPending()" (itemClick)="toggleMutation.mutate(l)">{{ l.activo ? 'Desactivar' : 'Activar' }}</app-menu-item>
+                        <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="No se puede si es titular de un local o autorizó ventas." (itemClick)="toDelete.set(l)">Eliminar</app-menu-item>
+                      </div>
+                    </app-table-dropdown>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<!-- ========== CREAR / EDITAR ========== -->
+@let f = form();
+<app-modal [isOpen]="!!f" (closed)="form.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ f?.id ? 'Editar colegiatura' : 'Nueva colegiatura' }}</h3>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    @if (f) {
+      <div class="grid gap-4 sm:grid-cols-2">
+        <app-input-field label="N.º de colegiatura (CQP)" [isRequired]="true" [maxLength]="20" [value]="f.colegiaturaCqp" [error]="!!errors().cqp" [hint]="errors().cqp || ''" (valueChange)="patch({ colegiaturaCqp: '' + $event })" />
+        <app-input-field label="Vigente hasta" type="date" helpText="Fecha de vencimiento de la habilitación." [value]="f.vigenciaHasta" (valueChange)="patch({ vigenciaHasta: '' + $event })" />
+      </div>
+      <app-input-field label="Nombre completo" [isRequired]="true" [maxLength]="200" [value]="f.fullName" [error]="!!errors().name" [hint]="errors().name || ''" (valueChange)="patch({ fullName: '' + $event })" />
+      <app-form-select label="Usuario del sistema" helpText="Su cuenta; con ella autoriza controlados en el Punto de venta." [showPlaceholder]="false" [options]="userOptions()" [value]="f.userId" (valueChange)="patch({ userId: $event })" />
+      @if (f.id) {
+        <app-checkbox label="Activa" [checked]="f.activo" (checkedChange)="patch({ activo: $event })" />
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="form.set(null)">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [loading]="saveMutation.isPending()" [disabled]="saveMutation.isPending()" (btnClick)="submit()">Guardar</app-button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- ========== ELIMINAR ========== -->
+<app-modal [isOpen]="!!toDelete()" (closed)="toDelete.set(null)" className="w-full max-w-md shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar colegiatura</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    @if (toDelete(); as d) {
+      ¿Eliminar la colegiatura CQP {{ d.colegiaturaCqp }} de <strong>{{ d.fullName }}</strong>? Si ya autorizó ventas o es titular de un local, mejor desactívala.
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="toDelete.set(null)">Cancelar</app-button>
+    <app-button variant="danger" startIconName="mdi:trash-can-outline" [loading]="deleteMutation.isPending()" [disabled]="deleteMutation.isPending()" (btnClick)="deleteMutation.mutate(toDelete()!.id)">Eliminar</app-button>
+  </div>
+</app-modal>

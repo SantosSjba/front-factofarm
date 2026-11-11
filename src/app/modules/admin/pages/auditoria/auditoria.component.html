@@ -1,48 +1,110 @@
-<app-breadcrumb-inline [segments]="[{ label: 'Usuarios & Establecimientos' }, { label: 'Auditoría' }]" />
+<app-breadcrumb-inline [segments]="breadcrumb" />
 
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Auditoría
-  </h1>
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Auditoría</h1>
+  <div data-toolbar-actions>
+    <app-button size="sm" variant="outline" [loading]="exporting()" [disabled]="exporting()" (btnClick)="exportExcel()"><app-excel-icon /> Excel</app-button>
+  </div>
 </app-page-toolbar>
 
-<app-page-state
-  [loading]="logsQuery.isPending()"
-  [error]="logsErrorMessage()"
-  [empty]="!logsQuery.isPending() && !logsQuery.isError() && items().length === 0"
-  emptyTitle="Sin eventos registrados"
-  emptyHint="Las acciones críticas del sistema aparecerán aquí."
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="auditoria">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Aquí queda cada acción importante: quién entró al sistema, qué creó, modificó, anuló o eliminó, cuándo y desde qué equipo.</li>
+    <li>Filtra por usuario, acción o módulo para revisar algo puntual, por ejemplo todas las anulaciones del mes. Pulsa una fila para ver el detalle.</li>
+    <li>Este registro no se puede editar ni borrar.</li>
+  </ol>
+</app-help-panel>
+
+<app-list-filters
+  collapsible
+  [showSearch]="false"
+  [showSelect]="false"
+  [activeCount]="activeFilterCount()"
+  clearLabel="Limpiar"
+  (clear)="clearFilters()"
+>
+  <app-form-select label="Usuario" [showPlaceholder]="false" [options]="userOptions()" [value]="userId()" (valueChange)="setFilter('userId', $event)" />
+  <app-form-select label="Acción" [showPlaceholder]="false" [options]="actionOptions()" [value]="action()" (valueChange)="setFilter('action', $event)" />
+  <app-form-select label="Módulo" [showPlaceholder]="false" [options]="entityOptions()" [value]="entity()" (valueChange)="setFilter('entity', $event)" />
+  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+</app-list-filters>
+
+@let state = logsQuery | queryPageState: total();
+<app-component-card
+  title="Registro"
+  [desc]="total() ? total() + ' eventos' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="state.loading"
+  [error]="state.error"
+  [empty]="state.empty"
+  emptyTitle="Sin eventos con esos filtros"
+  emptyHint="Prueba con otras fechas."
   (retry)="logsQuery.refetch()"
 >
-  <app-component-card title="Registro de auditoría" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-left">
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Fecha</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Acción</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Entidad</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Usuario</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">IP</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Usuario</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acción</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Módulo</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">IP</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400"><span class="sr-only">Detalle</span></th>
           </tr>
         </thead>
-        <tbody>
-          @for (row of items(); track row.id) {
-            <tr class="border-b border-gray-50 dark:border-white/[0.03]">
-              <td class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-200">{{ formatDate(row.createdAt) }}</td>
-              <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white">{{ row.action }}</td>
-              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ row.entity }}</td>
-              <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-300">{{ row.userId ?? '—' }}</td>
-              <td class="px-5 py-3 text-theme-sm text-gray-500">{{ row.ipAddress ?? '—' }}</td>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block text-gray-800 dark:text-white/90">{{ row.user?.nombre ?? (row.userId ? 'Usuario eliminado' : 'Sistema') }}</span>
+                @if (row.user?.email) { <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.user?.email }}</span> }
+              </td>
+              <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.action" [tone]="tone(row.action)" [label]="row.actionLabel ?? row.action" /></td>
+              <td class="px-5 py-3 text-theme-sm">{{ row.entityLabel ?? row.entity }}</td>
+              <td class="px-5 py-3 text-theme-sm text-gray-500 dark:text-gray-400">{{ row.ipAddress ?? '—' }}</td>
+              <td class="px-5 py-3 text-end">
+                <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:eye-outline" tooltip="Ver detalle" (btnClick)="detail.set(row)" />
+              </td>
             </tr>
           }
         </tbody>
       </table>
     </div>
-    @if (nextCursor()) {
-      <div class="border-t border-gray-100 p-4 text-center dark:border-white/[0.05]">
-        <app-button variant="link" (btnClick)="loadMore()">Cargar más</app-button>
+  </div>
+</app-component-card>
+<app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+
+<app-modal [isOpen]="!!detail()" (closed)="detail.set(null)" className="w-full max-w-2xl shadow-theme-lg" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    @if (detail(); as d) {
+      <div class="flex flex-wrap items-center gap-3 pe-12">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ d.entityLabel ?? d.entity }}</h3>
+        <app-status-badge [status]="d.action" [tone]="tone(d.action)" [label]="d.actionLabel ?? d.action" />
       </div>
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ d.createdAt | appDate: 'dd/MM/yyyy HH:mm:ss' }} · {{ d.user?.nombre ?? 'Sistema' }}</p>
     }
-  </app-component-card>
-</app-page-state>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 text-sm sm:px-6">
+    @if (detail(); as d) {
+      <dl class="grid gap-3 sm:grid-cols-2">
+        <div><dt class="text-xs text-gray-500 dark:text-gray-400">Id del registro</dt><dd class="break-all">{{ d.entityId ?? '—' }}</dd></div>
+        <div><dt class="text-xs text-gray-500 dark:text-gray-400">IP</dt><dd>{{ d.ipAddress ?? '—' }}</dd></div>
+        <div class="sm:col-span-2"><dt class="text-xs text-gray-500 dark:text-gray-400">Equipo / navegador</dt><dd class="break-all">{{ d.userAgent ?? '—' }}</dd></div>
+      </dl>
+      @if (d.diff) {
+        <div>
+          <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Cambios registrados</p>
+          <pre class="max-h-72 overflow-auto rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-white/[0.03] dark:text-gray-300">{{ d.diff | json }}</pre>
+        </div>
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" (btnClick)="detail.set(null)">Cerrar</app-button>
+  </div>
+</app-modal>

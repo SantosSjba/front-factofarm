@@ -28,6 +28,8 @@ import { FilesApiService } from '../../../../../core/services/files-api.service'
 import { NotifyService } from '../../../../../core/services/notify.service';
 import { httpErrorMessage } from '../../../../../core/http/http-error-message';
 import { userQueryKeys } from '../../../../../core/query/user-query.keys';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { hasChainScope } from '../../../utils/user-policy';
 import type {
   CreateUserProfileBody,
   CreateUserRequest,
@@ -235,6 +237,7 @@ export class UsuarioFormModalComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly filesApi = inject(FilesApiService);
   private readonly notify = inject(NotifyService);
+  private readonly auth = inject(AuthService);
   private readonly queryClient = injectQueryClient();
 
   protected readonly tabs = USUARIO_TABS;
@@ -257,7 +260,14 @@ export class UsuarioFormModalComponent {
     this.establishments().map((e) => ({ value: e.id, label: e.nombre })),
   );
 
-  protected readonly roleOptions = ROLE_OPTIONS;
+  /** Mismas reglas que la API: super administrador solo plataforma; roles de administración solo un administrador. */
+  protected readonly roleOptions = computed(() => {
+    const myRole = this.auth.user()?.role ?? '';
+    return ROLE_OPTIONS.filter((o) => {
+      if (o.value === 'SUPER_ADMIN') return myRole === 'SUPER_ADMIN';
+      return hasChainScope(myRole) || !hasChainScope(o.value);
+    });
+  });
   protected readonly tipoDocOptions = TIPO_DOC_OPTIONS;
 
   protected readonly nombre = signal('');

@@ -31,10 +31,12 @@ import type {
 } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 @Component({
   selector: 'app-mi-farmacia',
   standalone: true,
   imports: [
+    HelpPanelComponent,
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,

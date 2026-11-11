@@ -1,0 +1,271 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Gestión de personal</h1>
+  <div data-toolbar-actions>
+    <app-button size="sm" startIconName="mdi:calendar-plus" (btnClick)="openLeave()">Solicitar licencia</app-button>
+  </div>
+</app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="gestion-personal">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li><strong>Asistencia:</strong> marca la entrada y la salida de cada persona; las horas se calculan solas.</li>
+    <li><strong>Licencias:</strong> registra vacaciones, descansos médicos y permisos. Las aprueba otra persona, nunca quien la pide.</li>
+    <li><strong>Horario y comisión:</strong> define los días y horas de trabajo y el % de comisión sobre lo vendido. <strong>Productividad</strong> muestra cuánto vendió cada uno y su comisión.</li>
+  </ol>
+</app-help-panel>
+
+<app-tab-strip class="mb-4 block" [tabs]="tabs" [activeId]="tab()" (tabChange)="tab.set($any($event))" />
+
+@switch (tab()) {
+  @case ('asistencia') {
+    <div class="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <app-form-select class="w-full sm:w-72" label="Empleado" [showPlaceholder]="false" [options]="employeeFilterOptions()" [value]="attendanceUser()" (valueChange)="attendanceUser.set($event); attendancePage.set(1)" />
+      <app-button startIconName="mdi:login-variant" [disabled]="!attendanceUser() || punchMutation.isPending()" (btnClick)="punch('in')">Marcar entrada</app-button>
+      <app-button variant="outline" startIconName="mdi:logout-variant" [disabled]="!attendanceUser() || punchMutation.isPending()" (btnClick)="punch('out')">Marcar salida</app-button>
+    </div>
+
+    @let attState = attendanceQuery | queryPageState: attendanceTotal();
+    <app-component-card
+      title="Registros de asistencia"
+      [desc]="openNow() ? openNow() + ' persona(s) trabajando ahora' : ''"
+      className="overflow-hidden"
+      [bodyClass]="'p-0 sm:p-0'"
+      [loading]="attState.loading"
+      [error]="attState.error"
+      [empty]="attState.empty"
+      emptyTitle="Sin registros de asistencia"
+      emptyHint="Elige a una persona y pulsa «Marcar entrada»."
+      (retry)="attendanceQuery.refetch()"
+    >
+      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Empleado</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Entrada</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Salida</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Horas</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (row of attendanceRows(); track row.id) {
+                <tr>
+                  <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ row.user.nombre }}</td>
+                  <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.checkInAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                    @if (row.checkOutAt) { {{ row.checkOutAt | appDate: 'dd/MM/yyyy HH:mm' }} } @else { <app-status-badge status="ABIERTA" tone="success" label="Trabajando" /> }
+                  </td>
+                  <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ hours(row) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </app-component-card>
+    <app-pagination [currentPage]="attendancePage()" [totalItems]="attendanceTotal()" [pageSize]="20" (currentPageChange)="attendancePage.set($event)" />
+  }
+
+  @case ('licencias') {
+    @let leaveState = leavesQuery | queryPageState: leaves().length;
+    <app-component-card
+      title="Licencias y vacaciones"
+      [desc]="pendingLeaves() ? pendingLeaves() + ' por aprobar' : ''"
+      className="overflow-hidden"
+      [bodyClass]="'p-0 sm:p-0'"
+      [loading]="leaveState.loading"
+      [error]="leaveState.error"
+      [empty]="leaveState.empty"
+      [emptyTitle]="leaveStatusFilter() === 'SOLICITADO' ? 'No hay solicitudes por aprobar' : 'Sin licencias'"
+      emptyHint="Usa «Solicitar licencia» para registrar una."
+      (retry)="leavesQuery.refetch()"
+    >
+      <div data-card-header-end class="w-44">
+        <app-form-select ariaLabel="Filtrar licencias" [showPlaceholder]="false" [options]="leaveStatusOptions" [value]="leaveStatusFilter()" (valueChange)="leaveStatusFilter.set($any($event))" />
+      </div>
+      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Empleado</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Periodo</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (l of leaves(); track l.id) {
+                <tr>
+                  <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ l.user.nombre }}</td>
+                  <td class="px-5 py-4 text-theme-sm">
+                    {{ leaveTypeLabel(l.tipo) }}
+                    @if (l.notas) { <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ l.notas }}</span> }
+                  </td>
+                  <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                    {{ l.fromDate | appDate: 'dd/MM/yyyy' }} – {{ l.toDate | appDate: 'dd/MM/yyyy' }}
+                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ leaveDays(l) }} día(s)</span>
+                  </td>
+                  <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="l.estado" [tone]="leaveTone(l.estado)" [label]="leaveLabel(l.estado)" /></td>
+                  <td class="px-5 py-4 text-end">
+                    @if (l.estado === 'SOLICITADO' || l.estado === 'APROBADO') {
+                      <div class="inline-flex justify-end">
+                        <app-table-dropdown>
+                          <div dropdown-button>
+                            <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones de la licencia"></app-button>
+                          </div>
+                          <div dropdown-content>
+                            @if (canDecide(l)) {
+                              <app-menu-item icon="mdi:check-circle-outline" (itemClick)="decide.set({ leave: l, estado: 'APROBADO' })">Aprobar</app-menu-item>
+                              <app-menu-item icon="mdi:close-circle-outline" (itemClick)="decide.set({ leave: l, estado: 'RECHAZADO' })">Rechazar</app-menu-item>
+                            } @else if (l.estado === 'SOLICITADO') {
+                              <app-menu-item icon="mdi:information-outline" [disabled]="true" tooltip="Tu propia licencia la aprueba otra persona.">La aprueba otra persona</app-menu-item>
+                            }
+                            <app-menu-item variant="danger" icon="mdi:cancel" (itemClick)="decide.set({ leave: l, estado: 'CANCELADO' })">Cancelar</app-menu-item>
+                          </div>
+                        </app-table-dropdown>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin licencias con ese filtro.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </app-component-card>
+  }
+
+  @case ('horarios') {
+    <div class="mb-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <app-form-select class="block w-full sm:w-72" label="Empleado" placeholder="Seleccionar" [options]="employeeOptions()" [value]="scheduleUser()" (valueChange)="pickScheduleUser($event)" />
+    </div>
+    @if (scheduleUser()) {
+      <div class="grid gap-4 lg:grid-cols-3">
+        <app-component-card title="Horario semanal" desc="Marca los días que trabaja y su hora de entrada y salida." className="lg:col-span-2">
+          <div class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            @for (row of schedule(); track row.dayOfWeek) {
+              <div class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 py-2">
+                <app-checkbox [label]="days[row.dayOfWeek]" [checked]="row.activo" (checkedChange)="patchDay(row.dayOfWeek, { activo: $event })" />
+                <app-input-field type="time" [ariaLabel]="days[row.dayOfWeek] + ' entrada'" [disabled]="!row.activo" [value]="row.startTime" (valueChange)="patchDay(row.dayOfWeek, { startTime: '' + $event })" />
+                <app-input-field type="time" [ariaLabel]="days[row.dayOfWeek] + ' salida'" [disabled]="!row.activo" [value]="row.endTime" (valueChange)="patchDay(row.dayOfWeek, { endTime: '' + $event })" />
+              </div>
+            }
+          </div>
+          @if (scheduleError()) { <p class="mt-2 text-xs font-medium text-error-600 dark:text-error-400">{{ scheduleError() }}</p> }
+          <div class="mt-4 flex justify-end">
+            <app-button startIconName="mdi:content-save-outline" [loading]="scheduleMutation.isPending()" [disabled]="scheduleMutation.isPending()" (btnClick)="saveSchedule()">Guardar horario</app-button>
+          </div>
+        </app-component-card>
+        <app-component-card title="Comisión por ventas" desc="Porcentaje sobre lo que vende.">
+          @if (isSelf()) {
+            <p class="text-sm text-gray-500 dark:text-gray-400">Tu propia comisión la define otra persona.</p>
+          } @else {
+            <app-input-field label="% de comisión" [isRequired]="true" type="number" min="0" max="100" step="0.1" [value]="commission() ?? ''" [error]="!!commissionError()" [hint]="commissionError()" (valueChange)="commission.set($event === '' ? null : +$event); commissionError.set('')" />
+            <div class="mt-4 flex justify-end">
+              <app-button startIconName="mdi:content-save-outline" [loading]="commissionMutation.isPending()" [disabled]="commissionMutation.isPending()" (btnClick)="saveCommission()">Guardar comisión</app-button>
+            </div>
+          }
+        </app-component-card>
+      </div>
+    } @else {
+      <p class="rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">Elige a una persona para ver y editar su horario y comisión.</p>
+    }
+  }
+
+  @case ('productividad') {
+    <app-period-filter [value]="period()" (change)="period.set($event)" />
+    @let k = productivityKpis();
+    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <app-kpi-tile label="Ventas" [value]="k.ventas" icon="mdi:receipt-text-outline" tone="brand" />
+      <app-kpi-tile label="Vendido" [value]="k.total" icon="mdi:cash-multiple" tone="success" />
+      <app-kpi-tile label="Comisiones" [value]="k.comision" icon="mdi:percent-outline" tone="info" sub="Estimadas" />
+      <app-kpi-tile label="Más ventas" [value]="k.top" icon="mdi:trophy-outline" tone="warning" />
+    </div>
+    @let prodState = productivityQuery | queryPageState: employees().length;
+    <app-component-card
+      title="Por persona"
+      className="overflow-hidden"
+      [bodyClass]="'p-0 sm:p-0'"
+      [loading]="prodState.loading"
+      [error]="prodState.error"
+      [empty]="prodState.empty"
+      emptyTitle="Sin ventas en el periodo"
+      (retry)="productivityQuery.refetch()"
+    >
+      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Empleado</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Ventas</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vendido</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">% comisión</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comisión</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (e of employees(); track e.userId) {
+                <tr>
+                  <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ e.nombre }}</td>
+                  <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ e.ventasCount }}</td>
+                  <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ e.ventasTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                  <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ +e.commissionPercent }} %</td>
+                  <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums">{{ e.comisionEstimada | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </app-component-card>
+  }
+}
+
+<!-- ========== SOLICITAR LICENCIA ========== -->
+<app-modal [isOpen]="leaveOpen()" (closed)="leaveOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Solicitar licencia</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Queda por aprobar hasta que otra persona la revise.</p>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    <app-form-select label="Empleado" [required]="true" placeholder="Seleccionar" [options]="employeeOptions()" [value]="leaveUser()" [error]="!!leaveErrors().user" [hint]="leaveErrors().user || ''" (valueChange)="leaveUser.set($event); leaveErrors.set({})" />
+    <app-form-select label="Tipo" [required]="true" [showPlaceholder]="false" [options]="leaveTypeOptions" [value]="leaveTipo()" (valueChange)="leaveTipo.set($any($event))" />
+    <div class="grid gap-4 sm:grid-cols-2">
+      <app-input-field label="Desde" [isRequired]="true" type="date" [value]="leaveFrom()" [error]="!!leaveErrors().from" [hint]="leaveErrors().from || ''" (valueChange)="leaveFrom.set('' + $event); leaveErrors.set({})" />
+      <app-input-field label="Hasta" [isRequired]="true" type="date" [min]="leaveFrom()" [value]="leaveTo()" [error]="!!leaveErrors().to" [hint]="leaveErrors().to || ''" (valueChange)="leaveTo.set('' + $event); leaveErrors.set({})" />
+    </div>
+    <app-text-area label="Notas" placeholder="Ej. Descanso médico por 3 días" [maxLength]="500" [rows]="2" [value]="leaveNotes()" (valueChange)="leaveNotes.set($event)" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="leaveMutation.isPending()" (btnClick)="leaveOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:send-outline" [loading]="leaveMutation.isPending()" [disabled]="leaveMutation.isPending()" (btnClick)="submitLeave()">Registrar</app-button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- ========== APROBAR / RECHAZAR / CANCELAR ========== -->
+<app-modal [isOpen]="!!decide()" (closed)="decide.set(null)" className="w-full max-w-md shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      {{ decide()?.estado === 'APROBADO' ? 'Aprobar licencia' : decide()?.estado === 'RECHAZADO' ? 'Rechazar licencia' : 'Cancelar licencia' }}
+    </h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    @if (decide(); as d) {
+      {{ leaveTypeLabel(d.leave.tipo) }} de <strong>{{ d.leave.user.nombre }}</strong>, del {{ d.leave.fromDate | appDate: 'dd/MM/yyyy' }} al {{ d.leave.toDate | appDate: 'dd/MM/yyyy' }} ({{ leaveDays(d.leave) }} día(s)). Ya no se podrá volver a cambiar.
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="decideMutation.isPending()" (btnClick)="decide.set(null)">Volver</app-button>
+    <app-button [variant]="decide()?.estado === 'APROBADO' ? 'primary' : 'danger'" [loading]="decideMutation.isPending()" [disabled]="decideMutation.isPending()" (btnClick)="decideMutation.mutate({ id: decide()!.leave.id, estado: decide()!.estado })">Confirmar</app-button>
+  </div>
+</app-modal>

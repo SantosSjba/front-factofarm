@@ -109,6 +109,8 @@ export interface EstablishmentOptionDto {
   nombre: string;
   codigo: string | null;
   activo?: boolean;
+  /** Licencia (CQP) del farmacéutico titular del local. */
+  titularPharmacistLicenseId?: string | null;
   pais?: string;
   departmentId?: string | null;
   provinceId?: string | null;
@@ -559,6 +561,9 @@ export interface SaleVoidRequestDto {
 export interface AuditLogItemDto {
   id: string;
   userId: string | null;
+  user?: { nombre: string; email: string } | null;
+  actionLabel?: string;
+  entityLabel?: string;
   action: string;
   entity: string;
   entityId: string | null;
@@ -620,6 +625,7 @@ export interface CreateEstablishmentRequest {
   nombre: string;
   codigo?: string;
   activo?: boolean;
+  titularPharmacistLicenseId?: string;
   pais?: string;
   departmentId?: string;
   provinceId?: string;
@@ -3034,10 +3040,16 @@ export interface LpdTreatmentMatrixDto {
   }>;
 }
 
+export type ArcoRequestType = 'ACCESO' | 'RECTIFICACION' | 'CANCELACION' | 'OPOSICION';
+export type ArcoRequestStatus = 'PENDIENTE' | 'EN_PROCESO' | 'COMPLETADA' | 'RECHAZADA';
 export interface ArcoRequestDto {
   id: string;
-  requestType: string;
-  status: string;
+  requestType: ArcoRequestType;
+  status: ArcoRequestStatus;
+  details?: string | null;
+  responseNotes?: string | null;
+  processedAt?: string | null;
+  processedBy?: { id: string; nombre: string } | null;
   createdAt: string;
   customer?: { id: string; nombre: string; numeroDocumento: string };
 }
@@ -3054,6 +3066,8 @@ export interface PharmacistLicenseDto {
   fullName: string;
   vigenciaHasta: string | null;
   activo: boolean;
+  userId?: string | null;
+  user?: { id: string; nombre: string; email: string } | null;
   titularEstablishments?: Array<{ id: string; nombre: string; codigo: string | null }>;
 }
 
@@ -3714,4 +3728,9 @@ export interface PurchaseBudgetMonthDto {
   actual: string;
   variacion: string;
   variacionPorcentaje: string;
+}
+
+export interface AuditFacetsDto {
+  actions: { value: string; label: string }[];
+  entities: { value: string; label: string }[];
 }

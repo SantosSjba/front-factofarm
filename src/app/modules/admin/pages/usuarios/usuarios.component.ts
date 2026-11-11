@@ -10,7 +10,6 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { UserListItemDto, UserRoleDto } from '../../models/directory.models';
 import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
@@ -21,6 +20,12 @@ import { userQueryKeys } from '../../../../core/query/user-query.keys';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { userRoleLabel } from '../../../../core/utils/user-role-label.util';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+import { AuthService } from '../../../../core/services/auth.service';
+import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { canChangeAccess, canDeleteUser, canManageUser, roleTone } from '../../utils/user-policy';
 
 @Component({
   selector: 'app-usuarios',
@@ -34,18 +39,40 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
     PaginationComponent,
     PageToolbarComponent,
     ModalComponent,
-    IconComponent,
     ButtonComponent,
     UsuarioFormModalComponent,
     AvatarTextComponent,
     HasPermissionDirective,
+    HelpPanelComponent,
+    MenuItemComponent,
+    StatusBadgeComponent,
+    TableDropdownComponent,
   ],
   templateUrl: './usuarios.component.html',
 })
 export class UsuariosComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
+  private readonly auth = inject(AuthService);
   private readonly queryClient = injectQueryClient();
+
+  /** Mismas reglas que la API: así no se muestran acciones que serán rechazadas. */
+  private readonly me = computed(() => {
+    const u = this.auth.user();
+    return u ? { id: u.id, role: u.role } : null;
+  });
+  protected readonly canWrite = this.auth.hasPermission('users.write');
+  protected readonly myId = computed(() => this.me()?.id ?? '');
+  protected canEdit(u: UserListItemDto) {
+    return this.canWrite && canManageUser(this.me(), u);
+  }
+  protected canPermissions(u: UserListItemDto) {
+    return this.canWrite && canChangeAccess(this.me(), u);
+  }
+  protected canDelete(u: UserListItemDto) {
+    return this.canWrite && canDeleteUser(this.me(), u);
+  }
+  protected readonly roleTone = roleTone;
 
   protected readonly usersQuery = injectQuery(() => ({
     queryKey: userQueryKeys.list({
@@ -65,7 +92,7 @@ export class UsuariosComponent {
   }));
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
-    { label: 'Usuarios & Establecimientos' },
+    { label: 'Usuarios y establecimientos' },
     { label: 'Usuarios' },
   ];
 
@@ -80,7 +107,6 @@ export class UsuariosComponent {
   protected readonly itemsPerPage = 10;
   protected readonly roleFilterOptions = [
     { value: 'all', label: 'Todos los roles' },
-    { value: 'SUPER_ADMIN', label: 'Super administrador' },
     { value: 'ADMIN_CADENA', label: 'Admin cadena' },
     { value: 'GERENTE_SUCURSAL', label: 'Gerente de sucursal' },
     { value: 'FARMACEUTICO_TITULAR', label: 'Farmacéutico titular' },

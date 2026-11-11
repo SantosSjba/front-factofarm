@@ -33,6 +33,11 @@ import type {
 import { CONFIGURABLE_REFERENCE_METHODS, POS_PAYMENT_OPTIONS } from '../../utils/pos-payment.util';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
+import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+
 @Component({
   selector: 'app-establecimientos',
   standalone: true,
@@ -51,6 +56,10 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     InputFieldComponent,
     FormSelectComponent,
     CheckboxComponent,
+    HelpPanelComponent,
+    MenuItemComponent,
+    StatusBadgeComponent,
+    TableDropdownComponent,
   ],
   templateUrl: './establecimientos.component.html',
 })
@@ -60,7 +69,7 @@ export class EstablecimientosComponent {
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
-    { label: 'Usuarios & Establecimientos' },
+    { label: 'Usuarios y establecimientos' },
     { label: 'Establecimientos' },
   ];
 
@@ -146,6 +155,16 @@ export class EstablecimientosComponent {
   protected readonly clienteDefault = signal('');
   protected readonly sujetoIgv31556 = signal(false);
   protected readonly esHospital = signal(false);
+  protected readonly titularLicenseId = signal('');
+  /** Colegiaturas activas del cliente para elegir al farmacéutico titular. */
+  protected readonly licensesQuery = injectQuery(() => ({
+    queryKey: ['compliance', 'pharmacist-licenses', 'active'] as const,
+    queryFn: () => firstValueFrom(this.api.listPharmacistLicenses()),
+  }));
+  protected readonly titularOptions = computed(() => [
+    { value: '', label: 'Sin farmacéutico titular' },
+    ...(this.licensesQuery.data() ?? []).map((l) => ({ value: l.id, label: `${l.fullName} · CQP ${l.colegiaturaCqp}` })),
+  ]);
   protected readonly inventoryValuationMethod = signal<'PEPS' | 'PROMEDIO_PONDERADO'>('PEPS');
   protected readonly inventoryLotAllocationMethod = signal<'FEFO' | 'FIFO'>('FEFO');
   protected readonly blockExpiredProductSales = signal(true);
@@ -315,6 +334,7 @@ export class EstablecimientosComponent {
         this.clienteDefault.set(current.clienteDefault ?? '');
         this.sujetoIgv31556.set(current.sujetoIgv31556 ?? false);
         this.esHospital.set(current.esHospital ?? false);
+        this.titularLicenseId.set(current.titularPharmacistLicenseId ?? '');
         this.inventoryValuationMethod.set(current.inventoryValuationMethod ?? 'PEPS');
         this.inventoryLotAllocationMethod.set(current.inventoryLotAllocationMethod ?? 'FEFO');
         this.blockExpiredProductSales.set(true);
@@ -399,6 +419,7 @@ export class EstablecimientosComponent {
       clienteDefault: this.norm(this.clienteDefault()),
       sujetoIgv31556: this.sujetoIgv31556(),
       esHospital: this.esHospital(),
+      titularPharmacistLicenseId: this.titularLicenseId(),
       inventoryValuationMethod: this.inventoryValuationMethod(),
       inventoryLotAllocationMethod: this.inventoryLotAllocationMethod(),
       blockExpiredProductSales: true,
@@ -553,6 +574,7 @@ export class EstablecimientosComponent {
     this.clienteDefault.set('');
     this.sujetoIgv31556.set(false);
     this.esHospital.set(false);
+    this.titularLicenseId.set('');
     this.inventoryValuationMethod.set('PEPS');
     this.inventoryLotAllocationMethod.set('FEFO');
     this.blockExpiredProductSales.set(true);
