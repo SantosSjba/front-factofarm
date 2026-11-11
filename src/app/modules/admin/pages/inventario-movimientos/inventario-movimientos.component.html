@@ -17,7 +17,7 @@
         </app-button>
       </div>
       <div dropdown-content>
-        <app-menu-item icon="mdi:file-excel-outline" tooltip="Descarga en Excel todo lo que coincide con los filtros aplicados." (itemClick)="exportRows()">Exportar inventario</app-menu-item>
+        <app-menu-item icon="excel" tooltip="Descarga en Excel todo lo que coincide con los filtros aplicados." (itemClick)="exportRows()">Exportar inventario</app-menu-item>
       </div>
     </app-table-dropdown>
     <app-table-dropdown>
@@ -491,7 +491,7 @@
       (valueChange)="importWarehouseId.set($event)"
     />
     <div class="mt-4 flex items-center justify-center">
-      <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
+      <app-file-input variant="button" accept=".xlsx" icon="excel" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
     </div>
     @if (importResult(); as result) {
       <app-alert class="mt-6 block" [variant]="result.errors.length ? 'warning' : 'success'" title="Último resultado" [message]="'Filas: ' + result.totalRows + ' · Creados: ' + result.created + ' · Actualizados: ' + result.updated + ' · Errores: ' + result.errors.length">

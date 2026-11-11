@@ -32,9 +32,9 @@
           </app-button>
         </div>
         <div dropdown-content>
-          <app-menu-item (itemClick)="openImportModal('PRODUCTOS')">Productos</app-menu-item>
-          <app-menu-item (itemClick)="openImportModal('L_PRECIOS')">L. Precios</app-menu-item>
-          <app-menu-item (itemClick)="openImportModal('ACTUALIZAR_PRECIOS')">Actualizar precios</app-menu-item>
+          <app-menu-item tooltip="Crea productos nuevos o actualiza los que ya existen desde un archivo." (itemClick)="openImportModal('PRODUCTOS')">Productos</app-menu-item>
+          <app-menu-item tooltip="Carga presentaciones (caja, blíster…) con sus precios." (itemClick)="openImportModal('L_PRECIOS')">Listas de precios</app-menu-item>
+          <app-menu-item tooltip="Cambia los precios de productos que ya existen." (itemClick)="openImportModal('ACTUALIZAR_PRECIOS')">Actualizar precios</app-menu-item>
         </div>
       </app-table-dropdown>
       <app-button size="sm" (btnClick)="openCreateModal()">
@@ -604,48 +604,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Importar: {{ importModeLabel(importMode()) }}
-    </h3>
-  </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-    <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
-      <li>Descarga la plantilla y llénala con tus datos de <strong>{{ importModeLabel(importMode()) }}</strong>, sin cambiar sus columnas.</li>
-      <li>Selecciona el archivo y revisa la vista previa: te dice qué se creará, qué se actualizará y qué filas tienen errores.</li>
-      <li>Si todo está bien, confirma la importación.</li>
-    </ol>
-    <app-button variant="link" className="mt-3" (btnClick)="downloadImportTemplate()">Descargar plantilla</app-button>
-    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-      <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
-      <app-button startIconName="mdi:eye-outline" variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
-        {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
-      </app-button>
-    </div>
-    @if (importPreviewResult(); as preview) {
-      <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-white/5">
-        <p><strong>Filas:</strong> {{ preview.totalRows }} · <strong>Crearían:</strong> {{ preview.created }} · <strong>Actualizarían:</strong> {{ preview.updated }}</p>
-        @if (preview.errors.length) {
-          <p class="mt-2 font-medium text-warning-600">Errores ({{ preview.errors.length }}):</p>
-          <ul class="mt-1 max-h-40 list-disc overflow-y-auto pl-5 text-theme-xs text-gray-600 dark:text-gray-400">
-            @for (err of preview.errors.slice(0, 20); track err) {
-              <li>{{ err }}</li>
-            }
-          </ul>
-        }
-      </div>
-    }
-  </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">
-      Cancelar
-    </app-button>
-    <app-button startIconName="mdi:play-circle-outline" [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
-      {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
-    </app-button>
-  </div>
-</app-modal>
+<app-product-import-modal [open]="importOpen()" [mode]="importMode()" (closed)="importOpen.set(false)" />
 
 <app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">

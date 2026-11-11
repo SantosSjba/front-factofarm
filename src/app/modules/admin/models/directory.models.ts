@@ -722,6 +722,10 @@ export interface CategoryItemDto {
 }
 
 export interface CategoryTreeNodeDto extends CategoryItemDto {
+  /** Productos, servicios y packs vigentes asignados directamente a esta categoría. */
+  productCount: number;
+  serviceCount: number;
+  packCount: number;
   children: CategoryTreeNodeDto[];
 }
 
@@ -739,7 +743,10 @@ export interface CreateCategoryRequest {
   parentId?: string;
 }
 
-export type UpdateCategoryRequest = Partial<CreateCategoryRequest>;
+export type UpdateCategoryRequest = Partial<Omit<CreateCategoryRequest, 'parentId'>> & {
+  /** `null` la vuelve categoría principal; sin enviar, no cambia. */
+  parentId?: string | null;
+};
 
 export interface BrandItemDto {
   id: string;

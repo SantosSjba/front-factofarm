@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IconComponent } from '../../ui/icon/icon.component';
+import { ExcelIconComponent } from '../../../icons/excel-icon.component';
 
 /**
  * Selector de archivo. `variant="field"`: campo con botón nativo.
@@ -7,7 +8,7 @@ import { IconComponent } from '../../ui/icon/icon.component';
  */
 @Component({
   selector: 'app-file-input',
-  imports: [IconComponent],
+  imports: [IconComponent, ExcelIconComponent],
   template: `
     @if (variant === 'button') {
       <label
@@ -15,7 +16,11 @@ import { IconComponent } from '../../ui/icon/icon.component';
         [class.opacity-50]="disabled"
         [class.cursor-not-allowed]="disabled"
       >
-        <app-icon [name]="icon" iconClass="size-5" />
+        @if (icon === 'excel') {
+          <span class="flex rounded bg-white p-0.5"><app-excel-icon [size]="16" /></span>
+        } @else {
+          <app-icon [name]="icon" iconClass="size-5" />
+        }
         <span class="min-w-0 truncate">{{ fileName || buttonLabel }}</span>
         <input
           type="file"
@@ -57,6 +62,7 @@ export class FileInputComponent {
   @Input() buttonLabel = 'Seleccionar archivo';
   /** Nombre del archivo elegido, para mostrarlo en el botón. */
   @Input() fileName = '';
+  /** Icono iconify, o «excel» para el ícono de Excel del proyecto (importaciones). */
   @Input() icon = 'mdi:paperclip';
   @Output() fileChange = new EventEmitter<Event>();
 

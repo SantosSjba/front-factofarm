@@ -59,7 +59,7 @@ const PATH_HELP: Record<string, string> = {
   '/principios-activos': 'Sustancias activas de tus medicamentos.',
   '/vias-administracion': 'Cómo se administra el medicamento: oral, tópica…',
   '/series': 'Números de serie de productos y su estado: disponible o vendido.',
-  '/zonas': 'Zonas del almacén y los productos que hay en cada una.',
+  '/zonas': 'Zonas o sectores para agrupar a tus clientes.',
   '/importar-precios': 'Actualiza precios de forma masiva subiendo un archivo.',
   '/proveedores': 'Registra a quienes te venden mercadería.',
   '/ordenes-compra': 'Crea y da seguimiento a tus pedidos a proveedores.',

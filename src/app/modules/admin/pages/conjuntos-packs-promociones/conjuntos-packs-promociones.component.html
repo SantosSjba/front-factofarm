@@ -192,7 +192,7 @@
     </ol>
     <app-button variant="link" className="mt-3" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
     <div class="mt-6 flex items-center justify-center">
-      <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
+      <app-file-input variant="button" accept=".xlsx" icon="excel" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
     </div>
     @if (importResult(); as result) {
       <app-alert class="mt-6" [variant]="result.errors.length ? 'warning' : 'success'" title="Último resultado" [message]="'Filas: ' + result.totalRows + ' · Creados: ' + result.created + ' · Actualizados: ' + result.updated + ' · Errores: ' + result.errors.length">

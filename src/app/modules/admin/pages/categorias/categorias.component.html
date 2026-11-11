@@ -1,116 +1,155 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
-  <h1
-    data-toolbar-title
-    class="text-lg font-semibold text-gray-800 dark:text-white/90"
-  >
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
     Categorías
   </h1>
-  <div data-toolbar-actions>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <ng-container *appHasPermission="'categories.write'">
-      <app-button size="sm" (btnClick)="openCreateModal()">
-        <app-icon name="mdi:plus" width="18" height="18" />
-        <span class="leading-none">Nuevo</span>
-      </app-button>
+      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">Nueva categoría</app-button>
     </ng-container>
   </div>
 </app-page-toolbar>
 
-@let treeState = treeQuery | queryPageState: treeRows().length;
-
-<app-component-card title="Árbol de categorías" className="mb-5 overflow-hidden"
-  [loading]="treeState.loading"
-  [error]="treeState.error"
-  [empty]="treeState.empty"
-  emptyTitle="No hay categorías registradas"
-  (retry)="refetchTree()">
-  <div class="space-y-1 text-theme-sm text-gray-700 dark:text-gray-300">
-    @for (node of treeRows(); track node.id) {
-      <div [style.padding-left.px]="node.depth * 16" class="rounded px-2 py-1 hover:bg-gray-50 dark:hover:bg-white/5">
-        @if (node.depth > 0) {
-          <span class="text-gray-400">↳ </span>
-        }
-        {{ node.label }}
-      </div>
-    }
-  </div>
-</app-component-card>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="categorias">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Las categorías agrupan productos parecidos, por ejemplo «Medicamentos» o «Cuidado personal», para filtrarlos y ordenarlos.</li>
+    <li>Puedes crear subcategorías dentro de otra con «Agregar subcategoría» del menú de cada fila. Usa la flecha para abrir o cerrar cada grupo.</li>
+    <li>La categoría de cada producto se elige al crearlo o editarlo. Solo se puede eliminar una categoría vacía y sin subcategorías.</li>
+  </ol>
+</app-help-panel>
 
 <app-list-filters
-  [searchValue]="searchTerm()"
-  [selectValue]="filterField()"
-  [selectOptions]="fieldFilterOptions"
-  searchPlaceholder="Buscar"
-  selectPlaceholder="Filtrar por"
+  [showSelect]="false"
+  searchPlaceholder="Buscar categoría"
   clearLabel="Limpiar"
+  [searchValue]="searchTerm()"
   (searchValueChange)="onSearchChange($event)"
-  (selectValueChange)="onFilterFieldChange($event)"
   (clear)="clearFilters()"
 />
 
-@let listState = categoriesQuery | queryPageState: totalRows();
+@let treeState = treeQuery | queryPageState: totalCount();
 
-<app-component-card title="Listado de Categorías" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
-  [loading]="listState.loading"
-  [error]="listState.error"
-  [empty]="listState.empty"
-  emptyTitle="No hay categorías registradas"
-  (retry)="refetchRows()">
+<app-component-card
+  title="Árbol de categorías"
+  [desc]="totalCount() ? totalCount() + (totalCount() === 1 ? ' categoría' : ' categorías') + ' · ' + rootCount() + (rootCount() === 1 ? ' principal' : ' principales') + (emptyCount() ? ' · ' + emptyCount() + (emptyCount() === 1 ? ' vacía' : ' vacías') : '') : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="treeState.loading"
+  [error]="treeState.error"
+  [empty]="treeState.empty"
+  emptyTitle="Aún no hay categorías"
+  emptyHint="Usa «Nueva categoría» para crear la primera."
+  (retry)="refetchTree()"
+>
+  @if (hasCollapsible() && !searchTerm().trim()) {
+    <div data-card-header-end class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" startIconName="mdi:unfold-more-horizontal" (btnClick)="expandAll()">Expandir todo</app-button>
+      <app-button size="sm" variant="outline" startIconName="mdi:unfold-less-horizontal" (btnClick)="collapseAll()">Contraer todo</app-button>
+    </div>
+  }
+
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
-      <table class="min-w-full text-left">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-              Nombre
-            </th>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-              Fecha creación
-            </th>
-            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-              Acciones
-            </th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Categoría</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Contenido</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Subcategorías</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Creada</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of paginatedRows(); track row.id; let i = $index) {
-            <tr>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ pageStart() + i + 1 }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ row.createdAt | appDate: 'yyyy-MM-dd HH:mm:ss' }}</td>
-              <td class="px-5 py-4 text-end">
-                <div class="flex flex-wrap justify-end gap-1.5">
+          @for (row of rows(); track row.node.id) {
+            <tr class="transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]">
+              <td class="px-5 py-3 text-theme-sm">
+                <div class="flex min-w-0 items-center gap-1.5" [style.padding-inline-start.rem]="row.depth * 1.75">
+                  <span class="flex w-8 shrink-0 justify-center">
+                    @if (row.hasChildren) {
+                      <app-button
+                        size="xs"
+                        variant="ghost"
+                        [iconOnly]="true"
+                        [startIconName]="row.expanded ? 'mdi:chevron-down' : 'mdi:chevron-right'"
+                        [tooltip]="row.expanded ? 'Ocultar subcategorías' : 'Ver subcategorías'"
+                        [ariaLabel]="(row.expanded ? 'Ocultar subcategorías de ' : 'Ver subcategorías de ') + row.node.nombre"
+                        [ariaExpanded]="row.expanded"
+                        [disabled]="!!searchTerm().trim()"
+                        (btnClick)="toggle(row.node.id)"
+                      />
+                    }
+                  </span>
+                  <span
+                    class="flex size-8 shrink-0 items-center justify-center rounded-lg"
+                    [class]="row.depth === 0
+                      ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400'
+                      : 'bg-gray-100 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400'"
+                    aria-hidden="true"
+                  >
+                    <app-icon
+                      [name]="row.hasChildren ? (row.expanded ? 'mdi:folder-open-outline' : 'mdi:folder-outline') : 'mdi:tag-outline'"
+                      width="18"
+                      height="18"
+                    />
+                  </span>
+                  <span
+                    class="min-w-0 truncate"
+                    [class.font-semibold]="row.depth === 0"
+                    [class.text-gray-800]="row.match"
+                    [class.dark:text-white]="row.match"
+                    [class.text-gray-400]="!row.match"
+                    [class.dark:text-gray-500]="!row.match"
+                    [title]="row.path"
+                  >{{ row.node.nombre }}</span>
+                </div>
+              </td>
+              <td class="px-5 py-3 text-theme-sm">
+                @let parts = contentParts(row.node);
+                <div class="flex flex-wrap items-center gap-1.5">
+                  @for (part of parts; track part.label) {
+                    <app-badge size="sm" [color]="part.color">{{ part.label }}</app-badge>
+                  } @empty {
+                    <span class="text-gray-400 dark:text-gray-500">Vacía</span>
+                  }
+                  @if (row.hasChildren && row.totalItems > row.ownItems) {
+                    <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.totalItems }} en total con subcategorías</span>
+                  }
+                </div>
+              </td>
+              <td class="px-5 py-3 text-theme-sm tabular-nums">
+                {{ row.node.children.length || '—' }}
+              </td>
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ row.node.createdAt | appDate: 'dd/MM/yyyy' }}</td>
+              <td class="px-5 py-3 text-end">
+                <div class="inline-flex justify-end">
                   <ng-container *appHasPermission="'categories.write'">
-                    <app-button
-                      size="sm"
-                      variant="outline"
-                      [iconOnly]="true"
-                      startIconName="mdi:pencil-outline"
-                      tooltip="Editar"
-                      (btnClick)="openEditModal(row)"
-                    />
-                    <app-button
-                      size="sm"
-                      variant="danger"
-                      [iconOnly]="true"
-                      startIconName="mdi:trash-can-outline"
-                      tooltip="Eliminar"
-                      [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()"
-                      (btnClick)="openDeleteConfirm(row)"
-                    />
+                    <app-table-dropdown>
+                      <div dropdown-button>
+                        <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + row.node.nombre"></app-button>
+                      </div>
+                      <div dropdown-content>
+                        <app-menu-item icon="mdi:folder-plus-outline" tooltip="Crea una categoría dentro de esta." (itemClick)="openCreateModal(row)">Agregar subcategoría</app-menu-item>
+                        <app-menu-item icon="mdi:pencil-outline" tooltip="Cambia el nombre o muévela dentro de otra categoría." (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                        @let blockReason = deleteBlockReason(row);
+                        <app-menu-item
+                          variant="danger"
+                          icon="mdi:trash-can-outline"
+                          [tooltip]="blockReason || 'Quita la categoría. Te pedirá confirmación.'"
+                          [disabled]="!!blockReason"
+                          (itemClick)="openDeleteConfirm(row)"
+                        >Eliminar</app-menu-item>
+                      </div>
+                    </app-table-dropdown>
                   </ng-container>
                 </div>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-                Sin coincidencias para los filtros aplicados.
+              <td colspan="99" class="px-5 py-6 text-center text-theme-sm text-gray-500">
+                Ninguna categoría coincide con «{{ searchTerm().trim() }}».
               </td>
             </tr>
           }
@@ -120,95 +159,52 @@
   </div>
 </app-component-card>
 
-<app-pagination
-  [totalItems]="totalRows()"
-  [currentPage]="currentPage()"
-  [pageSize]="itemsPerPage"
-  (currentPageChange)="onPageChange($event)"
-/>
-
-<app-modal
-  [isOpen]="modalOpen()"
-  (closed)="closeFormModal()"
-  className="w-full max-w-3xl shadow-theme-lg"
->
-  <div
-    data-modal-header
-    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
-  >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      {{ editing() ? 'Editar categoría' : 'Nueva categoría' }}
-    </h3>
+<app-modal [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-xl">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ formTitle() }}</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ formDescription() }}</p>
   </div>
-
-  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-8 sm:py-5">
-    <div>
-      <app-label>Categoría padre (opcional)</app-label>
-      <app-form-select
-        className="mt-2"
-        [value]="parentId()"
-        [options]="[{ value: '', label: '— Raíz —' }, ...parentSelectOptions()]"
-        (valueChange)="parentId.set($event)"
-      />
-    </div>
-    <div>
-      <app-label for="categoria-nombre" required>Nombre</app-label>
-      <app-input-field
-        id="categoria-nombre"
-        [maxLength]="120"
-        className="mt-2"
-        [value]="nombre()"
-        (valueChange)="nombre.set($event + '')"
-      />
-    </div>
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-5 sm:px-8">
+    <app-input-field
+      label="Nombre"
+      [isRequired]="true"
+      helpText="Se guarda en mayúsculas. No puede repetirse con otra categoría. Ej.: Analgésicos, Cuidado del bebé."
+      [maxLength]="120"
+      [value]="nombre()"
+      [error]="!!nombreError()"
+      [hint]="nombreError()"
+      (valueChange)="nombre.set($event + ''); nombreError.set('')"
+    />
+    <app-form-select
+      label="Dentro de"
+      helpText="Elige otra categoría para que esta sea su subcategoría, o «Ninguna» para que sea principal. No puedes elegir una de sus propias subcategorías."
+      [value]="parentId()"
+      [options]="parentSelectOptions()"
+      [showPlaceholder]="false"
+      (valueChange)="parentId.set($event)"
+    />
   </div>
-
-  <div
-    data-modal-footer
-    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
-  >
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="closeFormModal()">
-      Cancelar
-    </app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
-      {{ submitLabel() }}
-    </app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
+        {{ isSaving() ? (editingId() ? 'Actualizando…' : 'Guardando…') : (editingId() ? 'Guardar cambios' : 'Guardar categoría') }}
+      </app-button>
+    </div>
   </div>
 </app-modal>
 
-<app-modal
-  [isOpen]="deleteConfirmOpen()"
-  (closed)="closeDeleteConfirm()"
-  className="w-full max-w-lg shadow-theme-lg"
->
-  <div
-    data-modal-header
-    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5"
-  >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Confirmar eliminación
-    </h3>
+<app-modal [isOpen]="!!deleteTarget()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar categoría</h3>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
-    @if (deleting(); as row) {
-      ¿Desea eliminar la categoría <span class="font-semibold">{{ row.nombre }}</span>?
-    }
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 sm:px-6 dark:text-gray-300">
+    ¿Eliminar «{{ deleteTarget()?.path }}»? Dejará de aparecer al elegir la categoría de un producto.
   </div>
-  <div
-    data-modal-footer
-    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6"
-  >
-    <app-button startIconName="mdi:close"
-      variant="outline"
-      [disabled]="deleteMutation.isPending()"
-      (btnClick)="closeDeleteConfirm()"
-    >
-      Cancelar
-    </app-button>
-    <app-button startIconName="mdi:trash-can-outline"
-      [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()"
-      (btnClick)="confirmDelete()"
-    >
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
+    <app-button variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="closeDeleteConfirm()">Cancelar</app-button>
+    <app-button variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>

@@ -428,7 +428,7 @@
   <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
     <app-button variant="link" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-      <app-file-input variant="button" accept=".xlsx" icon="mdi:file-excel-outline" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
+      <app-file-input variant="button" accept=".xlsx" icon="excel" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
       <app-button startIconName="mdi:eye-outline" variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
         {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
       </app-button>

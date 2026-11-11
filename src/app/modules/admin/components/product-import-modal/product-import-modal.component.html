@@ -1,0 +1,61 @@
+@let m = info();
+
+<app-modal [isOpen]="open()" (closed)="close()" className="w-full max-w-2xl">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Importar: {{ m.label }}</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ m.steps }}</p>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
+      <li>Descarga la plantilla y llénala sin cambiar sus columnas.</li>
+      <li>Selecciona el archivo: se revisa solo y te muestra qué se creará, qué se actualizará y qué filas tienen errores.</li>
+      <li>Si está bien, pulsa «Confirmar importación». Las filas con error no se importan.</li>
+    </ol>
+    <app-button variant="link" className="mt-3" startIconName="mdi:download-outline" (btnClick)="downloadTemplate()">Descargar plantilla</app-button>
+
+    <div class="mt-6 flex items-center justify-center">
+      <app-file-input
+        variant="button"
+        accept=".xlsx"
+        icon="excel"
+        buttonLabel="Seleccione un archivo (xlsx)"
+        [fileName]="file()?.name ?? ''"
+        [disabled]="busy()"
+        (fileChange)="onFileChange($event)"
+      />
+    </div>
+
+    @if (previewMutation.isPending()) {
+      <p class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">Revisando el archivo…</p>
+    }
+
+    @if (preview(); as p) {
+      <app-alert
+        class="mt-6 block"
+        [variant]="p.errors.length ? 'warning' : 'success'"
+        title="Vista previa"
+        [message]="'Filas: ' + p.totalRows + ' · Se crearían: ' + p.created + ' · Se actualizarían: ' + p.updated + ' · Con error: ' + p.errors.length"
+      >
+        @if (p.errors.length) {
+          <ul class="mt-2 max-h-40 list-disc overflow-y-auto ps-5 text-xs text-gray-600 dark:text-gray-400">
+            @for (err of p.errors.slice(0, 20); track $index) {
+              <li>{{ err }}</li>
+            }
+          </ul>
+          @if (p.errors.length > 20) {
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">… y {{ p.errors.length - 20 }} más.</p>
+          }
+        }
+        @if (p.created + p.updated === 0) {
+          <p class="mt-2 text-xs text-gray-600 dark:text-gray-400">No hay filas válidas para importar. Corrige el archivo y vuelve a seleccionarlo.</p>
+        }
+      </app-alert>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    <app-button variant="outline" [disabled]="busy()" (btnClick)="close()">Cancelar</app-button>
+    <app-button startIconName="mdi:play-circle-outline" [disabled]="!canConfirm()" [loading]="importMutation.isPending()" (btnClick)="confirm()">
+      {{ importMutation.isPending() ? 'Importando…' : 'Confirmar importación' }}
+    </app-button>
+  </div>
+</app-modal>

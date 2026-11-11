@@ -19,6 +19,8 @@ import type { ProductSerialStatus, SeriesListFiltersRequest, SeriesListItemDto }
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import { BadgeComponent, type BadgeColor } from '../../../../shared/components/ui/badge/badge.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
 
@@ -26,7 +28,9 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
   selector: 'app-series',
   standalone: true,
   imports: [
+    BadgeComponent,
     ExcelIconComponent,
+    HelpPanelComponent,
     MenuItemComponent,
     QueryPageStatePipe,
     CommonModule,
@@ -52,6 +56,7 @@ export class SeriesComponent {
     { label: 'Series' },
   ];
   protected readonly itemsPerPage = 10;
+  protected readonly exporting = signal(false);
   protected readonly searchTerm = signal('');
   protected readonly filterField = signal<NonNullable<SeriesListFiltersRequest['field']>>('serie');
   protected readonly currentPage = signal(1);
@@ -131,6 +136,20 @@ export class SeriesComponent {
     return this.locale.formatDate(v, { dateStyle: 'short' });
   }
 
+  protected estadoColor(estado: ProductSerialStatus): BadgeColor {
+    if (estado === 'DISPONIBLE') return 'success';
+    if (estado === 'RESERVADO') return 'warning';
+    if (estado === 'VENDIDO') return 'info';
+    return 'light';
+  }
+
+  /** Por qué no se puede cambiar ni eliminar (vendida o reservada), o cadena vacía. Lo exige el API. */
+  protected lockReason(row: SeriesListItemDto): string {
+    if (row.vendido || row.estado === 'VENDIDO') return 'Ya está vendida: no se puede cambiar ni eliminar.';
+    if (row.estado === 'RESERVADO') return 'Está reservada en una venta: no se puede cambiar ni eliminar.';
+    return '';
+  }
+
   protected estadoLabel(estado: ProductSerialStatus): string {
     if (estado === 'DISPONIBLE') return 'Disponible';
     if (estado === 'RESERVADO') return 'Reservado';
@@ -159,17 +178,17 @@ export class SeriesComponent {
   protected confirmActionText() {
     const row = this.confirmTarget();
     if (!row) return '';
-    if (this.confirmAction() === 'delete') return `¿Desea eliminar la serie "${row.serie}"?`;
-    return row.vendido
-      ? `¿Desea marcar la serie "${row.serie}" como disponible?`
-      : `¿Desea marcar la serie "${row.serie}" como vendida?`;
+    if (this.confirmAction() === 'delete') {
+      return `¿Eliminar la serie «${row.serie}» de ${row.product.nombre}? Esa unidad dejará de figurar en el inventario por series.`;
+    }
+    return `¿Marcar la serie «${row.serie}» de ${row.product.nombre} como vendida? Úsalo solo si se vendió fuera del sistema: después no se puede deshacer.`;
   }
 
   protected confirmActionButtonLabel() {
     if (this.confirmAction() === 'delete') {
-      return this.deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar';
+      return this.deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar';
     }
-    return this.statusMutation.isPending() ? 'Guardando...' : 'Confirmar';
+    return this.statusMutation.isPending() ? 'Guardando…' : 'Marcar como vendida';
   }
 
   protected runConfirmAction() {
@@ -188,6 +207,8 @@ export class SeriesComponent {
   }
 
   protected async exportRows() {
+    if (this.exporting()) return;
+    this.exporting.set(true);
     try {
       const blob = await firstValueFrom(
         this.api.exportSeries({
@@ -203,6 +224,8 @@ export class SeriesComponent {
       URL.revokeObjectURL(url);
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'No se pudo exportar el listado de series'));
+    } finally {
+      this.exporting.set(false);
     }
   }
 }

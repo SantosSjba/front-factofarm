@@ -1,12 +1,13 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
+import { ExcelIconComponent } from '../../../icons/excel-icon.component';
 import { TooltipDirective } from '../../../directives/tooltip.directive';
 
 /** Ítem de menú desplegable (acciones de fila, exportar, importar…). */
 @Component({
   selector: 'app-menu-item',
   standalone: true,
-  imports: [IconComponent, TooltipDirective],
+  imports: [IconComponent, ExcelIconComponent, TooltipDirective],
   host: { class: 'block' },
   template: `
     <button
@@ -23,6 +24,8 @@ import { TooltipDirective } from '../../../directives/tooltip.directive';
     >
       @if (loading) {
         <app-icon name="mdi:loading" iconClass="size-4 animate-spin" />
+      } @else if (icon === 'excel') {
+        <app-excel-icon [size]="16" />
       } @else if (icon) {
         <app-icon [name]="icon" iconClass="size-4" />
       }
@@ -32,6 +35,7 @@ import { TooltipDirective } from '../../../directives/tooltip.directive';
 })
 export class MenuItemComponent {
   @Input() variant: 'default' | 'danger' = 'default';
+  /** Icono iconify, o «excel» para el ícono de Excel del proyecto. */
   @Input() icon = '';
   /** Explica qué hace la acción. */
   @Input() tooltip = '';

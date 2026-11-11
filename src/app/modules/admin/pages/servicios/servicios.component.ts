@@ -22,7 +22,6 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { ModalTabHeaderComponent } from '../../../../shared/components/ui/modal-tab-header/modal-tab-header.component';
 import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
@@ -31,8 +30,12 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
+import { SelectQuickAddComponent } from '../../../../shared/components/form/select-quick-add/select-quick-add.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 
-type ServiceTab = 'general' | 'atributos';
+type ServiceTab = 'general' | 'mas';
 type HistoryTab = 'stock' | 'sales' | 'purchases';
 
 type ServiceColumnKey =
@@ -58,8 +61,8 @@ type AttributeRow = {
 };
 
 const SERVICE_TABS: TabStripItem[] = [
-  { id: 'general', label: 'General' },
-  { id: 'atributos', label: 'Atributos' },
+  { id: 'general', label: 'Datos principales' },
+  { id: 'mas', label: 'Más datos' },
 ];
 
 const HISTORY_TABS: TabStripItem[] = [
@@ -109,8 +112,11 @@ const barcodeSchema = yup.object({
     ImageSquarePickerComponent,
     InputFieldComponent,
     LabelComponent,
-    IconComponent,
     CheckboxComponent,
+    ColorLegendComponent,
+    FormSectionComponent,
+    SelectQuickAddComponent,
+    HelpPanelComponent,
   ],
   templateUrl: './servicios.component.html',
 })
@@ -123,6 +129,7 @@ export class ServiciosComponent {
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [{ label: 'Productos' }, { label: 'Servicios' }];
 
+  protected readonly rowLegend: LegendItem[] = [{ label: 'Inhabilitado', tone: 'muted' }];
   protected readonly searchTerm = signal('');
   protected readonly filterField = signal<NonNullable<ServiceListFiltersRequest['field']>>('nombre');
   protected readonly currentPage = signal(1);
@@ -239,6 +246,8 @@ export class ServiciosComponent {
   protected readonly historyTab = signal<HistoryTab>('stock');
   protected readonly activeTab = signal<ServiceTab>('general');
   protected readonly serviceTabs = SERVICE_TABS;
+  /** Alta rápida de categoría, marca o ubicación abierta en el formulario. */
+  protected readonly quickAddOpen = signal<'category' | 'brand' | 'location' | null>(null);
   protected readonly historyTabs = HISTORY_TABS;
   protected readonly barcodeValue = signal('');
   protected readonly barcodeSvg = signal('');
@@ -752,6 +761,7 @@ export class ServiciosComponent {
     this.newCategoryName.set('');
     this.newBrandName.set('');
     this.newLocationName.set('');
+    this.quickAddOpen.set(null);
     this.creatingCategory.set(false);
     this.creatingBrand.set(false);
     this.creatingLocation.set(false);
@@ -847,6 +857,7 @@ export class ServiciosComponent {
     try {
       const row = await firstValueFrom(this.api.createCategory({ nombre }));
       this.newCategoryName.set('');
+      this.quickAddOpen.set(null);
       await this.categoriesQuery.refetch();
       this.updateForm('categoryId', row.id);
       this.notify.success('Categoría creada correctamente');
@@ -868,6 +879,7 @@ export class ServiciosComponent {
     try {
       const row = await firstValueFrom(this.api.createBrand({ nombre }));
       this.newBrandName.set('');
+      this.quickAddOpen.set(null);
       await this.brandsQuery.refetch();
       this.updateForm('brandId', row.id);
       this.notify.success('Marca creada correctamente');
@@ -894,6 +906,7 @@ export class ServiciosComponent {
     try {
       const row = await firstValueFrom(this.api.createProductLocation({ establishmentId, nombre }));
       this.newLocationName.set('');
+      this.quickAddOpen.set(null);
       await this.locationsQuery.refetch();
       this.updateForm('productLocationId', row.id);
       this.notify.success('Ubicación creada correctamente');
@@ -924,7 +937,8 @@ export class ServiciosComponent {
           if (x.path) err[x.path] = x.message;
         }
         this.formErrors.set(err);
-        this.notify.warning('Revise los campos obligatorios en la pestaña General.');
+        this.notify.warning('Revise los campos obligatorios en «Datos principales».');
+        this.activeTab.set('general');
       }
       return;
     }
@@ -935,8 +949,8 @@ export class ServiciosComponent {
       return;
     }
     if (this.attributeRows().some((r) => !!r.attributeTypeId !== !!r.descripcion.trim())) {
-      this.notify.warning('En Atributos, complete el tipo y la descripción de cada fila (o elimine la fila).');
-      this.activeTab.set('atributos');
+      this.notify.warning('En «Más datos» → Atributos, complete el tipo y la descripción de cada fila (o elimine la fila).');
+      this.activeTab.set('mas');
       return;
     }
 
@@ -948,8 +962,8 @@ export class ServiciosComponent {
       }));
 
     if ((f.incluyeIscVenta || f.incluyeIscCompra) && !f.tipoSistemaIscId) {
-      this.notify.warning('Seleccione el tipo de sistema ISC.');
-      this.activeTab.set('general');
+      this.notify.warning('Seleccione el tipo de sistema ISC en «Más datos».');
+      this.activeTab.set('mas');
       return;
     }
 
@@ -1072,6 +1086,10 @@ export class ServiciosComponent {
     const n = parseFloat(row.precioUnitarioCompra);
     if (!Number.isFinite(n)) return '—';
     return `${sym} ${n % 1 === 0 ? n.toFixed(0) : n.toFixed(2)}`;
+  }
+
+  protected rowTone(row: ServiceListItemDto): LegendTone | null {
+    return row.habilitado ? null : 'muted';
   }
 
   protected siNo(v: boolean): string {

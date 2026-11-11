@@ -34,7 +34,6 @@ import type {
   PresentationDefaultPriceDto,
   ProductDetailDto,
   ProductImportMode,
-  ProductImportResultDto,
   ProductListFiltersRequest,
   ProductListItemDto,
 } from '../../models/directory.models';
@@ -42,11 +41,11 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
-import { FileInputComponent } from '../../../../shared/components/form/input/file-input.component';
 import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { STOCK_LEVEL_LABELS, stockLevel, type StockLevel } from '../../../../core/utils/stock-level';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 import { SelectQuickAddComponent } from '../../../../shared/components/form/select-quick-add/select-quick-add.component';
+import { ProductImportModalComponent } from '../../components/product-import-modal/product-import-modal.component';
 import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
 
 type ProductTab = 'general' | 'farmacia' | 'presentaciones' | 'mas' | 'proveedores';
@@ -132,17 +131,6 @@ const productSchema = yup.object({
   saleTaxAffectationId: yup.string().uuid('Seleccione tipo de afectación').required(),
 });
 
-const importSchema = yup.object({
-  mode: yup
-    .mixed<ProductImportMode>()
-    .oneOf(['PRODUCTOS', 'L_PRECIOS', 'ACTUALIZAR_PRECIOS'], 'Modo de importación no válido')
-    .required(),
-  file: yup
-    .mixed<File>()
-    .required('Seleccione un archivo xlsx')
-    .test('xlsx', 'El archivo debe ser .xlsx', (v) => !!v && /\.xlsx$/i.test(v.name)),
-});
-
 const barcodeSchema = yup.object({
   codigoBarra: yup
     .string()
@@ -160,7 +148,6 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
   imports: [
     ExcelIconComponent,
     QuickCreateComponent,
-    FileInputComponent,
     OptionItemComponent,
     OptionListComponent,
     MenuItemComponent,
@@ -183,6 +170,7 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     FormSectionComponent,
     ColorLegendComponent,
     SelectQuickAddComponent,
+    ProductImportModalComponent,
     HelpHintComponent,
     IconComponent,
     CheckboxComponent,
@@ -497,8 +485,6 @@ export class ProductosComponent {
   });
   protected readonly historyTabs = HISTORY_TABS;
   protected readonly importMode = signal<ProductImportMode>('PRODUCTOS');
-  protected readonly importFile = signal<File | null>(null);
-  protected readonly importPreviewResult = signal<ProductImportResultDto | null>(null);
   protected readonly barcodeValue = signal('');
   protected readonly barcodeSvg = signal('');
 
@@ -679,36 +665,6 @@ export class ProductosComponent {
       void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
     },
     onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo actualizar código de barras')),
-  }));
-
-  protected readonly previewImportMutation = injectMutation(() => ({
-    mutationFn: ({ mode, file }: { mode: ProductImportMode; file: File }) =>
-      firstValueFrom(this.api.previewImportProducts(mode, file)),
-    onSuccess: (res) => {
-      this.importPreviewResult.set(res);
-      if (res.errors.length) {
-        this.notify.warning(`Vista previa: ${res.errors.length} fila(s) con error.`);
-      } else {
-        this.notify.success('Vista previa lista. Revise y confirme la importación.');
-      }
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo validar el archivo')),
-  }));
-
-  protected readonly importMutation = injectMutation(() => ({
-    mutationFn: ({ mode, file }: { mode: ProductImportMode; file: File }) =>
-      firstValueFrom(this.api.importProducts(mode, file)),
-    onSuccess: (res) => {
-      this.notify.success(`Importación completada. Creados: ${res.created}, actualizados: ${res.updated}`);
-      if (res.errors.length) {
-        this.notify.warning(`Se detectaron ${res.errors.length} filas con error.`);
-      }
-      this.importOpen.set(false);
-      this.importFile.set(null);
-      this.importPreviewResult.set(null);
-      void this.queryClient.invalidateQueries({ queryKey: productQueryKeys.all });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo importar productos')),
   }));
 
   protected readonly warehouseSelectOptions = computed(() =>
@@ -1313,41 +1269,7 @@ export class ProductosComponent {
 
   protected openImportModal(mode: ProductImportMode) {
     this.importMode.set(mode);
-    this.importFile.set(null);
-    this.importPreviewResult.set(null);
     this.importOpen.set(true);
-  }
-
-  protected onImportFileChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.importFile.set(input.files?.[0] ?? null);
-    this.importPreviewResult.set(null);
-  }
-
-  protected runImportPreview() {
-    const mode = this.importMode();
-    const file = this.importFile();
-    const valid = this.validateImport(mode, file);
-    if (!valid.ok) {
-      this.notify.warning(valid.message);
-      return;
-    }
-    this.previewImportMutation.mutate({ mode, file: file as File });
-  }
-
-  protected processImport() {
-    const mode = this.importMode();
-    const file = this.importFile();
-    const valid = this.validateImport(mode, file);
-    if (!valid.ok) {
-      this.notify.warning(valid.message);
-      return;
-    }
-    if (!this.importPreviewResult()) {
-      this.notify.warning('Ejecute la vista previa antes de confirmar.');
-      return;
-    }
-    this.importMutation.mutate({ mode, file: file as File });
   }
 
   protected async exportProducts() {
@@ -1361,22 +1283,6 @@ export class ProductosComponent {
       this.notify.error(httpErrorMessage(err, 'No se pudo exportar productos'));
     } finally {
       this.exporting.set(false);
-    }
-  }
-
-  protected async downloadImportTemplate() {
-    const mode = this.importMode();
-    const filename =
-      mode === 'L_PRECIOS'
-        ? 'item_price_lists.xlsx'
-        : mode === 'ACTUALIZAR_PRECIOS'
-          ? 'items_update_prices.xlsx'
-          : 'items.xlsx';
-    try {
-      const blob = await firstValueFrom(this.api.downloadProductImportTemplate(mode));
-      this.downloadBlob(blob, filename);
-    } catch (err) {
-      this.notify.error(httpErrorMessage(err, 'No se pudo descargar la plantilla'));
     }
   }
 
@@ -1946,12 +1852,6 @@ export class ProductosComponent {
     /* reservado: stock */
   }
 
-  protected importModeLabel(mode: ProductImportMode): string {
-    if (mode === 'L_PRECIOS') return 'L. Precios';
-    if (mode === 'ACTUALIZAR_PRECIOS') return 'Actualizar precios';
-    return 'Productos';
-  }
-
   private downloadBlob(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1961,18 +1861,6 @@ export class ProductosComponent {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }
-
-  private validateImport(mode: ProductImportMode, file: File | null): { ok: boolean; message: string } {
-    try {
-      importSchema.validateSync({ mode, file }, { abortEarly: false });
-      return { ok: true, message: '' };
-    } catch (err) {
-      if (err instanceof yup.ValidationError) {
-        return { ok: false, message: err.errors[0] ?? 'Archivo inválido' };
-      }
-      return { ok: false, message: 'No se pudo validar archivo' };
-    }
   }
 
   private refreshBarcodePreview(value: string) {

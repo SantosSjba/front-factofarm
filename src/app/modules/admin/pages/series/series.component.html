@@ -1,25 +1,40 @@
-﻿<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
 <app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
     Series
   </h1>
-  <div data-toolbar-actions>
-    <app-button size="sm" variant="outline" (btnClick)="exportRows()">
-      <app-excel-icon />
-      <span>Exportar</span>
-    </app-button>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-table-dropdown>
+      <div dropdown-button>
+        <app-button size="sm" variant="outline" endIconName="mdi:chevron-down" [loading]="exporting()">
+          <app-excel-icon /> Exportar
+        </app-button>
+      </div>
+      <div dropdown-content>
+        <app-menu-item tooltip="Descarga en Excel todo lo que coincide con los filtros aplicados." (itemClick)="exportRows()">Exportar Excel</app-menu-item>
+      </div>
+    </app-table-dropdown>
   </div>
 </app-page-toolbar>
 
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="series">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Cada serie es una unidad con número propio, como un equipo o un tensiómetro, para saber exactamente cuál se vendió.</li>
+    <li>Las series se cargan en Inventario → Importar → Series. Aquí las consultas y ves en qué estado está cada una.</li>
+    <li>Una serie vendida o reservada ya no se puede cambiar ni eliminar.</li>
+  </ol>
+</app-help-panel>
+
 <app-list-filters
+  collapsible
+  [activeCount]="filterField() !== 'serie' ? 1 : 0"
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
+  [selectShowPlaceholder]="false"
   searchPlaceholder="Buscar"
-  selectPlaceholder="Filtrar por"
+  selectLabel="Buscar por"
   clearLabel="Limpiar"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
@@ -28,45 +43,65 @@
 
 @let listState = listQuery | queryPageState: totalRows();
 
-<app-component-card title="Listado de Series" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+<app-component-card
+  title="Listado de series"
+  [desc]="totalRows() ? totalRows() + ' en total' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay series registradas"
-  (retry)="refetchRows()">
+  [emptyTitle]="searchTerm().trim() ? 'Sin coincidencias para tu búsqueda' : 'Aún no hay series'"
+  [emptyHint]="searchTerm().trim() ? 'Prueba con otro texto o cambia «Buscar por».' : 'Se cargan en Inventario → Importar → Series.'"
+  (retry)="refetchRows()"
+>
   <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
     <div class="max-w-full overflow-x-auto">
-      <table class="min-w-full text-left text-gray-700 dark:text-gray-300">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">#</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Serie</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Producto</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Fecha</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Estado</th>
-            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500">Vendido</th>
-            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500">Acciones</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">#</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Serie</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of rows(); track row.id; let i = $index) {
+            @let locked = lockReason(row);
             <tr>
-              <td class="px-5 py-4 text-theme-sm">{{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
-              <td class="px-5 py-4 text-theme-sm">{{ row.serie }}</td>
+              <td class="px-5 py-4 text-theme-sm tabular-nums">{{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
+              <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ row.serie }}</td>
               <td class="px-5 py-4 text-theme-sm">{{ row.product.nombre }}</td>
-              <td class="px-5 py-4 text-theme-sm">{{ formatDate(row.fecha) }}</td>
-              <td class="px-5 py-4 text-theme-sm">{{ estadoLabel(row.estado) }}</td>
-              <td class="px-5 py-4 text-theme-sm">{{ row.vendido ? 'Si' : 'No' }}</td>
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ formatDate(row.fecha) }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                <app-badge size="sm" [color]="estadoColor(row.estado)">{{ estadoLabel(row.estado) }}</app-badge>
+              </td>
               <td class="px-5 py-4 text-end">
-                <app-table-dropdown>
-                  <div dropdown-button>
-                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical"></app-button>
-                  </div>
-                  <div dropdown-content>
-                    <app-menu-item (itemClick)="openToggleStatus(row)">{{ row.vendido ? 'Marcar disponible' : 'Marcar vendido' }}</app-menu-item>
-                    <app-menu-item variant="danger" (itemClick)="openDelete(row)">Eliminar</app-menu-item>
-                  </div>
-                </app-table-dropdown>
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para la serie ' + row.serie"></app-button>
+                    </div>
+                    <div dropdown-content>
+                      <app-menu-item
+                        icon="mdi:cart-check"
+                        [tooltip]="locked || 'Para una unidad que se vendió fuera del sistema. Te pedirá confirmación.'"
+                        [disabled]="!!locked"
+                        (itemClick)="openToggleStatus(row)"
+                      >Marcar como vendida</app-menu-item>
+                      <app-menu-item
+                        variant="danger"
+                        icon="mdi:trash-can-outline"
+                        [tooltip]="locked || 'Quita la serie del inventario. Te pedirá confirmación.'"
+                        [disabled]="!!locked"
+                        (itemClick)="openDelete(row)"
+                      >Eliminar</app-menu-item>
+                    </div>
+                  </app-table-dropdown>
+                </div>
               </td>
             </tr>
           } @empty {
@@ -89,16 +124,24 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
+<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Confirmar acción</h3>
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      {{ confirmAction() === 'delete' ? 'Eliminar serie' : 'Marcar serie como vendida' }}
+    </h3>
   </div>
-  <div data-modal-body class="px-4 py-4 text-theme-sm text-gray-700 sm:px-6 dark:text-gray-300">
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 sm:px-6 dark:text-gray-300">
     {{ confirmActionText() }}
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
-    <app-button startIconName="mdi:check" [disabled]="statusMutation.isPending() || deleteMutation.isPending()" [loading]="statusMutation.isPending()" (btnClick)="runConfirmAction()">
+    <app-button variant="outline" [disabled]="statusMutation.isPending() || deleteMutation.isPending()" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button
+      [variant]="confirmAction() === 'delete' ? 'danger' : 'primary'"
+      [startIconName]="confirmAction() === 'delete' ? 'mdi:trash-can-outline' : 'mdi:cart-check'"
+      [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
+      [loading]="statusMutation.isPending() || deleteMutation.isPending()"
+      (btnClick)="runConfirmAction()"
+    >
       {{ confirmActionButtonLabel() }}
     </app-button>
   </div>
