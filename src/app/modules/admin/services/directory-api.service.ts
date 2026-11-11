@@ -1666,6 +1666,14 @@ export class DirectoryApiService {
     return this.http.post<WarehouseZoneDto>(`${this.base}/warehouse-zones`, body);
   }
 
+  updateWarehouseZone(id: string, body: Partial<Pick<WarehouseZoneDto, 'nombre' | 'tipo' | 'activo'>>) {
+    return this.http.patch<WarehouseZoneDto>(`${this.base}/warehouse-zones/${id}`, body);
+  }
+
+  deleteWarehouseZone(id: string) {
+    return this.http.delete<void>(`${this.base}/warehouse-zones/${id}`);
+  }
+
   listSaleAvailableLots(productId: string, warehouseId: string) {
     return this.http.get<{
       metodoAsignacion: 'FEFO' | 'FIFO';

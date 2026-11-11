@@ -1,121 +1,159 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Reporte Kardex
-  </h1>
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Kardex</h1>
 </app-page-toolbar>
 
-<app-component-card title="Filtros" className="mb-4">
-  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-    <div>
-      @if (selectedProductId()) {
-        <app-label>Producto</app-label>
-        <p class="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ selectedProductLabel() }}</p>
-      } @else {
-        <app-label for="kardex-product" required>Producto</app-label>
-        <div class="mt-1 flex gap-2">
-          <app-input-field id="kardex-product" className="flex-1" placeholder="Buscar producto" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" (keydown.enter)="searchProducts()" />
-          <app-button startIconName="mdi:magnify" size="sm" (btnClick)="searchProducts()">Buscar</app-button>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="reporte-kardex">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Muestra cada entrada y salida de un producto, en orden de fecha, con el <strong>saldo</strong> que quedó después de cada movimiento y su valor.</li>
+    <li>Elige el producto y el periodo. El saldo arranca con lo que había antes de la fecha «Desde».</li>
+    <li>Los movimientos muy antiguos pasan a «archivados» para que el sistema siga rápido; ahí el saldo no se recalcula.</li>
+  </ol>
+</app-help-panel>
+
+<app-component-card title="Qué quieres ver">
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="md:col-span-2">
+      @if (product(); as p) {
+        <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-400">Producto</p>
+        <div class="flex min-h-11 items-center justify-between gap-3 rounded-[10px] border border-gray-200 px-4 py-2 dark:border-gray-800">
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ p.nombre }}</p>
+            @if (p.codigoInterno) {
+              <p class="text-xs text-gray-500 dark:text-gray-400">Cód. {{ p.codigoInterno }}</p>
+            }
+          </div>
+          <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="changeProduct()">Cambiar</app-button>
         </div>
-        @if (productOptions().length) {
-          <app-option-list class="mt-2">
-            @for (p of productOptions(); track p.id) {
-<app-option-item (optionSelect)="selectProduct(p)">{{ p.nombre }} — {{ p.codigoInterno || 'sin código' }}</app-option-item>
-}
-          </app-option-list>
-        }
+      } @else {
+        <app-search-select
+          label="Producto"
+          [required]="true"
+          helpText="Busca por nombre, código interno o código de barras."
+          placeholder="Escribe para buscar"
+          emptyText="No se encontró ningún producto."
+          [resetToken]="pickerReset()"
+          [options]="pickerOptions()"
+          [loading]="pickerQuery.isFetching()"
+          (searchChange)="pickerTerm.set($event)"
+          (selected)="pickProduct($event.value)"
+        />
       }
     </div>
-    <div>
-      <app-label for="reporte-kardex-1">Almacén (opcional)</app-label>
-      <app-form-select id="reporte-kardex-1"
-        className="mt-1"
-        placeholder="Todos"
-        [options]="warehouseOptions()"
-        [value]="warehouseId()"
-        (valueChange)="onWarehouseChange($event)"
-      />
-    </div>
-    <div>
-      <app-label for="reporte-kardex-2">Almacenamiento</app-label>
-      <app-form-select id="reporte-kardex-2"
-        className="mt-1"
-        [options]="storageOptions"
-        [value]="storage()"
-        (valueChange)="onStorageChange($event)"
-      />
-    </div>
-    <div>
-      <app-label for="reporte-kardex-3">Desde</app-label>
-      <app-input-field id="reporte-kardex-3" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event); currentPage.set(1)" />
-    </div>
-    <div>
-      <app-label for="reporte-kardex-4">Hasta</app-label>
-      <app-input-field id="reporte-kardex-4" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event); currentPage.set(1)" />
-    </div>
+    <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+    <app-form-select
+      label="Movimientos"
+      helpText="Los antiguos se archivan para que el sistema siga rápido. Elige «archivados» para consultarlos."
+      [showPlaceholder]="false"
+      [value]="storage()"
+      [options]="storageOptions"
+      (valueChange)="setStorage($event)"
+    />
+    <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFrom($event + '')" />
+    <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setTo($event + '')" />
   </div>
-  @if (storage() === 'archived') {
-    <p class="mt-3 text-theme-sm text-gray-500">Histórico en cold storage. El saldo acumulado no se recalcula en modo archivado.</p>
-  }
 </app-component-card>
 
-@if (!selectedProductId()) {
-  <p class="text-theme-sm text-gray-500">Seleccione un producto para ver el kardex valorizado.</p>
+@if (!product()) {
+  <p class="mt-6 rounded-[10px] border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+    Elige un producto para ver su kardex.
+  </p>
 } @else {
+  @if (!isArchived() && rows().length) {
+    @let s = summary();
+    <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Saldo inicial</p>
+        <p class="mt-1 text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ s.inicial | number: '1.0-4' }}</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Entradas</p>
+        <p class="mt-1 text-xl font-semibold tabular-nums text-success-600 dark:text-success-400">+{{ s.entradas | number: '1.0-4' }}</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Salidas</p>
+        <p class="mt-1 text-xl font-semibold tabular-nums text-error-600 dark:text-error-400">−{{ s.salidas | number: '1.0-4' }}</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Saldo final</p>
+        <p class="mt-1 text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ s.final | number: '1.0-4' }}</p>
+      </div>
+    </div>
+    @if (totalRows() > itemsPerPage) {
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Entradas y salidas de esta página. El saldo final es el de la última fila mostrada.</p>
+    }
+  }
+
   @let kardexState = kardexQuery | queryPageState: totalRows();
 
-  <app-component-card title="Movimientos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+  <app-component-card
+    title="Movimientos"
+    [desc]="totalRows() ? totalRows() + ' en el periodo' : ''"
+    className="mt-6 overflow-hidden"
+    [bodyClass]="'p-0 sm:p-0'"
     [loading]="kardexState.loading"
     [error]="kardexState.error"
     [empty]="kardexState.empty"
     emptyTitle="Sin movimientos en el periodo"
-    (retry)="kardexQuery.refetch()">
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-left">
-        <thead class="border-b border-gray-100 dark:border-gray-800">
-          <tr>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Fecha</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Tipo</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Motivo</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Cant.</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Saldo</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Valor</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          @for (row of rows(); track row.id) {
+    emptyHint="Prueba con otras fechas o con otro almacén."
+    (retry)="kardexQuery.refetch()"
+  >
+    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="max-w-full overflow-x-auto">
+        <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-100 dark:border-white/[0.05]">
             <tr>
-              <td class="px-4 py-3 text-theme-sm">
-                {{ row.fecha | appDate: 'yyyy-MM-dd HH:mm' }}
-                @if (isArchivedRow(row)) {
-                  <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Archivado</span>
-                }
-              </td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.tipo ?? '—' }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.motivo ?? '—' }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.cantidad }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.saldo ?? '—' }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.valorLinea ?? '—' }}</td>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Movimiento</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén / Lote</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Saldo</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                <span class="inline-flex items-center gap-1">Valor <app-help-hint text="Cantidad por costo unitario del movimiento." [iconSize]="14" /></span>
+              </th>
             </tr>
-          } @empty {
-            <tr>
-              <td colspan="6" class="px-4 py-6 text-center text-theme-sm text-gray-500">
-                Sin coincidencias para los filtros aplicados.
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            @for (row of rows(); track row.id) {
+              <tr>
+                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                  {{ row.fecha | appDate: 'dd/MM/yyyy HH:mm' }}
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.usuario ?? '' }}</span>
+                </td>
+                <td class="px-5 py-4 text-theme-sm">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <app-status-badge [status]="row.tipo" [tone]="movementTone(row.tipo)" [label]="movementLabel(row.tipo)" />
+                    @if (isArchivedRow(row)) {
+                      <app-status-badge status="ARCHIVADO" tone="neutral" label="Archivado" />
+                    }
+                  </div>
+                  <span class="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">
+                    {{ row.motivo ?? '' }}{{ row.referencia ? ' · Ref. ' + row.referencia : '' }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-theme-sm">
+                  {{ row.almacen ?? '—' }}
+                  @if (row.lote) {
+                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">Lote {{ row.lote }}</span>
+                  }
+                </td>
+                <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums" [class.text-success-600]="num(row.cantidad) > 0" [class.text-error-600]="num(row.cantidad) < 0">
+                  {{ num(row.cantidad) > 0 ? '+' : '' }}{{ num(row.cantidad) | number: '1.0-4' }}
+                </td>
+                <td class="px-5 py-4 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ row.saldo != null ? (num(row.saldo) | number: '1.0-4') : '—' }}</td>
+                <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.costoUnitario != null ? (num(row.costoUnitario) | number: '1.2-4') : '—' }}</td>
+                <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.valorLinea != null ? (num(row.valorLinea) | number: '1.2-2') : '—' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   </app-component-card>
-  <app-pagination
-    class="mt-4"
-    [currentPage]="currentPage()"
-    [totalItems]="totalRows()"
-    [pageSize]="itemsPerPage"
-    (currentPageChange)="onPageChange($event)"
-  />
+
+  <app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />
 }

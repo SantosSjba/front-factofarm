@@ -459,7 +459,7 @@ export const adminRoutes: Routes = [
           import('./pages/reporte-kardex/reporte-kardex.component').then(
             (m) => m.ReporteKardexComponent,
           ),
-        title: 'FactoFarm | Reporte Kardex',
+        title: 'FactoFarm | Kardex',
       },
       {
         path: 'reporte-inventario',
@@ -468,7 +468,7 @@ export const adminRoutes: Routes = [
           import('./pages/reporte-inventario/reporte-inventario.component').then(
             (m) => m.ReporteInventarioComponent,
           ),
-        title: 'FactoFarm | Reporte Inventario',
+        title: 'FactoFarm | Conteo físico',
       },
       {
         path: 'kardex-valorizado',
@@ -477,7 +477,7 @@ export const adminRoutes: Routes = [
           import('./pages/kardex-valorizado/kardex-valorizado.component').then(
             (m) => m.KardexValorizadoComponent,
           ),
-        title: 'FactoFarm | Kardex valorizado',
+        title: 'FactoFarm | Inventario valorizado',
       },
       {
         path: 'lotes',
@@ -485,15 +485,8 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./pages/lotes/lotes.component').then((m) => m.LotesComponent),
         title: 'FactoFarm | Lotes',
       },
-      {
-        path: 'salida-venta-lotes',
-        ...guarded(P.salidaVentaLotes),
-        loadComponent: () =>
-          import('./pages/salida-venta-lotes/salida-venta-lotes.component').then(
-            (m) => m.SalidaVentaLotesComponent,
-          ),
-        title: 'FactoFarm | Salida venta (lotes)',
-      },
+      // Integrada en Lotes («Simular salida»): la venta real descuenta lotes desde el Punto de Venta.
+      { path: 'salida-venta-lotes', redirectTo: 'lotes', pathMatch: 'full' },
       {
         path: 'cadena-frio',
         ...guarded(P.cadenaFrio),

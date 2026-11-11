@@ -22,6 +22,8 @@ export class ListFiltersComponent {
   @Input() selectPlaceholder = 'Todos';
   @Input() selectOptions: { value: string; label: string }[] = [];
   @Input() showSelect = true;
+  /** Oculta el buscador cuando el listado no admite búsqueda por texto. */
+  @Input() showSearch = true;
   /** Etiqueta del select (recomendada en modo plegable). */
   @Input() selectLabel = '';
   /** Falso cuando `selectOptions` ya incluye la opción por defecto. */

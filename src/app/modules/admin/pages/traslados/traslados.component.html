@@ -1,238 +1,375 @@
-﻿<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Traslados entre almacenes
-  </h1>
-  <div data-toolbar-actions *appHasPermission="'inventory.write'">
-    <app-button startIconName="mdi:plus" size="sm" (btnClick)="openCreateModal()">Nueva transferencia</app-button>
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Traslados entre almacenes</h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <ng-container *appHasPermission="'inventory.write'">
+      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nuevo traslado</app-button>
+    </ng-container>
   </div>
 </app-page-toolbar>
 
-<div class="mb-4 max-w-xs">
-  <app-label>Estado</app-label>
-  <app-form-select
-    className="mt-1"
-    placeholder="Todos"
-    [options]="estadoFilterOptions"
-    [value]="estadoFilter()"
-    (valueChange)="onEstadoChange($event)"
-  />
-</div>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="traslados">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Sirve para mover mercadería de un almacén a otro, por ejemplo de la principal a una sucursal. Se guarda primero como <strong>borrador</strong>.</li>
+    <li>Cuando la mercadería sale, pulsa <strong>«Despachar»</strong>: se descuenta del origen y queda <strong>en tránsito</strong>. Si hace falta, emite ahí la guía de remisión para SUNAT.</li>
+    <li>Cuando llega, pulsa <strong>«Recibir»</strong>: entra al almacén destino. Un borrador que ya no va se puede anular.</li>
+  </ol>
+</app-help-panel>
+
+<app-list-filters
+  collapsible
+  [showSearch]="false"
+  [showSelect]="false"
+  [activeCount]="activeFilterCount()"
+  clearLabel="Limpiar"
+  (clear)="clearFilters()"
+>
+  <app-form-select label="Estado" [showPlaceholder]="false" [value]="estadoFilter()" [options]="estadoOptions" (valueChange)="setEstado($event)" />
+  <app-form-select label="Almacén (origen o destino)" [showPlaceholder]="false" [value]="warehouseFilter()" [options]="warehouseFilterOptions()" (valueChange)="setWarehouse($event)" />
+</app-list-filters>
 
 @let listState = transfersQuery | queryPageState: totalRows();
 
-<app-component-card title="Transferencias" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+<app-component-card
+  title="Listado de traslados"
+  [desc]="totalRows() ? totalRows() + ' en total' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="Sin transferencias registradas"
-  (retry)="transfersQuery.refetch()">
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-left">
-      <thead class="border-b border-gray-100 dark:border-gray-800">
-        <tr>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Origen → Destino</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Estado</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Guía</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Ítems</th>
-          <th class="px-4 py-3 text-end text-theme-xs text-gray-500">Acciones</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        @for (row of rows(); track row.id) {
+  [emptyTitle]="activeFilterCount() ? 'Sin traslados con esos filtros' : 'Aún no hay traslados'"
+  [emptyHint]="activeFilterCount() ? 'Prueba con otros filtros.' : 'Usa «Nuevo traslado» para mover mercadería entre almacenes.'"
+  (retry)="transfersQuery.refetch()"
+>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <td class="px-4 py-3 text-theme-sm">
-              {{ row.fromWarehouse.nombre }} → {{ row.toWarehouse.nombre }}
-              <div class="text-theme-xs text-gray-500">{{ row.createdAt | appDate: 'yyyy-MM-dd HH:mm' }}</div>
-            </td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.estado }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.guiaNumero || '—' }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.items.length }}</td>
-            <td class="px-4 py-3 text-end">
-              <div class="flex flex-wrap items-center justify-end gap-1.5" *appHasPermission="'inventory.write'">
-                @if (row.estado === 'BORRADOR') {
-                  <app-button
-                    size="sm"
-                    [iconOnly]="true"
-                    startIconName="mdi:truck-delivery-outline"
-                    tooltip="Despachar"
-                    (btnClick)="dispatch(row)"
-                  />
-                  <app-button
-                    size="sm"
-                    variant="danger"
-                    [iconOnly]="true"
-                    startIconName="mdi:cancel"
-                    tooltip="Anular"
-                    (btnClick)="cancel(row)"
-                  />
-                }
-                @if (row.estado === 'EN_TRANSITO') {
-                  <app-button
-                    size="sm"
-                    [iconOnly]="true"
-                    startIconName="mdi:package-down"
-                    tooltip="Recibir"
-                    (btnClick)="receive(row)"
-                  />
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:file-certificate-outline"
-                    tooltip="Guía SUNAT"
-                    (btnClick)="emitGuia(row)"
-                  />
-                }
-              </div>
-            </td>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Origen → Destino</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Productos</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Guía</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
-        } @empty {
-          <tr>
-            <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">
-              Sin coincidencias para los filtros aplicados.
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                {{ row.createdAt | appDate: 'dd/MM/yyyy' }}
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.user?.nombre ?? '' }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+                <span class="font-medium">{{ row.fromWarehouse.nombre }}</span>
+                <span class="mx-1 text-gray-400">→</span>
+                <span class="font-medium">{{ row.toWarehouse.nombre }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.items.length }} producto(s) · {{ units(row) }} unid.</td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.guiaNumero || '—' }}</td>
+              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones del traslado"></app-button>
+                    </div>
+                    <div dropdown-content>
+                      <app-menu-item icon="mdi:eye-outline" tooltip="Productos, lotes y cantidades del traslado." (itemClick)="detail.set(row)">Ver detalle</app-menu-item>
+                      <ng-container *appHasPermission="'inventory.write'">
+                        @if (row.estado === 'BORRADOR') {
+                          <app-menu-item icon="mdi:truck-delivery-outline" tooltip="La mercadería sale: se descuenta del almacén de origen. Te pedirá confirmación." (itemClick)="ask(row, 'dispatch')">Despachar</app-menu-item>
+                        }
+                        @if (row.estado === 'EN_TRANSITO') {
+                          <app-menu-item icon="mdi:package-down" tooltip="La mercadería llegó: entra al almacén destino. Te pedirá confirmación." (itemClick)="ask(row, 'receive')">Recibir</app-menu-item>
+                        }
+                      </ng-container>
+                      <ng-container *appHasPermission="'billing.write'">
+                        @if (row.estado === 'EN_TRANSITO') {
+                          <app-menu-item icon="mdi:file-certificate-outline" tooltip="Programa la guía de remisión electrónica para SUNAT." (itemClick)="ask(row, 'guia')">Emitir guía SUNAT</app-menu-item>
+                        }
+                      </ng-container>
+                      <ng-container *appHasPermission="'inventory.write'">
+                        @if (row.estado === 'BORRADOR') {
+                          <app-menu-item variant="danger" icon="mdi:cancel" tooltip="Anula el borrador. El stock no se mueve. Te pedirá confirmación." (itemClick)="ask(row, 'cancel')">Anular</app-menu-item>
+                        }
+                      </ng-container>
+                    </div>
+                  </app-table-dropdown>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </app-component-card>
 
-<app-pagination
-  class="mt-4"
-  [currentPage]="currentPage()"
-  [totalItems]="totalRows()"
-  [pageSize]="itemsPerPage"
-  (currentPageChange)="onPageChange($event)"
-/>
+<app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />
 
-<app-modal [isOpen]="createOpen()" (closed)="closeCreateModal()" className="w-full max-w-4xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva transferencia</h3>
+<!-- ========== DETALLE ========== -->
+<app-modal [isOpen]="!!detail()" (closed)="detail.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    @if (detail(); as t) {
+    <div class="flex flex-wrap items-center gap-3 pe-12">
+      <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ t.fromWarehouse.nombre }} → {{ t.toWarehouse.nombre }}</h3>
+      <app-status-badge [status]="t.estado" [tone]="statusTone(t.estado)" [label]="statusLabel(t.estado)" />
+    </div>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Creado el {{ t.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}{{ t.user ? ' por ' + t.user.nombre : '' }}</p>
+    }
   </div>
-  <div data-modal-body class="min-h-0 space-y-4 px-4 py-5 sm:px-6">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+    @if (detail(); as t) {
+    <dl class="grid gap-4 text-sm sm:grid-cols-3">
       <div>
-        <app-label required>Almacén origen</app-label>
-        <div class="flex items-center gap-2">
-          <app-form-select
-            className="flex-1"
-            [value]="fromWarehouseId()"
-            [options]="warehouseOptions()"
-            [disabled]="createPending()"
-            (valueChange)="fromWarehouseId.set($event)"
-          />
-          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="fromWarehouseId.set($event.id)" />
-        </div>
+        <dt class="text-xs text-gray-500 dark:text-gray-400">Despachado</dt>
+        <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ t.fechaEnvio ? (t.fechaEnvio | appDate: 'dd/MM/yyyy HH:mm') : '—' }}</dd>
       </div>
       <div>
-        <app-label required>Almacén destino</app-label>
-        <div class="flex items-center gap-2">
-          <app-form-select
-            className="flex-1"
-            [value]="toWarehouseId()"
-            [options]="warehouseOptions()"
-            [disabled]="createPending()"
-            (valueChange)="toWarehouseId.set($event)"
-          />
-          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="toWarehouseId.set($event.id)" />
-        </div>
+        <dt class="text-xs text-gray-500 dark:text-gray-400">Recibido</dt>
+        <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ t.fechaRecepcion ? (t.fechaRecepcion | appDate: 'dd/MM/yyyy HH:mm') : '—' }}</dd>
       </div>
       <div>
-        <app-label>Guía (opcional)</app-label>
-        <app-input-field [maxLength]="30"
-          className="mt-2"
-          [disabled]="createPending()"
-          [value]="guiaNumero()"
-          (valueChange)="guiaNumero.set($event + '')"
-        />
+        <dt class="text-xs text-gray-500 dark:text-gray-400">Guía</dt>
+        <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ t.guiaNumero || '—' }}</dd>
       </div>
-      <div class="md:col-span-2">
-        <app-label>Comentario</app-label>
-        <app-text-area className="mt-2" [maxLength]="500" [rows]="2" [disabled]="createPending()" [value]="comentario()" (valueChange)="comentario.set($event)" />
-      </div>
-    </div>
-
-    <div class="rounded-lg border border-gray-100 p-4 dark:border-gray-800">
-      <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Agregar ítem</p>
-      @if (draftProductId()) {
-        <p class="mb-2 text-theme-sm text-brand-600">{{ draftProductLabel() }}</p>
-      } @else {
-        <div class="mb-2 flex gap-2">
-          <app-input-field
-            className="flex-1"
-            placeholder="Buscar producto"
-            [value]="productSearch()"
-            (valueChange)="productSearch.set($event + '')"
-            (keydown.enter)="$event.preventDefault(); searchProducts()"
-          />
-          <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
+      @if (t.comentario) {
+        <div class="sm:col-span-3">
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Comentario</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ t.comentario }}</dd>
         </div>
-        @if (productOptions().length > 0) {
-          <app-option-list class="mb-2">
-            @for (product of productOptions(); track product.id) {
-              <app-option-item (optionSelect)="selectProduct(product)">{{ product.nombre }} ({{ product.codigoInterno ?? 'sin código' }})</app-option-item>
-            }
-          </app-option-list>
-        }
       }
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div>
-          <app-label>Lote (opc.)</app-label>
-          <app-input-field [maxLength]="120"
-            className="mt-2"
-            [value]="draftLotCode()"
-            (valueChange)="draftLotCode.set($event + '')"
-          />
-        </div>
-        <div>
-          <app-label required>Cantidad</app-label>
-          <app-input-field min="0"
-            className="mt-2"
-            type="number"
-            [value]="draftQuantity()"
-            (valueChange)="draftQuantity.set(+$event || 0)"
-          />
-        </div>
-        <div class="flex items-end">
-          <app-button startIconName="mdi:plus" size="sm" variant="outline" (btnClick)="addDraftItem()">Agregar línea</app-button>
-        </div>
-      </div>
-    </div>
-
-    @if (draftItems().length > 0) {
-      <table class="min-w-full text-left text-theme-sm">
-        <thead>
-          <tr class="border-b border-gray-100 dark:border-gray-800">
-            <th class="py-2 text-theme-xs text-gray-500">Producto</th>
-            <th class="py-2 text-theme-xs text-gray-500">Lote</th>
-            <th class="py-2 text-theme-xs text-gray-500">Cant.</th>
-            <th class="py-2"></th>
+    </dl>
+    <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+      <table class="w-full min-w-[480px] text-sm text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+          <tr>
+            <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
           </tr>
         </thead>
         <tbody>
-          @for (item of draftItems(); track $index; let i = $index) {
-            <tr class="border-b border-gray-50">
-              <td class="py-2">{{ item.productLabel }}</td>
-              <td class="py-2">{{ item.codigoLote || '—' }}</td>
-              <td class="py-2">{{ item.cantidad }}</td>
-              <td class="py-2 text-end">
-                <app-button variant="link-danger" (btnClick)="removeDraftItem(i)">Quitar</app-button>
+          @for (item of t.items; track item.id) {
+            <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+              <td class="px-4 py-2">
+                <span class="text-gray-800 dark:text-white/90">{{ item.product.nombre }}</span>
+                @if (item.product.codigoInterno) {
+                  <span class="block text-xs text-gray-500 dark:text-gray-400">Cód. {{ item.product.codigoInterno }}</span>
+                }
               </td>
+              <td class="px-4 py-2">{{ item.codigoLote || '—' }}</td>
+              <td class="px-4 py-2 text-end tabular-nums">{{ +item.cantidad }}</td>
             </tr>
           }
         </tbody>
       </table>
+    </div>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    @if (detail(); as t) {
+    <app-button variant="outline" (btnClick)="detail.set(null)">Cerrar</app-button>
+    <ng-container *appHasPermission="'inventory.write'">
+      @if (t.estado === 'BORRADOR') {
+        <app-button variant="danger" startIconName="mdi:cancel" (btnClick)="ask(t, 'cancel')">Anular</app-button>
+        <app-button startIconName="mdi:truck-delivery-outline" (btnClick)="ask(t, 'dispatch')">Despachar</app-button>
+      }
+      @if (t.estado === 'EN_TRANSITO') {
+        <app-button startIconName="mdi:package-down" (btnClick)="ask(t, 'receive')">Recibir</app-button>
+      }
+    </ng-container>
+    }
+  </div>
+</app-modal>
+
+<!-- ========== CONFIRMAR ACCIÓN ========== -->
+<app-modal [isOpen]="!!pendingAction()" (closed)="closeAction()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ actionCopy()?.title }}</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    @if (pendingAction(); as p) {
+      @switch (p.action) {
+        @case ('dispatch') {
+          ¿Despachar {{ p.row.items.length }} producto(s) de <strong>{{ p.row.fromWarehouse.nombre }}</strong> a <strong>{{ p.row.toWarehouse.nombre }}</strong>? El stock se descuenta ahora del almacén de origen y el traslado queda en tránsito hasta que lo recibas.
+        }
+        @case ('receive') {
+          ¿Confirmar que llegó la mercadería a <strong>{{ p.row.toWarehouse.nombre }}</strong>? Entrará al stock de ese almacén con sus mismos lotes.
+        }
+        @case ('cancel') {
+          ¿Anular este borrador de {{ p.row.fromWarehouse.nombre }} a {{ p.row.toWarehouse.nombre }}? El stock no se mueve y no se puede deshacer.
+        }
+        @case ('guia') {
+          ¿Programar la guía de remisión electrónica de este traslado para SUNAT? Se usa la configuración de facturación de tu establecimiento.
+        }
+      }
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="createPending()" (btnClick)="closeCreateModal()">Cancelar</app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="createPending()" [loading]="createPending()" (btnClick)="processCreate()">
-      {{ createPending() ? 'Guardando…' : 'Crear borrador' }}
-    </app-button>
+    <app-button variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="closeAction()">Cancelar</app-button>
+    <app-button
+      [variant]="pendingAction()?.action === 'cancel' ? 'danger' : 'primary'"
+      [startIconName]="actionCopy()?.icon ?? ''"
+      [disabled]="actionMutation.isPending()"
+      [loading]="actionMutation.isPending()"
+      (btnClick)="runAction()"
+    >{{ actionCopy()?.button }}</app-button>
+  </div>
+</app-modal>
+
+<!-- ========== NUEVO TRASLADO ========== -->
+<app-modal [isOpen]="createOpen()" (closed)="closeCreate()" className="w-full max-w-4xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo traslado</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se guarda como borrador: el stock no se mueve hasta que lo despachas.</p>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    <div class="space-y-8">
+      <app-form-section title="Origen y destino" [cols]="2">
+        <div class="flex items-start gap-2">
+          <app-form-select
+            class="min-w-0 flex-1"
+            label="Sale de"
+            [required]="true"
+            helpText="Almacén de donde sale la mercadería. Los lotes se eligen de este almacén."
+            placeholder="Seleccionar"
+            [value]="fromWarehouseId()"
+            [options]="warehouseOptions()"
+            [error]="!!createErrors().from"
+            [hint]="createErrors().from || ''"
+            (valueChange)="setFrom($event)"
+          />
+          <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="setFrom($event.id)" /></div>
+        </div>
+        <div class="flex items-start gap-2">
+          <app-form-select
+            class="min-w-0 flex-1"
+            label="Llega a"
+            [required]="true"
+            helpText="Almacén donde entrará la mercadería al recibirla."
+            placeholder="Seleccionar"
+            [value]="toWarehouseId()"
+            [options]="warehouseOptions()"
+            [error]="!!createErrors().to"
+            [hint]="createErrors().to || ''"
+            (valueChange)="setTo($event)"
+          />
+          <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="setTo($event.id)" /></div>
+        </div>
+      </app-form-section>
+
+      <section>
+        <div class="mb-4">
+          <h4 class="text-base font-medium text-gray-800 dark:text-white/90">Productos <span class="text-error-500" aria-hidden="true">*</span></h4>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Busca el producto, indica cuánto mueves y, si maneja lotes, de cuál.</p>
+        </div>
+
+        @if (draft(); as d) {
+          <div class="rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/5">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p class="text-sm font-medium text-gray-800 dark:text-white/90">
+                {{ d.nombre }}
+                @if (d.codigoInterno) {
+                  <span class="text-xs font-normal text-gray-500 dark:text-gray-400">· Cód. {{ d.codigoInterno }}</span>
+                }
+              </p>
+              <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="cancelDraft()">Cambiar</app-button>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-3">
+              @if (d.manejaLotes) {
+                <app-suggest-input
+                  class="sm:col-span-2"
+                  label="Lote"
+                  [required]="true"
+                  helpText="Lotes con stock en el almacén de origen. Se mueven con su misma fecha de vencimiento."
+                  emptyText="No hay lotes con stock de este producto en el origen."
+                  [maxLength]="120"
+                  [value]="d.codigoLote"
+                  [options]="lotOptions()"
+                  [loading]="lotsQuery.isFetching()"
+                  (valueChange)="patchDraft({ codigoLote: $event })"
+                  (searchChange)="draftLotSearch.set($event)"
+                  (selected)="patchDraft({ codigoLote: $event.value })"
+                />
+              } @else {
+                <p class="flex items-center text-sm text-gray-500 sm:col-span-2 dark:text-gray-400">Este producto no maneja lotes.</p>
+              }
+              <app-input-field label="Cantidad" [isRequired]="true" type="number" min="0" step="1" [value]="d.cantidad" (valueChange)="patchDraft({ cantidad: +$event || 0 })" />
+            </div>
+            @if (draftError()) {
+              <p class="mt-2 text-xs font-medium text-error-600 dark:text-error-400">{{ draftError() }}</p>
+            }
+            <div class="mt-4 flex justify-end">
+              <app-button size="sm" startIconName="mdi:plus" (btnClick)="addDraft()">Agregar al traslado</app-button>
+            </div>
+          </div>
+        } @else {
+          <app-search-select
+            label="Agregar producto"
+            helpText="Busca por nombre, código interno o código de barras."
+            placeholder="Escribe para buscar"
+            emptyText="No se encontró ningún producto."
+            [resetToken]="pickerReset()"
+            [options]="pickerOptions()"
+            [loading]="pickerQuery.isFetching()"
+            (searchChange)="pickerTerm.set($event)"
+            (selected)="pickProduct($event.value)"
+          />
+        }
+
+        @if (lines().length === 0) {
+          <p
+            class="mt-4 rounded-[10px] border border-dashed px-4 py-6 text-center text-sm"
+            [class]="createErrors().lines ? 'border-error-500 text-error-600 dark:text-error-400' : 'border-gray-300 text-gray-500 dark:border-gray-700 dark:text-gray-400'"
+          >{{ createErrors().lines || 'Todavía no agregas productos.' }}</p>
+        } @else {
+          <div class="mt-4 max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+            <table class="w-full min-w-[480px] text-sm text-gray-700 dark:text-gray-300">
+              <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+                <tr>
+                  <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                  <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
+                  <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+                  <th class="px-4 py-2"><span class="sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of lines(); track $index; let i = $index) {
+                  <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                    <td class="px-4 py-2 text-gray-800 dark:text-white/90">{{ line.nombre }}</td>
+                    <td class="px-4 py-2">{{ line.codigoLote || '—' }}</td>
+                    <td class="px-4 py-2 text-end tabular-nums">{{ line.cantidad }}</td>
+                    <td class="px-4 py-2 text-end">
+                      <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:close" [tooltip]="'Quitar ' + line.nombre" (btnClick)="removeLine(i)" />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <app-form-section title="Más datos" description="Opcional." [cols]="2">
+        <app-input-field label="N.º de guía" helpText="Si ya tienes una guía de remisión física, anota su número. La electrónica se emite después de despachar." [maxLength]="30" [value]="guiaNumero()" (valueChange)="guiaNumero.set($event + '')" />
+        <app-text-area label="Comentario" helpText="Motivo del traslado u otra nota." [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
+      </app-form-section>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="closeCreate()">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">
+        {{ createMutation.isPending() ? 'Guardando…' : 'Guardar borrador' }}
+      </app-button>
+    </div>
   </div>
 </app-modal>

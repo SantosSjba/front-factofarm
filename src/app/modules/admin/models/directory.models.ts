@@ -1895,7 +1895,10 @@ export interface KardexLineDto {
   fromColdStorage?: boolean;
 }
 
-export type KardexListResponseDto = PaginatedResponseDto<KardexLineDto>;
+export type KardexListResponseDto = PaginatedResponseDto<KardexLineDto> & {
+  /** Saldo antes de la primera fila de esta página (solo en el kardex activo). */
+  saldoInicial?: string;
+};
 
 export interface KardexFiltersRequest {
   productId: string;

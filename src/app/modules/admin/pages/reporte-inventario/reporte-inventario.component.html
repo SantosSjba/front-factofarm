@@ -1,279 +1,255 @@
-﻿<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Reporte de inventario
-  </h1>
-</app-page-toolbar>
-
-<div class="mb-4 flex flex-wrap gap-2">
-  <app-button startIconName="mdi:cash-multiple" size="sm" [variant]="activeTab() === 'valorizacion' ? 'primary' : 'outline'" (btnClick)="setTab('valorizacion')">
-    Valorización
-  </app-button>
-  <app-button startIconName="mdi:clipboard-list-outline" size="sm" [variant]="activeTab() === 'conteo' ? 'primary' : 'outline'" (btnClick)="setTab('conteo')">
-    Conteo físico
-  </app-button>
-  <app-button startIconName="mdi:snowflake-thermometer" size="sm" [variant]="activeTab() === 'zonas' ? 'primary' : 'outline'" (btnClick)="setTab('zonas')">
-    Zonas BPA
-  </app-button>
-</div>
-
-@if (activeTab() === 'valorizacion') {
-  @let valuationState = valuationQuery | queryPageState: valuationTotal();
-
-  <div class="mb-4 max-w-md">
-    <app-label>Almacén</app-label>
-    <app-form-select
-      className="mt-2"
-      [value]="warehouseId()"
-      [options]="warehouseOptions()"
-      (valueChange)="onWarehouseChange($event)"
-    />
-  </div>
-
-  <app-component-card title="Inventario valorizado (PEPS / promedio)" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
-    [loading]="valuationState.loading"
-    [error]="valuationState.error"
-    [empty]="valuationState.empty"
-    emptyTitle="Sin stock valorizable"
-    (retry)="valuationQuery.refetch()">
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-left">
-        <thead class="border-b border-gray-100 dark:border-gray-800">
-          <tr>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Producto</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Almacén</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Método</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Stock</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Costo unit.</th>
-            <th class="px-4 py-3 text-theme-xs text-gray-500">Valor total</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          @for (row of valuationRows(); track row.productId + row.almacen) {
-            <tr>
-              <td class="px-4 py-3 text-theme-sm">{{ row.producto }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ row.metodoValoracion }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ formatQty(row.stock) }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.costoUnitario) }}</td>
-              <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.valorTotal) }}</td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="6" class="px-4 py-6 text-center text-theme-sm text-gray-500">
-                Sin coincidencias para los filtros aplicados.
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-    <p class="border-t border-gray-100 px-4 py-3 text-theme-sm font-medium dark:border-gray-800">
-      Total página: {{ formatMoney(valorTotalPagina()) }}
-    </p>
-  </app-component-card>
-
-  <app-pagination
-    class="mt-4"
-    [currentPage]="valuationPage()"
-    [totalItems]="valuationTotal()"
-    [pageSize]="itemsPerPage"
-    (currentPageChange)="onValuationPageChange($event)"
-  />
-}
-
-@if (activeTab() === 'conteo') {
-  @let countsState = countsQuery | queryPageState: countsTotal();
-
-  <div class="mb-6 grid grid-cols-1 gap-4 rounded-xl border border-gray-100 p-4 md:grid-cols-3 dark:border-gray-800">
-    <div>
-      <app-label>Almacén a contar</app-label>
-      <div class="flex items-center gap-2">
-        <app-form-select
-          className="flex-1"
-          [value]="countWarehouseId()"
-          [options]="warehouseOptions()"
-          (valueChange)="countWarehouseId.set($event)"
-        />
-        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="countWarehouseId.set($event.id)" />
-      </div>
-    </div>
-    <div class="md:col-span-2">
-      <app-label>Comentario</app-label>
-      <app-input-field className="mt-2" [value]="countComment()" (valueChange)="countComment.set($event + '')" />
-    </div>
-    <div class="md:col-span-3">
-      <app-button startIconName="mdi:clipboard-list-outline" size="sm" (btnClick)="startCount()">Iniciar conteo físico</app-button>
-    </div>
-  </div>
-
-  @if (activeCountId() && countDetail()) {
-    <app-component-card [title]="'Conteo en curso — ' + countDetail()!.almacen" className="mb-6">
-      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
-        @if (!countProductId()) {
-          <div class="md:col-span-2 flex gap-2">
-            <app-input-field
-              className="flex-1"
-              placeholder="Buscar producto"
-              [value]="countProductSearch()"
-              (valueChange)="countProductSearch.set($event + '')"
-            />
-            <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchCountProducts()">Buscar</app-button>
-          </div>
-        } @else {
-          <p class="md:col-span-2 text-theme-sm text-brand-600">{{ countProductLabel() }}</p>
-        }
-        <app-input-field placeholder="Lote" [value]="countLotCode()" (valueChange)="countLotCode.set($event + '')" />
-        <app-input-field type="number" placeholder="Cant. contada" [value]="countQty()" (valueChange)="countQty.set(+$event || 0)" />
-        <app-button startIconName="mdi:content-save-outline" size="sm" (btnClick)="addCountLine()">Registrar línea</app-button>
-      </div>
-
-      @if (countProductOptions().length > 0) {
-        <app-option-list class="mb-4">
-          @for (p of countProductOptions(); track p.id) {
-            <app-option-item (optionSelect)="selectCountProduct(p)">{{ p.nombre }}</app-option-item>
-          }
-        </app-option-list>
-      }
-
-      <table class="min-w-full text-left text-theme-sm">
-        <thead>
-          <tr class="border-b">
-            <th class="py-2">Producto</th>
-            <th class="py-2">Lote</th>
-            <th class="py-2">Sistema</th>
-            <th class="py-2">Contado</th>
-            <th class="py-2">Diferencia</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of countDetail()!.items; track item.id) {
-            <tr class="border-b border-gray-50">
-              <td class="py-2">{{ item.producto }}</td>
-              <td class="py-2">{{ item.codigoLote || '—' }}</td>
-              <td class="py-2">{{ formatQty(item.stockSistema) }}</td>
-              <td class="py-2">{{ formatQty(item.stockContado) }}</td>
-              <td class="py-2">{{ formatQty(item.diferencia) }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      <div class="mt-4">
-        <app-button startIconName="mdi:flag-checkered" (btnClick)="finalizeCount()">Finalizar y generar ajustes</app-button>
-      </div>
-    </app-component-card>
-  }
-
-  <app-component-card title="Historial de conteos" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
-    [loading]="countsState.loading"
-    [error]="countsState.error"
-    [empty]="countsState.empty"
-    emptyTitle="Sin conteos registrados"
-    (retry)="countsQuery.refetch()">
-    <table class="min-w-full text-left">
-      <thead class="border-b border-gray-100 dark:border-gray-800">
-        <tr>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Fecha</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Almacén</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Estado</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Líneas</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Usuario</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (row of countRows(); track row.id) {
-          <tr class="border-b border-gray-50">
-            <td class="px-4 py-3 text-theme-sm">{{ row.fecha | appDate: 'yyyy-MM-dd HH:mm' }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
-            <td class="px-4 py-3 text-theme-sm">
-              <app-button variant="link" [disabled]="row.estado !== 'EN_PROCESO'" (btnClick)="openCount(row)">{{ row.estado }}</app-button>
-            </td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.itemsCount }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.usuario || '—' }}</td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="5" class="px-4 py-6 text-center text-theme-sm text-gray-500">Sin conteos registrados.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </app-component-card>
-
-  <app-pagination
-    class="mt-4"
-    [currentPage]="countsPage()"
-    [totalItems]="countsTotal()"
-    [pageSize]="itemsPerPage"
-    (currentPageChange)="onCountsPageChange($event)"
-  />
-}
-
-@if (activeTab() === 'zonas') {
-  @let zonesState = zonesQuery | queryPageState: zoneRows().length;
-
-  <div class="mb-4 grid max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
-    <div>
-      <app-label>Almacén</app-label>
-      <div class="flex items-center gap-2">
-        <app-form-select
-          className="flex-1"
-          [value]="zoneWarehouseId()"
-          [options]="warehouseOptions()"
-          (valueChange)="zoneWarehouseId.set($event)"
-        />
-        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="zoneWarehouseId.set($event.id)" />
-      </div>
-    </div>
-    <ng-container *appHasPermission="'inventory.write'">
-    <div>
-      <app-label>Nueva zona</app-label>
-      <app-input-field className="mt-2" [value]="newZoneName()" (valueChange)="newZoneName.set($event + '')" />
-    </div>
-    <div>
-      <app-label>Tipo BPA</app-label>
-      <app-form-select
-        className="mt-2"
-        [value]="newZoneTipo()"
-        [options]="zoneTypeOptions"
-        (valueChange)="newZoneTipo.set($any($event))"
-      />
-    </div>
-    <div class="md:col-span-3">
-      <app-button startIconName="mdi:snowflake-thermometer" size="sm" (btnClick)="createZone()">Agregar zona</app-button>
-    </div>
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Conteo físico</h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <ng-container *appHasPermission="'inventory.adjust'">
+      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nuevo conteo</app-button>
     </ng-container>
   </div>
+</app-page-toolbar>
 
-  <app-component-card title="Mapa de zonas" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
-    [loading]="zoneWarehouseId() ? zonesState.loading : false"
-    [error]="zoneWarehouseId() ? zonesState.error : null"
-    [empty]="zoneWarehouseId() ? zonesState.empty : false"
-    emptyTitle="Sin zonas registradas"
-    [showRetry]="!!zoneWarehouseId()"
-    (retry)="zonesQuery.refetch()">
-    @if (!zoneWarehouseId()) {
-      <p class="px-4 py-6 text-theme-sm text-gray-500">Seleccione un almacén para ver sus zonas.</p>
-    } @else {
-      <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
-        @for (zone of zoneRows(); track zone.id) {
-          <div
-            class="rounded-xl border border-gray-200 p-4 dark:border-gray-700"
-            [class.opacity-50]="!zone.activo"
-          >
-            <p class="font-medium text-gray-800 dark:text-white/90">{{ zone.nombre }}</p>
-            <p class="mt-1 text-theme-xs text-gray-500">{{ zone.tipo }}</p>
-            <p class="mt-2 text-theme-xs" [class.text-success-600]="zone.activo" [class.text-gray-400]="!zone.activo">
-              {{ zone.activo ? 'Activa' : 'Inactiva' }}
-            </p>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="conteo-fisico">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Sirve para revisar que lo que hay en el estante coincida con el sistema. Empieza un <strong>conteo</strong> del almacén.</li>
+    <li>Busca cada producto y escribe cuántos contaste; si maneja lotes, cuenta por lote. Si vuelves a registrar el mismo, se reemplaza.</li>
+    <li>Al <strong>finalizar</strong>, el sistema ajusta el stock de los productos con diferencia. Los ajustes grandes esperan aprobación en Inventario → «Ajustes pendientes».</li>
+  </ol>
+</app-help-panel>
+
+@if (activeCountId()) {
+  @let c = count();
+  <app-component-card
+    [title]="c ? 'Conteo de ' + c.almacen : 'Conteo'"
+    [desc]="c ? (c.items.length + ' producto(s) contados' + (c.comentario ? ' · ' + c.comentario : '')) : ''"
+    [loading]="countQuery.isPending()"
+    [error]="countQuery.isError() ? 'No se pudo cargar el conteo.' : null"
+    (retry)="countQuery.refetch()"
+  >
+    <div data-card-header-end class="flex items-center gap-2">
+      @if (c) {
+        <app-status-badge [status]="c.estado" [tone]="statusTone(c.estado)" [label]="statusLabel(c.estado)" />
+      }
+      <app-button size="sm" variant="outline" startIconName="mdi:arrow-left" (btnClick)="closeCount()">Volver a la lista</app-button>
+    </div>
+
+    @if (c) {
+      <div class="space-y-6">
+        @if (isEditable()) {
+          <ng-container *appHasPermission="'inventory.adjust'">
+            @if (line(); as l) {
+              <div class="rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/5">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ l.nombre }}</p>
+                  <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="cancelLine()">Cambiar</app-button>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-3">
+                  @if (l.manejaLotes) {
+                    <app-suggest-input
+                      class="sm:col-span-2"
+                      label="Lote"
+                      [required]="true"
+                      helpText="Elige el lote que contaste. Si tienes uno que no está en el sistema, escríbelo."
+                      emptyText="Lote no registrado: se contará igual."
+                      [maxLength]="120"
+                      [value]="l.lote"
+                      [options]="lotOptions()"
+                      [loading]="lotsQuery.isFetching()"
+                      (valueChange)="patchLine({ lote: $event })"
+                      (searchChange)="lotSearch.set($event)"
+                      (selected)="patchLine({ lote: $event.value })"
+                    />
+                  } @else {
+                    <p class="flex items-center text-sm text-gray-500 sm:col-span-2 dark:text-gray-400">Este producto no maneja lotes.</p>
+                  }
+                  <app-input-field label="Cantidad contada" [isRequired]="true" type="number" min="0" step="1" placeholder="0" [value]="l.cantidad ?? ''" (valueChange)="patchLine({ cantidad: $event === '' ? null : +$event })" />
+                </div>
+                @if (lineError()) {
+                  <p class="mt-2 text-xs font-medium text-error-600 dark:text-error-400">{{ lineError() }}</p>
+                }
+                <div class="mt-4 flex justify-end">
+                  <app-button size="sm" startIconName="mdi:check" [loading]="upsertMutation.isPending()" [disabled]="upsertMutation.isPending()" (btnClick)="saveLine()">Registrar</app-button>
+                </div>
+              </div>
+            } @else {
+              <app-search-select
+                label="Producto contado"
+                helpText="Busca por nombre, código interno o código de barras. Funciona con lector de código de barras."
+                placeholder="Escribe o escanea"
+                emptyText="No se encontró ningún producto."
+                [resetToken]="pickerReset()"
+                [options]="pickerOptions()"
+                [loading]="pickerQuery.isFetching()"
+                (searchChange)="pickerTerm.set($event)"
+                (selected)="pickProduct($event.value)"
+              />
+            }
+          </ng-container>
+        } @else if (c.estado === 'FINALIZADO') {
+          <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-4 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">Este conteo ya se finalizó y sus ajustes se aplicaron. Solo se puede consultar.</p>
+        }
+
+        @if (c.items.length) {
+          @let s = summary();
+          <div class="flex flex-wrap gap-2 text-sm">
+            <app-status-badge status="IGUAL" tone="success" [label]="s.iguales + ' coinciden'" />
+            <app-status-badge status="SOBRA" tone="info" [label]="s.sobrantes + ' con sobrante'" />
+            <app-status-badge status="FALTA" tone="error" [label]="s.faltantes + ' con faltante'" />
           </div>
-        } @empty {
-          <p class="col-span-full px-4 py-6 text-center text-theme-sm text-gray-500">Sin zonas registradas.</p>
+        }
+
+        <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+          <table class="w-full min-w-[620px] text-sm text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+              <tr>
+                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
+                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span class="inline-flex items-center gap-1">En sistema <app-help-hint text="Stock que tenía el sistema cuando registraste el producto." [iconSize]="14" /></span>
+                </th>
+                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Contado</th>
+                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of c.items; track item.id) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                  <td class="px-4 py-2">
+                    <span class="text-gray-800 dark:text-white/90">{{ item.producto }}</span>
+                    @if (item.codigoInterno) {
+                      <span class="block text-xs text-gray-500 dark:text-gray-400">Cód. {{ item.codigoInterno }}</span>
+                    }
+                  </td>
+                  <td class="px-4 py-2">{{ item.codigoLote || '—' }}</td>
+                  <td class="px-4 py-2 text-end tabular-nums">{{ num(item.stockSistema) | number: '1.0-4' }}</td>
+                  <td class="px-4 py-2 text-end tabular-nums">{{ num(item.stockContado) | number: '1.0-4' }}</td>
+                  <td class="px-4 py-2 text-end font-semibold tabular-nums" [class.text-success-600]="num(item.diferencia) === 0" [class.text-blue-light-500]="num(item.diferencia) > 0" [class.text-error-600]="num(item.diferencia) < 0">
+                    {{ num(item.diferencia) > 0 ? '+' : '' }}{{ num(item.diferencia) | number: '1.0-4' }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Todavía no registras productos en este conteo.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (isEditable()) {
+          <ng-container *appHasPermission="'inventory.adjust'">
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+              <p class="me-auto text-xs text-gray-500 dark:text-gray-400">Puedes dejar el conteo abierto y continuarlo después.</p>
+              <app-button startIconName="mdi:flag-checkered" [disabled]="!c.items.length" (btnClick)="finalizeOpen.set(true)">Finalizar y ajustar stock</app-button>
+            </div>
+          </ng-container>
         }
       </div>
     }
   </app-component-card>
+} @else {
+  @let countsState = countsQuery | queryPageState: countsTotal();
+  <app-component-card
+    title="Conteos"
+    [desc]="countsTotal() ? countsTotal() + ' en total' : ''"
+    className="overflow-hidden"
+    [bodyClass]="'p-0 sm:p-0'"
+    [loading]="countsState.loading"
+    [error]="countsState.error"
+    [empty]="countsState.empty"
+    emptyTitle="Aún no hay conteos"
+    emptyHint="Usa «Nuevo conteo» para revisar el stock de un almacén."
+    (retry)="countsQuery.refetch()"
+  >
+    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="max-w-full overflow-x-auto">
+        <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+            <tr>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Productos</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            @for (row of countRows(); track row.id) {
+              <tr>
+                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                  {{ row.fecha | appDate: 'dd/MM/yyyy HH:mm' }}
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.usuario ?? '' }}</span>
+                </td>
+                <td class="px-5 py-4 text-theme-sm">
+                  {{ row.almacen }}
+                  @if (row.comentario) {
+                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.comentario }}</span>
+                  }
+                </td>
+                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ row.itemsCount }}</td>
+                <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
+                <td class="px-5 py-4 text-end">
+                  <app-button size="sm" [variant]="row.estado === 'EN_PROCESO' ? 'primary' : 'outline'" [startIconName]="row.estado === 'EN_PROCESO' ? 'mdi:clipboard-edit-outline' : 'mdi:eye-outline'" (btnClick)="openRow(row)">
+                    {{ row.estado === 'EN_PROCESO' ? 'Continuar' : 'Ver' }}
+                  </app-button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin conteos.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </app-component-card>
+  <app-pagination [currentPage]="countsPage()" [totalItems]="countsTotal()" [pageSize]="itemsPerPage" (currentPageChange)="countsPage.set($event)" />
 }
+
+<!-- ========== NUEVO CONTEO ========== -->
+<app-modal [isOpen]="createOpen()" (closed)="!createMutation.isPending() && createOpen.set(false)" className="w-full max-w-xl">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo conteo</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Mientras cuentas, el stock no cambia: se ajusta al finalizar.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-5 sm:px-8">
+    <div class="flex items-start gap-2">
+      <app-form-select
+        class="min-w-0 flex-1"
+        label="Almacén a contar"
+        [required]="true"
+        placeholder="Seleccionar"
+        [value]="newWarehouseId()"
+        [options]="warehouseOptions()"
+        [error]="!!newError()"
+        [hint]="newError()"
+        (valueChange)="newWarehouseId.set($event); newError.set('')"
+      />
+      <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="newWarehouseId.set($event.id)" /></div>
+    </div>
+    <app-text-area label="Comentario" helpText="Por ejemplo, qué estantes vas a contar. Opcional." [maxLength]="500" [rows]="2" [value]="newComment()" (valueChange)="newComment.set($event)" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="createOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:clipboard-list-outline" [loading]="createMutation.isPending()" [disabled]="createMutation.isPending()" (btnClick)="submitCreate()">Empezar conteo</app-button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- ========== FINALIZAR ========== -->
+<app-modal [isOpen]="finalizeOpen()" (closed)="!finalizeMutation.isPending() && finalizeOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Finalizar conteo</h3>
+  </div>
+  <div data-modal-body class="space-y-3 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    @let s = summary();
+    <p>Se ajustará el stock de los productos con diferencia: <strong>{{ s.sobrantes }}</strong> con sobrante y <strong>{{ s.faltantes }}</strong> con faltante.</p>
+    <ul class="list-disc space-y-1 ps-5 text-gray-600 dark:text-gray-400">
+      <li>Solo se ajustan los productos que registraste; los demás no cambian.</li>
+      <li>Los ajustes grandes quedan pendientes de aprobación y el conteo sigue abierto hasta aprobarlos.</li>
+    </ul>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="finalizeMutation.isPending()" (btnClick)="finalizeOpen.set(false)">Revisar de nuevo</app-button>
+    <app-button startIconName="mdi:flag-checkered" [loading]="finalizeMutation.isPending()" [disabled]="finalizeMutation.isPending()" (btnClick)="finalizeMutation.mutate()">Finalizar y ajustar</app-button>
+  </div>
+</app-modal>

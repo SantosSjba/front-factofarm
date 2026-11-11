@@ -1,128 +1,217 @@
-﻿<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+﻿<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Lotes
-  </h1>
-  <div data-toolbar-actions>
-    <a
-      routerLink="/salida-venta-lotes"
-      class="inline-flex items-center rounded-lg bg-brand-500 px-3 py-2 text-theme-xs font-medium text-white hover:bg-brand-600"
-    >
-      Salida venta (FEFO/FIFO)
-    </a>
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Lotes</h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-button size="sm" variant="outline" startIconName="mdi:sort-calendar-ascending" (btnClick)="openSimulator()">Simular salida</app-button>
   </div>
 </app-page-toolbar>
 
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="lotes">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Muestra el stock de cada lote con su vencimiento, para que vendas o devuelvas a tiempo lo que está por vencer.</li>
+    <li>Al vender, el Punto de Venta descuenta solo del lote que corresponde: primero el que vence antes (FEFO) o el que entró primero (FIFO), según tu establecimiento.</li>
+    <li>Con <strong>«Simular salida»</strong> ves de qué lotes saldría una cantidad, sin mover stock. Si una fecha está mal, corrígela desde el menú del lote.</li>
+  </ol>
+</app-help-panel>
+
 <app-list-filters
+  collapsible
+  [activeCount]="activeFilterCount()"
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
+  [selectShowPlaceholder]="false"
   searchPlaceholder="Buscar lote o producto"
-  selectPlaceholder="Filtrar por"
+  selectLabel="Buscar por"
   clearLabel="Limpiar"
   (searchValueChange)="onSearchChange($event)"
-  (selectValueChange)="onFilterFieldChange($event)"
+  (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
-/>
-
-<div class="mb-4 grid gap-4 sm:grid-cols-2">
-  <div>
-    <app-label for="lotes-1">Almacén</app-label>
-    <app-form-select id="lotes-1"
-      class="mt-1 block"
-      [options]="warehouseOptions()"
-      [value]="warehouseId()"
-      (valueChange)="onWarehouseChange($event)"
-    />
-  </div>
-  <div>
-    <app-label for="lotes-2">Vencimiento</app-label>
-    <app-form-select id="lotes-2"
-      className="mt-1"
-      [showPlaceholder]="false"
-      [options]="expiryOptions"
-      [value]="expiryFilter()"
-      (valueChange)="onExpiryChange($any($event))"
-    />
-  </div>
-</div>
+>
+  <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseFilterOptions()" (valueChange)="setWarehouse($event)" />
+  <app-form-select label="Vencimiento" [showPlaceholder]="false" [value]="expiryFilter()" [options]="expiryOptions" (valueChange)="setExpiry($event)" />
+</app-list-filters>
 
 @let listState = lotsQuery | queryPageState: totalRows();
 
-<app-component-card title="Stock por lote" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+<app-component-card
+  title="Stock por lote"
+  [desc]="totalRows() ? totalRows() + ' lotes con stock' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay lotes registrados"
-  (retry)="refetchRows()">
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-left">
-      <thead class="border-b border-gray-100 dark:border-white/[0.05]">
-        <tr>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Producto</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Lote</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Almacén</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Stock</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Costo unit.</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Vencimiento</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-        @for (row of rows(); track row.id) {
-            <tr>
+  [emptyTitle]="searchTerm().trim() || activeFilterCount() ? 'Sin lotes con esos filtros' : 'Aún no hay lotes'"
+  [emptyHint]="searchTerm().trim() || activeFilterCount() ? 'Prueba con otro texto o limpia los filtros.' : 'Los lotes se crean al recibir mercadería de productos que manejan lotes.'"
+  (retry)="lotsQuery.refetch()"
+>
+  <app-color-legend
+    data-card-header-end
+    ariaLabel="Leyenda de vencimientos"
+    [items]="legend"
+    helpText="El color se basa en la fecha de vencimiento del lote frente a hoy."
+  />
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vencimiento</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            @let state = expiryState(row.fechaVencimiento);
+            <tr [attr.data-row-tone]="state.row">
               <td class="px-5 py-4 text-theme-sm">
-                <div class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</div>
-                <div class="text-theme-xs text-gray-500">{{ row.codigoInterno || '—' }} · {{ row.categoria }}</div>
+                <span class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.codigoInterno ? 'Cód. ' + row.codigoInterno + ' · ' : '' }}{{ row.categoria }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoLote }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
+              <td class="px-5 py-4 text-theme-sm font-medium">{{ row.codigoLote }}</td>
+              <td class="px-5 py-4 text-theme-sm">
                 {{ row.almacen }}
-                <div class="text-theme-xs text-gray-500">{{ row.establecimiento }}</div>
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.establecimiento }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.stock }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.costoUnitario ?? '—' }}</td>
-              <td
-                class="px-5 py-4 text-theme-sm"
-                [class.text-error-600]="isExpired(row.fechaVencimiento)"
-              >
-                {{ row.fechaVencimiento ? row.fechaVencimiento.slice(0, 10) : '—' }}
-                <ng-container *appHasPermission="'inventory.write'">
-                  @if (editingLotId() === row.id) {
-                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                      <app-input-field type="date" ariaLabel="Fecha de vencimiento"
-                        [value]="expiryDraft()" [disabled]="savingExpiry()"
-                        (valueChange)="expiryDraft.set('' + $event)" />
-                      <app-button size="sm" variant="link" [loading]="savingExpiry()" [disabled]="!expiryDraft()"
-                        (btnClick)="saveExpiry(row.id)">Guardar</app-button>
-                      <app-button size="sm" variant="link" [disabled]="savingExpiry()"
-                        (btnClick)="editingLotId.set(null)">Cancelar</app-button>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.stock) | number: '1.0-4' }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.costoUnitario != null ? (num(row.costoUnitario) | number: '1.2-4') : '—' }}</td>
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                {{ formatDate(row.fechaVencimiento) }}
+                <span class="mt-1 block"><app-status-badge [status]="state.label" [tone]="state.tone" [label]="state.label" /></span>
+              </td>
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones del lote ' + row.codigoLote"></app-button>
                     </div>
-                  } @else {
-                    <app-button size="sm" variant="link" className="ms-2" [disabled]="savingExpiry()"
-                      (btnClick)="editExpiry(row.id, row.fechaVencimiento)">Editar</app-button>
-                  }
-                </ng-container>
+                    <div dropdown-content>
+                      <app-menu-item icon="mdi:sort-calendar-ascending" tooltip="Mira de qué lotes de este producto saldría una venta, sin mover stock." (itemClick)="openSimulator(row)">Simular salida</app-menu-item>
+                      <ng-container *appHasPermission="'inventory.write'">
+                        <app-menu-item icon="mdi:calendar-edit" tooltip="Corrige la fecha si se registró mal. Usa la que figura en el empaque." (itemClick)="openExpiry(row)">Corregir vencimiento</app-menu-item>
+                      </ng-container>
+                    </div>
+                  </app-table-dropdown>
+                </div>
               </td>
             </tr>
-        } @empty {
-          <tr>
-            <td colspan="6" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-              Sin coincidencias para los filtros aplicados.
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </app-component-card>
 
-<app-pagination
-  class="mt-4"
-  [currentPage]="currentPage()"
-  [totalItems]="totalRows()"
-  [pageSize]="itemsPerPage"
-  (currentPageChange)="onPageChange($event)"
-/>
+<app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />
+
+<!-- ========== CORREGIR VENCIMIENTO ========== -->
+<app-modal [isOpen]="!!expiryTarget()" (closed)="!expiryMutation.isPending() && expiryTarget.set(null)" className="w-full max-w-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Corregir vencimiento</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ expiryTarget()?.producto }} · Lote {{ expiryTarget()?.codigoLote }}</p>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-5 sm:px-6">
+    <app-input-field
+      label="Fecha de vencimiento"
+      [isRequired]="true"
+      helpText="Un lote del fabricante tiene una sola fecha: la que figura en el empaque."
+      type="date"
+      [value]="expiryDraft()"
+      [error]="!!expiryError()"
+      [hint]="expiryError()"
+      (valueChange)="expiryDraft.set($event + ''); expiryError.set('')"
+    />
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="expiryMutation.isPending()" (btnClick)="expiryTarget.set(null)">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline" [loading]="expiryMutation.isPending()" [disabled]="expiryMutation.isPending()" (btnClick)="saveExpiry()">Guardar fecha</app-button>
+  </div>
+</app-modal>
+
+<!-- ========== SIMULAR SALIDA ========== -->
+<app-modal [isOpen]="simOpen()" (closed)="simOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Simular salida</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Mira de qué lotes saldría una venta. No mueve stock.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        @if (simProduct(); as p) {
+          <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-400">Producto</p>
+          <div class="flex min-h-11 items-center justify-between gap-3 rounded-[10px] border border-gray-200 px-4 py-2 dark:border-gray-800">
+            <span class="truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ p.nombre }}</span>
+            <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="changeSimProduct()">Cambiar</app-button>
+          </div>
+        } @else {
+          <app-search-select
+            label="Producto"
+            [required]="true"
+            helpText="Solo aparecen productos que manejan lotes."
+            placeholder="Escribe para buscar"
+            emptyText="No se encontró ningún producto con lotes."
+            [resetToken]="simPickerReset()"
+            [options]="simPickerOptions()"
+            [loading]="simPickerQuery.isFetching()"
+            (searchChange)="simPickerTerm.set($event)"
+            (selected)="pickSimProduct($event.value)"
+          />
+        }
+      </div>
+      <app-form-select label="Almacén" [required]="true" placeholder="Seleccionar" [value]="simWarehouseId()" [options]="warehouseOptions()" (valueChange)="simWarehouseId.set($event)" />
+      <app-input-field label="Cantidad a vender" [isRequired]="true" type="number" min="1" step="1" [value]="simQuantity()" (valueChange)="simQuantity.set(+$event || 0)" />
+    </div>
+
+    @if (simProduct() && simWarehouseId() && simQuantity() > 0) {
+      @if (simQuery.isPending()) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">Calculando…</p>
+      } @else if (simQuery.isError()) {
+        <p class="rounded-[10px] border border-warning-300 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">{{ simErrorMessage() }}</p>
+      } @else if (simQuery.data(); as sim) {
+        <div class="flex flex-wrap items-center gap-2 text-sm">
+          <app-status-badge status="METODO" tone="brand" [label]="'Método: ' + sim.metodoAsignacion" />
+          <app-status-badge status="VENCIDOS" [tone]="sim.blockExpiredProductSales ? 'success' : 'warning'" [label]="sim.blockExpiredProductSales ? 'No se venden lotes vencidos' : 'Se permite vender vencidos'" />
+          @if (simAssigned() < simQuantity()) {
+            <app-status-badge status="FALTA" tone="error" [label]="'Solo alcanza para ' + simAssigned()" />
+          }
+        </div>
+        <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+          <table class="w-full min-w-[420px] text-sm text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+              <tr>
+                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Orden</th>
+                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
+                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Vencimiento</th>
+                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Saldría</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of sim.asignacion; track line.lotId; let i = $index) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                  <td class="px-4 py-2 tabular-nums">{{ i + 1 }}.º</td>
+                  <td class="px-4 py-2 font-medium text-gray-800 dark:text-white/90">{{ line.codigoLote }}</td>
+                  <td class="px-4 py-2" [class.text-error-600]="line.vencido">{{ formatDate(line.fechaVencimiento) }}{{ line.vencido ? ' · vencido' : '' }}</td>
+                  <td class="px-4 py-2 text-end font-semibold tabular-nums">{{ num(line.cantidad) | number: '1.0-4' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay lotes con stock para esta venta.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    <app-button variant="outline" (btnClick)="simOpen.set(false)">Cerrar</app-button>
+  </div>
+</app-modal>

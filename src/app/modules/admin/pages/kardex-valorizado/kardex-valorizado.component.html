@@ -1,78 +1,95 @@
-﻿<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Kardex valorizado
-  </h1>
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Inventario valorizado</h1>
 </app-page-toolbar>
 
-<p class="mb-4 text-theme-sm text-gray-500">
-  Valorización de stock por producto y almacén según el método configurado en el establecimiento (PEPS o promedio ponderado).
-</p>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="inventario-valorizado">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Muestra cuánto vale hoy tu mercadería: el stock de cada producto en cada almacén por su costo.</li>
+    <li>El costo se calcula con el método de tu establecimiento: <strong>PEPS</strong> (primero en entrar, primero en salir) o <strong>promedio ponderado</strong>.</li>
+    <li>Para ver las entradas y salidas de un producto con su saldo, usa <strong>Kardex</strong>.</li>
+  </ol>
+</app-help-panel>
 
-<div class="mb-4 max-w-md">
-  <app-label>Almacén</app-label>
-  <app-form-select
-    className="mt-2"
-    [value]="warehouseId()"
-    [options]="warehouseOptions()"
-    (valueChange)="onWarehouseChange($event)"
-  />
-</div>
+<app-list-filters
+  collapsible
+  [showSearch]="false"
+  [showSelect]="false"
+  [activeCount]="warehouseId() ? 1 : 0"
+  clearLabel="Limpiar"
+  (clear)="setWarehouse('')"
+>
+  <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+</app-list-filters>
 
 @let listState = valuationQuery | queryPageState: totalRows();
 
-<app-component-card title="Stock valorizado" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+<app-component-card
+  title="Stock valorizado"
+  [desc]="totalRows() ? totalRows() + ' productos con stock' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="Sin registros de stock valorizado"
-  (retry)="valuationQuery.refetch()">
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-left">
-      <thead class="border-b border-gray-100 dark:border-gray-800">
-        <tr>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Código</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Producto</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Almacén</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Método</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Stock</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Costo unit.</th>
-          <th class="px-4 py-3 text-theme-xs text-gray-500">Valor</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        @for (row of rows(); track row.productId + row.almacen) {
+  emptyTitle="No hay stock para valorizar"
+  emptyHint="Cuando registres ingresos de mercadería, aparecerán aquí."
+  (retry)="valuationQuery.refetch()"
+>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <td class="px-4 py-3 text-theme-sm">{{ row.codigoInterno || '—' }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.producto }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.almacen }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ row.metodoValoracion }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ formatQty(row.stock) }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.costoUnitario) }}</td>
-            <td class="px-4 py-3 text-theme-sm">{{ formatMoney(row.valorTotal) }}</td>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+              <span class="inline-flex items-center gap-1">Método <app-help-hint text="PEPS: el costo de lo que entró primero. Promedio: el costo promedio de todo lo que entró." [iconSize]="14" /></span>
+            </th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Valor</th>
           </tr>
-        } @empty {
-          <tr>
-            <td colspan="7" class="px-4 py-6 text-center text-theme-sm text-gray-500">
-              Sin coincidencias para los filtros aplicados.
-            </td>
-          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.productId + row.almacen) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
+                @if (row.codigoInterno) {
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">Cód. {{ row.codigoInterno }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                {{ row.almacen }}
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.establecimiento }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.metodoValoracion" tone="neutral" [label]="methodLabel(row)" /></td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.stock) | number: '1.0-4' }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.costoUnitario) | number: '1.2-4' }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums text-gray-800 dark:text-white/90">{{ num(row.valorTotal) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+          }
+        </tbody>
+        @if (rows().length) {
+          <tfoot class="border-t border-gray-200 dark:border-gray-800">
+            <tr>
+              <td colspan="5" class="px-5 py-3 text-end text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                <span class="inline-flex items-center gap-1.5">
+                  Total de esta página
+                  <app-help-hint text="Suma de las filas que ves. Cambia de página o filtra por almacén para ver el resto." [iconSize]="14" />
+                </span>
+              </td>
+              <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ pageTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            </tr>
+          </tfoot>
         }
-      </tbody>
-    </table>
+      </table>
+    </div>
   </div>
-  <p class="border-t border-gray-100 px-4 py-3 text-theme-sm font-medium dark:border-gray-800">
-    Total página: {{ formatMoney(valorTotalPagina()) }}
-  </p>
 </app-component-card>
 
-<app-pagination
-  class="mt-4"
-  [currentPage]="currentPage()"
-  [totalItems]="totalRows()"
-  [pageSize]="itemsPerPage"
-  (currentPageChange)="onPageChange($event)"
-/>
+<app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />

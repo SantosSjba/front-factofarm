@@ -1,100 +1,263 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Cadena de frío (BPA)
-  </h1>
+
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Cadena de frío</h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <ng-container *appHasPermission="'inventory.write'">
+      @if (tab() === 'temperaturas') {
+        <app-button size="sm" startIconName="mdi:thermometer-plus" [disabled]="!warehouseId()" (btnClick)="openLog()">Registrar temperatura</app-button>
+      } @else {
+        <app-button size="sm" startIconName="mdi:plus" [disabled]="!warehouseId()" (btnClick)="openZoneForm()">Nueva zona</app-button>
+      }
+    </ng-container>
+  </div>
 </app-page-toolbar>
 
-<p class="mb-4 text-theme-sm text-gray-500">
-  Registro diario de temperatura en zonas refrigeradas. Requerido para cumplimiento BPA.
-</p>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="cadena-frio">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Las Buenas Prácticas de Almacenamiento piden anotar cada día la temperatura de las refrigeradoras. Aquí queda ese registro.</li>
+    <li>Primero crea las <strong>zonas</strong> del almacén (por ejemplo «Refrigeradora 1») como «Refrigerada». Luego registra su temperatura con «Registrar temperatura».</li>
+    <li>Las lecturas fuera de {{ range.min }} a {{ range.max }} °C se resaltan en rojo. Anota en la observación qué hiciste.</li>
+  </ol>
+</app-help-panel>
 
-<div class="grid gap-4 lg:grid-cols-2">
-  @let logsState = logsQuery | queryPageState: (logsQuery.data()?.length ?? 0);
+<app-tab-strip class="mb-4 block" [tabs]="tabs" [activeId]="tab()" (tabChange)="tab.set($any($event))" />
 
-  <app-component-card title="Registrar temperatura">
-    <div class="space-y-4">
-      <div>
-        <app-label required>Almacén</app-label>
-        <div class="flex items-center gap-2">
-          <app-form-select className="flex-1"
-            [options]="warehouseOptions()"
-            [value]="warehouseId()"
-            (valueChange)="warehouseId.set($event); zoneId.set('')"
-          />
-          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id); zoneId.set('')" />
+<div class="mb-5 grid gap-4 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-2 dark:border-gray-800 dark:bg-white/[0.03]">
+  <div class="flex items-start gap-2">
+    <app-form-select class="min-w-0 flex-1" label="Almacén" placeholder="Seleccionar" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+    <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="setWarehouse($event.id)" /></div>
+  </div>
+  @if (tab() === 'temperaturas') {
+    <app-form-select label="Zona refrigerada" placeholder="Seleccionar" [disabled]="!warehouseId()" [value]="zoneId()" [options]="coldZoneOptions()" (valueChange)="zoneId.set($event)" />
+  }
+</div>
+
+@if (!warehouseId()) {
+  <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+    Elige un almacén para empezar.
+  </p>
+} @else if (tab() === 'temperaturas') {
+  @if (!coldZones().length && !zonesQuery.isPending()) {
+    <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      Este almacén no tiene zonas refrigeradas. Créalas en la pestaña «Zonas del almacén».
+    </p>
+  } @else if (!zoneId()) {
+    <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      Elige la zona refrigerada para ver su historial.
+    </p>
+  } @else {
+    @if (lastLog(); as last) {
+      <div class="mb-4 grid gap-3 sm:grid-cols-3">
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Última lectura</p>
+          <p class="mt-1 text-2xl font-semibold tabular-nums" [class.text-error-600]="isOut(last.temperaturaCelsius)" [class.text-gray-800]="!isOut(last.temperaturaCelsius)" [class.dark:text-white]="!isOut(last.temperaturaCelsius)">{{ +last.temperaturaCelsius }} °C</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ last.fecha | appDate: 'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Lecturas mostradas</p>
+          <p class="mt-1 text-2xl font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ logs().length }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Las 100 más recientes</p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Fuera de rango</p>
+          <p class="mt-1 text-2xl font-semibold tabular-nums" [class.text-error-600]="outOfRangeCount() > 0" [class.text-success-600]="outOfRangeCount() === 0">{{ outOfRangeCount() }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Referencia: {{ range.min }} a {{ range.max }} °C</p>
         </div>
       </div>
-      <div>
-        <app-label required>Zona refrigerada</app-label>
-        <div class="flex items-center gap-2">
-          <app-form-select className="flex-1"
-            [options]="zoneOptions()"
-            [value]="zoneId()"
-            (valueChange)="zoneId.set($event)"
-          />
-          <app-quick-create entity="warehouseZone" [context]="{ warehouseId: warehouseId() }" [iconOnly]="true" (created)="zoneId.set($event.id)" />
-        </div>
-        @if (warehouseId() && coldZones().length === 0) {
-          <p class="mt-2 text-theme-xs text-amber-600">
-            No hay zonas tipo REFRIGERADO. Créelas en Reporte Inventario → Mapa de zonas.
-          </p>
-        }
-      </div>
-      <div>
-        <app-label required>Temperatura (°C)</app-label>
-        <app-input-field type="number" [value]="temperatura()" (valueChange)="temperatura.set(+$event)" />
-      </div>
-      <div>
-        <app-label>Observación</app-label>
-        <app-input-field [maxLength]="500" [value]="observacion()" (valueChange)="observacion.set('' + $event)" />
-      </div>
-      <app-button startIconName="mdi:content-save-outline"
-        variant="primary"
-        [disabled]="!zoneId() || registerMutation.isPending()" [loading]="registerMutation.isPending()"
-        (btnClick)="submitRegister()"
-      >
-        Registrar
-      </app-button>
-    </div>
-  </app-component-card>
+    }
 
-  <app-component-card title="Historial de la zona"
-    [loading]="zoneId() ? logsState.loading : false"
-    [error]="zoneId() ? logsState.error : null"
-    [empty]="zoneId() ? logsState.empty : false"
-    emptyTitle="Sin registros para esta zona"
-    [showRetry]="!!zoneId()"
-    (retry)="logsQuery.refetch()">
-    @if (!zoneId()) {
-      <p class="text-theme-sm text-gray-500">Seleccione una zona para ver el historial.</p>
-    } @else {
-      <div class="max-h-80 overflow-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="border-b text-xs uppercase text-gray-500">
+    @let logsState = logsQuery | queryPageState: logs().length;
+    <app-component-card
+      title="Historial de temperaturas"
+      className="overflow-hidden"
+      [bodyClass]="'p-0 sm:p-0'"
+      [loading]="logsState.loading"
+      [error]="logsState.error"
+      [empty]="logsState.empty"
+      emptyTitle="Todavía no hay lecturas en esta zona"
+      emptyHint="Usa «Registrar temperatura» para anotar la primera."
+      (retry)="logsQuery.refetch()"
+    >
+      <app-color-legend data-card-header-end ariaLabel="Leyenda de temperaturas" [items]="legend" [helpText]="'Rango de referencia para medicamentos refrigerados: ' + range.min + ' a ' + range.max + ' °C.'" />
+      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Temperatura</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Registró</th>
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Observación</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (log of logs(); track log.id) {
+                <tr [attr.data-row-tone]="isOut(log.temperaturaCelsius) ? 'error' : null">
+                  <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ log.fecha | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="px-5 py-4 text-end text-theme-sm">
+                    <app-status-badge [status]="'T'" [tone]="isOut(log.temperaturaCelsius) ? 'error' : 'success'" [label]="(+log.temperaturaCelsius) + ' °C'" />
+                  </td>
+                  <td class="px-5 py-4 text-theme-sm">{{ log.user?.nombre ?? '—' }}</td>
+                  <td class="px-5 py-4 text-theme-sm text-gray-500 dark:text-gray-400">{{ log.observacion || '—' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin lecturas.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </app-component-card>
+  }
+} @else {
+  @let zonesState = zonesQuery | queryPageState: zones().length;
+  <app-component-card
+    title="Zonas del almacén"
+    [desc]="zones().length ? zones().length + ' zona(s)' : ''"
+    className="overflow-hidden"
+    [bodyClass]="'p-0 sm:p-0'"
+    [loading]="zonesState.loading"
+    [error]="zonesState.error"
+    [empty]="zonesState.empty"
+    emptyTitle="Este almacén no tiene zonas"
+    emptyHint="Usa «Nueva zona» para crear, por ejemplo, «Refrigeradora 1»."
+    (retry)="zonesQuery.refetch()"
+  >
+    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="max-w-full overflow-x-auto">
+        <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-100 dark:border-white/[0.05]">
             <tr>
-              <th class="py-2">Fecha</th>
-              <th class="py-2">°C</th>
-              <th class="py-2">Usuario</th>
-              <th class="py-2">Nota</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Zona</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
             </tr>
           </thead>
-          <tbody>
-            @for (log of logsQuery.data() ?? []; track log.id) {
-              <tr class="border-b border-gray-100 dark:border-gray-800">
-                <td class="py-2">{{ log.fecha | appDate: 'short' }}</td>
-                <td class="py-2 font-medium">{{ log.temperaturaCelsius }}</td>
-                <td class="py-2">{{ log.user?.nombre ?? '—' }}</td>
-                <td class="py-2 text-gray-500">{{ log.observacion ?? '—' }}</td>
+          <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            @for (zone of zones(); track zone.id) {
+              <tr [attr.data-row-tone]="zone.activo ? null : 'muted'">
+                <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ zone.nombre }}</td>
+                <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="zone.tipo" [tone]="zoneTypeTone(zone.tipo)" [label]="zoneTypeLabel(zone.tipo)" /></td>
+                <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="zone.activo ? 'ACTIVA' : 'INACTIVA'" [tone]="zone.activo ? 'success' : 'neutral'" [label]="zone.activo ? 'Activa' : 'Inactiva'" /></td>
+                <td class="px-5 py-4 text-end">
+                  <ng-container *appHasPermission="'inventory.write'">
+                    <div class="inline-flex justify-end">
+                      <app-table-dropdown>
+                        <div dropdown-button>
+                          <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + zone.nombre"></app-button>
+                        </div>
+                        <div dropdown-content>
+                          <app-menu-item icon="mdi:pencil-outline" tooltip="Cambia el nombre o el tipo." (itemClick)="openZoneForm(zone)">Editar</app-menu-item>
+                          <app-menu-item [icon]="zone.activo ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" [tooltip]="zone.activo ? 'Deja de ofrecerse para registrar temperaturas. Su historial se conserva.' : 'Vuelve a ofrecerse para registrar temperaturas.'" [disabled]="toggleZoneMutation.isPending()" (itemClick)="toggleZoneMutation.mutate(zone)">{{ zone.activo ? 'Desactivar' : 'Activar' }}</app-menu-item>
+                          <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Solo se puede eliminar una zona sin registros de temperatura. Te pedirá confirmación." (itemClick)="zoneToDelete.set(zone)">Eliminar</app-menu-item>
+                        </div>
+                      </app-table-dropdown>
+                    </div>
+                  </ng-container>
+                </td>
               </tr>
             } @empty {
-              <tr>
-                <td colspan="4" class="py-6 text-center text-theme-sm text-gray-500">Sin registros para esta zona.</td>
-              </tr>
+              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin zonas.</td></tr>
             }
           </tbody>
         </table>
       </div>
-    }
+    </div>
   </app-component-card>
-</div>
+}
+
+<!-- ========== REGISTRAR TEMPERATURA ========== -->
+<app-modal [isOpen]="logOpen()" (closed)="!logMutation.isPending() && logOpen.set(false)" className="w-full max-w-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Registrar temperatura</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se guarda con la fecha y hora de ahora y tu usuario.</p>
+  </div>
+  <div data-modal-body class="space-y-5 px-4 py-5 sm:px-6">
+    <app-form-select
+      label="Zona refrigerada"
+      [required]="true"
+      placeholder="Seleccionar"
+      [value]="logZoneId()"
+      [options]="coldZoneOptions()"
+      [error]="!!logErrors().zone"
+      [hint]="logErrors().zone || ''"
+      (valueChange)="logZoneId.set($event); logErrors.set({ temp: logErrors().temp })"
+    />
+    <app-input-field
+      label="Temperatura (°C)"
+      [isRequired]="true"
+      [helpText]="'Lo que marca el termómetro. Referencia: ' + range.min + ' a ' + range.max + ' °C.'"
+      type="number"
+      step="0.1"
+      placeholder="Ej.: 4.5"
+      [value]="temperatura() ?? ''"
+      [error]="!!logErrors().temp"
+      [hint]="logErrors().temp || ''"
+      (valueChange)="temperatura.set($event === '' ? null : +$event); logErrors.set({ zone: logErrors().zone })"
+    />
+    @if (temperatura() != null && isOut(temperatura()!)) {
+      <p class="rounded-[10px] border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+        Está fuera de {{ range.min }} a {{ range.max }} °C. Anota en la observación qué hiciste (por ejemplo, regular el termostato).
+      </p>
+    }
+    <app-input-field label="Observación" helpText="Opcional. Recomendado si la lectura está fuera de rango." [maxLength]="500" [value]="observacion()" (valueChange)="observacion.set($event + '')" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="logMutation.isPending()" (btnClick)="logOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [loading]="logMutation.isPending()" [disabled]="logMutation.isPending()" (btnClick)="submitLog()">Registrar</app-button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- ========== ZONA ========== -->
+<app-modal [isOpen]="!!zoneForm()" (closed)="!saveZoneMutation.isPending() && zoneForm.set(null)" className="w-full max-w-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ zoneForm()?.id ? 'Editar zona' : 'Nueva zona' }}</h3>
+  </div>
+  <div data-modal-body class="space-y-5 px-4 py-5 sm:px-6">
+    @if (zoneForm(); as f) {
+      <app-input-field
+        label="Nombre"
+        [isRequired]="true"
+        helpText="Cómo la reconoces en el almacén."
+        placeholder="Ej.: Refrigeradora 1"
+        [maxLength]="120"
+        [value]="f.nombre"
+        [error]="!!zoneFormError()"
+        [hint]="zoneFormError()"
+        (valueChange)="patchZoneForm({ nombre: $event + '' })"
+      />
+      <app-form-select
+        label="Tipo"
+        [required]="true"
+        helpText="Solo las zonas refrigeradas aparecen para registrar temperaturas."
+        [showPlaceholder]="false"
+        [value]="f.tipo"
+        [options]="zoneTypeOptions"
+        (valueChange)="patchZoneForm({ tipo: $any($event) })"
+      />
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="saveZoneMutation.isPending()" (btnClick)="zoneForm.set(null)">Cancelar</app-button>
+    <app-button startIconName="mdi:content-save-outline" [loading]="saveZoneMutation.isPending()" [disabled]="saveZoneMutation.isPending()" (btnClick)="submitZone()">Guardar zona</app-button>
+  </div>
+</app-modal>
+
+<!-- ========== ELIMINAR ZONA ========== -->
+<app-modal [isOpen]="!!zoneToDelete()" (closed)="!deleteZoneMutation.isPending() && zoneToDelete.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar zona</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    ¿Eliminar «{{ zoneToDelete()?.nombre }}»? Si ya tiene temperaturas registradas no se podrá: en ese caso, desactívala para conservar su historial.
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="deleteZoneMutation.isPending()" (btnClick)="zoneToDelete.set(null)">Cancelar</app-button>
+    <app-button variant="danger" startIconName="mdi:trash-can-outline" [loading]="deleteZoneMutation.isPending()" [disabled]="deleteZoneMutation.isPending()" (btnClick)="deleteZoneMutation.mutate(zoneToDelete()!.id)">Eliminar</app-button>
+  </div>
+</app-modal>

@@ -1,7 +1,9 @@
 <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
   @if (collapsible) {
     <div class="flex flex-wrap items-start gap-3">
-      <ng-container [ngTemplateOutlet]="search" />
+      @if (showSearch) {
+        <ng-container [ngTemplateOutlet]="search" />
+      }
       <app-button
         size="lg"
         variant="outline"
@@ -31,9 +33,11 @@
     }
   } @else {
     <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-      <div [class]="showSelect ? 'md:col-span-7' : 'md:col-span-10'">
-        <ng-container [ngTemplateOutlet]="search" />
-      </div>
+      @if (showSearch) {
+        <div [class]="showSelect ? 'md:col-span-7' : 'md:col-span-10'">
+          <ng-container [ngTemplateOutlet]="search" />
+        </div>
+      }
       @if (showSelect) {
         <div class="md:col-span-3">
           <ng-container [ngTemplateOutlet]="select" />

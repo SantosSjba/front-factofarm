@@ -1631,6 +1631,8 @@ export class ProductosComponent {
     const neg = (v: number | null | undefined) => v != null && Number.isFinite(v) && v < 0;
     const notInt = (v: number | null | undefined) => v != null && Number.isFinite(v) && !Number.isInteger(v);
     if (this.stockInicial() < 0) return { message: 'El stock inicial no puede ser negativo.', tab: 'general' };
+    if (!this.editingProductId() && f.manejaLotes && this.stockInicial() > 0 && !f.codigoLote?.trim())
+      return { message: 'Escribe el código de lote del stock inicial: el producto maneja lotes.', tab: 'general' };
     if (neg(f.stockMinimo) || notInt(f.stockMinimo))
       return { message: 'El stock mínimo debe ser un número entero mayor o igual a 0.', tab: 'general' };
     if (neg(f.stockMaximo) || notInt(f.stockMaximo))
