@@ -127,14 +127,14 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     name: 'Ventas y caja',
     subItems: [
       { name: 'Punto de venta', path: '/punto-venta', permissionCode: 'nav.punto_venta' },
-      { name: 'Caja chica POS', path: '/caja-chica-pos', permissionCode: 'nav.caja_chica_pos' },
+      { name: 'Caja', path: '/caja-chica-pos', permissionCode: 'nav.caja_chica_pos' },
       { name: 'Historial de cajas', path: '/historial-cajas', permissionCode: 'nav.historial_cajas' },
       {
-        name: 'Comprobante electrónico',
+        name: 'Comprobantes electrónicos',
         path: '/comprobante-electronico',
         permissionCode: 'nav.comprobante_electronico',
       },
-      { name: 'Notas de venta', path: '/notas-venta', permissionCode: 'nav.notas_venta' },
+      { name: 'Historial de ventas', path: '/notas-venta', permissionCode: 'nav.notas_venta' },
       {
         name: 'Resúmenes y anulaciones',
         subItems: [

@@ -1,60 +1,83 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
-import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
-import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
-import { NotifyService } from '../../../../core/services/notify.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { LocaleService } from '../../../../core/services/locale.service';
+import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
-import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { LabelComponent } from '../../../../shared/components/form/label/label.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
-import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
-import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
-import { DirectoryApiService } from '../../services/directory-api.service';
-import { LocaleService } from '../../../../core/services/locale.service';
+import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
+import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
+import { SaleVoidModalComponent, type SaleVoidTarget } from '../../components/sale-void-modal/sale-void-modal.component';
 import type {
-  SaleDetailDto,
+  DataStorageMode,
+  PaymentMethod,
   SaleDocumentType,
   SaleListItemDto,
   SaleStatus,
-  PaymentMethod,
-  DataStorageMode } from '../../models/directory.models';
+} from '../../models/directory.models';
+import { DirectoryApiService } from '../../services/directory-api.service';
+import { POS_PAYMENT_OPTIONS } from '../../utils/pos-payment.util';
+import {
+  documentNumber,
+  documentTypeLabel,
+  paymentMethodLabel,
+  SALE_STATUS_OPTIONS,
+  saleStatusLabel,
+  saleStatusTone,
+  sunatStatusLabel,
+  sunatStatusTone,
+} from '../../utils/sale-labels';
 
-type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string };
+type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; quantity: number; lotCode: string; lotes: string[]; unitTotal: number };
 
-import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
-import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 @Component({
   selector: 'app-notas-venta',
   standalone: true,
   imports: [
-    MenuItemComponent,
-    StatusBadgeComponent,
-    QueryPageStatePipe,
     CommonModule,
-    AppDatePipe,
     CurrencyPipe,
+    RouterLink,
+    AppDatePipe,
+    QueryPageStatePipe,
     BreadcrumbInlineComponent,
-    PageToolbarComponent,
-    ComponentCardComponent,
-    PaginationComponent,
-    FormSelectComponent,
-    ModalComponent,
     ButtonComponent,
+    ColorLegendComponent,
+    ComponentCardComponent,
+    FormSelectComponent,
+    HasPermissionDirective,
+    HelpPanelComponent,
     InputFieldComponent,
-    LabelComponent,
+    ListFiltersComponent,
+    MenuItemComponent,
+    ModalComponent,
+    PageToolbarComponent,
+    PaginationComponent,
+    SaleVoidModalComponent,
+    StatusBadgeComponent,
     TableDropdownComponent,
+    TextAreaComponent,
   ],
-  templateUrl: './notas-venta.component.html' })
+  templateUrl: './notas-venta.component.html',
+})
 export class NotasVentaComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
@@ -64,116 +87,142 @@ export class NotasVentaComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Notas de venta' }];
+  protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Historial de ventas' }];
+  protected readonly pageSize = 15;
+  protected readonly typeLabel = documentTypeLabel;
+  protected readonly number = documentNumber;
+  protected readonly statusLabel = saleStatusLabel;
+  protected readonly statusTone = saleStatusTone;
+  protected readonly sunatLabel = sunatStatusLabel;
+  protected readonly sunatTone = sunatStatusTone;
+  protected readonly payLabel = paymentMethodLabel;
+  protected readonly legend: LegendItem[] = [
+    { label: 'Anulada', tone: 'error-light' },
+    { label: 'Anulación pendiente', tone: 'warning' },
+  ];
+
+  // ---------- Filtros ----------
   protected readonly page = signal(1);
-  protected readonly pageSize = signal(15);
-  protected readonly detailId = signal<string | null>(null);
-  protected readonly returnSaleId = signal<string | null>(null);
-  protected readonly debitSaleId = signal<string | null>(null);
-  protected readonly debitMotivo = signal('');
-  protected readonly debitDescripcion = signal('');
-  protected readonly debitTotal = signal('');
-  protected readonly returnMotivo = signal('');
-  protected readonly returnLines = signal<ReturnLineDraft[]>([]);
-  protected readonly estado = signal<string>('');
-  protected readonly documentType = signal<string>('');
+  protected readonly search = signal('');
+  protected readonly estado = signal('');
+  protected readonly documentType = signal('');
   protected readonly dateFrom = signal(this.locale.monthStartYmd());
   protected readonly dateTo = signal(this.locale.todayYmd());
-  protected readonly paymentMetodo = signal<string>('');
+  protected readonly paymentMetodo = signal('');
   protected readonly paymentReferencia = signal('');
   protected readonly storage = signal<DataStorageMode>('hot');
-  protected readonly convertSaleId = signal<string | null>(null);
-  protected readonly convertTarget = signal<'BOLETA' | 'FACTURA'>('BOLETA');
-  private filtersHydrated = false;
 
-  protected readonly convertDocOptions = [
-    { value: 'BOLETA', label: 'Boleta electrónica' },
-    { value: 'FACTURA', label: 'Factura electrónica' },
-  ];
-
-  protected readonly storageOptions = [
-    { value: 'hot', label: 'Activo' },
-    { value: 'archived', label: 'Archivado' },
-    { value: 'all', label: 'Todos (tabla activa)' },
-  ];
-
-  protected readonly paymentMethodOptions = [
-    { value: '', label: 'Todos los medios' },
-    { value: 'EFECTIVO', label: 'Efectivo' },
-    { value: 'YAPE', label: 'Yape' },
-    { value: 'PLIN', label: 'Plin' },
-    { value: 'TARJETA', label: 'Tarjeta' },
-    { value: 'TRANSFERENCIA', label: 'Transferencia' },
-  ];
-
-  protected readonly estadoOptions = [
-    { value: '', label: 'Todos los estados' },
-    { value: 'COMPLETADA', label: 'Completada' },
-    { value: 'ANULADA', label: 'Anulada' },
-    { value: 'PARCIALMENTE_DEVUELTA', label: 'Parcialmente devuelta' },
-  ];
-
+  protected readonly estadoOptions = [{ value: '', label: 'Todos los estados' }, ...SALE_STATUS_OPTIONS];
   protected readonly docOptions = [
     { value: '', label: 'Todos los comprobantes' },
-    { value: 'BOLETA', label: 'Boleta' },
-    { value: 'FACTURA', label: 'Factura' },
-    { value: 'NOTA_VENTA', label: 'Nota de venta' },
-    { value: 'TICKET', label: 'Ticket' },
+    ...(['BOLETA', 'FACTURA', 'NOTA_VENTA', 'TICKET'] as const).map((value) => ({ value, label: documentTypeLabel(value) })),
   ];
+  protected readonly paymentMethodOptions = [{ value: '', label: 'Todos los medios' }, ...POS_PAYMENT_OPTIONS];
+  protected readonly storageOptions = [
+    { value: 'hot', label: 'Ventas recientes' },
+    { value: 'archived', label: 'Archivadas (solo consulta)' },
+  ];
+
+  protected readonly activeFilterCount = computed(
+    () =>
+      [this.estado(), this.documentType(), this.paymentMetodo(), this.paymentReferencia().trim(), this.storage() !== 'hot' ? '1' : ''].filter(Boolean).length +
+      (this.dateFrom() !== this.locale.monthStartYmd() || this.dateTo() !== this.locale.todayYmd() ? 1 : 0),
+  );
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: [
-      'sales',
-      'list',
-      this.page(),
-      this.pageSize(),
-      this.estado(),
-      this.documentType(),
-      this.dateFrom(),
-      this.dateTo(),
-      this.paymentMetodo(),
-      this.paymentReferencia(),
-      this.storage(),
+      'sales', 'list', this.page(), this.search(), this.estado(), this.documentType(), this.dateFrom(), this.dateTo(),
+      this.paymentMetodo(), this.paymentReferencia(), this.storage(),
     ] as const,
     queryFn: () =>
       firstValueFrom(
         this.api.listSales({
           page: this.page(),
-          pageSize: this.pageSize(),
+          pageSize: this.pageSize,
+          search: this.storage() === 'archived' ? undefined : this.search(),
           estado: (this.estado() || undefined) as SaleStatus | undefined,
           documentType: (this.documentType() || undefined) as SaleDocumentType | undefined,
           from: this.dateFrom() || undefined,
           to: this.dateTo() || undefined,
           paymentMetodo: (this.paymentMetodo() || undefined) as PaymentMethod | undefined,
           paymentReferencia: this.paymentReferencia().trim() || undefined,
-          storage: this.storage() }),
-      ) }));
-
-  protected readonly detailQuery = injectQuery(() => ({
-    queryKey: ['sales', 'detail', this.detailId()] as const,
-    enabled: !!this.detailId(),
-    queryFn: () => firstValueFrom(this.api.getSale(this.detailId()!)) }));
-
-  protected readonly returnSaleQuery = injectQuery(() => ({
-    queryKey: ['sales', 'return', this.returnSaleId()] as const,
-    enabled: !!this.returnSaleId(),
-    queryFn: () => firstValueFrom(this.api.getSale(this.returnSaleId()!)) }));
-
-  protected readonly billingStatusQuery = injectQuery(() => ({
-    queryKey: ['billing', 'sale-status', this.detailId()] as const,
-    enabled: !!this.detailId(),
-    queryFn: () => firstValueFrom(this.api.getSaleBillingStatus(this.detailId()!)),
-    refetchInterval: 3000 }));
-
-  protected readonly returnTotal = computed(() =>
-    this.returnLines().reduce((acc, line) => {
-      const sale = this.returnSaleQuery.data();
-      const item = sale?.items.find((i) => i.id === line.saleItemId);
-      if (!item) return acc;
-      const unitTotal = Number(item.totalLinea) / Number(item.cantidad);
-      return acc + unitTotal * line.quantity;
-    }, 0),
+          storage: this.storage(),
+        }),
+      ),
+  }));
+  protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
+  protected readonly total = computed(() => this.listQuery.data()?.total ?? 0);
+  /** Suma de la página visible (sin anuladas). */
+  protected readonly pageTotal = computed(() =>
+    this.rows().filter((r) => r.estado !== 'ANULADA').reduce((acc, r) => acc + Number(r.total), 0),
   );
+
+  protected setSearch(v: string) {
+    this.search.set(v);
+    this.page.set(1);
+  }
+  protected setFilter(which: 'estado' | 'documentType' | 'paymentMetodo' | 'paymentReferencia' | 'dateFrom' | 'dateTo', v: string | number) {
+    this[which].set(String(v ?? ''));
+    this.page.set(1);
+  }
+  protected setStorage(v: string) {
+    this.storage.set(v as DataStorageMode);
+    this.page.set(1);
+  }
+  protected clearFilters() {
+    this.search.set('');
+    this.estado.set('');
+    this.documentType.set('');
+    this.paymentMetodo.set('');
+    this.paymentReferencia.set('');
+    this.storage.set('hot');
+    this.dateFrom.set(this.locale.monthStartYmd());
+    this.dateTo.set(this.locale.todayYmd());
+    this.page.set(1);
+  }
+
+  protected isArchived(row: { storage?: string; archivedAt?: string | null; fromColdStorage?: boolean }): boolean {
+    return row.storage === 'archived' || !!row.archivedAt || !!row.fromColdStorage;
+  }
+  protected isElectronic(type: string): boolean {
+    return type === 'BOLETA' || type === 'FACTURA';
+  }
+  protected rowTone(row: SaleListItemDto): LegendTone | null {
+    if (row.estado === 'ANULADA') return 'error-light';
+    if (row.pendingVoidRequestId) return 'warning';
+    return null;
+  }
+
+  // ---------- Permisos ----------
+  /** La API exige `sales.write` o el ítem Anulaciones para registrar devoluciones. */
+  private readonly canCreateReturns = this.auth.hasPermission('sales.write') || this.auth.hasPermission('nav.anulaciones');
+  protected readonly canRequestVoid =
+    this.auth.hasPermission('sales.write') || this.auth.hasPermission('nav.punto_venta') || this.auth.hasPermission('nav.anulaciones');
+
+  protected canReturn(sale: { canReturn?: boolean; storage?: string; archivedAt?: string | null; fromColdStorage?: boolean }): boolean {
+    return !this.isArchived(sale) && this.canCreateReturns && sale.canReturn === true;
+  }
+  protected canDebit(sale: { canDebit?: boolean; storage?: string; archivedAt?: string | null; fromColdStorage?: boolean }): boolean {
+    return !this.isArchived(sale) && sale.canDebit === true;
+  }
+  protected canVoid(row: SaleListItemDto): boolean {
+    return this.canRequestVoid && !this.isArchived(row) && row.canVoid === true && !row.pendingVoidRequestId;
+  }
+
+  // ---------- Detalle ----------
+  protected readonly detailRow = signal<SaleListItemDto | null>(null);
+  protected readonly detailQuery = injectQuery(() => ({
+    queryKey: ['sales', 'detail', this.detailRow()?.id] as const,
+    enabled: !!this.detailRow(),
+    queryFn: () => firstValueFrom(this.api.getSale(this.detailRow()!.id)),
+  }));
+  protected readonly billingStatusQuery = injectQuery(() => ({
+    queryKey: ['billing', 'sale-status', this.detailRow()?.id] as const,
+    enabled: !!this.detailRow() && !!this.detailRow()!.electronicDocumentId,
+    queryFn: () => firstValueFrom(this.api.getSaleBillingStatus(this.detailRow()!.id)),
+    refetchInterval: (q: { state: { data?: { sunatStatus: string } | null } }) =>
+      q.state.data && ['PENDIENTE', 'ENVIANDO'].includes(q.state.data.sunatStatus) ? 3000 : false,
+  }));
 
   constructor() {
     const q = this.route.snapshot.queryParamMap;
@@ -183,20 +232,11 @@ export class NotasVentaComponent {
     if (from) this.dateFrom.set(from);
     if (to) this.dateTo.set(to);
     if (estado != null) this.estado.set(estado);
-    this.filtersHydrated = true;
 
     effect(() => {
-      if (!this.filtersHydrated) return;
-      const dateFrom = this.dateFrom();
-      const dateTo = this.dateTo();
-      const estadoVal = this.estado();
       void this.router.navigate([], {
         relativeTo: this.route,
-        queryParams: {
-          dateFrom: dateFrom || null,
-          dateTo: dateTo || null,
-          estado: estadoVal || null,
-        },
+        queryParams: { dateFrom: this.dateFrom() || null, dateTo: this.dateTo() || null, estado: this.estado() || null },
         queryParamsHandling: 'merge',
         replaceUrl: true,
       });
@@ -213,112 +253,16 @@ export class NotasVentaComponent {
               saleItemId: item.id,
               producto: item.producto,
               maxQty,
-              quantity: maxQty > 0 ? maxQty : 0,
-              // Con varios lotes vendidos se deja vacío: el API reparte la devolución entre los
-              // lotes originales. Antes se forzaba el primero y se reponía todo en ese lote.
-              lotCode: item.lotes.length === 1 ? item.lotes[0].codigoLote : '' };
+              quantity: 0,
+              // Con varios lotes vendidos se deja vacío: el API reparte la devolución entre los lotes originales.
+              lotCode: item.lotes.length === 1 ? item.lotes[0].codigoLote : '',
+              lotes: item.lotes.map((l) => l.codigoLote),
+              unitTotal: Number(item.totalLinea) / Number(item.cantidad),
+            };
           })
           .filter((line) => line.maxQty > 0),
       );
     });
-  }
-
-  protected readonly returnMutation = injectMutation(() => ({
-    mutationFn: () => {
-      const items = this.returnLines()
-        .filter((line) => line.quantity > 0)
-        .map((line) => ({
-          saleItemId: line.saleItemId,
-          quantity: line.quantity,
-          lotCode: line.lotCode.trim() || undefined }));
-      if (items.length === 0) throw new Error('Indique al menos un ítem a devolver');
-      return firstValueFrom(
-        this.api.createSaleReturn(this.returnSaleId()!, {
-          motivo: this.returnMotivo().trim(),
-          items }),
-      );
-    },
-    onSuccess: (res) => {
-      this.notify.success(
-        res.electronicDocumentId
-          ? `${res.message}. NC electrónica en proceso.`
-          : res.message,
-      );
-      this.closeReturn();
-      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
-      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
-      void this.queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      void this.queryClient.invalidateQueries({ queryKey: ['cash'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la devolución')) }));
-
-  protected readonly debitMutation = injectMutation(() => ({
-    mutationFn: () =>
-      firstValueFrom(
-        this.api.createSaleDebitNote(this.debitSaleId()!, {
-          motivo: this.debitMotivo().trim(),
-          descripcion: this.debitDescripcion().trim(),
-          total: Number(this.debitTotal()) }),
-      ),
-    onSuccess: (res) => {
-      this.notify.success(`${res.message}. ND electrónica en proceso.`);
-      this.closeDebit();
-      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
-      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la nota de débito')) }));
-
-  protected readonly emitMutation = injectMutation(() => ({
-    mutationFn: (saleId: string) => firstValueFrom(this.api.emitElectronicDocumentFromSale(saleId)),
-    onSuccess: (doc) => {
-      this.notify.success(`Emisión en curso · SUNAT: ${doc.sunatStatus}`);
-      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
-      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir el CPE')) }));
-
-  protected readonly convertMutation = injectMutation(() => ({
-    mutationFn: () =>
-      firstValueFrom(this.api.convertSaleToCpe(this.convertSaleId()!, this.convertTarget())),
-    onSuccess: (sale) => {
-      this.notify.success(
-        `Migrada a ${sale.documentType} ${sale.serie}-${sale.numero}. Emisión SUNAT en cola.`,
-      );
-      this.closeConvert();
-      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
-      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
-    },
-    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo migrar a boleta/factura')) }));
-
-  protected onFilterChange() {
-    this.page.set(1);
-  }
-
-  protected openConvert(saleId: string) {
-    this.convertSaleId.set(saleId);
-    this.convertTarget.set('BOLETA');
-  }
-
-  protected closeConvert() {
-    this.convertSaleId.set(null);
-  }
-
-  protected emitCpe(saleId: string) {
-    this.emitMutation.mutate(saleId);
-  }
-
-  protected sunatLabel(row: SaleListItemDto): string {
-    if (row.sunatStatus) return row.sunatStatus;
-    if (row.documentType === 'BOLETA' || row.documentType === 'FACTURA') return 'SIN EMITIR';
-    return '—';
-  }
-
-  protected openDetail(id: string) {
-    this.detailId.set(id);
-  }
-
-  protected closeDetail() {
-    this.detailId.set(null);
   }
 
   protected downloadPdf(saleId: string) {
@@ -328,99 +272,147 @@ export class NotasVentaComponent {
         window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       },
-      error: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo obtener el PDF')) });
+      error: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo obtener el PDF')),
+    });
   }
 
-  protected canReturn(sale: SaleDetailDto | { canReturn?: boolean; storage?: string; fromColdStorage?: boolean; archivedAt?: string | null }): boolean {
-    if (sale.storage === 'archived' || sale.fromColdStorage || ('archivedAt' in sale && sale.archivedAt)) {
-      return false;
-    }
-    if (!this.canCreateReturns) return false;
-    if (typeof sale.canReturn === 'boolean') return sale.canReturn;
-    return false;
-  }
+  // ---------- Emitir / migrar ----------
+  protected readonly emitMutation = injectMutation(() => ({
+    mutationFn: (saleId: string) => firstValueFrom(this.api.emitElectronicDocumentFromSale(saleId)),
+    onSuccess: (doc) => {
+      this.notify.success(`Enviado a SUNAT · estado: ${sunatStatusLabel(doc.sunatStatus)}`);
+      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo enviar a SUNAT')),
+  }));
 
-  /** La API exige `sales.write` o el ítem Anulaciones para registrar devoluciones. */
-  private readonly canCreateReturns =
-    this.auth.hasPermission('sales.write') || this.auth.hasPermission('nav.anulaciones');
-
-  protected isArchivedRow(row: { storage?: string; archivedAt?: string | null }): boolean {
-    return row.storage === 'archived' || !!row.archivedAt;
+  protected readonly convertRow = signal<SaleListItemDto | null>(null);
+  protected readonly convertTarget = signal<'BOLETA' | 'FACTURA'>('BOLETA');
+  protected readonly convertDocOptions = [
+    { value: 'BOLETA', label: 'Boleta electrónica' },
+    { value: 'FACTURA', label: 'Factura electrónica (el cliente debe tener RUC)' },
+  ];
+  protected openConvert(row: SaleListItemDto) {
+    this.convertTarget.set('BOLETA');
+    this.convertRow.set(row);
   }
+  protected readonly convertMutation = injectMutation(() => ({
+    mutationFn: (args: { id: string; target: 'BOLETA' | 'FACTURA' }) => firstValueFrom(this.api.convertSaleToCpe(args.id, args.target)),
+    onSuccess: (sale) => {
+      this.notify.success(`Ahora es ${documentTypeLabel(sale.documentType)} ${documentNumber(sale)}. Se enviará a SUNAT.`);
+      this.convertRow.set(null);
+      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo cambiar a boleta o factura')),
+  }));
 
-  protected canDebit(sale: SaleDetailDto | { canDebit?: boolean; storage?: string; fromColdStorage?: boolean; archivedAt?: string | null }): boolean {
-    if (sale.storage === 'archived' || sale.fromColdStorage || ('archivedAt' in sale && sale.archivedAt)) {
-      return false;
-    }
-    if (typeof sale.canDebit === 'boolean') return sale.canDebit;
-    return false;
-  }
-
-  protected openDebit(saleId: string) {
-    this.debitSaleId.set(saleId);
-    this.debitMotivo.set('');
-    this.debitDescripcion.set('');
-    this.debitTotal.set('');
-  }
-
-  protected closeDebit() {
-    this.debitSaleId.set(null);
-    this.debitMotivo.set('');
-    this.debitDescripcion.set('');
-    this.debitTotal.set('');
-  }
-
-  protected submitDebit() {
-    if (!this.debitMotivo().trim() || !this.debitDescripcion().trim() || !this.debitTotal().trim()) {
-      this.notify.warning('Complete motivo, descripción y monto');
-      return;
-    }
-    if (Number(this.debitTotal()) <= 0) {
-      this.notify.warning('El monto debe ser mayor a cero');
-      return;
-    }
-    this.debitMutation.mutate();
-  }
+  // ---------- Devolución ----------
+  protected readonly returnSaleId = signal<string | null>(null);
+  protected readonly returnMotivo = signal('');
+  protected readonly returnLines = signal<ReturnLineDraft[]>([]);
+  protected readonly returnErrors = signal<{ motivo?: string; lines?: string }>({});
+  protected readonly returnSaleQuery = injectQuery(() => ({
+    queryKey: ['sales', 'return', this.returnSaleId()] as const,
+    enabled: !!this.returnSaleId(),
+    queryFn: () => firstValueFrom(this.api.getSale(this.returnSaleId()!)),
+  }));
+  protected readonly returnTotal = computed(() => this.returnLines().reduce((acc, l) => acc + l.unitTotal * l.quantity, 0));
 
   protected openReturn(saleId: string) {
-    this.returnSaleId.set(saleId);
     this.returnMotivo.set('');
     this.returnLines.set([]);
+    this.returnErrors.set({});
+    this.returnSaleId.set(saleId);
   }
-
   protected closeReturn() {
     this.returnSaleId.set(null);
-    this.returnMotivo.set('');
-    this.returnLines.set([]);
   }
-
-  protected updateReturnQty(saleItemId: string, value: string) {
+  protected setReturnQty(saleItemId: string, value: string | number) {
     const qty = Math.max(0, Number(value) || 0);
-    this.returnLines.update((lines) =>
-      lines.map((line) =>
-        line.saleItemId === saleItemId
-          ? { ...line, quantity: Math.min(qty, line.maxQty) }
-          : line,
-      ),
-    );
+    this.returnLines.update((lines) => lines.map((l) => (l.saleItemId === saleItemId ? { ...l, quantity: Math.min(qty, l.maxQty) } : l)));
+    this.returnErrors.update((e) => ({ ...e, lines: undefined }));
+  }
+  protected setReturnAll(all: boolean) {
+    this.returnLines.update((lines) => lines.map((l) => ({ ...l, quantity: all ? l.maxQty : 0 })));
+  }
+  protected setReturnLot(saleItemId: string, value: string) {
+    this.returnLines.update((lines) => lines.map((l) => (l.saleItemId === saleItemId ? { ...l, lotCode: value } : l)));
   }
 
-  protected updateReturnLot(saleItemId: string, value: string) {
-    this.returnLines.update((lines) =>
-      lines.map((line) => (line.saleItemId === saleItemId ? { ...line, lotCode: value } : line)),
-    );
-  }
+  protected readonly returnMutation = injectMutation(() => ({
+    mutationFn: () =>
+      firstValueFrom(
+        this.api.createSaleReturn(this.returnSaleId()!, {
+          motivo: this.returnMotivo().trim(),
+          items: this.returnLines()
+            .filter((l) => l.quantity > 0)
+            .map((l) => ({ saleItemId: l.saleItemId, quantity: l.quantity, lotCode: l.lotCode.trim() || undefined })),
+        }),
+      ),
+    onSuccess: (res) => {
+      this.notify.success(res.electronicDocumentId ? `${res.message}. La nota de crédito se envía a SUNAT.` : res.message);
+      this.closeReturn();
+      for (const key of ['sales', 'billing', 'inventory', 'cash']) void this.queryClient.invalidateQueries({ queryKey: [key] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo registrar la devolución')),
+  }));
 
   protected submitReturn() {
-    if (!this.returnMotivo().trim()) {
-      this.notify.warning('Indique el motivo de la devolución');
-      return;
-    }
-    if (!this.returnLines().some((line) => line.quantity > 0)) {
-      this.notify.warning('Indique la cantidad a devolver en al menos un producto.');
-      return;
-    }
+    const errors: { motivo?: string; lines?: string } = {};
+    if (!this.returnMotivo().trim()) errors.motivo = 'Escribe el motivo de la devolución.';
+    if (!this.returnLines().some((l) => l.quantity > 0)) errors.lines = 'Indica cuánto se devuelve de al menos un producto.';
+    this.returnErrors.set(errors);
+    if (Object.keys(errors).length) return;
     this.returnMutation.mutate();
   }
 
+  // ---------- Nota de débito ----------
+  protected readonly debitRow = signal<SaleListItemDto | null>(null);
+  protected readonly debitMotivo = signal('');
+  protected readonly debitDescripcion = signal('');
+  protected readonly debitTotal = signal<number | null>(null);
+  protected readonly debitErrors = signal<{ motivo?: string; descripcion?: string; total?: string }>({});
+
+  protected openDebit(row: SaleListItemDto) {
+    this.debitMotivo.set('');
+    this.debitDescripcion.set('');
+    this.debitTotal.set(null);
+    this.debitErrors.set({});
+    this.debitRow.set(row);
+  }
+  protected readonly debitMutation = injectMutation(() => ({
+    mutationFn: () =>
+      firstValueFrom(
+        this.api.createSaleDebitNote(this.debitRow()!.id, {
+          motivo: this.debitMotivo().trim(),
+          descripcion: this.debitDescripcion().trim(),
+          total: Number(this.debitTotal()),
+        }),
+      ),
+    onSuccess: (res) => {
+      this.notify.success(`${res.message}. La nota de débito se envía a SUNAT.`);
+      this.debitRow.set(null);
+      void this.queryClient.invalidateQueries({ queryKey: ['sales'] });
+      void this.queryClient.invalidateQueries({ queryKey: ['billing'] });
+    },
+    onError: (err) => this.notify.error(httpErrorMessage(err, 'No se pudo emitir la nota de débito')),
+  }));
+  protected submitDebit() {
+    const errors: { motivo?: string; descripcion?: string; total?: string } = {};
+    if (!this.debitMotivo().trim()) errors.motivo = 'Escribe el motivo del cargo.';
+    if (!this.debitDescripcion().trim()) errors.descripcion = 'Escribe cómo aparecerá en el comprobante.';
+    if (!(Number(this.debitTotal()) > 0)) errors.total = 'El monto debe ser mayor a 0.';
+    this.debitErrors.set(errors);
+    if (Object.keys(errors).length) return;
+    this.debitMutation.mutate();
+  }
+
+  // ---------- Anular ----------
+  protected readonly voidTarget = signal<SaleVoidTarget | null>(null);
+  protected openVoid(row: SaleListItemDto) {
+    this.detailRow.set(null);
+    this.voidTarget.set(row);
+  }
 }

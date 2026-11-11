@@ -1,367 +1,388 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Historial de ventas</h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <ng-container *appHasPermission="'nav.punto_venta'">
+      <a routerLink="/punto-venta"><app-button size="sm" startIconName="mdi:cart-plus">Nueva venta</app-button></a>
+    </ng-container>
+  </div>
 </app-page-toolbar>
 
-<app-component-card title="Filtros" className="mt-4 mb-4">
-  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-    <app-form-select [options]="storageOptions" [value]="storage()" (valueChange)="storage.set($any($event)); onFilterChange()" />
-    <app-form-select [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set($event); onFilterChange()" />
-    <app-form-select [options]="docOptions" [value]="documentType()" (valueChange)="documentType.set($event); onFilterChange()" />
-    <app-form-select [options]="paymentMethodOptions" [value]="paymentMetodo()" (valueChange)="paymentMetodo.set($event); onFilterChange()" />
-    <app-input-field placeholder="Código operación" [value]="paymentReferencia()" (valueChange)="paymentReferencia.set('' + $event); onFilterChange()" />
-    <div>
-      <app-input-field id="notas-venta-desde" label="Desde" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event); onFilterChange()" />
-    </div>
-    <div>
-      <app-input-field id="notas-venta-hasta" label="Hasta" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event); onFilterChange()" />
-    </div>
-  </div>
-  @if (storage() === 'archived') {
-    <p class="mt-3 text-theme-sm text-gray-500">Consulta de histórico en cold storage (solo lectura).</p>
-  }
-</app-component-card>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="notas-venta">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Aquí están todas las ventas: boletas, facturas, notas de venta y tickets. Busca por número (por ejemplo B001-25) o por cliente.</li>
+    <li>Desde el menú <strong>⋮</strong> de cada venta puedes ver el detalle, imprimir el PDF, enviarla a SUNAT o cambiar una nota de venta a boleta o factura.</li>
+    <li>Si el cliente devuelve productos, usa <strong>«Devolver productos»</strong>. Si la venta entera fue un error, <strong>«Anular venta»</strong>: el stock y el efectivo vuelven.</li>
+  </ol>
+</app-help-panel>
 
-@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+<app-list-filters
+  collapsible
+  [showSelect]="false"
+  [showSearch]="storage() !== 'archived'"
+  searchPlaceholder="Buscar por número (B001-25), cliente o DNI/RUC"
+  [searchValue]="search()"
+  [activeCount]="activeFilterCount()"
+  clearLabel="Limpiar"
+  (searchValueChange)="setSearch($event)"
+  (clear)="clearFilters()"
+>
+  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+  <app-form-select label="Estado" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions" (valueChange)="setFilter('estado', $event)" />
+  <app-form-select label="Comprobante" [showPlaceholder]="false" [value]="documentType()" [options]="docOptions" (valueChange)="setFilter('documentType', $event)" />
+  <app-form-select label="Medio de pago" [showPlaceholder]="false" [value]="paymentMetodo()" [options]="paymentMethodOptions" (valueChange)="setFilter('paymentMetodo', $event)" />
+  <app-input-field label="Código de operación" helpText="El código de Yape, Plin, tarjeta o transferencia." [maxLength]="120" [value]="paymentReferencia()" (valueChange)="setFilter('paymentReferencia', $event)" />
+  <app-form-select label="Ventas" helpText="Las ventas antiguas se archivan: se pueden consultar pero no modificar." [showPlaceholder]="false" [value]="storage()" [options]="storageOptions" (valueChange)="setStorage($event)" />
+</app-list-filters>
 
-<app-component-card title="Ventas registradas"
+@let listState = listQuery | queryPageState: total();
+
+<app-component-card
+  title="Ventas"
+  [desc]="total() ? total() + ' en total · ' + (pageTotal() | currency: 'PEN' : 'symbol' : '1.2-2') + ' en esta página' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay ventas registradas"
-  (retry)="listQuery.refetch()">
-  <div class="overflow-x-auto">
-    <table class="w-full text-left text-sm">
-      <caption class="sr-only">Historial de ventas con comprobante, cliente, estado y total</caption>
-      <thead class="border-b text-xs uppercase text-gray-500">
-        <tr>
-          <th class="px-3 py-2">Fecha</th>
-          <th class="px-3 py-2">Comprobante</th>
-          <th class="px-3 py-2">Cliente</th>
-          <th class="px-3 py-2">Vendedor</th>
-          <th class="px-3 py-2">Estado</th>
-          <th class="px-3 py-2">SUNAT</th>
-          <th class="px-3 py-2 text-right">Total</th>
-          <th class="px-3 py-2"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (row of listQuery.data()?.items ?? []; track row.id) {
-          <tr class="border-b border-gray-100 dark:border-gray-800">
-            <td class="px-3 py-2">{{ row.createdAt | appDate: 'short' }}</td>
-            <td class="px-3 py-2">
-              {{ row.documentType }} {{ row.serie }}-{{ row.numero }}
-              @if (isArchivedRow(row)) {
-                <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Archivado</span>
-              }
-            </td>
-            <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
-            <td class="px-3 py-2">{{ row.seller?.nombre ?? '—' }}</td>
-            <td class="px-3 py-2"><app-status-badge [status]="row.estado" /></td>
-            <td class="px-3 py-2">
-              <app-status-badge [status]="row.sunatStatus" [label]="sunatLabel(row)" />
-            </td>
-            <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-            <td class="px-3 py-2 text-right">
-              <div class="hidden flex-wrap items-center justify-end gap-1.5 md:flex">
-                <app-button
-                  size="sm"
-                  variant="outline"
-                  [iconOnly]="true"
-                  startIconName="mdi:eye-outline"
-                  tooltip="Ver"
-                  (btnClick)="openDetail(row.id)"
-                />
-                @if (!isArchivedRow(row)) {
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:file-pdf-box"
-                    tooltip="PDF"
-                    (btnClick)="downloadPdf(row.id)"
-                  />
-                }
-                @if (!isArchivedRow(row) && row.canEmitCpe) {
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:cloud-upload-outline"
-                    tooltip="Emitir a SUNAT"
-                    [disabled]="emitMutation.isPending()" [loading]="emitMutation.isPending()"
-                    (btnClick)="emitCpe(row.id)"
-                  />
-                }
-                @if (!isArchivedRow(row) && row.canConvertToCpe) {
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:swap-horizontal"
-                    tooltip="Migrar a boleta/factura"
-                    (btnClick)="openConvert(row.id)"
-                  />
-                }
-                @if (!isArchivedRow(row) && canReturn(row)) {
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:undo"
-                    tooltip="Devolver"
-                    (btnClick)="openReturn(row.id)"
-                  />
-                }
-                @if (!isArchivedRow(row) && canDebit(row)) {
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:file-document-outline"
-                    tooltip="Nota de débito"
-                    (btnClick)="openDebit(row.id)"
-                  />
-                }
-              </div>
-              <div class="inline-flex justify-end md:hidden">
-                <app-table-dropdown>
-                  <div dropdown-button>
-                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones de la venta"></app-button>
-                  </div>
-                  <div dropdown-content>
-                    <app-menu-item (itemClick)="openDetail(row.id)">Ver</app-menu-item>
-                    @if (!isArchivedRow(row)) {
-                      <app-menu-item (itemClick)="downloadPdf(row.id)">PDF</app-menu-item>
-                    }
-                    @if (!isArchivedRow(row) && row.canEmitCpe) {
-                      <app-menu-item [disabled]="emitMutation.isPending()" (itemClick)="emitCpe(row.id)">Emitir a SUNAT</app-menu-item>
-                    }
-                    @if (!isArchivedRow(row) && row.canConvertToCpe) {
-                      <app-menu-item (itemClick)="openConvert(row.id)">Migrar a boleta/factura</app-menu-item>
-                    }
-                    @if (!isArchivedRow(row) && canReturn(row)) {
-                      <app-menu-item (itemClick)="openReturn(row.id)">Devolver</app-menu-item>
-                    }
-                    @if (!isArchivedRow(row) && canDebit(row)) {
-                      <app-menu-item (itemClick)="openDebit(row.id)">Nota de débito</app-menu-item>
-                    }
-                  </div>
-                </app-table-dropdown>
-              </div>
-            </td>
-          </tr>
-        } @empty {
+  [emptyTitle]="activeFilterCount() || search() ? 'Sin ventas con esos filtros' : 'Aún no hay ventas en estas fechas'"
+  [emptyHint]="activeFilterCount() || search() ? 'Prueba con otros filtros o fechas.' : 'Las ventas se registran en el Punto de venta.'"
+  (retry)="listQuery.refetch()"
+>
+  <div data-card-header-end><app-color-legend [items]="legend" /></div>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">SUNAT</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr [attr.data-row-tone]="rowTone(row)">
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                {{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.seller?.nombre ?? '' }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ number(row) }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ typeLabel(row.documentType) }}{{ isArchived(row) ? ' · archivada' : '' }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.customer?.nombre ?? 'Cliente varios' }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                <div class="flex flex-wrap gap-1">
+                  <app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" />
+                  @if (row.pendingVoidRequestId) {
+                    <app-status-badge status="PENDIENTE" tone="warning" label="Anulación pendiente" />
+                  }
+                </div>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                @if (isElectronic(row.documentType)) {
+                  <app-status-badge [status]="row.sunatStatus ?? 'SIN_EMITIR'" [tone]="sunatTone(row.sunatStatus)" [label]="sunatLabel(row.sunatStatus)" />
+                } @else {
+                  <span class="text-theme-xs text-gray-400">No aplica</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums" [class.line-through]="row.estado === 'ANULADA'">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones de la venta"></app-button>
+                    </div>
+                    <div dropdown-content>
+                      <app-menu-item icon="mdi:eye-outline" tooltip="Productos, pagos, lotes y estado SUNAT." (itemClick)="detailRow.set(row)">Ver detalle</app-menu-item>
+                      @if (!isArchived(row)) {
+                        <app-menu-item icon="mdi:file-pdf-box" tooltip="Abre el comprobante para imprimir o enviar." (itemClick)="downloadPdf(row.id)">PDF del comprobante</app-menu-item>
+                        @if (row.canEmitCpe) {
+                          <app-menu-item icon="mdi:cloud-upload-outline" tooltip="Envía esta boleta o factura a SUNAT." [disabled]="emitMutation.isPending()" (itemClick)="emitMutation.mutate(row.id)">Enviar a SUNAT</app-menu-item>
+                        }
+                        @if (row.canConvertToCpe) {
+                          <app-menu-item icon="mdi:swap-horizontal" tooltip="Le da número de boleta o factura y la envía a SUNAT." (itemClick)="openConvert(row)">Cambiar a boleta o factura</app-menu-item>
+                        }
+                        @if (canReturn(row)) {
+                          <app-menu-item icon="mdi:keyboard-return" tooltip="El cliente devuelve productos: vuelven al stock y se emite nota de crédito si corresponde." (itemClick)="openReturn(row.id)">Devolver productos</app-menu-item>
+                        }
+                        @if (canDebit(row)) {
+                          <app-menu-item icon="mdi:file-document-plus-outline" tooltip="Cobra un cargo adicional sobre el comprobante aceptado." (itemClick)="openDebit(row)">Nota de débito</app-menu-item>
+                        }
+                        @if (canVoid(row)) {
+                          <app-menu-item variant="danger" icon="mdi:cancel" tooltip="Anula la venta entera. Te pedirá el motivo." (itemClick)="openVoid(row)">Anular venta</app-menu-item>
+                        }
+                      }
+                    </div>
+                  </app-table-dropdown>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
-  @if (listQuery.data(); as data) {
-    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="pageSize()" (currentPageChange)="page.set($event)" />
-  }
 </app-component-card>
 
-<app-modal [isOpen]="!!detailId()" (closed)="closeDetail()" className="w-full max-w-2xl" ariaLabel="Detalle de venta">
-  @if (detailQuery.isPending()) {
-    <div class="p-6 text-sm text-gray-500 dark:text-gray-400">Cargando detalle…</div>
-  } @else if (detailQuery.isError()) {
-    <div class="space-y-3 p-6">
-      <p class="text-sm text-rose-600 dark:text-rose-400">No se pudo cargar el detalle de la venta.</p>
-      <app-button startIconName="mdi:refresh" variant="outline" size="sm" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
-    </div>
-  } @else if (detailQuery.data(); as sale) {
-    <div class="space-y-4 p-6">
-      <h3 class="text-lg font-semibold">{{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
-      <p class="text-sm text-gray-500">{{ sale.createdAt | appDate: 'medium' }} · {{ sale.estado }}</p>
-      @if (isArchivedRow(sale)) {
-        <p class="text-sm text-slate-600 dark:text-slate-300">Registro archivado (cold storage) — consulta histórica.</p>
+<app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+
+<!-- ========== DETALLE ========== -->
+@let row = detailRow();
+@let sale = detailQuery.data();
+<app-modal [isOpen]="!!row" (closed)="detailRow.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar" ariaLabel="Detalle de venta">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    @if (row) {
+      <div class="flex flex-wrap items-center gap-3 pe-12">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ typeLabel(row.documentType) }} {{ number(row) }}</h3>
+        <app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" />
+      </div>
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}{{ row.seller ? ' · vendió ' + row.seller.nombre : '' }}</p>
+    }
+  </div>
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+    @if (detailQuery.isPending()) {
+      <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
+    } @else if (detailQuery.isError()) {
+      <p class="text-sm text-error-600 dark:text-error-400">No se pudo cargar la venta.</p>
+      <app-button size="sm" variant="outline" startIconName="mdi:refresh" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
+    } @else if (sale && row) {
+      @if (row.estado === 'ANULADA') {
+        <div class="rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+          Anulada{{ row.voidedAt ? ' el ' + (row.voidedAt | appDate: 'dd/MM/yyyy HH:mm') : '' }}{{ row.voidedBy ? ' por ' + row.voidedBy.nombre : '' }}.
+          @if (row.voidReason) { Motivo: {{ row.voidReason }} }
+        </div>
+      } @else if (row.pendingVoidRequestId) {
+        <div class="rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
+          Hay una solicitud de anulación esperando aprobación en Anulaciones.
+        </div>
       }
-      @if (billingStatusQuery.data(); as sunat) {
-        <p class="text-sm">
-          Estado SUNAT:
-          <app-status-badge [status]="sunat.sunatStatus" />
-          @if (sunat.sunatDescripcion) {
-            <span class="ml-1 text-gray-500">· {{ sunat.sunatDescripcion }}</span>
+      @if (isArchived(sale)) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">Venta archivada: solo se puede consultar.</p>
+      }
+
+      <dl class="grid gap-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Cliente</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ sale.customer?.nombre ?? 'Cliente varios' }}</dd>
+          @if (sale.customer?.numeroDocumento) {
+            <dd class="text-xs text-gray-500 dark:text-gray-400">{{ sale.customer?.numeroDocumento }}</dd>
           }
-        </p>
-      } @else if (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') {
-        <p class="text-sm text-gray-500">Sin comprobante electrónico asociado</p>
-      }
-      @if (sale.customer) {
-        <p class="text-sm">Cliente: {{ sale.customer.nombre }}</p>
-      }
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b text-xs uppercase text-gray-500">
-            <th class="py-2 text-left">Producto</th>
-            <th class="py-2 text-right">Cant.</th>
-            <th class="py-2 text-right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of sale.items; track item.id) {
-            <tr class="border-b border-gray-100 dark:border-gray-800">
-              <td class="py-2">
-                {{ item.producto }}
-                @if (item.lotes.length > 0) {
-                  <div class="text-xs text-gray-500">
-                    @for (lot of item.lotes; track lot.codigoLote) {
-                      <span>{{ lot.codigoLote }}×{{ lot.cantidad }} </span>
-                    }
-                  </div>
-                }
-              </td>
-              <td class="py-2 text-right">{{ item.cantidad }}</td>
-              <td class="py-2 text-right">{{ item.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Pago</dt>
+          @for (p of sale.payments; track $index) {
+            <dd class="mt-0.5 text-gray-800 dark:text-white/90">
+              {{ payLabel(p.metodo) }} · {{ p.monto | currency: 'PEN' : 'symbol' : '1.2-2' }}
+              @if (p.referencia) { <span class="block text-xs text-gray-500 dark:text-gray-400">Operación {{ p.referencia }}</span> }
+            </dd>
+          } @empty {
+            <dd class="mt-0.5 text-gray-500">—</dd>
+          }
+        </div>
+        @if (isElectronic(sale.documentType)) {
+          <div>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">SUNAT</dt>
+            @let sunat = billingStatusQuery.data();
+            <dd class="mt-0.5">
+              <app-status-badge [status]="sunat?.sunatStatus ?? row.sunatStatus ?? 'SIN_EMITIR'" [tone]="sunatTone(sunat?.sunatStatus ?? row.sunatStatus)" [label]="sunatLabel(sunat?.sunatStatus ?? row.sunatStatus)" />
+            </dd>
+            @if (sunat?.sunatDescripcion) {
+              <dd class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ sunat?.sunatDescripcion }}</dd>
+            } @else if (!row.electronicDocumentId && sale.emitBlockedReason) {
+              <dd class="mt-1 text-xs text-warning-600 dark:text-warning-400">{{ sale.emitBlockedReason }}</dd>
+            }
+          </div>
+        }
+      </dl>
+
+      <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <table class="w-full min-w-[520px] text-sm text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+            <tr>
+              <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Cant.</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">P. unit.</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
             </tr>
-          }
-        </tbody>
-      </table>
-      <div class="space-y-1 text-sm">
-        <div class="flex justify-between"><span>Subtotal</span><span>{{ sale.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
-        <div class="flex justify-between"><span>IGV</span><span>{{ sale.igvTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
-        <div class="flex justify-between font-bold"><span>Total</span><span>{{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
+          </thead>
+          <tbody>
+            @for (item of sale.items; track item.id) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                <td class="px-4 py-2">
+                  <span class="text-gray-800 dark:text-white/90">{{ item.producto }}</span>
+                  @if (item.lotes.length) {
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">
+                      Lote @for (lot of item.lotes; track lot.codigoLote; let last = $last) {{{ lot.codigoLote }} × {{ +lot.cantidad }}{{ last ? '' : ', ' }}}
+                    </span>
+                  }
+                  @if (+(item.cantidadDevuelta ?? 0) > 0) {
+                    <span class="block text-xs text-warning-600 dark:text-warning-400">Devuelto: {{ +(item.cantidadDevuelta ?? 0) }}</span>
+                  }
+                </td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ +item.cantidad }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ item.precioUnitario | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ item.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot class="border-t border-gray-200 dark:border-gray-800">
+            @if (+sale.descuentoTotal > 0) {
+              <tr><td colspan="3" class="px-4 py-1.5 text-end text-gray-500 dark:text-gray-400">Descuento</td><td class="px-4 py-1.5 text-end tabular-nums">−{{ sale.descuentoTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</td></tr>
+            }
+            <tr><td colspan="3" class="px-4 py-1.5 text-end text-gray-500 dark:text-gray-400">Op. gravada</td><td class="px-4 py-1.5 text-end tabular-nums">{{ sale.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</td></tr>
+            <tr><td colspan="3" class="px-4 py-1.5 text-end text-gray-500 dark:text-gray-400">IGV</td><td class="px-4 py-1.5 text-end tabular-nums">{{ sale.igvTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</td></tr>
+            <tr><td colspan="3" class="px-4 py-2 text-end font-semibold text-gray-800 dark:text-white/90">Total</td><td class="px-4 py-2 text-end font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td></tr>
+          </tfoot>
+        </table>
       </div>
-      <div class="flex flex-wrap justify-end gap-2 border-t pt-4">
-        @if (!isArchivedRow(sale)) {
-          <app-button
-            variant="outline"
-            startIconName="mdi:file-pdf-box"
-            (btnClick)="downloadPdf(sale.id)"
-          >
-            Descargar PDF
-          </app-button>
-        }
-        @if (!isArchivedRow(sale) && sale.canEmitCpe) {
-          <app-button
-            variant="primary"
-            startIconName="mdi:cloud-upload-outline"
-            [disabled]="emitMutation.isPending()" [loading]="emitMutation.isPending()"
-            (btnClick)="emitCpe(sale.id)"
-          >
-            Emitir a SUNAT
-          </app-button>
-        } @else if (!isArchivedRow(sale) && sale.emitBlockedReason && (sale.documentType === 'BOLETA' || sale.documentType === 'FACTURA') && !sale.electronicDocumentId) {
-          <p class="w-full text-right text-xs text-amber-700 dark:text-amber-300">{{ sale.emitBlockedReason }}</p>
-        }
-        @if (!isArchivedRow(sale) && sale.canConvertToCpe) {
-          <app-button
-            variant="primary"
-            startIconName="mdi:swap-horizontal"
-            (btnClick)="openConvert(sale.id); closeDetail()"
-          >
-            Migrar a boleta/factura
-          </app-button>
-        }
-        @if (canReturn(sale)) {
-          <app-button startIconName="mdi:keyboard-return" variant="outline" (btnClick)="openReturn(sale.id); closeDetail()">Devolver productos</app-button>
-        }
-        @if (canDebit(sale)) {
-          <app-button startIconName="mdi:file-document-plus-outline" variant="outline" (btnClick)="openDebit(sale.id); closeDetail()">Nota de débito</app-button>
-        }
-      </div>
-    </div>
-  }
+
+      @if (sale.comentario || sale.prescriptionNote) {
+        <dl class="space-y-2 text-sm">
+          @if (sale.comentario) { <div><dt class="text-xs text-gray-500 dark:text-gray-400">Comentario</dt><dd>{{ sale.comentario }}</dd></div> }
+          @if (sale.prescriptionNote) { <div><dt class="text-xs text-gray-500 dark:text-gray-400">Receta</dt><dd>{{ sale.prescriptionNote }}</dd></div> }
+        </dl>
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    <app-button variant="outline" (btnClick)="detailRow.set(null)">Cerrar</app-button>
+    @if (row && !isArchived(row)) {
+      <app-button variant="outline" startIconName="mdi:file-pdf-box" (btnClick)="downloadPdf(row.id)">PDF</app-button>
+      @if (canVoid(row)) {
+        <app-button variant="danger" startIconName="mdi:cancel" (btnClick)="openVoid(row)">Anular venta</app-button>
+      }
+      @if (canReturn(row)) {
+        <app-button variant="outline" startIconName="mdi:keyboard-return" (btnClick)="detailRow.set(null); openReturn(row.id)">Devolver productos</app-button>
+      }
+      @if (row.canConvertToCpe) {
+        <app-button startIconName="mdi:swap-horizontal" (btnClick)="detailRow.set(null); openConvert(row)">Cambiar a boleta o factura</app-button>
+      }
+      @if (row.canEmitCpe) {
+        <app-button startIconName="mdi:cloud-upload-outline" [loading]="emitMutation.isPending()" [disabled]="emitMutation.isPending()" (btnClick)="emitMutation.mutate(row.id)">Enviar a SUNAT</app-button>
+      }
+    }
+  </div>
 </app-modal>
 
-<app-modal title="Migrar nota de venta" [isOpen]="!!convertSaleId()" (closed)="closeConvert()" className="w-full max-w-md">
-  <div class="space-y-4">
-    <p class="text-sm text-gray-500">
-      Se reasignará serie/número de boleta o factura y se encolará la emisión a SUNAT (requiere OSE configurado).
-      Para factura el cliente debe tener RUC.
-    </p>
-    <div>
-      <app-label required>Comprobante destino</app-label>
-      <app-form-select
-        className="mt-1.5"
-        [showPlaceholder]="false"
-        [options]="convertDocOptions"
-        [value]="convertTarget()"
-        (valueChange)="convertTarget.set($any($event))"
-      />
-    </div>
-    <div class="flex justify-end gap-2">
-      <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeConvert()">Cancelar</app-button>
-      <app-button startIconName="mdi:swap-horizontal"
-        variant="primary"
-        [disabled]="convertMutation.isPending()" [loading]="convertMutation.isPending()"
-        (btnClick)="convertMutation.mutate()"
-      >
-        {{ convertMutation.isPending() ? 'Migrando…' : 'Migrar y emitir' }}
-      </app-button>
+<!-- ========== ANULAR (compartido) ========== -->
+<app-sale-void-modal [sale]="voidTarget()" (closed)="voidTarget.set(null)" />
+
+<!-- ========== CAMBIAR A BOLETA / FACTURA ========== -->
+<app-modal [isOpen]="!!convertRow()" (closed)="convertRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Cambiar a boleta o factura</h3>
+    @if (convertRow(); as c) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ typeLabel(c.documentType) }} {{ number(c) }} · {{ c.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+    }
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    <p>La venta recibe un número de boleta o factura y se envía a SUNAT. Necesitas un proveedor de facturación configurado.</p>
+    <app-form-select label="Comprobante" [required]="true" [showPlaceholder]="false" [options]="convertDocOptions" [value]="convertTarget()" (valueChange)="convertTarget.set($any($event))" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="convertMutation.isPending()" (btnClick)="convertRow.set(null)">Cancelar</app-button>
+    <app-button startIconName="mdi:swap-horizontal" [loading]="convertMutation.isPending()" [disabled]="convertMutation.isPending()" (btnClick)="convertMutation.mutate({ id: convertRow()!.id, target: convertTarget() })">Cambiar y enviar</app-button>
+  </div>
+</app-modal>
+
+<!-- ========== DEVOLUCIÓN ========== -->
+@let ret = returnSaleQuery.data();
+<app-modal [isOpen]="!!returnSaleId()" (closed)="closeReturn()" className="w-full max-w-3xl" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Devolver productos</h3>
+    @if (ret) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ typeLabel(ret.documentType) }} {{ number(ret) }} · los productos vuelven al stock, el efectivo sale de la caja de la venta (o de tu caja abierta si ya se cerró) y, si el comprobante fue aceptado por SUNAT, se emite una nota de crédito.</p>
+    }
+  </div>
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+    @if (returnSaleQuery.isPending()) {
+      <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
+    } @else if (ret) {
+      <app-text-area label="Motivo" [required]="true" placeholder="Ej. Producto equivocado" [maxLength]="500" [rows]="2" [value]="returnMotivo()" [error]="!!returnErrors().motivo" [hint]="returnErrors().motivo || ''" (valueChange)="returnMotivo.set($event); returnErrors.update(e => ({ ...e, motivo: undefined }))" />
+      <section>
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h4 class="text-sm font-medium text-gray-800 dark:text-white/90">¿Qué se devuelve? <span class="text-error-500" aria-hidden="true">*</span></h4>
+          <div class="flex gap-2">
+            <app-button size="sm" variant="outline" (btnClick)="setReturnAll(true)">Todo</app-button>
+            <app-button size="sm" variant="outline" (btnClick)="setReturnAll(false)">Nada</app-button>
+          </div>
+        </div>
+        <div class="max-w-full overflow-x-auto rounded-xl border" [class]="returnErrors().lines ? 'border-error-500' : 'border-gray-200 dark:border-gray-800'">
+          <table class="w-full min-w-[520px] text-sm text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+              <tr>
+                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
+                <th class="w-32 px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Devolver</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of returnLines(); track line.saleItemId) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                  <td class="px-4 py-2">
+                    <span class="text-gray-800 dark:text-white/90">{{ line.producto }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">Puedes devolver hasta {{ line.maxQty }}</span>
+                  </td>
+                  <td class="px-4 py-2">
+                    @if (line.lotes.length > 1) {
+                      <span class="text-xs text-gray-500 dark:text-gray-400">Vuelve a sus lotes: {{ line.lotes.join(', ') }}</span>
+                    } @else {
+                      {{ line.lotCode || '—' }}
+                    }
+                  </td>
+                  <td class="px-4 py-2">
+                    <app-input-field className="text-end" type="number" min="0" [max]="'' + line.maxQty" [ariaLabel]="'Cantidad a devolver de ' + line.producto" [value]="line.quantity" (valueChange)="setReturnQty(line.saleItemId, $event)" />
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="px-4 py-4 text-center text-gray-500">No queda nada por devolver en esta venta.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (returnErrors().lines) {
+          <p class="mt-2 text-xs font-medium text-error-600 dark:text-error-400">{{ returnErrors().lines }}</p>
+        }
+      </section>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-sm font-semibold text-gray-800 dark:text-white/90">A devolver: {{ returnTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="returnMutation.isPending()" (btnClick)="closeReturn()">Cancelar</app-button>
+      <app-button startIconName="mdi:keyboard-return" [loading]="returnMutation.isPending()" [disabled]="returnMutation.isPending()" (btnClick)="submitReturn()">Registrar devolución</app-button>
     </div>
   </div>
 </app-modal>
 
-<app-modal [isOpen]="!!returnSaleId()" (closed)="closeReturn()" className="w-full max-w-2xl">
-  @if (returnSaleQuery.data(); as sale) {
-    <div class="space-y-4 p-6">
-      <h3 class="text-lg font-semibold">Devolución · {{ sale.documentType }} {{ sale.serie }}-{{ sale.numero }}</h3>
-      <p class="text-sm text-gray-500">Se generará nota de crédito electrónica si el comprobante original fue aceptado por SUNAT.</p>
-      <div>
-        <app-label required>Motivo</app-label>
-        <app-input-field [maxLength]="500" [value]="returnMotivo()" (valueChange)="returnMotivo.set('' + $event)" placeholder="Motivo de devolución" />
-      </div>
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b text-xs uppercase text-gray-500">
-            <th class="py-2 text-left">Producto</th>
-            <th class="py-2 text-right">Cant. devolver</th>
-            <th class="py-2 text-left">Lote</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (line of returnLines(); track line.saleItemId) {
-            <tr class="border-b border-gray-100 dark:border-gray-800">
-              <td class="py-2">{{ line.producto }} <span class="text-xs text-gray-500">(máx. {{ line.maxQty }})</span></td>
-              <td class="py-2 text-right">
-                <app-input-field class="ml-auto block w-24" className="text-right" type="number" min="0" [max]="'' + line.maxQty" [ariaLabel]="'Cantidad a devolver de ' + line.producto" [value]="line.quantity" (valueChange)="updateReturnQty(line.saleItemId, '' + $event)" />
-              </td>
-              <td class="py-2">
-                <app-input-field placeholder="Opcional" [maxLength]="120" [ariaLabel]="'Lote de ' + line.producto" [value]="line.lotCode" (valueChange)="updateReturnLot(line.saleItemId, '' + $event)" />
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      <div class="flex items-center justify-between border-t pt-4">
-        <span class="font-semibold">Total a devolver: {{ returnTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-        <div class="flex gap-2">
-          <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeReturn()">Cancelar</app-button>
-          <app-button startIconName="mdi:keyboard-return" variant="primary" [disabled]="returnMutation.isPending()" [loading]="returnMutation.isPending()" (btnClick)="submitReturn()">
-            Confirmar devolución
-          </app-button>
-        </div>
-      </div>
-    </div>
-  }
-</app-modal>
-
-<app-modal title="Nota de débito electrónica" [isOpen]="!!debitSaleId()" (closed)="closeDebit()" className="w-full max-w-lg">
-  <div class="space-y-4">
-    <p class="text-sm text-gray-500">
-      Cargo adicional sobre comprobante ya emitido (intereses, ajuste de valor, etc.). Requiere CPE original aceptado.
-    </p>
-    <div>
-      <app-label required>Motivo</app-label>
-      <app-input-field [maxLength]="500" [value]="debitMotivo()" (valueChange)="debitMotivo.set('' + $event)" placeholder="Motivo del cargo" />
-    </div>
-    <div>
-      <app-label required>Descripción en comprobante</app-label>
-      <app-input-field [maxLength]="500" [value]="debitDescripcion()" (valueChange)="debitDescripcion.set('' + $event)" placeholder="Ej. Interés por mora" />
-    </div>
-    <div>
-      <app-label required>Monto total (inc. IGV)</app-label>
-      <app-input-field min="0.01" type="number" [value]="debitTotal()" (valueChange)="debitTotal.set('' + $event)" placeholder="0.00" />
-    </div>
-    <div class="flex justify-end gap-2 border-t pt-4">
-      <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeDebit()">Cancelar</app-button>
-      <app-button startIconName="mdi:file-document-plus-outline" variant="primary" [disabled]="debitMutation.isPending()" [loading]="debitMutation.isPending()" (btnClick)="submitDebit()">
-        Emitir ND
-      </app-button>
+<!-- ========== NOTA DE DÉBITO ========== -->
+<app-modal [isOpen]="!!debitRow()" (closed)="debitRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nota de débito</h3>
+    @if (debitRow(); as d) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Cargo adicional sobre {{ typeLabel(d.documentType) }} {{ number(d) }} (intereses, ajuste de precio…).</p>
+    }
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    <app-input-field label="Motivo" [isRequired]="true" placeholder="Ej. Interés por pago tardío" [maxLength]="500" [value]="debitMotivo()" [error]="!!debitErrors().motivo" [hint]="debitErrors().motivo || ''" (valueChange)="debitMotivo.set('' + $event)" />
+    <app-input-field label="Descripción en el comprobante" [isRequired]="true" placeholder="Ej. Interés por mora" [maxLength]="500" [value]="debitDescripcion()" [error]="!!debitErrors().descripcion" [hint]="debitErrors().descripcion || ''" (valueChange)="debitDescripcion.set('' + $event)" />
+    <app-input-field label="Monto (con IGV)" [isRequired]="true" type="number" min="0" step="0.01" [value]="debitTotal() ?? ''" [error]="!!debitErrors().total" [hint]="debitErrors().total || ''" (valueChange)="debitTotal.set($event === '' ? null : +$event)" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="debitMutation.isPending()" (btnClick)="debitRow.set(null)">Cancelar</app-button>
+      <app-button startIconName="mdi:file-document-plus-outline" [loading]="debitMutation.isPending()" [disabled]="debitMutation.isPending()" (btnClick)="submitDebit()">Emitir nota de débito</app-button>
     </div>
   </div>
 </app-modal>

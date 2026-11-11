@@ -540,7 +540,18 @@ export interface SaleVoidRequestDto {
   rejectedReason: string | null;
   createdAt: string;
   resolvedAt: string | null;
-  sale: { id: string; serie: string | null; numero: string | null; total: string; sellerId: string | null };
+  sale: {
+    id: string;
+    serie: string | null;
+    numero: string | null;
+    total: string;
+    sellerId: string | null;
+    documentType?: SaleDocumentType;
+    estado?: SaleStatus;
+    createdAt?: string;
+    customer?: { nombre: string } | null;
+    seller?: { id: string; nombre: string } | null;
+  };
   requestedBy: { id: string; nombre: string };
   approvedBy: { id: string; nombre: string } | null;
 }
@@ -2159,6 +2170,12 @@ export interface SaleListItemDto {
   convertBlockedReason?: string | null;
   returnBlockedReason?: string | null;
   debitBlockedReason?: string | null;
+  canVoid?: boolean;
+  /** Solicitud de anulación pendiente de aprobar. */
+  pendingVoidRequestId?: string | null;
+  voidReason?: string | null;
+  voidedAt?: string | null;
+  voidedBy?: { id: string; nombre: string } | null;
 }
 
 export interface SaleDetailDto {
@@ -2252,6 +2269,8 @@ export interface CreateSaleRequest {
 export interface SaleListFiltersRequest {
   page?: number;
   pageSize?: number;
+  /** Serie-número del comprobante, nombre o documento del cliente. */
+  search?: string;
   customerId?: string;
   estado?: SaleStatus;
   documentType?: SaleDocumentType;
@@ -2756,9 +2775,21 @@ export interface ElectronicDocumentListItemDto {
   sunatStatus: SunatDocumentStatus;
   total: string;
   customerNombre: string | null;
+  customerDocNumber?: string | null;
+  sunatDescripcion?: string | null;
   emittedAt: string | null;
   createdAt: string;
   saleId: string | null;
+}
+
+export interface ElectronicDocumentListFilters {
+  page?: number;
+  pageSize?: number;
+  sunatStatus?: SunatDocumentStatus;
+  documentType?: string;
+  search?: string;
+  from?: string;
+  to?: string;
 }
 
 export interface ElectronicDocumentDetailDto extends ElectronicDocumentListItemDto {

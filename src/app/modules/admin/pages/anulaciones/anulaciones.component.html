@@ -1,71 +1,221 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Anulaciones de venta</h1>
 </app-page-toolbar>
 
-@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="anulaciones">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Al anular una venta, los productos vuelven al stock y el efectivo sale de la caja en que se cobró; si ya se cerró (por ejemplo, una venta de ayer), sale de la caja abierta de quien anula, sin tocar el arqueo ya cerrado. Si tenía boleta o factura aceptada, se comunica la baja a SUNAT.</li>
+    <li>Los cajeros no anulan directamente: envían una <strong>solicitud</strong> y un farmacéutico, gerente o administrador la aprueba o rechaza.</li>
+    <li>Nadie puede anular su propia venta: siempre la autoriza otra persona. Si el cliente solo devuelve algunos productos, usa «Devolver productos» en el Historial de ventas.</li>
+  </ol>
+</app-help-panel>
 
-<app-component-card title="Ventas completadas" className="mt-4"
-  [loading]="listState.loading"
-  [error]="listState.error"
-  [empty]="listState.empty"
-  emptyTitle="No hay ventas completadas para anular"
-  (retry)="listQuery.refetch()">
-  <div class="overflow-x-auto">
-    <table class="w-full text-left text-sm">
-      <thead class="border-b text-xs uppercase text-gray-500">
-        <tr>
-          <th class="px-3 py-2">Fecha</th>
-          <th class="px-3 py-2">Comprobante</th>
-          <th class="px-3 py-2">Cliente</th>
-          <th class="px-3 py-2 text-right">Total</th>
-          <th class="px-3 py-2"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (row of listQuery.data()?.items ?? []; track row.id) {
-          <tr class="border-b border-gray-100 dark:border-gray-800">
-            <td class="px-3 py-2">{{ row.createdAt | appDate: 'short' }}</td>
-            <td class="px-3 py-2">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
-            <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
-            <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-            <td class="px-3 py-2 text-right">
-              <app-button
-                size="sm"
-                variant="danger"
-                [iconOnly]="true"
-                startIconName="mdi:cancel"
-                tooltip="Anular"
-                (btnClick)="voidTargetId.set(row.id)"
-              />
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="5" class="px-3 py-6 text-center text-gray-500">No hay ventas completadas para anular.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+<app-tab-strip class="mb-4 block" [tabs]="tabs()" [activeId]="tab()" (tabChange)="setTab($event)" />
+
+@if (tab() === 'solicitudes') {
+  @let reqState = requestsQuery | queryPageState: requests().length;
+  <app-component-card
+    title="Solicitudes de anulación"
+    [desc]="canApprove ? 'Revisa el motivo y aprueba o rechaza.' : 'Las solicitudes se aprueban por un farmacéutico, gerente o administrador.'"
+    className="overflow-hidden"
+    [bodyClass]="'p-0 sm:p-0'"
+    [loading]="reqState.loading"
+    [error]="reqState.error"
+    [empty]="reqState.empty"
+    [emptyTitle]="requestFilter() === 'PENDIENTE' ? 'No hay solicitudes pendientes' : 'No hay solicitudes'"
+    emptyHint="Se crean cuando un cajero pide anular una venta."
+    (retry)="requestsQuery.refetch()"
+  >
+    <div data-card-header-end class="w-44">
+      <app-form-select ariaLabel="Filtrar solicitudes" [showPlaceholder]="false" [options]="requestFilterOptions" [value]="requestFilter()" (valueChange)="requestFilter.set($any($event))" />
+    </div>
+    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="max-w-full overflow-x-auto">
+        <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+            <tr>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Solicitada</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Venta</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Motivo</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            @for (r of requests(); track r.id) {
+              <tr>
+                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                  {{ r.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">por {{ r.requestedBy.nombre }}</span>
+                </td>
+                <td class="px-5 py-4 text-theme-sm">
+                  <span class="block font-medium text-gray-800 dark:text-white/90">{{ number(r.sale) }}</span>
+                  <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ typeLabel(r.sale.documentType) }}{{ r.sale.customer ? ' · ' + r.sale.customer.nombre : '' }}</span>
+                </td>
+                <td class="max-w-xs px-5 py-4 text-theme-sm">
+                  {{ r.reason }}
+                  @if (r.rejectedReason) {
+                    <span class="block text-theme-xs text-error-600 dark:text-error-400">Rechazo: {{ r.rejectedReason }}</span>
+                  }
+                </td>
+                <td class="px-5 py-4 text-theme-sm">
+                  <app-status-badge [status]="r.status" [tone]="requestTone(r.status)" [label]="requestLabel(r.status)" />
+                  @if (r.approvedBy && r.resolvedAt) {
+                    <span class="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">{{ r.approvedBy.nombre }} · {{ r.resolvedAt | appDate: 'dd/MM HH:mm' }}</span>
+                  }
+                </td>
+                <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ r.sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="px-5 py-4 text-end">
+                  @if (r.status === 'PENDIENTE' && canApprove) {
+                    @if (isOwnSale(r)) {
+                      <span class="text-theme-xs text-gray-500 dark:text-gray-400">Es tu venta: la aprueba otra persona</span>
+                    } @else {
+                      <div class="inline-flex gap-2">
+                        <app-button size="sm" variant="outline" startIconName="mdi:close" (btnClick)="openReject(r)">Rechazar</app-button>
+                        <app-button size="sm" variant="danger" startIconName="mdi:check" (btnClick)="approveTarget.set(r)">Aprobar</app-button>
+                      </div>
+                    }
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin solicitudes.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </app-component-card>
+} @else {
+  <app-list-filters
+    collapsible
+    [showSelect]="false"
+    searchPlaceholder="Buscar por número (B001-25), cliente o DNI/RUC"
+    [searchValue]="search()"
+    [activeCount]="activeFilterCount()"
+    clearLabel="Limpiar"
+    (searchValueChange)="setSearch($event)"
+    (clear)="clearFilters()"
+  >
+    <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setDate('dateFrom', $event)" />
+    <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setDate('dateTo', $event)" />
+  </app-list-filters>
+
+  @let salesState = salesQuery | queryPageState: salesTotal();
+  <app-component-card
+    [title]="tab() === 'anuladas' ? 'Ventas anuladas' : 'Ventas completadas'"
+    [desc]="salesTotal() ? salesTotal() + ' en total' : ''"
+    className="overflow-hidden"
+    [bodyClass]="'p-0 sm:p-0'"
+    [loading]="salesState.loading"
+    [error]="salesState.error"
+    [empty]="salesState.empty"
+    [emptyTitle]="tab() === 'anuladas' ? 'No hay ventas anuladas en estas fechas' : 'No hay ventas para anular en estas fechas'"
+    emptyHint="Prueba con otras fechas o busca por número."
+    (retry)="salesQuery.refetch()"
+  >
+    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="max-w-full overflow-x-auto">
+        <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+            <tr>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+              @if (tab() === 'anuladas') {
+                <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Anulación</th>
+              }
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+              @if (tab() === 'ventas') {
+                <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            @for (row of sales(); track row.id) {
+              <tr [attr.data-row-tone]="row.pendingVoidRequestId ? 'warning' : null">
+                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                  {{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.seller?.nombre ?? '' }}</span>
+                </td>
+                <td class="px-5 py-4 text-theme-sm">
+                  <span class="block font-medium text-gray-800 dark:text-white/90">{{ number(row) }}</span>
+                  <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ typeLabel(row.documentType) }}</span>
+                </td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.customer?.nombre ?? 'Cliente varios' }}</td>
+                @if (tab() === 'anuladas') {
+                  <td class="max-w-xs px-5 py-4 text-theme-sm">
+                    {{ row.voidReason || '—' }}
+                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.voidedBy?.nombre ?? '' }}{{ row.voidedAt ? ' · ' + (row.voidedAt | appDate: 'dd/MM/yyyy HH:mm') : '' }}</span>
+                  </td>
+                }
+                <td class="px-5 py-4 text-end text-theme-sm tabular-nums" [class.line-through]="tab() === 'anuladas'">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                @if (tab() === 'ventas') {
+                  <td class="px-5 py-4 text-end">
+                    @if (row.pendingVoidRequestId) {
+                      <app-status-badge status="PENDIENTE" tone="warning" label="Solicitud pendiente" />
+                    } @else if (canVoid(row)) {
+                      <app-button size="sm" variant="danger" startIconName="mdi:cancel" (btnClick)="voidTarget.set(row)">{{ canApprove ? 'Anular' : 'Solicitar' }}</app-button>
+                    } @else {
+                      <span class="text-theme-xs text-gray-500 dark:text-gray-400">Tiene devoluciones</span>
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </app-component-card>
+  <app-pagination [currentPage]="page()" [totalItems]="salesTotal()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+}
+
+<app-sale-void-modal [sale]="voidTarget()" (closed)="voidTarget.set(null)" />
+
+<!-- ========== APROBAR ========== -->
+<app-modal [isOpen]="!!approveTarget()" (closed)="approveTarget.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Aprobar anulación</h3>
+    @if (approveTarget(); as a) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ typeLabel(a.sale.documentType) }} {{ number(a.sale) }} · {{ a.sale.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
+    }
   </div>
-</app-component-card>
+  <div data-modal-body class="space-y-3 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    @if (approveTarget(); as a) {
+      <p><strong>{{ a.requestedBy.nombre }}</strong> pidió anularla: «{{ a.reason }}».</p>
+    }
+    <ul class="list-disc space-y-1 ps-5">
+      <li>Los productos vuelven al stock.</li>
+      <li>El efectivo sale de la caja en que se cobró o, si ya se cerró, de tu caja abierta.</li>
+      <li>Si tiene boleta o factura aceptada, se comunica la baja a SUNAT.</li>
+      <li>No se puede deshacer.</li>
+    </ul>
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="approveMutation.isPending()" (btnClick)="approveTarget.set(null)">Cancelar</app-button>
+    <app-button variant="danger" startIconName="mdi:check" [loading]="approveMutation.isPending()" [disabled]="approveMutation.isPending()" (btnClick)="approveMutation.mutate(approveTarget()!.id)">Aprobar y anular</app-button>
+  </div>
+</app-modal>
 
-<app-modal [isOpen]="!!voidTargetId()" (closed)="voidTargetId.set(null)" className="w-full max-w-md">
-  <div class="space-y-4 p-6">
-    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Anular venta</h3>
-    <div>
-      <app-label required>Motivo de anulación</app-label>
-      <app-input-field [value]="voidReason()" (valueChange)="voidReason.set('' + $event)" [maxLength]="500" />
-    </div>
-    <div class="flex justify-end gap-2">
-      <app-button startIconName="mdi:close" variant="outline" (btnClick)="voidTargetId.set(null)">Cancelar</app-button>
-      <app-button startIconName="mdi:check"
-        variant="primary"
-        [disabled]="!voidReason().trim() || voidMutation.isPending()" [loading]="voidMutation.isPending()"
-        (btnClick)="voidMutation.mutate()"
-      >
-        Confirmar anulación
-      </app-button>
-    </div>
+<!-- ========== RECHAZAR ========== -->
+<app-modal [isOpen]="!!rejectTarget()" (closed)="rejectTarget.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Rechazar solicitud</h3>
+    @if (rejectTarget(); as r) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ typeLabel(r.sale.documentType) }} {{ number(r.sale) }} · la venta seguirá vigente.</p>
+    }
+  </div>
+  <div data-modal-body class="px-4 py-4 sm:px-6">
+    <app-text-area label="Motivo del rechazo" [required]="true" helpText="Lo verá quien pidió la anulación." [maxLength]="500" [rows]="3" [value]="rejectReason()" [error]="!!rejectError()" [hint]="rejectError()" (valueChange)="rejectReason.set($event); rejectError.set('')" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="rejectMutation.isPending()" (btnClick)="rejectTarget.set(null)">Cancelar</app-button>
+    <app-button startIconName="mdi:close" [loading]="rejectMutation.isPending()" [disabled]="rejectMutation.isPending()" (btnClick)="submitReject()">Rechazar</app-button>
   </div>
 </app-modal>

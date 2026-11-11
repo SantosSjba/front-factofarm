@@ -155,6 +155,7 @@ import type {
   StaffLeaveStatusDto,
   StaffProductivityReportDto,
   SaleVoidRequestDto,
+  ElectronicDocumentListFilters,
   AuditLogListResponseDto,
   EstablishmentListResponseDto,
   InventoryLotListFiltersRequest,
@@ -462,8 +463,9 @@ export class DirectoryApiService {
     return this.http.get<SaleVoidRequestDto[]>(`${this.base}/sales/void-requests`, { params });
   }
 
+  /** Supervisores anulan en el acto; el resto deja una solicitud pendiente de aprobación. */
   requestVoidSale(id: string, reason: string) {
-    return this.http.post<unknown>(`${this.base}/sales/${id}/void-request`, { reason });
+    return this.http.post<{ ok: boolean; requestId?: string; status?: string; message?: string }>(`${this.base}/sales/${id}/void-request`, { reason });
   }
 
   approveVoidRequest(requestId: string) {
@@ -1709,6 +1711,7 @@ export class DirectoryApiService {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
     if (filters?.customerId) params['customerId'] = filters.customerId;
     if (filters?.estado) params['estado'] = filters.estado;
     if (filters?.documentType) params['documentType'] = filters.documentType;
@@ -2047,11 +2050,15 @@ export class DirectoryApiService {
     return this.http.patch<BillingConfigDto>(`${this.base}/billing/config`, body);
   }
 
-  listElectronicDocuments(filters?: { page?: number; pageSize?: number; sunatStatus?: SunatDocumentStatus }) {
+  listElectronicDocuments(filters?: ElectronicDocumentListFilters) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     if (filters?.sunatStatus) params['sunatStatus'] = filters.sunatStatus;
+    if (filters?.documentType) params['documentType'] = filters.documentType;
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    if (filters?.from) params['from'] = filters.from;
+    if (filters?.to) params['to'] = filters.to;
     return this.http.get<PaginatedResponseDto<ElectronicDocumentListItemDto>>(
       `${this.base}/billing/documents`,
       { params },

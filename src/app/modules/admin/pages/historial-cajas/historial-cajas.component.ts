@@ -8,6 +8,10 @@ import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { CashSessionSummaryComponent } from '../../components/cash/cash-session-summary.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -32,15 +36,6 @@ import type {
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 const CHAIN_ROLES = new Set(['SUPER_ADMIN', 'ADMIN_CADENA', 'ADMINISTRADOR']);
-
-const MOVEMENT_LABELS: Record<string, string> = {
-  APERTURA: 'Apertura',
-  INGRESO: 'Ingreso',
-  EGRESO: 'Egreso',
-  VENTA: 'Venta',
-  ANULACION: 'Anulación',
-  CIERRE: 'Cierre',
-};
 
 /** Historial y supervisión de sesiones de caja: KPIs, filtros, detalle, cierre forzado y exportación. */
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
@@ -67,6 +62,10 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     ModalComponent,
     CashCloseModalComponent,
     CashOpenSessionsBannerComponent,
+    CashSessionSummaryComponent,
+    HelpPanelComponent,
+    KpiTileComponent,
+    ListFiltersComponent,
   ],
   templateUrl: './historial-cajas.component.html',
 })
@@ -78,8 +77,6 @@ export class HistorialCajasComponent {
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas y caja' }, { label: 'Historial de cajas' }];
   protected readonly formatHours = formatHoursOpen;
-  protected readonly abs = (value: string) => Math.abs(Number(value));
-  protected readonly movementLabel = (tipo: string) => MOVEMENT_LABELS[tipo] ?? tipo;
   protected readonly isChain = CHAIN_ROLES.has(this.auth.user()?.role ?? '');
 
   protected readonly page = signal(1);
@@ -179,6 +176,17 @@ export class HistorialCajasComponent {
   );
   protected readonly detailError = computed(() =>
     httpErrorMessage(this.detailQuery.error(), 'No se pudo cargar el detalle de la sesión.'),
+  );
+
+  private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
+  protected money(value: string | number | null | undefined): string {
+    return this.pen.format(Number(value) || 0);
+  }
+
+  protected readonly activeFilterCount = computed(
+    () =>
+      [this.establishmentId(), this.userId(), this.cashRegisterId(), this.estado(), this.diferencia(), this.forzado()].filter(Boolean).length +
+      (this.dateFrom() !== this.locale.monthStartYmd() || this.dateTo() !== this.locale.todayYmd() ? 1 : 0),
   );
 
   protected onFilterChange(): void {

@@ -336,10 +336,11 @@
         @if (catalogViewMode() === 'tiles') {
           <div class="grid grid-cols-2 gap-1.5 p-1.5 sm:grid-cols-3 sm:gap-2 sm:p-2 xl:grid-cols-4">
             @for (item of catalog(); track item.id) {
-              <button
-                type="button"
-                class="flex flex-col rounded-lg border border-gray-200 bg-white p-1.5 text-left transition hover:border-brand-400 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:p-2"
-                (click)="addToCart(item)"
+              <app-button
+                variant="unstyled"
+                className="flex w-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-1.5 text-left transition hover:border-brand-400 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:p-2"
+                [ariaLabel]="'Agregar ' + item.nombre"
+                (btnClick)="addToCart(item)"
               >
                 <div class="mb-1.5 flex h-12 items-center justify-center overflow-hidden rounded-md bg-gray-100 sm:h-16 dark:bg-gray-800">
                   @if (productImageUrl(item.imagenArchivoId) | authFile | async; as imgUrl) {
@@ -357,7 +358,7 @@
                 @if (item.necesitaRecetaMedica) {
                   <span class="mt-0.5 text-[10px] font-medium text-rose-600">Rx</span>
                 }
-              </button>
+              </app-button>
             } @empty {
               <p class="col-span-full px-3 py-8 text-center text-sm text-gray-500">
                 @if (catalogLoading()) { Cargando productos… }
@@ -647,13 +648,16 @@
 </app-page-state>
 </div>
 
-<app-modal [isOpen]="payModalOpen()" (closed)="payModalOpen.set(false)" className="w-full max-w-xl" ariaLabel="Cobrar venta">
-  <app-form-stack className="p-4 sm:p-6">
-    <h3 class="inline-flex items-center gap-2 text-base font-semibold sm:text-lg">
+<app-modal [isOpen]="payModalOpen()" (closed)="payModalOpen.set(false)" className="w-full max-w-xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar" ariaLabel="Cobrar venta">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="inline-flex items-center gap-2 pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       <app-icon name="mdi:cash-multiple" iconClass="size-5 text-brand-500" />
       Cobrar venta
     </h3>
-    <div class="space-y-1.5 text-sm">
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
+  <app-form-stack>
+    <div class="space-y-1.5 rounded-xl bg-gray-50 p-4 text-sm dark:bg-white/[0.03]">
       <div class="flex justify-between"><span>Subtotal</span><span>{{ cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       <div class="flex justify-between"><span>IGV</span><span>{{ cartIgv() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></div>
       @if (promoDiscount() > 0) {
@@ -753,6 +757,30 @@
       </app-form-stack>
     </div>
 
+    @if (cashToCollect() > 0) {
+      <div class="grid items-end gap-3 rounded-xl border border-gray-200 p-3 sm:grid-cols-2 sm:p-4 dark:border-gray-700">
+        <app-input-field
+          label="El cliente paga con"
+          helpText="Opcional: solo para calcular el vuelto."
+          type="number"
+          min="0"
+          step="0.10"
+          inputMode="decimal"
+          placeholder="0.00"
+          [value]="cashReceived() ?? ''"
+          (valueChange)="cashReceived.set($event === '' ? null : +$event)"
+        />
+        @if (cashChange(); as change) {
+          <p class="text-sm sm:pb-2.5" [class.text-error-600]="change < 0">
+            {{ change < 0 ? 'Faltan' : 'Vuelto' }}
+            <span class="block text-2xl font-bold tabular-nums" [class.text-success-600]="change >= 0">{{ (change < 0 ? -change : change) | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+          </p>
+        } @else if (cashChange() === 0) {
+          <p class="text-sm sm:pb-2.5">Vuelto <span class="block text-2xl font-bold tabular-nums">S/ 0.00</span></p>
+        }
+      </div>
+    }
+
     <app-form-field label="Código promoción">
       <app-input-field [maxLength]="40"
         [value]="promotionCode()"
@@ -777,29 +805,40 @@
         }
       </div>
     }
-    <div class="flex justify-end gap-3 pt-2">
-      <app-button variant="outline" startIconName="mdi:close" (btnClick)="payModalOpen.set(false)">
-        Cancelar
-      </app-button>
+  </app-form-stack>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-sm font-semibold" [class.text-error-600]="paymentRemaining() !== 0" [class.text-success-600]="paymentRemaining() === 0">
+      {{ paymentRemaining() === 0 ? 'Pago completo' : paymentRemaining() > 0 ? 'Falta ' + (paymentRemaining() | currency: 'PEN' : 'symbol' : '1.2-2') : 'Sobra ' + (-paymentRemaining() | currency: 'PEN' : 'symbol' : '1.2-2') }}
+    </p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="saleMutation.isPending()" (btnClick)="payModalOpen.set(false)">Cancelar</app-button>
       <app-button
         variant="primary"
         startIconName="mdi:printer-pos"
         [disabled]="saleMutation.isPending()" [loading]="saleMutation.isPending()"
         (btnClick)="confirmSale()"
       >
-        Confirmar e imprimir
+        Cobrar e imprimir
       </app-button>
     </div>
-  </app-form-stack>
+  </div>
 </app-modal>
 
 <app-modal [isOpen]="!!lotModalProductId()" (closed)="closeLotModal()" className="w-full max-w-lg" ariaLabel="Selección de lotes">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="inline-flex items-center gap-2 pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
+      <app-icon name="mdi:barcode-scan" iconClass="size-5 text-brand-500" />
+      ¿De qué lote sale?
+    </h3>
+    @if (lotModalLine(); as line) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ line.nombre }}</p>
+    }
+  </div>
+  <div data-modal-body class="px-4 py-4 sm:px-6">
   @if (lotModalLine(); as line) {
-    <div class="space-y-3 p-6">
-      <h3 class="inline-flex items-center gap-2 font-semibold">
-        <app-icon name="mdi:barcode-scan" iconClass="size-5 text-brand-500" />
-        Lotes — {{ line.nombre }}
-      </h3>
+    <div class="space-y-4">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Automático: sale primero el lote que vence antes. Manual: eliges tú el lote (por ejemplo, el que tienes en la mano).</p>
       <div class="flex gap-2">
         <app-button
           size="sm"
@@ -807,7 +846,7 @@
           [variant]="line.lotMode === 'AUTO' ? 'primary' : 'outline'"
           (btnClick)="setLotMode('AUTO')"
         >
-          FEFO/FIFO
+          Automático
         </app-button>
         <app-button
           size="sm"
@@ -820,29 +859,39 @@
       </div>
       @if (line.lotMode === 'MANUAL') {
         <div class="flex flex-col gap-2 sm:flex-row">
-          <app-input-field placeholder="Código lote *" [maxLength]="120" [value]="manualLotCode()" (valueChange)="manualLotCode.set('' + $event)" />
-          <app-input-field type="number" min="0" placeholder="Cantidad *" ariaLabel="Cantidad del lote" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event)" />
-          <app-button startIconName="mdi:plus" size="sm" (btnClick)="addManualLot()">+</app-button>
+          <app-input-field class="flex-1" label="Lote" [isRequired]="true" [maxLength]="120" [value]="manualLotCode()" (valueChange)="manualLotCode.set('' + $event)" />
+          <app-input-field class="sm:w-28" label="Cantidad" [isRequired]="true" type="number" min="0" [value]="manualLotQty()" (valueChange)="manualLotQty.set(+$event)" />
+          <div class="sm:pt-7"><app-button startIconName="mdi:plus" size="sm" (btnClick)="addManualLot()">Agregar</app-button></div>
         </div>
       }
       @if (lotPreviewLoading()) {
         <p class="text-sm text-gray-500">Calculando…</p>
       } @else {
-        @for (row of lotPreviewRows(); track row.codigoLote) {
-          <div class="text-sm">{{ row.codigoLote }} × {{ row.cantidad }}</div>
-        }
+        <ul class="divide-y divide-gray-100 rounded-xl border border-gray-200 text-sm dark:divide-gray-800 dark:border-gray-800">
+          @for (row of lotPreviewRows(); track row.codigoLote) {
+            <li class="flex justify-between px-4 py-2"><span>Lote {{ row.codigoLote }}</span><span class="tabular-nums">{{ row.cantidad }}</span></li>
+          } @empty {
+            <li class="px-4 py-3 text-gray-500">Sin lotes asignados todavía.</li>
+          }
+        </ul>
       }
-      <app-button startIconName="mdi:check" variant="primary" (btnClick)="closeLotModal()">Listo</app-button>
     </div>
   }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button startIconName="mdi:check" variant="primary" (btnClick)="closeLotModal()">Listo</app-button>
+  </div>
 </app-modal>
 
 <app-modal [isOpen]="!!substituteModalProductId()" (closed)="closeSubstituteModal()" className="w-full max-w-lg" ariaLabel="Sustitutos genéricos o bioequivalentes">
-  <div class="space-y-3 p-6">
-    <h3 class="inline-flex items-center gap-2 font-semibold">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="inline-flex items-center gap-2 pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       <app-icon name="mdi:molecule" iconClass="size-5 text-brand-500" />
-      Sustitutos genéricos / bioequivalentes
+      Alternativas con el mismo principio activo
     </h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Genéricos o bioequivalentes con stock. Elige uno para reemplazarlo en el carrito.</p>
+  </div>
+  <div data-modal-body class="space-y-3 px-4 py-4 sm:px-6">
     @if (substituteLoading()) {
       <p class="text-sm text-gray-500">Buscando alternativas con stock…</p>
     } @else if (substituteOptions().length === 0) {

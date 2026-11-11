@@ -394,7 +394,7 @@ const VENDER: TourDef = {
     {
       title: '¿Te equivocaste en una venta?',
       description:
-        'Búscala en <b>Ventas › Notas de venta</b> (o Comprobantes) y pide su <b>anulación</b>: el stock vuelve al inventario y el efectivo sale de la caja.<br><br>Repite esta guía cuando quieras desde <b>tu cuenta › Tutoriales</b>.',
+        'Búscala en <b>Ventas › Historial de ventas</b> (o Anulaciones) y pide su <b>anulación</b>: el stock vuelve al inventario y el efectivo sale de la caja.<br><br>Repite esta guía cuando quieras desde <b>tu cuenta › Tutoriales</b>.',
     },
   ],
 };

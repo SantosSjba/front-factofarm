@@ -1,42 +1,95 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Resúmenes SUNAT</h1>
+
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Resúmenes diarios</h1>
 </app-page-toolbar>
 
-<app-component-card title="Resumen diario de boletas (RC)" className="mt-4">
-  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-    Envía el resumen diario de boletas aceptadas al OSE/SUNAT para el día seleccionado.
-  </p>
-  <div class="flex max-w-md flex-wrap items-end gap-3">
-    <div class="min-w-0 flex-1">
-      <app-label for="resumen-fecha" required>Fecha del resumen</app-label>
-      <app-input-field
-        id="resumen-fecha"
-        className="mt-1.5"
-        type="date"
-        [value]="fecha()"
-        (valueChange)="fecha.set('' + $event)"
-      />
-    </div>
-    <app-button startIconName="mdi:send-outline"
-      variant="primary"
-      [disabled]="summaryMutation.isPending() || !canSendDailySummary()" [loading]="summaryMutation.isPending()"
-      (btnClick)="summaryMutation.mutate()"
-    >
-      {{ summaryMutation.isPending() ? 'Enviando…' : 'Enviar RC' }}
-    </app-button>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="resumenes">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>SUNAT pide informar las boletas de cada día en un <strong>resumen diario</strong>. Elige el día y pulsa «Enviar resumen».</li>
+    <li>Antes de enviarlo, revisa que no queden boletas pendientes ni rechazadas ese día: corrígelas en <a routerLink="/comprobante-electronico" class="text-brand-600 underline dark:text-brand-400">Comprobantes electrónicos</a>.</li>
+    <li>Los resúmenes enviados quedan abajo con la respuesta de SUNAT.</li>
+  </ol>
+</app-help-panel>
+
+@if (blockedMessage(); as blocked) {
+  <div class="mb-4 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">{{ blocked }}</div>
+}
+
+<app-component-card title="Enviar resumen" desc="Boletas del día elegido.">
+  <div class="flex flex-wrap items-end gap-3">
+    <app-input-field class="w-full max-w-xs" label="Día" [isRequired]="true" type="date" [max]="today" [value]="fecha()" [error]="!!fechaError()" [hint]="fechaError()" (valueChange)="fecha.set('' + $event); fechaError.set('')" />
+    <ng-container *appHasPermission="'billing.write'">
+      <app-button startIconName="mdi:send-outline" [disabled]="!!blockedMessage() || summaryMutation.isPending()" (btnClick)="askSend()">Enviar resumen</app-button>
+    </ng-container>
   </div>
-  @if (dailySummaryBlockedMessage(); as blocked) {
-    <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-      {{ blocked }}
-    </p>
-  }
-  @if (summaryMutation.isError()) {
-    <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200" role="alert">
-      {{ summaryErrorMessage() }}
-    </div>
-  }
-  @if (lastResult(); as result) {
-    <p class="mt-4 text-sm text-emerald-700 dark:text-emerald-300">{{ result.message }} · ID: {{ result.id }}</p>
-  }
+  <div class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <app-kpi-tile label="Boletas del día" [value]="'' + (boletasDia.data()?.total ?? '—')" icon="mdi:receipt-text-outline" tone="brand" />
+    <app-kpi-tile label="Aceptadas" [value]="'' + (boletasAceptadas.data()?.total ?? '—')" icon="mdi:check-circle-outline" tone="success" />
+    <app-kpi-tile label="Pendientes de envío" [value]="'' + (boletasPendientes.data()?.total ?? '—')" icon="mdi:clock-outline" [tone]="(boletasPendientes.data()?.total ?? 0) > 0 ? 'warning' : 'gray'" />
+    <app-kpi-tile label="Rechazadas" [value]="'' + (boletasRechazadas.data()?.total ?? '—')" icon="mdi:alert-circle-outline" [tone]="(boletasRechazadas.data()?.total ?? 0) > 0 ? 'error' : 'gray'" hint="Corrígelas y reenvíalas antes del resumen." />
+  </div>
 </app-component-card>
+
+@let histState = historyQuery | queryPageState: historyTotal();
+<app-component-card
+  title="Resúmenes enviados"
+  [desc]="historyTotal() ? historyTotal() + ' en total' : ''"
+  className="mt-4 overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="histState.loading"
+  [error]="histState.error"
+  [empty]="histState.empty"
+  emptyTitle="Aún no se envió ningún resumen"
+  emptyHint="Aparecerán aquí al enviarlos."
+  (retry)="historyQuery.refetch()"
+>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Enviado</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Número</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado SUNAT</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (r of history(); track r.id) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ (r.emittedAt ?? r.createdAt) | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ number(r) }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                <app-status-badge [status]="r.sunatStatus" [tone]="sunatTone(r.sunatStatus)" [label]="sunatLabel(r.sunatStatus)" />
+                @if (r.sunatDescripcion) {
+                  <span class="mt-1 block max-w-md truncate text-theme-xs text-gray-500 dark:text-gray-400" [title]="r.sunatDescripcion">{{ r.sunatDescripcion }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ r.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+<app-pagination [currentPage]="page()" [totalItems]="historyTotal()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+
+<app-modal [isOpen]="confirmOpen()" (closed)="confirmOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Enviar resumen del {{ fecha() | appDate: 'dd/MM/yyyy' }}</h3>
+  </div>
+  <div data-modal-body class="space-y-3 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    <p>Se informará a SUNAT las boletas de ese día.</p>
+    @if ((boletasPendientes.data()?.total ?? 0) > 0 || (boletasRechazadas.data()?.total ?? 0) > 0) {
+      <p class="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
+        Ese día hay {{ boletasPendientes.data()?.total ?? 0 }} boleta(s) pendiente(s) y {{ boletasRechazadas.data()?.total ?? 0 }} rechazada(s). Conviene resolverlas antes.
+      </p>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="summaryMutation.isPending()" (btnClick)="confirmOpen.set(false)">Cancelar</app-button>
+    <app-button startIconName="mdi:send-outline" [loading]="summaryMutation.isPending()" [disabled]="summaryMutation.isPending()" (btnClick)="summaryMutation.mutate(fecha())">Enviar</app-button>
+  </div>
+</app-modal>

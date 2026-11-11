@@ -353,6 +353,18 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly paymentRemaining = computed(
     () => Math.round((this.payableTotal() - this.paymentPaidTotal()) * 100) / 100,
   );
+  /** Efectivo que entrega el cliente: solo para calcular el vuelto (no se guarda). */
+  protected readonly cashReceived = signal<number | null>(null);
+  protected readonly cashToCollect = computed(() =>
+    this.paymentLines()
+      .filter((line) => line.metodo === 'EFECTIVO')
+      .reduce((acc, line) => acc + (Number(line.monto) || 0), 0),
+  );
+  protected readonly cashChange = computed(() => {
+    const received = this.cashReceived();
+    if (received == null) return null;
+    return Math.round((received - this.cashToCollect()) * 100) / 100;
+  });
   /** El local puede desactivar la exigencia de receta (Establecimientos → POS). */
   protected readonly posRequirePrescription = computed(
     () => this.posPaymentSettingsQuery.data()?.posRequirePrescription ?? true,
@@ -1116,6 +1128,7 @@ export class PuntoVentaComponent implements OnDestroy {
     // F-LOG-06: inicializar pagos solo al abrir el modal
     const total = Math.round(this.payableTotal() * 100) / 100;
     this.paymentLines.set([createPaymentLine('EFECTIVO', total)]);
+    this.cashReceived.set(null);
     this.payModalOpen.set(true);
     this.mobilePosTab.set('cart');
   }

@@ -1,241 +1,350 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Comprobantes electrónicos</h1>
-  <div class="flex gap-2">
-    <app-button startIconName="mdi:file-document-edit-outline" variant="outline" (btnClick)="openSpecialModal()">Comprobante especial</app-button>
-    <app-button startIconName="mdi:cog-outline" variant="outline" (btnClick)="openConfig()">Configuración OSE</app-button>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <ng-container *appHasPermission="'billing.write'">
+      <app-button size="sm" variant="outline" startIconName="mdi:cog-outline" (btnClick)="openConfig()">Configuración</app-button>
+      <app-button size="sm" startIconName="mdi:file-document-plus-outline" [disabled]="noProvider()" (btnClick)="openSpecial()">Comprobante especial</app-button>
+    </ng-container>
   </div>
 </app-page-toolbar>
 
-<app-component-card title="Filtros" className="mt-4">
-  <div class="max-w-xs">
-    <app-form-select [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set('' + $event); page.set(1)" />
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="comprobante-electronico">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Aquí ves cada boleta, factura, nota y guía enviada a SUNAT, con su estado. Las boletas y facturas se envían solas al cobrar en el Punto de venta.</li>
+    <li><strong>Aceptado</strong> significa que el comprobante es válido. Si sale <strong>Rechazado</strong>, abre el detalle, lee el motivo y pulsa <strong>«Reenviar»</strong>.</li>
+    <li>Para anular un comprobante de una venta se anula la venta: el stock y el efectivo vuelven, y se comunica la baja a SUNAT.</li>
+  </ol>
+</app-help-panel>
+
+@if (noProvider() && configQuery.isSuccess()) {
+  <div class="mb-4 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
+    No hay proveedor de facturación electrónica configurado: solo se emiten notas de venta. Configúralo en
+    <a routerLink="/mi-farmacia" class="font-medium underline">Mi farmacia</a> o con el botón «Configuración».
   </div>
-</app-component-card>
+}
 
-@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+<app-list-filters
+  collapsible
+  [showSelect]="false"
+  searchPlaceholder="Buscar por número (B001-25) o cliente"
+  [searchValue]="search()"
+  [activeCount]="activeFilterCount()"
+  clearLabel="Limpiar"
+  (searchValueChange)="setSearch($event)"
+  (clear)="clearFilters()"
+>
+  <app-form-select label="Estado SUNAT" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions" (valueChange)="setFilter('estado', $event)" />
+  <app-form-select label="Tipo" [showPlaceholder]="false" [value]="tipo()" [options]="tipoOptions" (valueChange)="setFilter('tipo', $event)" />
+  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+</app-list-filters>
 
-<app-component-card title="Bandeja CPE" className="mt-4"
+@let listState = listQuery | queryPageState: total();
+
+<app-component-card
+  title="Comprobantes"
+  [desc]="total() ? total() + ' en total' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay comprobantes en la bandeja"
-  (retry)="listQuery.refetch()">
-  <div class="overflow-x-auto">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b text-xs uppercase text-gray-500">
-      <tr>
-        <th class="px-3 py-2">Comprobante</th>
-        <th class="px-3 py-2">Cliente</th>
-        <th class="px-3 py-2">Estado SUNAT</th>
-        <th class="px-3 py-2">Fecha</th>
-        <th class="px-3 py-2 text-right">Total</th>
-        <th class="px-3 py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of listQuery.data()?.items ?? []; track row.id) {
-        <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2 font-medium">{{ row.documentType }} {{ row.serie }}-{{ row.numero }}</td>
-          <td class="px-3 py-2">{{ row.customerNombre ?? '—' }}</td>
-          <td class="px-3 py-2">
-            <app-status-badge [status]="row.sunatStatus" />
-          </td>
-          <td class="px-3 py-2">{{ (row.emittedAt ?? row.createdAt) | appDate: 'short' }}</td>
-          <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-          <td class="px-3 py-2 text-right">
-            <div class="flex flex-wrap items-center justify-end gap-1.5">
-              <app-button
-                size="sm"
-                variant="outline"
-                [iconOnly]="true"
-                startIconName="mdi:eye-outline"
-                tooltip="Ver"
-                (btnClick)="openDetail(row.id)"
-              />
-              @if (row.sunatStatus === 'RECHAZADO') {
-                <app-button
-                  size="sm"
-                  variant="outline"
-                  [iconOnly]="true"
-                  startIconName="mdi:send-outline"
-                  tooltip="Reenviar"
-                  (btnClick)="retryMutation.mutate(row.id)"
-                />
-              }
-            </div>
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
-        </tr>
-      }
-    </tbody>
-  </table>
-  </div>
-  @if (listQuery.data(); as data) {
-    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
-  }
-</app-component-card>
-
-<app-modal title="Configuración OSE / SUNAT" [isOpen]="configOpen()" (closed)="configOpen.set(false)" className="w-full max-w-lg">
-  <div class="space-y-4">
-    <p class="text-xs text-gray-500">
-      Preferible en
-      <a routerLink="/mi-farmacia" class="text-brand-600 underline">Mi farmacia</a>.
-      Primero configure el panel del proveedor; aquí solo pega URL y token para que FactoFarm emita.
-    </p>
-    <app-form-field label="Proveedor de facturación" required>
-      <app-form-select [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
-    </app-form-field>
-    <p class="text-xs text-gray-600 dark:text-gray-300">{{ providerSetupHint() }}</p>
-    @if (billingCapabilities(); as caps) {
-      <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-        @for (note of caps.notes; track note) {
-          <p>{{ note }}</p>
-        }
-        @if (!caps.supportsDailySummary) {
-          <p>RC diario: no disponible con este conector (use Nubefact o el panel del OSE).</p>
-        }
-        @if (!caps.supportsVoidDocument) {
-          <p>Comunicación de baja: no disponible con este conector (use Nubefact o APIsPERU).</p>
-        }
-      </div>
-    }
-    <app-form-field label="RUC emisor">
-      <app-input-field [value]="rucEmisor()" (valueChange)="rucEmisor.set('' + $event)" placeholder="20XXXXXXXXX" [maxLength]="11" inputMode="numeric" />
-    </app-form-field>
-    <app-form-field label="Razón social emisor">
-      <app-input-field [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" [maxLength]="200" />
-    </app-form-field>
-    <app-form-field label="URL / RUTA del panel del proveedor">
-      <app-input-field
-        [value]="apiUrl()"
-        (valueChange)="apiUrl.set('' + $event)"
-        placeholder="https://…"
-        [maxLength]="500"
-      />
-    </app-form-field>
-    <app-form-field label="URL consulta (opcional)">
-      <app-input-field
-        [value]="consultaApiUrl()"
-        (valueChange)="consultaApiUrl.set('' + $event)"
-        placeholder="https://…"
-        [maxLength]="500"
-      />
-    </app-form-field>
-    <app-form-field label="Token del proveedor">
-      <app-input-field
-        type="password"
-        [value]="apiToken()"
-        (valueChange)="apiToken.set('' + $event)"
-        placeholder="Se guarda encriptado · vacío conserva el actual"
-      />
-    </app-form-field>
-    <app-checkbox [checked]="modoSandbox()" label="Modo sandbox" (checkedChange)="modoSandbox.set($event)" />
-    <app-checkbox [checked]="autoEmit()" label="Emitir automáticamente al registrar venta (boleta/factura)" (checkedChange)="autoEmit.set($event)" />
-    <app-checkbox [checked]="emitNotaVenta()" label="Emitir nota de venta electrónica (donde aplique)" (checkedChange)="emitNotaVenta.set($event)" />
-    <app-checkbox [checked]="applyDetraccion()" label="Aplicar detracción en facturas ≥ S/ 700" (checkedChange)="applyDetraccion.set($event)" />
-    <app-checkbox [checked]="autoEmitGuia()" label="Emitir guía de remisión al despachar traslado" (checkedChange)="autoEmitGuia.set($event)" />
-    <app-button startIconName="mdi:content-save-outline" variant="primary" [disabled]="saveConfigMutation.isPending()" [loading]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
-  </div>
-</app-modal>
-
-<app-modal [isOpen]="!!detailId()" (closed)="closeDetail()" className="w-full max-w-2xl">
-  @if (detailQuery.data(); as doc) {
-    <div class="space-y-4 p-6">
-      <div class="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 class="text-lg font-semibold">{{ doc.documentType }} {{ doc.serie }}-{{ doc.numero }}</h3>
-          <p class="text-sm text-gray-500">{{ doc.sunatDescripcion ?? 'Sin respuesta SUNAT' }}</p>
-          @if (doc.relatedDocument) {
-            <p class="text-xs text-gray-500">
-              Modifica: {{ doc.relatedDocument.documentType }} {{ doc.relatedDocument.serie }}-{{ doc.relatedDocument.numero }}
-            </p>
-          }
-        </div>
-        <app-status-badge [status]="doc.sunatStatus" />
-      </div>
-      <div class="flex flex-wrap gap-2">
-        @if (doc.pdfArchivoId) {
-          <app-button startIconName="mdi:file-pdf-box" size="sm" variant="outline" (btnClick)="download(doc, 'pdf')">PDF</app-button>
-        }
-        @if (doc.xmlArchivoId) {
-          <app-button startIconName="mdi:file-code-outline" size="sm" variant="outline" (btnClick)="download(doc, 'xml')">XML</app-button>
-        }
-        @if (doc.cdrArchivoId) {
-          <app-button startIconName="mdi:file-check-outline" size="sm" variant="outline" (btnClick)="download(doc, 'cdr')">CDR</app-button>
-        }
-        <app-button startIconName="mdi:cloud-search-outline" size="sm" variant="outline" (btnClick)="refreshStatusMutation.mutate(doc.id)">Consultar SUNAT</app-button>
-        @if (canVoid(doc)) {
-          <app-button startIconName="mdi:cancel" size="sm" variant="outline" (btnClick)="voidMutation.mutate()" [disabled]="!voidReason().trim() || voidMutation.isPending()" [loading]="voidMutation.isPending()">
-            Comunicación de baja
-          </app-button>
-        }
-      </div>
-      @if (canVoid(doc)) {
-        <app-form-field label="Motivo de baja SUNAT" required>
-          <app-input-field [value]="voidReason()" (valueChange)="voidReason.set('' + $event)" placeholder="Ej. Error en datos del cliente" [maxLength]="500" />
-        </app-form-field>
-      }
-      <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="border-b text-xs uppercase text-gray-500">
+  [emptyTitle]="activeFilterCount() || search() ? 'Sin comprobantes con esos filtros' : 'Aún no hay comprobantes'"
+  [emptyHint]="activeFilterCount() || search() ? 'Prueba con otros filtros.' : 'Se crean al cobrar boletas o facturas en el Punto de venta.'"
+  (retry)="listQuery.refetch()"
+>
+  <div data-card-header-end><app-color-legend [items]="legend" /></div>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="py-1 text-left">Producto</th>
-            <th class="py-1 text-right">Cant.</th>
-            <th class="py-1 text-right">IGV</th>
-            <th class="py-1 text-right">Total</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado SUNAT</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          @for (line of doc.lines; track line.lineNumber) {
-            <tr class="border-b border-gray-100 dark:border-gray-800">
-              <td class="py-1">{{ line.descripcion }}</td>
-              <td class="py-1 text-right">{{ line.cantidad }}</td>
-              <td class="py-1 text-right">{{ line.igvLinea }}</td>
-              <td class="py-1 text-right">{{ line.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr [attr.data-row-tone]="rowTone(row)">
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ (row.emittedAt ?? row.createdAt) | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ number(row) }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ typeLabel(row.documentType) }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                {{ row.customerNombre || '—' }}
+                @if (row.customerDocNumber) {
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.customerDocNumber }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                <app-status-badge [status]="row.sunatStatus" [tone]="sunatTone(row.sunatStatus)" [label]="sunatLabel(row.sunatStatus)" />
+                @if (row.sunatStatus === 'RECHAZADO' && row.sunatDescripcion) {
+                  <span class="mt-1 block max-w-xs truncate text-theme-xs text-gray-500 dark:text-gray-400" [title]="row.sunatDescripcion">{{ row.sunatDescripcion }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" tooltip="Acciones del comprobante"></app-button>
+                    </div>
+                    <div dropdown-content>
+                      <app-menu-item icon="mdi:eye-outline" tooltip="Detalle, respuesta de SUNAT y archivos PDF, XML y CDR." (itemClick)="detailId.set(row.id)">Ver detalle</app-menu-item>
+                      <app-menu-item icon="mdi:cloud-search-outline" tooltip="Pregunta a SUNAT el estado actual del comprobante." [disabled]="refreshMutation.isPending()" (itemClick)="refreshMutation.mutate(row.id)">Consultar estado en SUNAT</app-menu-item>
+                      <ng-container *appHasPermission="'billing.write'">
+                        @if (row.sunatStatus === 'RECHAZADO') {
+                          <app-menu-item icon="mdi:send-outline" tooltip="Vuelve a enviar el comprobante a SUNAT." [disabled]="retryMutation.isPending()" (itemClick)="retryMutation.mutate(row.id)">Reenviar a SUNAT</app-menu-item>
+                        }
+                      </ng-container>
+                      @if (canVoid(row)) {
+                        <app-menu-item variant="danger" icon="mdi:cancel" [tooltip]="row.saleId ? 'Anula la venta: devuelve el stock y el efectivo y comunica la baja a SUNAT.' : 'Comunica la baja del comprobante a SUNAT.'" (itemClick)="startVoid(row)">{{ row.saleId ? 'Anular venta' : 'Comunicar baja' }}</app-menu-item>
+                      }
+                    </div>
+                  </app-table-dropdown>
+                </div>
+              </td>
             </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
       </table>
-      </div>
     </div>
-  }
+  </div>
+</app-component-card>
+
+<app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+
+<!-- ========== DETALLE ========== -->
+@let doc = detailQuery.data();
+<app-modal [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    @if (doc) {
+      <div class="flex flex-wrap items-center gap-3 pe-12">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ typeLabel(doc.documentType) }} {{ number(doc) }}</h3>
+        <app-status-badge [status]="doc.sunatStatus" [tone]="sunatTone(doc.sunatStatus)" [label]="sunatLabel(doc.sunatStatus)" />
+      </div>
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ sunatHint(doc.sunatStatus) }}</p>
+    } @else {
+      <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Comprobante</h3>
+    }
+  </div>
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+    @if (detailQuery.isPending()) {
+      <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
+    } @else if (detailQuery.isError()) {
+      <p class="text-sm text-error-600 dark:text-error-400">No se pudo cargar el comprobante.</p>
+      <app-button size="sm" variant="outline" startIconName="mdi:refresh" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
+    } @else if (doc) {
+      @if (doc.sunatDescripcion || doc.sunatCodigo) {
+        <div class="rounded-xl border px-4 py-3 text-sm"
+          [class]="doc.sunatStatus === 'RECHAZADO' ? 'border-error-200 bg-error-50 text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400' : 'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300'">
+          <p class="text-xs font-medium uppercase tracking-wide opacity-75">Respuesta de SUNAT{{ doc.sunatCodigo ? ' · código ' + doc.sunatCodigo : '' }}</p>
+          <p class="mt-1">{{ doc.sunatDescripcion || 'Sin descripción' }}</p>
+        </div>
+      }
+
+      <dl class="grid gap-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Cliente</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ doc.customerNombre || '—' }}</dd>
+          @if (doc.customerDocNumber) {
+            <dd class="text-xs text-gray-500 dark:text-gray-400">{{ doc.customerDocNumber }}</dd>
+          }
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Emitido</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ (doc.emittedAt ?? doc.createdAt) | appDate: 'dd/MM/yyyy HH:mm' }}</dd>
+          @if (doc.esContingencia) {
+            <dd class="text-xs text-purple-600 dark:text-purple-400">En contingencia</dd>
+          }
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">{{ doc.relatedDocument ? 'Modifica a' : 'Moneda' }}</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">
+            {{ doc.relatedDocument ? typeLabel(doc.relatedDocument.documentType) + ' ' + number(doc.relatedDocument) : doc.moneda }}
+          </dd>
+        </div>
+      </dl>
+
+      <div class="flex flex-wrap gap-2">
+        <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" [disabled]="!doc.pdfArchivoId" (btnClick)="download(doc, 'pdf')">PDF</app-button>
+        <app-button size="sm" variant="outline" startIconName="mdi:file-code-outline" [disabled]="!doc.xmlArchivoId" (btnClick)="download(doc, 'xml')">XML</app-button>
+        <app-button size="sm" variant="outline" startIconName="mdi:file-check-outline" [disabled]="!doc.cdrArchivoId" (btnClick)="download(doc, 'cdr')">CDR (constancia SUNAT)</app-button>
+      </div>
+
+      <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <table class="w-full min-w-[520px] text-sm text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+            <tr>
+              <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Cant.</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">P. unit.</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">IGV</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (line of doc.lines; track line.lineNumber) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                <td class="px-4 py-2 text-gray-800 dark:text-white/90">{{ line.descripcion }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ +line.cantidad }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ line.precioUnitario | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ line.igvLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ line.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot class="border-t border-gray-200 text-sm dark:border-gray-800">
+            <tr><td colspan="4" class="px-4 py-1.5 text-end text-gray-500 dark:text-gray-400">Op. gravada</td><td class="px-4 py-1.5 text-end tabular-nums">{{ doc.subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</td></tr>
+            <tr><td colspan="4" class="px-4 py-1.5 text-end text-gray-500 dark:text-gray-400">IGV</td><td class="px-4 py-1.5 text-end tabular-nums">{{ doc.igvTotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</td></tr>
+            <tr><td colspan="4" class="px-4 py-2 text-end font-semibold text-gray-800 dark:text-white/90">Total</td><td class="px-4 py-2 text-end font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ doc.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      @if (doc.responses.length) {
+        <section>
+          <h4 class="mb-2 text-sm font-medium text-gray-800 dark:text-white/90">Historial de respuestas</h4>
+          <ul class="space-y-2 text-sm">
+            @for (r of doc.responses; track r.createdAt + r.tipo) {
+              <li class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/[0.03]">
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ r.createdAt | appDate: 'dd/MM/yyyy HH:mm' }} · {{ r.tipo }}{{ r.codigo ? ' · ' + r.codigo : '' }}</span>
+                <span class="block text-gray-700 dark:text-gray-300">{{ r.descripcion || '—' }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    <app-button variant="outline" (btnClick)="detailId.set(null)">Cerrar</app-button>
+    @if (doc) {
+      <app-button variant="outline" startIconName="mdi:cloud-search-outline" [loading]="refreshMutation.isPending()" [disabled]="refreshMutation.isPending()" (btnClick)="refreshMutation.mutate(doc.id)">Consultar SUNAT</app-button>
+      <ng-container *appHasPermission="'billing.write'">
+        @if (doc.sunatStatus === 'RECHAZADO') {
+          <app-button startIconName="mdi:send-outline" [loading]="retryMutation.isPending()" [disabled]="retryMutation.isPending()" (btnClick)="retryMutation.mutate(doc.id)">Reenviar a SUNAT</app-button>
+        }
+      </ng-container>
+      @if (canVoid(doc)) {
+        <app-button variant="danger" startIconName="mdi:cancel" (btnClick)="detailId.set(null); startVoid(doc)">{{ doc.saleId ? 'Anular venta' : 'Comunicar baja' }}</app-button>
+      }
+    }
+  </div>
 </app-modal>
 
-<app-modal title="Emitir comprobante especial" [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-lg">
-  <div class="space-y-4">
-    <app-form-field label="Tipo de comprobante" required>
-      <app-form-select [options]="filteredSpecialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
-    </app-form-field>
-    @if (specialDocumentBlockedReason(specialType()); as reason) {
-      <p class="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">{{ reason }}</p>
+<!-- ========== ANULAR VENTA (compartido) ========== -->
+<app-sale-void-modal [sale]="voidSale()" (closed)="voidSale.set(null)" />
+
+<!-- ========== COMUNICACIÓN DE BAJA ========== -->
+<app-modal [isOpen]="!!bajaDoc()" (closed)="bajaDoc.set(null)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Comunicar baja a SUNAT</h3>
+    @if (bajaDoc(); as b) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ typeLabel(b.documentType) }} {{ number(b) }}</p>
     }
-    <app-form-field label="Razón social / nombre del cliente" required>
-      <app-input-field [value]="specialCustomer()" (valueChange)="specialCustomer.set('' + $event)" [maxLength]="200" />
-    </app-form-field>
-    <div class="grid grid-cols-2 gap-2">
-      <app-form-field label="Tipo doc. (SUNAT)" required helpText="Catálogo 06 SUNAT: 1 = DNI, 6 = RUC, 4 = CE, 7 = Pasaporte.">
-        <app-input-field [value]="specialDocType()" (valueChange)="specialDocType.set('' + $event)" placeholder="6" [maxLength]="20" />
-      </app-form-field>
-      <app-form-field label="Número documento" required>
-        <app-input-field [value]="specialDocNumber()" (valueChange)="specialDocNumber.set('' + $event)" [maxLength]="20" />
-      </app-form-field>
+  </div>
+  <div data-modal-body class="space-y-4 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    <p>SUNAT dará de baja el comprobante y dejará de ser válido. No se puede deshacer.</p>
+    <app-text-area label="Motivo" [required]="true" [maxLength]="500" [rows]="3" placeholder="Ej. Error en los datos del cliente" [value]="bajaReason()" [error]="!!bajaError()" [hint]="bajaError()" (valueChange)="bajaReason.set($event); bajaError.set('')" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="bajaMutation.isPending()" (btnClick)="bajaDoc.set(null)">Cancelar</app-button>
+    <app-button variant="danger" startIconName="mdi:cancel" [loading]="bajaMutation.isPending()" [disabled]="bajaMutation.isPending()" (btnClick)="submitBaja()">Comunicar baja</app-button>
+  </div>
+</app-modal>
+
+<!-- ========== CONFIGURACIÓN ========== -->
+<app-modal [isOpen]="configOpen()" (closed)="configOpen.set(false)" className="w-full max-w-3xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Facturación electrónica</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">También puedes configurarla en <a routerLink="/mi-farmacia" class="text-brand-600 underline dark:text-brand-400">Mi farmacia</a>.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-8 px-4 py-5 sm:px-8">
+    <app-form-section title="Proveedor (OSE)" [description]="providerSetupHint()" [cols]="1">
+      <app-form-select label="Proveedor de facturación" [required]="true" [showPlaceholder]="false" [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
+      @if (capabilities(); as caps) {
+        @if (caps.notes.length || !caps.supportsDailySummary || !caps.supportsVoidDocument) {
+          <div class="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
+            @for (note of caps.notes; track note) { <p>{{ note }}</p> }
+            @if (!caps.supportsDailySummary) { <p>El resumen diario de boletas no está disponible con este proveedor.</p> }
+            @if (!caps.supportsVoidDocument) { <p>La comunicación de baja no está disponible con este proveedor.</p> }
+          </div>
+        }
+      }
+    </app-form-section>
+
+    @if (provider() !== 'MOCK') {
+      <app-form-section title="Datos del emisor" [cols]="2">
+        <app-input-field label="RUC" inputMode="numeric" [maxLength]="11" placeholder="20XXXXXXXXX" [value]="rucEmisor()" [error]="!!configErrors().ruc" [hint]="configErrors().ruc || ''" (valueChange)="rucEmisor.set('' + $event); configErrors.set({})" />
+        <app-input-field label="Razón social" [maxLength]="200" [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" />
+      </app-form-section>
+
+      <app-form-section title="Conexión" description="Datos que te da el panel del proveedor." [cols]="1">
+        <app-input-field label="URL o ruta de envío" placeholder="https://…" [maxLength]="500" [value]="apiUrl()" [error]="!!configErrors().url" [hint]="configErrors().url || ''" (valueChange)="apiUrl.set('' + $event); configErrors.set({})" />
+        <app-input-field label="URL de consulta" helpText="Opcional. Solo si tu proveedor usa otra dirección para consultar estados." placeholder="https://…" [maxLength]="500" [value]="consultaApiUrl()" [error]="!!configErrors().consulta" [hint]="configErrors().consulta || ''" (valueChange)="consultaApiUrl.set('' + $event); configErrors.set({})" />
+        <app-input-field label="Token" type="password" helpText="Se guarda cifrado. Déjalo vacío para conservar el actual." [value]="apiToken()" (valueChange)="apiToken.set('' + $event)" />
+        <app-checkbox label="Modo de pruebas (sandbox)" helpText="Los comprobantes van al ambiente de pruebas del proveedor y no tienen validez." [checked]="modoSandbox()" (checkedChange)="modoSandbox.set($event)" />
+      </app-form-section>
+    }
+
+    <app-form-section title="Automatizaciones" [cols]="1">
+      <app-checkbox label="Enviar boletas y facturas a SUNAT al cobrar" helpText="Si lo apagas, se envían desde el Historial de ventas." [checked]="autoEmit()" (checkedChange)="autoEmit.set($event)" />
+      <app-checkbox label="Emitir nota de venta electrónica donde aplique" [checked]="emitNotaVenta()" (checkedChange)="emitNotaVenta.set($event)" />
+      <app-checkbox label="Aplicar detracción en facturas desde S/ 700" [checked]="applyDetraccion()" (checkedChange)="applyDetraccion.set($event)" />
+      <app-checkbox label="Emitir guía de remisión al despachar un traslado" [checked]="autoEmitGuia()" (checkedChange)="autoEmitGuia.set($event)" />
+    </app-form-section>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="saveConfigMutation.isPending()" (btnClick)="configOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [loading]="saveConfigMutation.isPending()" [disabled]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
     </div>
-    <app-form-field label="Concepto / descripción">
-      <app-input-field [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" placeholder="Servicio / concepto" [maxLength]="500" />
-    </app-form-field>
-    <app-form-field label="Monto total (inc. IGV)" required>
-      <app-input-field type="number" min="0.01" [value]="specialAmount()" (valueChange)="specialAmount.set('' + $event)" placeholder="0.00" />
-    </app-form-field>
-    <app-button startIconName="mdi:send-outline"
-      variant="primary"
-      (btnClick)="submitSpecial()"
-      [disabled]="emitSpecialMutation.isPending() || !!specialDocumentBlockedReason(specialType())" [loading]="emitSpecialMutation.isPending()"
-    >
-      Emitir
-    </app-button>
+  </div>
+</app-modal>
+
+<!-- ========== COMPROBANTE ESPECIAL ========== -->
+<app-modal [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Comprobante especial</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Retenciones, percepciones, liquidaciones de compra y guías de transportista.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-8 px-4 py-5 sm:px-8">
+    <app-form-section title="Comprobante" [cols]="1">
+      <app-form-select label="Tipo" [required]="true" [showPlaceholder]="false" [options]="specialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
+      @if (specialBlockedReason(); as reason) {
+        <p class="rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">{{ reason }}</p>
+      }
+    </app-form-section>
+    <app-form-section title="Cliente o proveedor" [cols]="2">
+      <app-input-field class="sm:col-span-2" label="Nombre o razón social" [isRequired]="true" [maxLength]="200" [value]="specialCustomer()" [error]="!!specialErrors().customer" [hint]="specialErrors().customer || ''" (valueChange)="specialCustomer.set('' + $event)" />
+      <app-form-select label="Tipo de documento" [required]="true" [showPlaceholder]="false" [options]="docTypeOptions" [value]="specialDocType()" (valueChange)="specialDocType.set($event)" />
+      <app-input-field label="Número de documento" [isRequired]="true" inputMode="numeric" [maxLength]="20" [value]="specialDocNumber()" [error]="!!specialErrors().doc" [hint]="specialErrors().doc || ''" (valueChange)="specialDocNumber.set('' + $event)" />
+    </app-form-section>
+    <app-form-section title="Importe" [cols]="2">
+      <app-input-field class="sm:col-span-2" label="Concepto" placeholder="Servicio / concepto" [maxLength]="500" [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" />
+      <app-input-field label="Monto total (con IGV)" [isRequired]="true" type="number" min="0" step="0.01" [value]="specialAmount() ?? ''" [error]="!!specialErrors().amount" [hint]="specialErrors().amount || ''" (valueChange)="specialAmount.set($event === '' ? null : +$event)" />
+      <dl class="self-end space-y-1 rounded-lg bg-gray-50 px-3 py-2 text-sm dark:bg-white/[0.03]">
+        <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Op. gravada</dt><dd class="tabular-nums">{{ specialBreakdown().subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">IGV (18 %)</dt><dd class="tabular-nums">{{ specialBreakdown().igv | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
+      </dl>
+    </app-form-section>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="emitSpecialMutation.isPending()" (btnClick)="specialOpen.set(false)">Cancelar</app-button>
+      <app-button startIconName="mdi:send-outline" [loading]="emitSpecialMutation.isPending()" [disabled]="emitSpecialMutation.isPending() || !!specialBlockedReason()" (btnClick)="submitSpecial()">Emitir</app-button>
+    </div>
   </div>
 </app-modal>

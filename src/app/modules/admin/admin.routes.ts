@@ -368,7 +368,7 @@ export const adminRoutes: Routes = [
           import('./pages/caja-chica-pos/caja-chica-pos.component').then(
             (m) => m.CajaChicaPosComponent,
           ),
-        title: 'FactoFarm | Caja Chica POS',
+        title: 'FactoFarm | Caja',
       },
       {
         path: 'historial-cajas',
@@ -386,14 +386,14 @@ export const adminRoutes: Routes = [
           import('./pages/comprobante-electronico/comprobante-electronico.component').then(
             (m) => m.ComprobanteElectronicoComponent,
           ),
-        title: 'FactoFarm | Comprobante electrónico',
+        title: 'FactoFarm | Comprobantes electrónicos',
       },
       {
         path: 'notas-venta',
         ...guarded(P.notasVenta),
         loadComponent: () =>
           import('./pages/notas-venta/notas-venta.component').then((m) => m.NotasVentaComponent),
-        title: 'FactoFarm | Notas de venta',
+        title: 'FactoFarm | Historial de ventas',
       },
       {
         path: 'resumenes',
