@@ -1,67 +1,129 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Sugerido de compras</h1>
 </app-page-toolbar>
 
-<app-component-card title="Filtros" className="mt-4">
-  <div class="max-w-xs">
-    <app-form-select
-      [options]="warehouseOptions()"
-      [value]="warehouseId()"
-      (valueChange)="warehouseId.set($event)"
-    />
-  </div>
-  <p class="mt-2 text-xs text-gray-500">Basado en stock mínimo, rotación 90 días y clasificación ABC.</p>
-</app-component-card>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="sugerido-compras">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Lista los productos que están <strong>por debajo de su stock mínimo</strong> en cada almacén, para que sepas qué pedir.</li>
+    <li>La <strong>clase</strong> dice cuánto aporta cada producto a tus ventas de los últimos 90 días: <strong>A</strong> son los que más venden, <strong>B</strong> los de venta media y <strong>C</strong> los de venta baja.</li>
+    <li>La <strong>cantidad sugerida</strong> te lleva a 2 veces el mínimo en la clase A, 1,5 veces en la B y al mínimo en la C.</li>
+    <li>El proveedor y el precio salen del proveedor habilitado más barato registrado en Proveedores → Productos que vende. El stock mínimo se cambia en cada producto.</li>
+    <li>Marca los productos y pulsa <strong>«Crear orden de compra»</strong>: se abre una orden nueva con esas cantidades para que la revises antes de guardarla.</li>
+  </ol>
+</app-help-panel>
 
-@let reportState = reportQuery | queryPageState: (reportQuery.data()?.items?.length ?? 0);
+<app-list-filters
+  collapsible
+  [showSelect]="false"
+  [activeCount]="activeFilterCount()"
+  [searchValue]="search()"
+  searchPlaceholder="Buscar producto, código o proveedor"
+  clearLabel="Limpiar"
+  (searchValueChange)="setSearch($event)"
+  (clear)="clearFilters()"
+>
+  <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+  <app-form-select label="Clase" [showPlaceholder]="false" [value]="abc()" [options]="abcOptions" (valueChange)="setAbc($event)" />
+</app-list-filters>
 
-<app-component-card title="Productos sugeridos" className="mt-4"
+@let reportState = reportQuery | queryPageState: filtered().length;
+
+<app-component-card
+  title="Productos por reponer"
+  [desc]="filtered().length ? filtered().length + ' productos' + (estimatedTotal() > 0 ? ' · costo estimado ' + (estimatedTotal() | currency: 'PEN' : 'symbol' : '1.2-2') : '') : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="reportState.loading"
   [error]="reportState.error"
   [empty]="reportState.empty"
-  emptyTitle="No hay productos bajo stock mínimo"
-  (retry)="reportQuery.refetch()">
-  <div class="overflow-x-auto">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b text-xs uppercase text-gray-500">
-      <tr>
-        <th class="px-3 py-2">ABC</th>
-        <th class="px-3 py-2">Producto</th>
-        <th class="px-3 py-2">Almacén</th>
-        <th class="px-3 py-2 text-right">Stock</th>
-        <th class="px-3 py-2 text-right">Mín.</th>
-        <th class="px-3 py-2 text-right">Sugerido</th>
-        <th class="px-3 py-2 text-right">Rot. 90d</th>
-        <th class="px-3 py-2">Proveedor</th>
-        <th class="px-3 py-2 text-right">Precio ref.</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of reportQuery.data()?.items ?? []; track row.productId + row.warehouseId) {
-        <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2">
-            <span class="rounded px-1.5 py-0.5 text-xs font-semibold" [class.bg-emerald-100]="row.claseAbc === 'A'" [class.text-emerald-800]="row.claseAbc === 'A'" [class.bg-amber-100]="row.claseAbc === 'B'" [class.text-amber-800]="row.claseAbc === 'B'" [class.bg-gray-100]="row.claseAbc === 'C'">{{ row.claseAbc }}</span>
-          </td>
-          <td class="px-3 py-2">{{ row.producto }}</td>
-          <td class="px-3 py-2">{{ row.warehouse }}</td>
-          <td class="px-3 py-2 text-right">{{ row.stockActual }}</td>
-          <td class="px-3 py-2 text-right">{{ row.stockMinimo }}</td>
-          <td class="px-3 py-2 text-right font-semibold text-brand-600">{{ row.cantidadSugerida }}</td>
-          <td class="px-3 py-2 text-right">{{ row.rotacion90d }}</td>
-          <td class="px-3 py-2">{{ row.proveedorSugerido ?? '—' }}</td>
-          <td class="px-3 py-2 text-right">
-            @if (row.precioSugerido) {
-              {{ row.precioSugerido | currency: 'PEN' : 'symbol' : '1.2-2' }}
-            } @else { — }
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="9" class="px-3 py-6 text-center text-gray-500">No hay productos bajo stock mínimo.</td>
-        </tr>
-      }
-    </tbody>
-  </table>
+  [emptyTitle]="search().trim() || activeFilterCount() ? 'Sin coincidencias para los filtros aplicados' : 'Ningún producto está por debajo de su stock mínimo'"
+  [emptyHint]="search().trim() || activeFilterCount() ? 'Prueba con otro texto o limpia los filtros.' : 'Cuando el stock de un producto baje de su mínimo, aparecerá aquí.'"
+  (retry)="reportQuery.refetch()"
+>
+  @if (reportQuery.data(); as data) {
+    <span data-card-header-end class="text-xs text-gray-500 dark:text-gray-400">Calculado {{ data.generatedAt | appDate: 'dd/MM/yyyy HH:mm' }}</span>
+  }
+  @if (selected().size) {
+    <div class="px-3 pt-3 sm:px-4">
+      <app-alert
+        [variant]="selectionProblem() ? 'warning' : 'info'"
+        [title]="selected().size + (selected().size === 1 ? ' producto elegido' : ' productos elegidos')"
+        [message]="selectionProblem() || (selectedSuppliers().size > 1 ? 'Tienen distintos proveedores sugeridos: en la orden eliges a quién comprarle.' : 'Se abrirá una orden nueva con estas cantidades para que la revises.')"
+      >
+        <div class="mt-3 flex flex-wrap gap-2">
+          <ng-container *appHasPermission="'purchases.write'">
+            <app-button size="sm" startIconName="mdi:cart-plus" [disabled]="!!selectionProblem()" (btnClick)="createOrder()">Crear orden de compra</app-button>
+          </ng-container>
+          <app-button size="sm" variant="outline" startIconName="mdi:close" (btnClick)="clearSelection()">Quitar selección</app-button>
+        </div>
+      </app-alert>
+    </div>
+  }
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="w-10 px-5 py-3">
+              <app-checkbox ariaLabel="Elegir todos los de esta página" [checked]="pageAllSelected()" (checkedChange)="togglePage($event)" />
+            </th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+              <span class="inline-flex items-center gap-1">Clase <app-help-hint text="A: los que más venden (80 % de tus ventas en 90 días). B: venta media (el siguiente 15 %). C: el resto o sin ventas." [iconSize]="14" /></span>
+            </th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Mínimo</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vendido 90 días</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pedir</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Proveedor más barato</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo estimado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of pageRows(); track row.productId + row.warehouseId) {
+            <tr [class.bg-brand-50]="selected().has(key(row))" [class.dark:bg-brand-500/10]="selected().has(key(row))">
+              <td class="px-5 py-4">
+                <app-checkbox [ariaLabel]="'Elegir ' + row.producto" [checked]="selected().has(key(row))" (checkedChange)="toggleRow(row, $event)" />
+              </td>
+              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.claseAbc" [tone]="abcTone(row.claseAbc)" [label]="row.claseAbc" /></td>
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
+                @if (row.codigoInterno) {
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">Cód. {{ row.codigoInterno }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.warehouse }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums text-error-600 dark:text-error-400">{{ num(row.stockActual) }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.stockMinimo }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.rotacion90d) }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm font-semibold tabular-nums text-brand-600 dark:text-brand-400">{{ row.cantidadSugerida }}</td>
+              <td class="px-5 py-4 text-theme-sm">
+                @if (row.proveedorSugerido) {
+                  {{ row.proveedorSugerido }}
+                  <app-button variant="unstyled" className="block cursor-pointer text-start text-theme-xs text-brand-600 hover:underline dark:text-brand-400" (btnClick)="selectSameSupplier(row)">Elegir todo lo de este proveedor</app-button>
+                } @else {
+                  —
+                }
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.precioSugerido ? (num(row.precioSugerido) | number: '1.2-2') : '—' }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.precioSugerido ? (lineTotal(row) | number: '1.2-2') : '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
+  @if (withoutPrice()) {
+    <p class="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">
+      {{ withoutPrice() }} producto(s) sin proveedor con precio: no suman al costo estimado. Regístralos en Proveedores → Productos que vende.
+    </p>
+  }
 </app-component-card>
+
+<app-pagination [totalItems]="filtered().length" [currentPage]="page()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />

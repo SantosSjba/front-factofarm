@@ -1942,12 +1942,14 @@ export class DirectoryApiService {
   }
 
   // —— Compras (Fase 4) ——
-  listPurchaseOrders(filters?: { page?: number; pageSize?: number; supplierId?: string; estado?: PurchaseOrderStatus }) {
+  listPurchaseOrders(filters?: { page?: number; pageSize?: number; supplierId?: string; estado?: PurchaseOrderStatus; search?: string }) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     if (filters?.supplierId) params['supplierId'] = filters.supplierId;
     if (filters?.estado) params['estado'] = filters.estado;
+    const search = filters?.search?.trim();
+    if (search) params['search'] = search;
     return this.http.get<PaginatedResponseDto<PurchaseOrderListItemDto>>(
       `${this.base}/purchases/purchase-orders`,
       { params },

@@ -1,102 +1,232 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Recepción de mercadería</h1>
 </app-page-toolbar>
 
-@let ordersState = pendingOrdersQuery | queryPageState: (pendingOrdersQuery.data()?.length ?? 0);
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="recepcion-mercaderia">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Cuando llega un pedido, elige su orden de compra y pulsa «Recibir». Aquí solo aparecen las órdenes enviadas o recibidas en parte.</li>
+    <li>Indica cuánto llegó de cada producto. Si la factura trae otro costo, cámbialo. Los productos con lotes piden lote y vencimiento.</li>
+    <li>Al confirmar, el stock sube en el almacén de la orden y se crea la cuenta por pagar al proveedor. Lo que falte se puede recibir después.</li>
+  </ol>
+</app-help-panel>
 
-<app-component-card title="Orden de compra" className="mt-3"
-  [loading]="ordersState.loading"
-  [error]="ordersState.error"
-  [empty]="ordersState.empty"
-  emptyTitle="No hay órdenes pendientes de recepción"
-  (retry)="pendingOrdersQuery.refetch()">
-  <div class="max-w-3xl space-y-3">
-    <app-form-select
-      [options]="orderOptions()"
-      [value]="selectedOrderId()"
-      (valueChange)="onOrderChange($event)"
-    />
-    @if (detailQuery.isPending() && selectedOrderId()) {
-      <p class="text-sm text-gray-500">Cargando detalle de la orden…</p>
-    } @else if (detailQuery.isError() && selectedOrderId()) {
-      <div class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
-        {{ detailErrorMessage() }}
-        <app-button variant="link-danger" className="ml-2" (btnClick)="detailQuery.refetch()">Reintentar</app-button>
-      </div>
-    } @else if (detailQuery.data(); as po) {
-      <div class="rounded-lg border border-gray-200 p-2.5 text-sm dark:border-gray-700">
-        <p><strong>{{ po.numero }}</strong> · {{ po.supplier.razonSocial }}</p>
-        <p class="text-gray-500">Almacén: {{ po.warehouse.nombre }} · Total: {{ po.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
-      </div>
-    }
-  </div>
-</app-component-card>
+@if (!selectedOrderId()) {
+  <app-list-filters
+    [showSelect]="false"
+    [searchValue]="search()"
+    searchPlaceholder="Buscar por número, proveedor o RUC"
+    clearLabel="Limpiar"
+    (searchValueChange)="onSearchChange($event)"
+    (clear)="search.set('')"
+  />
 
-@if (receiptLines().length > 0) {
-  <app-component-card title="Ítems a recibir" className="mt-3">
-    <div class="space-y-3">
-      @for (line of receiptLines(); track line.purchaseOrderItemId) {
-        <div
-          class="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 p-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] dark:border-gray-700 sm:p-3"
-        >
-          <div class="min-w-0 sm:col-span-2 lg:col-span-1">
-            <p class="truncate font-medium">{{ line.producto }}</p>
-            <p class="text-xs text-gray-500">Pendiente: {{ line.pendiente }}</p>
-          </div>
-          <div>
-            <app-label [for]="'recepcion-mercaderia-1-' + line.purchaseOrderItemId">Cantidad</app-label>
-            <app-input-field [id]="'recepcion-mercaderia-1-' + line.purchaseOrderItemId"
-              type="number"
-              placeholder="0"
-              [ariaLabel]="'Cantidad a recibir de ' + line.producto"
-              min="0"
-              [max]="'' + line.pendiente"
-              [step]="0.0001"
-              [value]="line.quantity"
-              (valueChange)="updateLine(line.purchaseOrderItemId, { quantity: parseNum($event) })"
-            />
-          </div>
-          @if (line.manejaLotes) {
-            <div>
-              <app-label [for]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId" required>Lote</app-label>
-              <app-input-field [id]="'recepcion-mercaderia-2-' + line.purchaseOrderItemId"
-                placeholder="Código lote"
-                [maxLength]="60"
-                [ariaLabel]="'Código de lote de ' + line.producto"
-                [value]="line.lotCode"
-                (valueChange)="updateLine(line.purchaseOrderItemId, { lotCode: '' + $event })"
-              />
-            </div>
-            <div>
-              <app-label [for]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId" required>Vencimiento</app-label>
-              <app-input-field [id]="'recepcion-mercaderia-3-' + line.purchaseOrderItemId"
-                type="date"
-                placeholder="Vencimiento"
-                [ariaLabel]="'Fecha de vencimiento de ' + line.producto"
-                [value]="line.expirationDate"
-                (valueChange)="updateLine(line.purchaseOrderItemId, { expirationDate: '' + $event })"
-              />
-            </div>
-          } @else {
-            <div class="hidden text-xs text-gray-400 lg:block">—</div>
-            <div class="hidden text-xs text-gray-400 lg:block">—</div>
-          }
-        </div>
-      }
-      <div class="grid gap-2 sm:grid-cols-2">
-        <div>
-          <app-label for="recepcion-mercaderia-4">N° factura / guía</app-label>
-          <app-input-field id="recepcion-mercaderia-4" [maxLength]="60" ariaLabel="Número de factura o guía del proveedor" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set('' + $event)" placeholder="N° factura / guía proveedor" />
-        </div>
-        <div>
-          <app-label for="recepcion-mercaderia-5">Comentario</app-label>
-          <app-input-field id="recepcion-mercaderia-5" [maxLength]="500" ariaLabel="Comentario de la recepción" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Comentario" />
-        </div>
+  @let ordersState = pendingOrdersQuery | queryPageState: pendingOrders().length;
+
+  <app-component-card
+    title="Órdenes por recibir"
+    [desc]="pendingOrders().length ? pendingOrders().length + ' esperando mercadería' : ''"
+    className="overflow-hidden"
+    [bodyClass]="'p-0 sm:p-0'"
+    [loading]="ordersState.loading"
+    [error]="ordersState.error"
+    [empty]="ordersState.empty"
+    [emptyTitle]="search().trim() ? 'Sin coincidencias para tu búsqueda' : 'No hay órdenes esperando mercadería'"
+    emptyHint="Una orden aparece aquí cuando la marcas como enviada en Órdenes de compra."
+    (retry)="pendingOrdersQuery.refetch()"
+  >
+    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="max-w-full overflow-x-auto">
+        <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+            <tr>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Orden</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            @for (row of pendingOrders(); track row.id) {
+              <tr>
+                <td class="px-5 py-4 text-theme-sm font-medium whitespace-nowrap text-gray-800 dark:text-white/90">{{ row.numero ?? '—' }}</td>
+                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.fechaEmision | appDate: 'dd/MM/yyyy' }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.supplier.razonSocial }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.warehouse.nombre }}</td>
+                <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [label]="statusLabel(row.estado)" /></td>
+                <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.total) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="px-5 py-4 text-end">
+                  <ng-container *appHasPermission="'purchases.receive'">
+                    <app-button size="sm" startIconName="mdi:truck-check-outline" (btnClick)="selectOrder(row)">Recibir</app-button>
+                  </ng-container>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
+            }
+          </tbody>
+        </table>
       </div>
-      <app-button startIconName="mdi:check" variant="primary" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
-        Confirmar recepción
-      </app-button>
     </div>
   </app-component-card>
+} @else {
+  @let po = detailQuery.data();
+  <app-component-card
+    [title]="po ? 'Recibir orden ' + (po.numero ?? '') : 'Recibir orden'"
+    [desc]="po ? po.supplier.razonSocial + ' · Almacén ' + po.warehouse.nombre : ''"
+    [loading]="detailQuery.isPending()"
+    [error]="detailQuery.isError() ? 'No se pudo cargar la orden.' : null"
+    (retry)="detailQuery.refetch()"
+  >
+    <div data-card-header-end>
+      <app-button size="sm" variant="outline" startIconName="mdi:arrow-left" [disabled]="receiveMutation.isPending()" (btnClick)="closeOrder()">Elegir otra orden</app-button>
+    </div>
+
+    @if (po) {
+      @if (!canReceive(po)) {
+        <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          Esta orden está «{{ statusLabel(po.estado) }}»: solo se reciben órdenes enviadas o recibidas en parte.
+        </p>
+      } @else if (lines().length === 0) {
+        <p class="rounded-[10px] border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          Ya se recibió todo lo de esta orden.
+        </p>
+      } @else {
+        <div class="space-y-8">
+          <section>
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 class="text-base font-medium text-gray-800 dark:text-white/90">¿Qué llegó?</h4>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Viene lleno con todo lo pendiente; corrige lo que no llegó completo.</p>
+              </div>
+              <div class="flex gap-2">
+                <app-button size="sm" variant="outline" startIconName="mdi:check-all" (btnClick)="receiveAll()">Todo lo pendiente</app-button>
+                <app-button size="sm" variant="outline" startIconName="mdi:eraser" (btnClick)="receiveNone()">Poner todo en 0</app-button>
+              </div>
+            </div>
+            <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+              <table class="w-full min-w-[900px] text-sm text-gray-700 dark:text-gray-300">
+                <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+                  <tr>
+                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                    <th class="px-3 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Pendiente</th>
+                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Llegó</th>
+                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">
+                      <span class="inline-flex items-center gap-1">Costo unit. <app-help-hint text="Viene de la orden. Cámbialo si la factura del proveedor trae otro precio: con ese costo se valoriza el stock y se calcula la deuda." [iconSize]="14" /></span>
+                    </th>
+                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">
+                      <span class="inline-flex items-center gap-1">Lote <app-help-hint text="Solo para productos con lotes. Escribe uno nuevo o elige uno que ya tengas: si existe, se le suma la cantidad." [iconSize]="14" /></span>
+                    </th>
+                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Vencimiento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (line of lines(); track line.purchaseOrderItemId) {
+                    <tr class="border-b border-gray-100 align-top last:border-b-0 dark:border-gray-800" [class.bg-error-50]="!!line.error" [class.dark:bg-error-500/10]="!!line.error">
+                      <td class="min-w-[220px] px-3 py-2">
+                        <span class="text-gray-800 dark:text-white/90">{{ line.producto }}</span>
+                        <span class="block text-xs text-gray-500 dark:text-gray-400">
+                          {{ line.codigoInterno ? 'Cód. ' + line.codigoInterno + ' · ' : '' }}Pedido: {{ line.pedido }}
+                        </span>
+                        @if (line.error) {
+                          <span class="mt-1 block text-xs font-medium text-error-600 dark:text-error-400">{{ line.error }}</span>
+                        }
+                      </td>
+                      <td class="px-3 py-3 text-end tabular-nums">{{ line.pendiente }}</td>
+                      <td class="w-28 px-3 py-2">
+                        <app-input-field type="number" min="0" [max]="'' + line.pendiente" step="1" [ariaLabel]="'Cantidad que llegó de ' + line.producto" [value]="line.quantity" (valueChange)="setQuantity(line, $event)" />
+                      </td>
+                      <td class="w-32 px-3 py-2">
+                        <app-input-field type="number" min="0" step="0.01" [ariaLabel]="'Costo unitario de ' + line.producto" [value]="line.unitCost" (valueChange)="setCost(line, $event)" />
+                        @if (line.unitCost !== line.costoOrden) {
+                          <span class="mt-1 block text-xs text-warning-600 dark:text-warning-400">Orden: {{ line.costoOrden | number: '1.2-4' }}</span>
+                        }
+                      </td>
+                      @if (line.manejaLotes) {
+                        <td class="w-48 px-3 py-2">
+                          <app-suggest-input
+                            placeholder="Código de lote"
+                            emptyText="Lote nuevo: se creará al guardar."
+                            [maxLength]="60"
+                            [value]="line.lotCode"
+                            [options]="lotOptions(line)"
+                            [loading]="lotQuery.isFetching()"
+                            (valueChange)="onLotInput(line, $event)"
+                            (searchChange)="onLotSearch(line, $event)"
+                            (selected)="selectLot(line, $event.value)"
+                          />
+                        </td>
+                        <td class="w-44 px-3 py-2">
+                          <app-input-field
+                            type="date"
+                            [min]="today"
+                            [ariaLabel]="'Vencimiento del lote de ' + line.producto"
+                            [disabled]="line.expiryLocked"
+                            [value]="line.expirationDate"
+                            (valueChange)="patch(line.purchaseOrderItemId, { expirationDate: $event + '' })"
+                          />
+                          @if (line.expiryLocked) {
+                            <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">Fecha del lote existente.</span>
+                          }
+                        </td>
+                      } @else {
+                        <td colspan="2" class="px-3 py-3 text-xs text-gray-400 dark:text-gray-500">No maneja lotes</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+                <tfoot class="border-t border-gray-200 dark:border-gray-800">
+                  <tr>
+                    <td colspan="6" class="px-3 py-3 text-end text-gray-800 dark:text-white/90">
+                      <span class="text-gray-500 dark:text-gray-400">{{ linesToReceive().length }} producto(s) · {{ unitsTotal() }} unidades ·</span>
+                      <span class="ms-1 inline-flex items-center gap-1.5 font-semibold">
+                        Total estimado: {{ receiptTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}
+                        <app-help-hint text="Cantidad por costo. El IGV se calcula al confirmar según cada producto." [iconSize]="15" />
+                      </span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+
+          <app-form-section title="Documento del proveedor" description="Para encontrar luego esta recepción y su cuenta por pagar." [cols]="2">
+            <app-input-field label="N.º de factura o guía" helpText="El número del comprobante que trajo el proveedor. Opcional, pero recomendado." placeholder="Ej.: F001-00012345" [maxLength]="60" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set($event + '')" />
+            <app-text-area label="Comentario" helpText="Algo que quieras dejar anotado: faltantes, cajas dañadas… Opcional." [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
+          </app-form-section>
+
+          <div class="flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+            <app-button variant="outline" [disabled]="receiveMutation.isPending()" (btnClick)="closeOrder()">Cancelar</app-button>
+            <app-button startIconName="mdi:truck-check-outline" [disabled]="receiveMutation.isPending()" (btnClick)="review()">Confirmar recepción</app-button>
+          </div>
+        </div>
+      }
+    }
+  </app-component-card>
 }
+
+<app-modal [isOpen]="confirmOpen()" (closed)="!receiveMutation.isPending() && confirmOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Confirmar recepción</h3>
+  </div>
+  <div data-modal-body class="space-y-3 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    @if (detailQuery.data(); as po) {
+      <p>Vas a registrar <strong>{{ unitsTotal() }} unidades</strong> de {{ linesToReceive().length }} producto(s) de la orden {{ po.numero }}.</p>
+      <ul class="list-disc space-y-1 ps-5 text-gray-600 dark:text-gray-400">
+        <li>El stock sube en el almacén <strong>{{ po.warehouse.nombre }}</strong>.</li>
+        <li>Se crea una cuenta por pagar a {{ po.supplier.razonSocial }}{{ po.supplier.diasCredito ? ', que vence en ' + po.supplier.diasCredito + ' días' : ' al contado' }}.</li>
+        <li>No se puede deshacer desde aquí.</li>
+      </ul>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="receiveMutation.isPending()" (btnClick)="confirmOpen.set(false)">Revisar de nuevo</app-button>
+    <app-button startIconName="mdi:check" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
+      {{ receiveMutation.isPending() ? 'Registrando…' : 'Confirmar' }}
+    </app-button>
+  </div>
+</app-modal>

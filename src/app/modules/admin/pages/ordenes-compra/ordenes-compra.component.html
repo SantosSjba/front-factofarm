@@ -1,184 +1,458 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Órdenes de compra</h1>
-  <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nueva OC</app-button>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <ng-container *appHasPermission="'purchases.write'">
+      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nueva orden</app-button>
+    </ng-container>
+  </div>
 </app-page-toolbar>
 
-<app-component-card title="Filtros" className="mt-4">
-  <div class="max-w-xs">
-    <app-form-select [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set('' + $event); page.set(1)" />
-  </div>
-</app-component-card>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="ordenes-compra">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Aquí pides mercadería a tus proveedores. Cada orden empieza como <strong>borrador</strong>.</li>
+    <li>Revísala y <strong>apruébala</strong>; cuando se la hagas llegar al proveedor, márcala como <strong>enviada</strong>.</li>
+    <li>Cuando llegue la mercadería, regístrala en «Recibir mercadería»: el stock sube y se crea la cuenta por pagar.</li>
+    <li>El costo de cada producto sale del precio del proveedor (Proveedores → Productos que vende) o, si no tiene, del precio de compra del producto.</li>
+  </ol>
+</app-help-panel>
 
-@let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
+<app-list-filters
+  collapsible
+  [showSelect]="false"
+  [activeCount]="activeFilterCount()"
+  [searchValue]="search()"
+  searchPlaceholder="Buscar por número, proveedor o RUC"
+  clearLabel="Limpiar"
+  (searchValueChange)="onSearchChange($event)"
+  (clear)="clearFilters()"
+>
+  <app-form-select label="Estado" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions" (valueChange)="setEstado($event)" />
+  <app-form-select label="Proveedor" [showPlaceholder]="false" [value]="filterSupplierId()" [options]="supplierFilterOptions()" (valueChange)="setSupplierFilter($event)" />
+</app-list-filters>
 
-<app-component-card title="Listado" className="mt-4"
+@let listState = listQuery | queryPageState: totalRows();
+
+<app-component-card
+  title="Listado de órdenes"
+  [desc]="totalRows() ? totalRows() + ' en total' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay órdenes de compra"
-  (retry)="listQuery.refetch()">
-  <div class="overflow-x-auto">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b border-gray-200 text-xs uppercase dark:border-gray-800">
-      <tr>
-        <th class="px-3 py-2">Número</th>
-        <th class="px-3 py-2">Fecha</th>
-        <th class="px-3 py-2">Proveedor</th>
-        <th class="px-3 py-2">Almacén</th>
-        <th class="px-3 py-2">Estado</th>
-        <th class="px-3 py-2 text-right">Total</th>
-        <th class="px-3 py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of listQuery.data()?.items ?? []; track row.id) {
-        <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ row.numero ?? '—' }}</td>
-          <td class="px-3 py-2">{{ row.fechaEmision | appDate: 'shortDate' }}</td>
-          <td class="px-3 py-2">{{ row.supplier.razonSocial }}</td>
-          <td class="px-3 py-2">{{ row.warehouse.nombre }}</td>
-          <td class="px-3 py-2">
-            <app-status-badge [status]="row.estado" />
-          </td>
-          <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-          <td class="px-3 py-2 text-right">
-            <app-button
-              size="sm"
-              variant="outline"
-              [iconOnly]="true"
-              startIconName="mdi:eye-outline"
-              tooltip="Ver"
-              (btnClick)="openDetail(row.id)"
-            />
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="99" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">Sin coincidencias para los filtros aplicados.</td>
-        </tr>
-      }
-    </tbody>
-  </table>
-  </div>
-  @if (listQuery.data(); as data) {
-    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
-  }
-</app-component-card>
-
-<app-modal [isOpen]="createOpen()" (closed)="createOpen.set(false)" title="Nueva orden de compra" className="w-full max-w-2xl">
-  <div class="space-y-4">
-    <div class="grid gap-3 sm:grid-cols-2">
-      <app-form-field label="Proveedor" required>
-        <div class="flex items-center gap-2">
-          <app-form-select className="flex-1" [options]="supplierOptions()" [value]="supplierId()" (valueChange)="supplierId.set($event)" />
-          <app-quick-create entity="supplier" [iconOnly]="true" (created)="supplierId.set($event.id)" />
-        </div>
-      </app-form-field>
-      <app-form-field label="Almacén de destino" required>
-        <div class="flex items-center gap-2">
-          <app-form-select className="flex-1" [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
-          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
-        </div>
-      </app-form-field>
-    </div>
-    <div class="flex flex-col gap-2 sm:flex-row">
-      <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />
-      <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
-    </div>
-    <app-option-list>
-      @if (catalog().length === 0) {
-        <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">No se encontraron productos</p>
-      } @else {
-        @for (item of catalog(); track item.id) {
-          <app-option-item (optionSelect)="addLine(item)">{{ item.nombre }}@if (item.codigoInterno) { · {{ item.codigoInterno }} }</app-option-item>
-        }
-      }
-    </app-option-list>
-    @if (lines().length) {
-      <div class="grid grid-cols-[1fr_88px_110px_auto] items-center gap-2 text-xs font-medium uppercase text-gray-500">
-        <span>Producto</span><span>Cantidad <span class="text-error-500" aria-hidden="true">*</span></span><span>Costo unit. (S/)</span><span></span>
-      </div>
-    }
-    @for (line of lines(); track line.productId) {
-      <div class="grid grid-cols-[1fr_88px_110px_auto] items-center gap-2 text-sm">
-        <span class="min-w-0 truncate" [title]="line.nombre">{{ line.nombre }}</span>
-        <app-input-field type="number" min="0" [ariaLabel]="'Cantidad de ' + line.nombre" [value]="line.quantity" (valueChange)="updateLine(line.productId, { quantity: +$event })" />
-        <app-input-field type="number" min="0" [ariaLabel]="'Costo unitario de ' + line.nombre" [value]="line.unitPrice ?? ''" (valueChange)="updateLine(line.productId, { unitPrice: $event === '' ? undefined : +$event })" />
-        <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar" (btnClick)="removeLine(line.productId)" />
-      </div>
-    }
-    <app-form-field label="Condiciones de pago">
-      <app-input-field [value]="condicionesPago()" (valueChange)="condicionesPago.set('' + $event)" placeholder="Ej. Crédito 30 días" [maxLength]="200" />
-    </app-form-field>
-    <app-form-field label="Comentario">
-      <app-input-field [value]="comentario()" (valueChange)="comentario.set('' + $event)" [maxLength]="500" />
-    </app-form-field>
-    <div class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
-      <div>
-        <span class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-        <p class="text-xs text-gray-500">Estimado con los precios ingresados; el IGV se calcula según cada producto al crear la OC.</p>
-      </div>
-      <app-button startIconName="mdi:plus"
-        variant="primary"
-        [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()"
-        (btnClick)="submitCreate()"
-      >
-        Crear OC
-      </app-button>
-    </div>
-  </div>
-</app-modal>
-
-<app-modal [isOpen]="!!detailId()" (closed)="closeDetail()" [title]="detailQuery.data()?.numero ?? 'Orden de compra'" className="w-full max-w-3xl">
-  @if (detailQuery.data(); as po) {
-    <div class="space-y-4">
-      <div class="flex flex-wrap items-start justify-between gap-2">
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ po.supplier.razonSocial }} · {{ po.warehouse.nombre }}</p>
-        <app-status-badge [status]="po.estado" />
-      </div>
-      <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="border-b border-gray-200 text-xs uppercase dark:border-gray-800">
+  [emptyTitle]="search().trim() || activeFilterCount() ? 'Sin coincidencias para los filtros aplicados' : 'Aún no hay órdenes de compra'"
+  [emptyHint]="search().trim() || activeFilterCount() ? 'Prueba con otro texto o limpia los filtros.' : 'Usa «Nueva orden» para pedir mercadería a un proveedor.'"
+  (retry)="listQuery.refetch()"
+>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="py-2 text-left">Producto</th>
-            <th class="py-2 text-right">Pedido</th>
-            <th class="py-2 text-right">Recibido</th>
-            <th class="py-2 text-right">Pendiente</th>
-            <th class="py-2 text-right">Total</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Orden</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          @for (item of po.items; track item.id) {
-            <tr class="border-b border-gray-100 dark:border-gray-800">
-              <td class="py-2">{{ item.producto }}</td>
-              <td class="py-2 text-right">{{ item.cantidadPedida }}</td>
-              <td class="py-2 text-right">{{ item.cantidadRecibida }}</td>
-              <td class="py-2 text-right">{{ item.cantidadPendiente }}</td>
-              <td class="py-2 text-right">{{ item.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                <app-button variant="unstyled" className="cursor-pointer text-start whitespace-nowrap font-medium underline-offset-2 hover:underline" [ariaLabel]="'Ver la orden ' + (row.numero ?? '')" (btnClick)="openDetail(row)">{{ row.numero ?? '—' }}</app-button>
+              </td>
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.fechaEmision | appDate: 'dd/MM/yyyy' }}</td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.supplier.razonSocial }}</td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.warehouse.nombre }}</td>
+              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [label]="statusLabel(row.estado)" /></td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.total) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-4 text-end">
+                <div class="inline-flex justify-end">
+                  <app-table-dropdown>
+                    <div dropdown-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + (row.numero ?? 'la orden')"></app-button>
+                    </div>
+                    <div dropdown-content>
+                      <app-menu-item icon="mdi:eye-outline" tooltip="Productos, cantidades recibidas y totales." (itemClick)="openDetail(row)">Ver detalle</app-menu-item>
+                      <ng-container *appHasPermission="'purchases.write'">
+                        @if (canApprove(row.estado)) {
+                          <app-menu-item icon="mdi:check-decagram-outline" tooltip="Confirma que la orden está lista. Te pedirá confirmación." (itemClick)="askAction(row.id, row.numero, 'approve')">Aprobar</app-menu-item>
+                        }
+                        @if (canSend(row.estado)) {
+                          <app-menu-item icon="mdi:send-outline" tooltip="Indica que ya se la hiciste llegar al proveedor. A partir de ahí se puede recibir." (itemClick)="askAction(row.id, row.numero, 'send')">Marcar como enviada</app-menu-item>
+                        }
+                      </ng-container>
+                      <ng-container *appHasPermission="'purchases.receive'">
+                        @if (canReceive(row.estado)) {
+                          <app-menu-item icon="mdi:truck-check-outline" tooltip="Registra lo que llegó: sube el stock y crea la cuenta por pagar." (itemClick)="goToReceipt(row.id)">Recibir mercadería</app-menu-item>
+                        }
+                      </ng-container>
+                      <ng-container *appHasPermission="'purchases.write'">
+                        @if (canCancel(row.estado)) {
+                          <app-menu-item variant="danger" icon="mdi:cancel" tooltip="Anula la orden. Solo se puede antes de enviarla. Te pedirá confirmación." (itemClick)="askAction(row.id, row.numero, 'cancel')">Anular</app-menu-item>
+                        }
+                      </ng-container>
+                    </div>
+                  </app-table-dropdown>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td>
             </tr>
           }
         </tbody>
       </table>
-      </div>
-      <div class="text-right font-semibold text-gray-800 dark:text-white/90">Total OC: {{ po.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</div>
-      @if (po.goodsReceipts.length > 0) {
-        <div class="text-sm">
-          <p class="font-medium text-gray-800 dark:text-white/90">Recepciones:</p>
-          @for (gr of po.goodsReceipts; track gr.id) {
-            <p class="text-gray-600 dark:text-gray-400">{{ gr.numero }} · {{ gr.fechaRecepcion | appDate: 'short' }}</p>
-          }
-        </div>
-      }
-      <div class="flex flex-wrap gap-2">
-        @if (po.estado === 'BORRADOR') {
-          <app-button startIconName="mdi:check-decagram-outline" variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'approve' })">Aprobar</app-button>
-          <app-button startIconName="mdi:cancel" variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'cancel' })">Anular</app-button>
-        }
-        @if (po.estado === 'APROBADA') {
-          <app-button startIconName="mdi:send-outline" variant="primary" [disabled]="actionMutation.isPending()" (btnClick)="actionMutation.mutate({ id: po.id, action: 'send' })">Enviar</app-button>
-        }
-      </div>
     </div>
-  }
+  </div>
+</app-component-card>
+
+<app-pagination [totalItems]="totalRows()" [currentPage]="page()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+
+<!-- ========== DETALLE ========== -->
+<app-modal [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-4xl shadow-theme-lg" bodyClass="custom-scrollbar">
+  @let po = detailQuery.data();
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <div class="flex flex-wrap items-center gap-3 pe-12">
+      <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">Orden {{ po?.numero ?? '' }}</h3>
+      @if (po) {
+        <app-status-badge [status]="po.estado" [label]="statusLabel(po.estado)" />
+      }
+    </div>
+    @if (po) {
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ po.supplier.razonSocial }} · RUC {{ po.supplier.numeroDocumento }}</p>
+    }
+  </div>
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+    @if (detailQuery.isPending()) {
+      <p class="text-sm text-gray-500 dark:text-gray-400">Cargando orden…</p>
+    } @else if (po) {
+      <dl class="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Almacén de destino</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.warehouse.nombre }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Fecha de emisión</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.fechaEmision | appDate: 'dd/MM/yyyy' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Entrega estimada</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.fechaEntregaEstimada ? (po.fechaEntregaEstimada | appDate: 'dd/MM/yyyy') : '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Crédito del proveedor</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.supplier.diasCredito ? po.supplier.diasCredito + ' días' : 'Contado' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Creada por</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.createdBy.nombre }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Aprobada por</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.approvedBy?.nombre ?? '—' }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Condiciones de pago</dt>
+          <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.condicionesPago || '—' }}</dd>
+        </div>
+        @if (po.comentario) {
+          <div class="sm:col-span-2 lg:col-span-4">
+            <dt class="text-xs text-gray-500 dark:text-gray-400">Comentario</dt>
+            <dd class="mt-0.5 text-gray-800 dark:text-white/90">{{ po.comentario }}</dd>
+          </div>
+        }
+      </dl>
+
+      <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <table class="w-full min-w-[720px] text-sm text-gray-700 dark:text-gray-300">
+          <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+            <tr>
+              <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Pedido</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Recibido</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Pendiente</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
+              <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of po.items; track item.id) {
+              <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                <td class="px-4 py-2">
+                  <span class="text-gray-800 dark:text-white/90">{{ item.producto }}</span>
+                  @if (item.codigoInterno || item.codigoProveedor) {
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">
+                      {{ item.codigoInterno ? 'Cód. ' + item.codigoInterno : '' }}{{ item.codigoInterno && item.codigoProveedor ? ' · ' : '' }}{{ item.codigoProveedor ? 'Cód. proveedor ' + item.codigoProveedor : '' }}
+                    </span>
+                  }
+                </td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ num(item.cantidadPedida) }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ num(item.cantidadRecibida) }}</td>
+                <td class="px-4 py-2 text-end tabular-nums" [class.font-semibold]="num(item.cantidadPendiente) > 0" [class.text-warning-600]="num(item.cantidadPendiente) > 0">{{ num(item.cantidadPendiente) }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ num(item.precioUnitario) | number: '1.2-4' }}</td>
+                <td class="px-4 py-2 text-end tabular-nums">{{ num(item.totalLinea) | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot class="border-t border-gray-200 text-gray-800 dark:border-gray-800 dark:text-white/90">
+            <tr>
+              <td colspan="5" class="px-4 pt-3 text-end text-gray-500 dark:text-gray-400">Subtotal</td>
+              <td class="px-4 pt-3 text-end tabular-nums">{{ num(po.subtotal) | number: '1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td colspan="5" class="px-4 text-end text-gray-500 dark:text-gray-400">IGV</td>
+              <td class="px-4 text-end tabular-nums">{{ num(po.igvTotal) | number: '1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td colspan="5" class="px-4 pb-3 text-end font-semibold">Total</td>
+              <td class="px-4 pb-3 text-end font-semibold tabular-nums">{{ num(po.total) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      @if (po.goodsReceipts.length) {
+        <section>
+          <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Recepciones</h4>
+          <ul class="divide-y divide-gray-100 rounded-xl border border-gray-200 text-sm dark:divide-gray-800 dark:border-gray-800">
+            @for (gr of po.goodsReceipts; track gr.id) {
+              <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
+                <span class="font-medium text-gray-800 dark:text-white/90">{{ gr.numero ?? 'Recepción' }}</span>
+                <span class="text-gray-500 dark:text-gray-400">{{ gr.fechaRecepcion | appDate: 'dd/MM/yyyy HH:mm' }}{{ gr.referenciaDoc ? ' · Doc. ' + gr.referenciaDoc : '' }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    } @else {
+      <p class="text-sm text-error-600">No se pudo cargar la orden. Ciérrala e inténtalo de nuevo.</p>
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+    <app-button variant="outline" (btnClick)="detailId.set(null)">Cerrar</app-button>
+    @if (po) {
+      <ng-container *appHasPermission="'purchases.write'">
+        @if (canCancel(po.estado)) {
+          <app-button variant="danger" startIconName="mdi:cancel" (btnClick)="askAction(po.id, po.numero, 'cancel')">Anular</app-button>
+        }
+        @if (canApprove(po.estado)) {
+          <app-button startIconName="mdi:check-decagram-outline" (btnClick)="askAction(po.id, po.numero, 'approve')">Aprobar</app-button>
+        }
+        @if (canSend(po.estado)) {
+          <app-button startIconName="mdi:send-outline" (btnClick)="askAction(po.id, po.numero, 'send')">Marcar como enviada</app-button>
+        }
+      </ng-container>
+      <ng-container *appHasPermission="'purchases.receive'">
+        @if (canReceive(po.estado)) {
+          <app-button startIconName="mdi:truck-check-outline" (btnClick)="goToReceipt(po.id)">Recibir mercadería</app-button>
+        }
+      </ng-container>
+    }
+  </div>
+</app-modal>
+
+<!-- ========== CONFIRMAR ACCIÓN ========== -->
+<app-modal [isOpen]="!!pendingAction()" (closed)="closeAction()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ actionCopy()?.title }}</h3>
+  </div>
+  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
+    @if (pendingAction(); as p) {
+      @switch (p.action) {
+        @case ('approve') {
+          ¿Aprobar la orden {{ p.numero }}? Ya no se podrá modificar; el siguiente paso es hacérsela llegar al proveedor y marcarla como enviada.
+        }
+        @case ('send') {
+          ¿Marcar la orden {{ p.numero }} como enviada? El sistema no la envía por correo: úsalo cuando ya se la hayas hecho llegar al proveedor. Después ya no se puede anular y queda lista para recibir la mercadería.
+        }
+        @case ('cancel') {
+          ¿Anular la orden {{ p.numero }}? No se puede deshacer y ya no se podrá recibir mercadería con ella.
+        }
+      }
+    }
+  </div>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="closeAction()">Cancelar</app-button>
+    <app-button
+      [variant]="pendingAction()?.action === 'cancel' ? 'danger' : 'primary'"
+      [startIconName]="actionCopy()?.icon ?? ''"
+      [disabled]="actionMutation.isPending()"
+      [loading]="actionMutation.isPending()"
+      (btnClick)="runAction()"
+    >{{ actionCopy()?.button }}</app-button>
+  </div>
+</app-modal>
+
+<!-- ========== NUEVA ORDEN ========== -->
+<app-modal
+  [isOpen]="createOpen()"
+  (closed)="closeCreate()"
+  className="w-full max-w-4xl"
+  maxHeightClass="max-h-[min(95dvh,920px)]"
+  bodyClass="custom-scrollbar"
+>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva orden de compra</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">
+      {{ fromSuggestion() ? 'Armada con los productos que elegiste en el Sugerido de compras. Revisa cantidades y costos antes de guardar.' : 'Se guarda como borrador; después la revisas y la apruebas.' }}
+    </p>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+    <div class="space-y-8">
+      <app-form-section title="Proveedor y destino" [cols]="2">
+        <div class="flex items-start gap-2">
+          <app-form-select
+            class="min-w-0 flex-1"
+            label="Proveedor"
+            [required]="true"
+            helpText="Solo aparecen los proveedores habilitados. Si tiene precios en «Productos que vende», se usan para los costos."
+            placeholder="Seleccionar"
+            [value]="supplierId()"
+            [options]="supplierOptions()"
+            [error]="!!createErrors().supplierId"
+            [hint]="createErrors().supplierId || ''"
+            (valueChange)="onSupplierChange($event)"
+          />
+          <div class="pt-7"><app-quick-create entity="supplier" [iconOnly]="true" (created)="onSupplierChange($event.id)" /></div>
+        </div>
+        <div class="flex items-start gap-2">
+          <app-form-select
+            class="min-w-0 flex-1"
+            label="Almacén de destino"
+            [required]="true"
+            helpText="Donde entrará la mercadería al recibirla."
+            placeholder="Seleccionar"
+            [value]="warehouseId()"
+            [options]="warehouseOptions()"
+            [error]="!!createErrors().warehouseId"
+            [hint]="createErrors().warehouseId || ''"
+            (valueChange)="onWarehouseChange($event)"
+          />
+          <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" /></div>
+        </div>
+        <app-input-field
+          label="Entrega estimada"
+          helpText="Cuándo esperas recibir la mercadería. Opcional."
+          type="date"
+          [value]="fechaEntrega()"
+          (valueChange)="fechaEntrega.set($event + '')"
+        />
+        <app-input-field
+          label="Condiciones de pago"
+          helpText="Lo acordado con el proveedor para esta orden. Opcional."
+          placeholder="Ej.: Crédito 30 días"
+          [maxLength]="200"
+          [value]="condicionesPago()"
+          (valueChange)="condicionesPago.set($event + '')"
+        />
+      </app-form-section>
+
+      <section>
+        <div class="mb-4">
+          <h4 class="text-base font-medium text-gray-800 dark:text-white/90">
+            Productos <span class="text-error-500" aria-hidden="true">*</span>
+          </h4>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Busca cada producto que vas a pedir y ajusta la cantidad y el costo.</p>
+        </div>
+        <app-search-select
+          label="Agregar producto"
+          helpText="Busca por nombre, código interno o código de barras. Si ya está en la orden, se le suma 1."
+          placeholder="Escribe para buscar"
+          emptyText="No se encontró ningún producto habilitado."
+          [resetToken]="pickerReset()"
+          [options]="pickerOptions()"
+          [loading]="pickerQuery.isFetching()"
+          (searchChange)="pickerTerm.set($event)"
+          (selected)="addLine($event.value)"
+        />
+
+        @if (lines().length === 0) {
+          <p
+            class="mt-4 rounded-[10px] border border-dashed px-4 py-6 text-center text-sm"
+            [class]="createErrors().lines ? 'border-error-500 text-error-600 dark:text-error-400' : 'border-gray-300 text-gray-500 dark:border-gray-700 dark:text-gray-400'"
+          >
+            {{ createErrors().lines || 'Todavía no agregas productos.' }}
+          </p>
+        } @else {
+          <div class="mt-4 max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+            <table class="w-full min-w-[680px] text-sm text-gray-700 dark:text-gray-300">
+              <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+                <tr>
+                  <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                  <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+                  <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <span class="inline-flex items-center gap-1">Costo unit. (S/) <app-help-hint text="Precio por unidad. Se toma del proveedor si lo tiene registrado. Si lo dejas vacío, al guardar se usa el precio de compra del producto. Puedes cambiarlo." [iconSize]="14" /></span>
+                  </th>
+                  <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+                  <th class="px-4 py-2"><span class="sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of lines(); track line.productId) {
+                  <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                    <td class="px-4 py-2">
+                      <span class="text-gray-800 dark:text-white/90">{{ line.nombre }}</span>
+                      <span class="block text-xs text-gray-500 dark:text-gray-400">
+                        {{ line.codigoInterno ? 'Cód. ' + line.codigoInterno : '' }}{{ line.codigoInterno && line.priceFromSupplier ? ' · ' : '' }}{{ line.priceFromSupplier ? 'Precio del proveedor' : '' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-2 text-center">
+                      <app-quantity-stepper size="sm" [value]="line.quantity" [ariaLabel]="'Cantidad de ' + line.nombre" (valueChange)="setQuantity(line.productId, $event)" />
+                    </td>
+                    <td class="w-36 px-4 py-2">
+                      <app-input-field
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        [ariaLabel]="'Costo unitario de ' + line.nombre"
+                        placeholder="Automático"
+                        [value]="line.unitPrice ?? ''"
+                        (valueChange)="setPrice(line.productId, $event + '')"
+                      />
+                    </td>
+                    <td class="px-4 py-2 text-end tabular-nums">{{ (line.unitPrice ?? 0) * line.quantity | number: '1.2-2' }}</td>
+                    <td class="px-4 py-2 text-end">
+                      <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:close" [tooltip]="'Quitar ' + line.nombre" (btnClick)="removeLine(line.productId)" />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="border-t border-gray-200 dark:border-gray-800">
+                <tr>
+                  <td colspan="3" class="px-4 py-3 text-end font-medium text-gray-800 dark:text-white/90">
+                    <span class="inline-flex items-center gap-1.5">
+                      Total estimado
+                      <app-help-hint text="Suma de cantidad por costo de las líneas con costo. El IGV y los costos vacíos se completan al guardar, así que el total final puede variar." [iconSize]="15" />
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-end font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+      </section>
+
+      <app-form-section title="Notas" [cols]="1">
+        <app-text-area label="Comentario" helpText="Nota interna sobre la orden. Opcional." [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
+      </app-form-section>
+    </div>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-3">
+      <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="closeCreate()">Cancelar</app-button>
+      <app-button startIconName="mdi:content-save-outline" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">
+        {{ createMutation.isPending() ? 'Guardando…' : 'Guardar orden' }}
+      </app-button>
+    </div>
+  </div>
 </app-modal>

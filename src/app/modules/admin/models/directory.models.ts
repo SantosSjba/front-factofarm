@@ -1090,12 +1090,21 @@ export interface CustomerImportResultDto {
   preview?: boolean;
 }
 
+/** Últimas órdenes de compra del proveedor (hasta 50). */
+export interface SupplierPurchaseHistoryItemDto {
+  id: string;
+  numero: string;
+  estado: PurchaseOrderStatus;
+  total: string;
+  fechaEmision: string;
+  warehouse: string;
+}
+
 export interface SupplierPurchaseHistoryResponseDto {
-  items: unknown[];
+  items: SupplierPurchaseHistoryItemDto[];
   total: number;
   page: number;
   pageSize: number;
-  message: string;
 }
 
 export interface ExportCustomersRequest {
@@ -2627,8 +2636,16 @@ export interface ReplenishmentSuggestionDto {
   cantidadSugerida: number;
   rotacion90d: string;
   claseAbc: 'A' | 'B' | 'C';
+  proveedorSugeridoId: string | null;
   proveedorSugerido: string | null;
   precioSugerido: string | null;
+}
+
+/** Borrador que el Sugerido de compras le pasa a «Nueva orden» (por estado de navegación). */
+export interface PurchaseOrderDraft {
+  supplierId: string | null;
+  warehouseId: string;
+  items: { productId: string; nombre: string; codigoInterno: string | null; quantity: number }[];
 }
 
 export interface PriceComparisonItemDto {
