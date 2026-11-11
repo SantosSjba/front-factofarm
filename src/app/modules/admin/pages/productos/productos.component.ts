@@ -3,6 +3,7 @@ import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import JsBarcode from 'jsbarcode';
 import * as yup from 'yup';
@@ -193,6 +194,7 @@ export class ProductosComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly filesApi = inject(FilesApiService);
   private readonly notify = inject(NotifyService);
+  private readonly router = inject(Router);
   private readonly queryClient = injectQueryClient();
   private codigoLookupTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -1376,6 +1378,14 @@ export class ProductosComponent {
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'No se pudo descargar la plantilla'));
     }
+  }
+
+  /** El stock no se edita aquí: lleva a Inventario con el ingreso de este producto ya abierto. */
+  protected goToInbound() {
+    const productId = this.editingProductId();
+    if (!productId) return;
+    this.closeFormModal();
+    void this.router.navigate(['/inventario-movimientos'], { queryParams: { ingreso: productId } });
   }
 
   protected closeFormModal() {

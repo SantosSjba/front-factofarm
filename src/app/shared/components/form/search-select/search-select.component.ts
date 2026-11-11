@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, signal } from '@angular/core';
 import { ClickOutsideDirective } from '../../../directives/click-outside.directive';
 import { OptionItemComponent, OptionListComponent } from '../../ui/option-list/option-list.component';
 import { InputFieldComponent } from '../input/input-field.component';
@@ -38,7 +38,7 @@ export type SearchSelectOption = { value: string; label: string; meta?: string }
     </div>
   `,
 })
-export class SearchSelectComponent implements OnDestroy {
+export class SearchSelectComponent implements OnChanges, OnDestroy {
   @Input() label = '';
   @Input() helpText = '';
   @Input() required = false;
@@ -48,10 +48,9 @@ export class SearchSelectComponent implements OnDestroy {
   @Input() loading = false;
   @Input() disabled = false;
   /** Al cambiar este número se vacía el campo (p. ej. tras agregar la opción elegida). */
-  @Input() set resetToken(_value: number) {
-    this.term.set('');
-    this.open.set(false);
-  }
+  @Input() resetToken = 0;
+  /** Texto con el que queda el campo al reiniciarse; si no está vacío, la lista se abre sola. */
+  @Input() resetTerm = '';
 
   @Output() searchChange = new EventEmitter<string>();
   @Output() selected = new EventEmitter<SearchSelectOption>();
@@ -59,6 +58,12 @@ export class SearchSelectComponent implements OnDestroy {
   protected readonly term = signal('');
   protected readonly open = signal(false);
   private timer?: ReturnType<typeof setTimeout>;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['resetToken']) return;
+    this.term.set(this.resetTerm);
+    this.open.set(!!this.resetTerm);
+  }
 
   protected onInput(value: string) {
     this.term.set(value);

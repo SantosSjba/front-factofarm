@@ -927,13 +927,27 @@
           </div>
           @if (editingProductId()) {
             <!-- El stock se mueve sólo con ingresos, ajustes o traslados (kardex). -->
-            <app-input-field
-              label="Stock actual (todos los almacenes)"
-              helpText="Aquí no se edita: cambia con compras, ingresos, ajustes o traslados de inventario, para que el kardex quede correcto."
-              type="number"
-              [value]="stockInicial()"
-              [disabled]="true"
-            />
+            <div class="flex items-end gap-2">
+              <app-input-field
+                class="block min-w-0 flex-1"
+                label="Stock actual"
+                helpText="Suma de todos los almacenes. Aquí no se edita: cambia con compras, ingresos, ajustes o traslados de inventario, para que el kardex quede correcto. Usa + para agregar stock."
+                type="number"
+                [value]="stockInicial()"
+                [disabled]="true"
+              />
+              <ng-container *appHasPermission="'nav.inventario_movimientos'">
+                <app-button
+                  size="lg"
+                  [iconOnly]="true"
+                  variant="outline"
+                  startIconName="mdi:plus"
+                  tooltip="Agregar stock: te lleva a Inventario con el ingreso de este producto. Guarda antes los cambios que hayas hecho aquí."
+                  ariaLabel="Agregar stock"
+                  (btnClick)="goToInbound()"
+                />
+              </ng-container>
+            </div>
           } @else {
             <app-input-field
               label="Stock inicial"

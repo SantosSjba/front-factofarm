@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { inventoryMovementQueryKeys } from '../../../../core/query/inventory-movement-query.keys';
@@ -107,6 +108,8 @@ export class InventarioMovimientosComponent {
   private readonly notify = inject(NotifyService);
   private readonly locale = inject(LocaleService);
   private readonly queryClient = injectQueryClient();
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
     { label: 'Inventario' },
@@ -207,6 +210,8 @@ export class InventarioMovimientosComponent {
   protected readonly inboundProduct = signal<StockTarget | null>(null);
   protected readonly inboundPickerTerm = signal('');
   protected readonly inboundPickerReset = signal(0);
+  /** Texto con el que se abre el buscador del ingreso (p. ej. lo que se buscó en la lista). */
+  protected readonly inboundPickerSeed = signal('');
   protected readonly inboundWarehouseId = signal('');
   protected readonly inboundQuantity = signal<number>(1);
   /** Precio de compra: valoriza este ingreso y, si cambió, actualiza el del producto. */
@@ -595,13 +600,41 @@ export class InventarioMovimientosComponent {
     return value.toFixed(2);
   }
 
-  /** «Registrar ingreso»: el producto se busca dentro del modal. */
-  protected openNewInboundModal() {
+  constructor() {
+    this.openInboundFromUrl();
+  }
+
+  /** «Registrar ingreso»: el producto se busca dentro del modal, opcionalmente ya con un texto. */
+  protected openNewInboundModal(searchTerm = '') {
     this.resetInboundForm();
+    const term = searchTerm.trim();
+    this.inboundPickerSeed.set(term);
+    this.inboundPickerTerm.set(term);
     this.inboundFromSearch.set(true);
     this.inboundProduct.set(null);
     this.inboundWarehouseId.set(this.defaultWarehouseId());
     this.inboundOpen.set(true);
+  }
+
+  /**
+   * `?ingreso=<productId>` (p. ej. desde «Agregar stock» en Productos): abre el ingreso con ese
+   * producto ya elegido. Sirve también para productos nuevos, que aún no salen en la lista.
+   */
+  private openInboundFromUrl() {
+    const productId = this.route.snapshot.queryParamMap.get('ingreso');
+    if (!productId) return;
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { ingreso: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    firstValueFrom(this.api.getProduct(productId))
+      .then((product) => {
+        this.openNewInboundModal();
+        this.inboundProduct.set({
+          productId: product.id,
+          producto: product.nombre,
+          codigoInterno: product.codigoInterno ?? null,
+          manejaLotes: product.manejaLotes,
+        });
+      })
+      .catch((err) => this.notify.error(httpErrorMessage(err, 'No se pudo abrir el ingreso del producto')));
   }
 
   protected openInboundModal(row: InventoryMovementListItemDto) {
@@ -613,6 +646,7 @@ export class InventarioMovimientosComponent {
   }
 
   private resetInboundForm() {
+    this.inboundPickerSeed.set('');
     this.inboundPickerTerm.set('');
     this.inboundPickerReset.update((n) => n + 1);
     this.resetInboundProductFields();
@@ -653,6 +687,7 @@ export class InventarioMovimientosComponent {
 
   protected clearInboundProduct() {
     this.inboundProduct.set(null);
+    this.inboundPickerSeed.set('');
     this.inboundPickerTerm.set('');
     this.inboundPickerReset.update((n) => n + 1);
     this.resetInboundProductFields();
