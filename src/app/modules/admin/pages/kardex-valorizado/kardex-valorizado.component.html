@@ -23,6 +23,15 @@
   <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
 </app-list-filters>
 
+@if (kpis(); as k) {
+  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <app-kpi-tile label="Valor del inventario" [value]="k.valor" icon="mdi:cash-multiple" tone="success" sub="Todo lo filtrado" />
+    <app-kpi-tile label="Unidades en stock" [value]="k.unidades" icon="mdi:package-variant-closed" tone="info" />
+    <app-kpi-tile label="Productos con stock" [value]="k.productos" icon="mdi:pill" tone="brand" sub="Por almacén" />
+    <app-kpi-tile label="Sin costo registrado" [value]="'' + k.sinCosto" icon="mdi:alert-circle-outline" [tone]="k.sinCosto ? 'warning' : 'gray'" sub="Se valorizan en S/ 0" hint="Registra el costo en Productos o en los ingresos para valorizarlos." />
+  </div>
+}
+
 @let listState = valuationQuery | queryPageState: totalRows();
 
 <app-component-card
@@ -79,11 +88,11 @@
             <tr>
               <td colspan="5" class="px-5 py-3 text-end text-theme-sm font-medium text-gray-800 dark:text-white/90">
                 <span class="inline-flex items-center gap-1.5">
-                  Total de esta página
-                  <app-help-hint text="Suma de las filas que ves. Cambia de página o filtra por almacén para ver el resto." [iconSize]="14" />
+                  Valor total del inventario
+                  <app-help-hint text="Suma de todos los productos con los filtros aplicados, no solo de esta página." [iconSize]="14" />
                 </span>
               </td>
-              <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ pageTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ grandTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             </tr>
           </tfoot>
         }

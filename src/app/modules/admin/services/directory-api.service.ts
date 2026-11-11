@@ -155,6 +155,9 @@ import type {
   StaffLeaveStatusDto,
   StaffProductivityReportDto,
   SaleVoidRequestDto,
+  SoldItemsFilters,
+  SoldItemsResponseDto,
+  SaleListTotalsDto,
   ElectronicDocumentListFilters,
   AuditLogListResponseDto,
   EstablishmentListResponseDto,
@@ -1720,7 +1723,21 @@ export class DirectoryApiService {
     if (filters?.paymentMetodo) params['paymentMetodo'] = filters.paymentMetodo;
     if (filters?.paymentReferencia?.trim()) params['paymentReferencia'] = filters.paymentReferencia.trim();
     if (filters?.storage) params['storage'] = filters.storage;
-    return this.http.get<PaginatedResponseDto<SaleListItemDto>>(`${this.base}/sales`, { params });
+    return this.http.get<PaginatedResponseDto<SaleListItemDto> & { totales?: SaleListTotalsDto }>(`${this.base}/sales`, { params });
+  }
+
+  listSoldItems(filters: SoldItemsFilters) {
+    const params: Record<string, string> = {};
+    if (filters.page) params['page'] = String(filters.page);
+    if (filters.pageSize) params['pageSize'] = String(filters.pageSize);
+    if (filters.search?.trim()) params['search'] = filters.search.trim();
+    if (filters.from) params['from'] = filters.from;
+    if (filters.to) params['to'] = filters.to;
+    if (filters.documentType) params['documentType'] = filters.documentType;
+    if (filters.sellerId) params['sellerId'] = filters.sellerId;
+    if (filters.productId) params['productId'] = filters.productId;
+    if (filters.includeVoided) params['includeVoided'] = 'true';
+    return this.http.get<SoldItemsResponseDto>(`${this.base}/sales/items-report`, { params });
   }
 
   getSale(id: string) {

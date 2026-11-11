@@ -1907,6 +1907,8 @@ export interface KardexLineDto {
 }
 
 export type KardexListResponseDto = PaginatedResponseDto<KardexLineDto> & {
+  /** Totales de todo el filtro (no solo de la página). */
+  resumen?: { saldoInicial: string; entradas: string; salidas: string; saldoFinal: string };
   /** Saldo antes de la primera fila de esta página (solo en el kardex activo). */
   saldoInicial?: string;
 };
@@ -2005,6 +2007,11 @@ export interface InventoryValuationRowDto {
 
 export interface InventoryValuationReportResponseDto extends PaginatedResponseDto<InventoryValuationRowDto> {
   valorTotalPagina: string;
+  /** Valor y unidades de todo el filtro (no solo de la página). */
+  valorTotal?: string;
+  unidadesTotal?: string;
+  /** Filas sin costo registrado (se valorizan en 0). */
+  sinCosto?: number;
 }
 
 export interface InventoryValuationFiltersRequest {
@@ -3612,4 +3619,50 @@ export interface TenantLeadDto {
   convertedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+
+/** Reporte de productos vendidos: una fila por producto de cada venta. */
+export interface SoldItemRowDto {
+  id: string;
+  fecha: string;
+  saleId: string;
+  documentType: SaleDocumentType;
+  serie: string | null;
+  numero: string | null;
+  estado: SaleStatus;
+  cliente: string | null;
+  vendedor: string | null;
+  productId: string;
+  producto: string;
+  codigoInterno: string | null;
+  cantidad: string;
+  cantidadDevuelta: string;
+  precioUnitario: string;
+  totalLinea: string;
+  promocion: string | null;
+  lotes: { codigoLote: string; cantidad: string }[];
+}
+
+export interface SoldItemsResponseDto extends PaginatedResponseDto<SoldItemRowDto> {
+  totales: { lineas: number; unidades: string; monto: string; ventas: number };
+}
+
+export interface SoldItemsFilters {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  from?: string;
+  to?: string;
+  documentType?: SaleDocumentType;
+  sellerId?: string;
+  productId?: string;
+  includeVoided?: boolean;
+}
+
+/** Totales de todo el filtro del historial de ventas (las anuladas no suman). */
+export interface SaleListTotalsDto {
+  ventas: number;
+  monto: string;
+  anuladas: number;
 }

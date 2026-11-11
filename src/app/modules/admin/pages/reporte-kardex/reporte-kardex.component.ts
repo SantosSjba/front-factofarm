@@ -4,6 +4,7 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
+import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -32,6 +33,7 @@ const MOVEMENT: Record<string, { label: string; tone: StatusTone }> = {
   selector: 'app-reporte-kardex',
   standalone: true,
   imports: [
+    KpiTileComponent,
     CommonModule,
     AppDatePipe,
     QueryPageStatePipe,
@@ -116,18 +118,18 @@ export class ReporteKardexComponent {
   protected readonly isArchived = computed(() => this.storage() === 'archived');
 
   /** Resumen de la página: entradas, salidas y saldos. */
+  private readonly qtyFmt = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 4 });
+  /** Totales de todo el periodo filtrado (los calcula la API, no la página visible). */
   protected readonly summary = computed(() => {
-    const rows = this.rows();
-    let entradas = 0;
-    let salidas = 0;
-    for (const r of rows) {
-      const q = Number(r.cantidad) || 0;
-      if (q >= 0) entradas += q;
-      else salidas += -q;
-    }
-    const inicial = Number(this.kardexQuery.data()?.saldoInicial ?? 0);
-    const final = rows.length ? Number(rows[rows.length - 1].saldo ?? inicial) : inicial;
-    return { entradas, salidas, inicial, final };
+    const r = this.kardexQuery.data()?.resumen;
+    if (!r) return null;
+    const f = (v: string) => this.qtyFmt.format(Number(v) || 0);
+    return {
+      inicial: f(r.saldoInicial),
+      entradas: '+' + f(r.entradas),
+      salidas: '−' + f(String(Math.abs(Number(r.salidas)))),
+      final: f(r.saldoFinal),
+    };
   });
 
   protected pickProduct(id: string) {

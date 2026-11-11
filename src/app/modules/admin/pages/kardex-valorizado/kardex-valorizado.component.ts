@@ -3,6 +3,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
+import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
@@ -21,6 +22,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
   selector: 'app-kardex-valorizado',
   standalone: true,
   imports: [
+    KpiTileComponent,
     CommonModule,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
@@ -65,7 +67,20 @@ export class KardexValorizadoComponent {
   }));
   protected readonly rows = computed(() => this.valuationQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.valuationQuery.data()?.total ?? 0);
-  protected readonly pageTotal = computed(() => Number(this.valuationQuery.data()?.valorTotalPagina ?? 0));
+  private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
+  private readonly qtyFmt = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 2 });
+  /** Total de todo el filtro (la API valoriza todas las filas, no solo la página). */
+  protected readonly grandTotal = computed(() => Number(this.valuationQuery.data()?.valorTotal ?? this.valuationQuery.data()?.valorTotalPagina ?? 0));
+  protected readonly kpis = computed(() => {
+    const d = this.valuationQuery.data();
+    if (!d) return null;
+    return {
+      valor: this.pen.format(this.grandTotal()),
+      unidades: this.qtyFmt.format(Number(d.unidadesTotal ?? 0)),
+      productos: `${d.total}`,
+      sinCosto: d.sinCosto ?? 0,
+    };
+  });
 
   constructor() {
     effect(() => {

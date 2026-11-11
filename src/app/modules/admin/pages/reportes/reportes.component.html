@@ -1,0 +1,59 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Reportes</h1>
+</app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="reportes">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Aquí están todos los reportes del negocio, agrupados por tema. Solo ves los que tu usuario puede abrir.</li>
+    <li>Arriba tienes el resumen del mes. Pulsa una tarjeta para ver el detalle.</li>
+    <li>Cada reporte tiene su botón <strong>Excel</strong>, que descarga el listado completo con los filtros que elegiste.</li>
+  </ol>
+</app-help-panel>
+
+@if (month(); as m) {
+  <section class="mb-6">
+    <h2 class="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">Este mes</h2>
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <app-kpi-tile label="Vendido" [value]="m.monto" icon="mdi:cash-multiple" tone="success" sub="Sin ventas anuladas" link="/reporte-productos-vendidos" />
+      <app-kpi-tile label="Ventas" [value]="m.ventas" icon="mdi:receipt-text-outline" tone="brand" sub="Boletas, facturas y notas de venta" link="/notas-venta" [queryParams]="{ dateFrom: monthLink.from, dateTo: monthLink.to }" />
+      <app-kpi-tile label="Unidades vendidas" [value]="m.unidades" icon="mdi:pill" tone="info" [sub]="m.lineas" link="/reporte-productos-vendidos" />
+      <app-kpi-tile label="Ticket promedio" [value]="m.ticket" icon="mdi:calculator-variant-outline" tone="gray" sub="Vendido ÷ número de ventas" />
+    </div>
+  </section>
+}
+
+<div class="grid gap-6 xl:grid-cols-2">
+  @for (section of sections; track section.title) {
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      <header class="mb-4 flex items-start gap-3">
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl" [class]="section.tone">
+          <app-icon [name]="section.icon" iconClass="size-5" />
+        </span>
+        <div>
+          <h2 class="text-base font-semibold text-gray-800 dark:text-white/90">{{ section.title }}</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ section.desc }}</p>
+        </div>
+      </header>
+      <div class="grid gap-2 sm:grid-cols-2">
+        @for (link of section.links; track link.path) {
+          <a
+            [routerLink]="link.path"
+            class="group flex items-start gap-3 rounded-xl border border-gray-100 p-3 transition hover:border-brand-300 hover:bg-brand-50/40 focus-visible:outline-2 focus-visible:outline-brand-500 dark:border-gray-800 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/5"
+          >
+            <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-brand-100 group-hover:text-brand-600 dark:bg-white/5 dark:text-gray-300 dark:group-hover:bg-brand-500/15 dark:group-hover:text-brand-400">
+              <app-icon [name]="link.icon" iconClass="size-4" />
+            </span>
+            <span class="min-w-0">
+              <span class="block text-sm font-medium text-gray-800 dark:text-white/90">{{ link.label }}</span>
+              <span class="block text-xs text-gray-500 dark:text-gray-400">{{ link.desc }}</span>
+            </span>
+          </a>
+        }
+      </div>
+    </section>
+  } @empty {
+    <p class="text-sm text-gray-500 dark:text-gray-400">Tu usuario no tiene reportes habilitados. Pide acceso a tu administrador.</p>
+  }
+</div>

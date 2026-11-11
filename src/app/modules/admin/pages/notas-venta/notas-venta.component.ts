@@ -152,10 +152,8 @@ export class NotasVentaComponent {
   }));
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly total = computed(() => this.listQuery.data()?.total ?? 0);
-  /** Suma de la página visible (sin anuladas). */
-  protected readonly pageTotal = computed(() =>
-    this.rows().filter((r) => r.estado !== 'ANULADA').reduce((acc, r) => acc + Number(r.total), 0),
-  );
+  /** Totales de todo el filtro (los calcula la API; las anuladas no suman). */
+  protected readonly totals = computed(() => this.listQuery.data()?.totales ?? null);
 
   protected setSearch(v: string) {
     this.search.set(v);
@@ -229,6 +227,8 @@ export class NotasVentaComponent {
     const from = q.get('dateFrom') ?? q.get('from');
     const to = q.get('dateTo') ?? q.get('to');
     const estado = q.get('estado');
+    const search = q.get('search');
+    if (search) this.search.set(search);
     if (from) this.dateFrom.set(from);
     if (to) this.dateTo.set(to);
     if (estado != null) this.estado.set(estado);

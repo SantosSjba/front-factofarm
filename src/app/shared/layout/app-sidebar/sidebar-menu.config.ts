@@ -208,7 +208,10 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     icon: 'lucide:chart-no-axes-column',
     key: 'reportes',
     name: 'Reportes',
-    subItems: [{ name: 'Reportes', path: '/reportes', permissionCode: 'nav.reportes_panel' }],
+    subItems: [
+      { name: 'Panel de reportes', path: '/reportes', permissionCode: 'nav.reportes_panel' },
+      { name: 'Productos vendidos', path: '/reporte-productos-vendidos', permissionCode: 'nav.reportes_panel' },
+    ],
   },
   {
     icon: 'lucide:calculator',

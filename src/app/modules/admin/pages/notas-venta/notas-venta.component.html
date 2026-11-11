@@ -41,7 +41,7 @@
 
 <app-component-card
   title="Ventas"
-  [desc]="total() ? total() + ' en total · ' + (pageTotal() | currency: 'PEN' : 'symbol' : '1.2-2') + ' en esta página' : ''"
+  [desc]="totals() ? totals()!.ventas + (totals()!.ventas === 1 ? ' venta · ' : ' ventas · ') + (totals()!.monto | currency: 'PEN' : 'symbol' : '1.2-2') + ' vendido' + (totals()!.anuladas ? ' · ' + totals()!.anuladas + ' anuladas (no suman)' : '') : (total() ? total() + ' en total' : '')"
   className="overflow-hidden"
   [bodyClass]="'p-0 sm:p-0'"
   [loading]="listState.loading"

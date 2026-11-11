@@ -1,0 +1,116 @@
+<app-breadcrumb-inline [segments]="breadcrumb" />
+
+<app-page-toolbar>
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Productos vendidos</h1>
+</app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="reporte-productos-vendidos">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Cada fila es un producto de una venta, del más reciente al más antiguo. Busca un producto por nombre, código o código de barras para ver todas sus ventas.</li>
+    <li>Los totales de arriba suman <strong>todo lo filtrado</strong>, no solo esta página. Las ventas anuladas nunca suman.</li>
+    <li>Pulsa el número del comprobante para abrir la venta. Con <strong>Excel</strong> descargas el listado completo.</li>
+  </ol>
+</app-help-panel>
+
+<app-list-filters
+  collapsible
+  [showSelect]="false"
+  searchPlaceholder="Buscar producto por nombre, código o código de barras"
+  [searchValue]="search()"
+  [activeCount]="activeFilterCount()"
+  clearLabel="Limpiar"
+  (searchValueChange)="setSearch($event)"
+  (clear)="clearFilters()"
+>
+  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+  <app-form-select label="Comprobante" [showPlaceholder]="false" [value]="documentType()" [options]="docOptions" (valueChange)="setFilter('documentType', $event)" />
+  <div class="flex items-end pb-2">
+    <app-checkbox label="Mostrar también ventas anuladas" helpText="Se ven en rojo y no suman en los totales." [checked]="includeVoided()" (checkedChange)="setVoided($event)" />
+  </div>
+</app-list-filters>
+
+@if (kpis(); as k) {
+  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <app-kpi-tile label="Total vendido" [value]="k.monto" icon="mdi:cash-multiple" tone="success" sub="Suma de todo el filtro" />
+    <app-kpi-tile label="Unidades" [value]="k.unidades" icon="mdi:pill" tone="info" [sub]="k.lineas + ' líneas de venta'" />
+    <app-kpi-tile label="Ventas" [value]="k.ventas" icon="mdi:receipt-text-outline" tone="brand" sub="Comprobantes con estos productos" />
+    <app-kpi-tile label="Ticket promedio" [value]="k.ticket" icon="mdi:calculator-variant-outline" tone="gray" sub="Total vendido ÷ ventas" />
+  </div>
+}
+
+@let state = query | queryPageState: total();
+
+<app-component-card
+  title="Detalle por producto"
+  [desc]="total() ? total() + ' filas' : ''"
+  className="overflow-hidden"
+  [bodyClass]="'p-0 sm:p-0'"
+  [loading]="state.loading"
+  [error]="state.error"
+  [empty]="state.empty"
+  [emptyTitle]="search() || activeFilterCount() ? 'No hay ventas con esos filtros' : 'No hay ventas en estas fechas'"
+  emptyHint="Prueba con otras fechas o con otro producto."
+  (retry)="query.refetch()"
+>
+  <div data-card-header-end><app-color-legend [items]="legend" /></div>
+  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">P. unitario</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr [attr.data-row-tone]="rowTone(row)">
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                {{ row.fecha | appDate: 'dd/MM/yyyy HH:mm' }}
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.vendedor ?? '' }}</span>
+              </td>
+              <td class="px-5 py-4 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {{ row.codigoInterno ? 'Cód. ' + row.codigoInterno : '' }}
+                  @if (row.lotes.length) {
+                    · Lote @for (lot of row.lotes; track lot.codigoLote; let last = $last) {{{ lot.codigoLote }}{{ row.lotes.length > 1 ? ' × ' + (+lot.cantidad) : '' }}{{ last ? '' : ', ' }}}
+                  }
+                </span>
+                @if (row.promocion) {
+                  <span class="block text-theme-xs text-success-600 dark:text-success-400">{{ row.promocion }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                <a routerLink="/notas-venta" [queryParams]="saleLink(row)" class="font-medium text-brand-600 hover:underline dark:text-brand-400" [attr.aria-label]="'Abrir la venta ' + number(row)">{{ number(row) }}</a>
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ typeLabel(row.documentType) }}</span>
+                @if (row.estado !== 'COMPLETADA') {
+                  <app-status-badge class="mt-1" [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" />
+                }
+              </td>
+              <td class="px-5 py-4 text-theme-sm">{{ row.cliente ?? 'Cliente varios' }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">
+                {{ +row.cantidad }}
+                @if (+row.cantidadDevuelta > 0) {
+                  <span class="block text-theme-xs text-warning-600 dark:text-warning-400">devuelto {{ +row.cantidadDevuelta }}</span>
+                }
+              </td>
+              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.precioUnitario | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums" [class.line-through]="row.estado === 'ANULADA'">{{ row.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-component-card>
+
+<app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />

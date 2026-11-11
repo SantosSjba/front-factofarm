@@ -573,6 +573,15 @@ export const adminRoutes: Routes = [
         title: 'FactoFarm | Reportes',
       },
       {
+        path: 'reporte-productos-vendidos',
+        ...guarded(P.reportes),
+        loadComponent: () =>
+          import('./pages/reporte-productos-vendidos/reporte-productos-vendidos.component').then(
+            (m) => m.ReporteProductosVendidosComponent,
+          ),
+        title: 'FactoFarm | Productos vendidos',
+      },
+      {
         path: 'contabilidad-exportar-reporte',
         ...guarded(P.contabilidadExportarReporte),
         loadComponent: () =>

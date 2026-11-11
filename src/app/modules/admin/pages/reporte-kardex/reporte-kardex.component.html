@@ -60,29 +60,13 @@
     Elige un producto para ver su kardex.
   </p>
 } @else {
-  @if (!isArchived() && rows().length) {
-    @let s = summary();
-    <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <p class="text-xs text-gray-500 dark:text-gray-400">Saldo inicial</p>
-        <p class="mt-1 text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ s.inicial | number: '1.0-4' }}</p>
-      </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <p class="text-xs text-gray-500 dark:text-gray-400">Entradas</p>
-        <p class="mt-1 text-xl font-semibold tabular-nums text-success-600 dark:text-success-400">+{{ s.entradas | number: '1.0-4' }}</p>
-      </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <p class="text-xs text-gray-500 dark:text-gray-400">Salidas</p>
-        <p class="mt-1 text-xl font-semibold tabular-nums text-error-600 dark:text-error-400">−{{ s.salidas | number: '1.0-4' }}</p>
-      </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <p class="text-xs text-gray-500 dark:text-gray-400">Saldo final</p>
-        <p class="mt-1 text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ s.final | number: '1.0-4' }}</p>
-      </div>
+  @if (summary(); as s) {
+    <div class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <app-kpi-tile label="Saldo al inicio" [value]="s.inicial" icon="mdi:flag-outline" tone="gray" sub="Antes de la fecha «Desde»" />
+      <app-kpi-tile label="Entradas" [value]="s.entradas" icon="mdi:arrow-down-bold-circle-outline" tone="success" sub="Todo el periodo" />
+      <app-kpi-tile label="Salidas" [value]="s.salidas" icon="mdi:arrow-up-bold-circle-outline" tone="error" sub="Todo el periodo" />
+      <app-kpi-tile label="Saldo final" [value]="s.final" icon="mdi:package-variant-closed" tone="brand" sub="Al cierre del periodo" />
     </div>
-    @if (totalRows() > itemsPerPage) {
-      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Entradas y salidas de esta página. El saldo final es el de la última fila mostrada.</p>
-    }
   }
 
   @let kardexState = kardexQuery | queryPageState: totalRows();
