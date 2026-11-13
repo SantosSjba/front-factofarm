@@ -5,7 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
@@ -50,7 +51,7 @@ export function regulatedPriceStatus(
     HelpPanelComponent,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     FormSectionComponent,
     HelpHintComponent,
     InputFieldComponent,
@@ -71,36 +72,44 @@ export function regulatedPriceStatus(
         <li>Aquí registras el <strong>precio máximo</strong> al que se puede vender un medicamento, con su código DIGEMID.</li>
         <li>En <strong>Productos → Farmacia</strong> pones ese mismo código en «Código de medicamento DIGEMID».</li>
         <li>Al vender, el sistema compara el precio con este máximo. Si activas «Bloquear ventas sobre el precio máximo regulado» en <strong>Establecimientos</strong>, rechaza la venta que lo supere; viene desactivado.</li>
+        <li>Este catálogo es solo de tu farmacia: otros clientes no lo ven ni lo cambian.</li>
       </ol>
     </app-help-panel>
 
+    <!-- Buscador compacto; el estado se elige desde los chips (conteos de todo el catálogo). -->
     <app-list-filters
+      compact
       [showSelect]="false"
       searchPlaceholder="Buscar por nombre o código DIGEMID"
       [searchValue]="search()"
+      [summaryChips]="summaryChips()"
+      summaryLabel="Resumen del catálogo"
+      summaryStorageKey="precios-regulados"
+      (summaryChipClick)="onSummaryChip($event)"
       (searchValueChange)="search.set($event)"
-      (clear)="search.set('')"
+      (clear)="search.set(''); estado.set('')"
     />
 
-    <app-component-card
-      title="Precios máximos registrados"
-      helpText="Este catálogo es solo de tu farmacia: otros clientes no lo ven ni lo cambian."
-      bodyClass="p-0 sm:p-0"
+    <!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+    <app-page-state
       [loading]="listQuery.isPending()"
       [error]="listQuery.isError() ? 'No se pudieron cargar los precios regulados.' : null"
       [empty]="(listQuery.data() ?? []).length === 0"
-      [emptyTitle]="search().trim() ? 'Sin coincidencias para tu búsqueda' : 'Aún no hay precios regulados'"
+      [emptyTitle]="search().trim() || estado() ? 'Sin precios con esos filtros' : 'Aún no hay precios regulados'"
       emptyHint="Usa «Nuevo precio» para registrar el primero."
+      skeleton="table"
       (retry)="listQuery.refetch()"
     >
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div class="max-w-full overflow-x-auto">
         <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <caption class="sr-only">Precios máximos regulados</caption>
           <thead class="border-b border-gray-100 dark:border-white/[0.05]">
             <tr>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 <span class="inline-flex items-center gap-1">Código <app-help-hint text="Código DIGEMID. Debe ser igual al que tiene el producto en la pestaña Farmacia." [iconSize]="14" /></span>
               </th>
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Medicamento</th>
+              <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Medicamento</th>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 <span class="inline-flex items-center gap-1">Precio máximo <app-help-hint text="Precio más alto al que se debería vender una unidad." [iconSize]="14" /></span>
               </th>
@@ -132,17 +141,19 @@ export function regulatedPriceStatus(
           </tbody>
         </table>
       </div>
-    </app-component-card>
+      </div>
+    </app-page-state>
 
     <app-modal compact [isOpen]="formOpen()" (closed)="closeForm()" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
-      <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-8 sm:py-5 dark:border-gray-800">
+      <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
         <h3 class="pe-10 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo precio regulado</h3>
         <p class="mt-1 pe-10 text-sm text-gray-500 dark:text-gray-400">El precio máximo se compara con las ventas de los productos que tengan este código.</p>
       </div>
-      <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-        <div class="space-y-8">
-          <app-form-section title="Medicamento" [cols]="2">
+      <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
+        <div class="space-y-5">
+          <app-form-section compact icon="lucide:pill" title="Medicamento" [cols]="2">
             <app-input-field
+              compact
               label="Código DIGEMID"
               [isRequired]="true"
               helpText="Código del medicamento en DIGEMID. Sin él no se puede comparar con tus productos. Si ya existe, al guardar se actualiza."
@@ -153,6 +164,7 @@ export function regulatedPriceStatus(
               (valueChange)="codigo.set($event + ''); clearError('codigo')"
             />
             <app-input-field
+              compact
               label="Precio máximo (S/)"
               [isRequired]="true"
               helpText="Precio más alto al que se debería vender una unidad."
@@ -165,6 +177,7 @@ export function regulatedPriceStatus(
               (valueChange)="precio.set($event + ''); clearError('precio')"
             />
             <app-input-field
+              compact
               class="md:col-span-2"
               label="Nombre del medicamento"
               [isRequired]="true"
@@ -176,8 +189,9 @@ export function regulatedPriceStatus(
               (valueChange)="nombre.set($event + ''); clearError('nombre')"
             />
           </app-form-section>
-          <app-form-section title="Vigencia y fuente" description="Opcional. Sin fechas, el precio aplica siempre." [cols]="3">
+          <app-form-section compact icon="lucide:calendar-range" title="Vigencia y fuente" description="Opcional. Sin fechas, el precio aplica siempre." [cols]="3">
             <app-input-field
+              compact
               label="Vigente desde"
               helpText="Desde qué fecha aplica el precio. Si pones fecha final, esta también es necesaria."
               type="date"
@@ -187,6 +201,7 @@ export function regulatedPriceStatus(
               (valueChange)="desde.set($event + ''); clearError('desde')"
             />
             <app-input-field
+              compact
               label="Vigente hasta"
               helpText="Hasta qué fecha aplica. Déjala vacía si no tiene fin."
               type="date"
@@ -196,6 +211,7 @@ export function regulatedPriceStatus(
               (valueChange)="hasta.set($event + ''); clearError('hasta')"
             />
             <app-input-field
+              compact
               label="Fuente"
               helpText="De dónde sale el precio, por ejemplo DIGEMID o una resolución."
               [maxLength]="40"
@@ -205,11 +221,11 @@ export function regulatedPriceStatus(
           </app-form-section>
         </div>
       </div>
-      <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+      <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
         <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-        <div class="flex items-center gap-3">
-          <app-button variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeForm()">Cancelar</app-button>
-          <app-button startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="save()">
+        <div class="flex items-center gap-2">
+          <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeForm()">Cancelar</app-button>
+          <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="save()">
             {{ existingRow() ? 'Actualizar precio' : 'Guardar precio' }}
           </app-button>
         </div>
@@ -234,13 +250,40 @@ export class PreciosReguladosComponent {
   protected readonly hasta = signal(EMPTY_FORM.hasta);
   protected readonly fuente = signal(EMPTY_FORM.fuente);
 
+  /** Estado elegido en los chips: se filtra en el API (todo el catálogo, no solo las 500 filas). */
+  protected readonly estado = signal<'' | 'vigente' | 'vencido' | 'no_vigente' | 'sin_codigo'>('');
+
   protected readonly listQuery = injectQuery(() => {
     const search = this.search().trim();
+    const estado = this.estado();
     return {
-      queryKey: ['compliance', 'regulated-prices', search] as const,
-      queryFn: () => firstValueFrom(this.api.listRegulatedPrices(search || undefined)),
+      queryKey: ['compliance', 'regulated-prices', search, estado] as const,
+      queryFn: () => firstValueFrom(this.api.listRegulatedPrices(search || undefined, estado || undefined)),
     };
   });
+
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: ['compliance', 'regulated-prices', 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.regulatedPricesSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const e = this.estado();
+    return [
+      { id: 'all', label: 'Total', count: s.total, icon: 'lucide:list', active: !e, tooltip: 'Todo el catálogo. Clic para quitar el filtro de estado.' },
+      { id: 'vigente', label: 'Vigentes', count: s.vigente, tone: 'success', active: e === 'vigente', tooltip: 'Se comparan con las ventas. Clic para ver solo estos.' },
+      { id: 'no_vigente', label: 'No vigentes', count: s.noVigente, tone: 'neutral', active: e === 'no_vigente', tooltip: 'Aún no empiezan: revisa su fecha de inicio. Clic para ver solo estos.' },
+      { id: 'vencido', label: 'Vencidos', count: s.vencido, tone: 'neutral', active: e === 'vencido', tooltip: 'Ya pasó su fecha final: no se comparan con las ventas. Clic para ver solo estos.' },
+      { id: 'sin_codigo', label: 'Sin código', count: s.sinCodigo, tone: 'warning', active: e === 'sin_codigo', tooltip: 'Sin código DIGEMID no se pueden comparar con ningún producto. Clic para ver solo estos.' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const id = chip.id === 'all' ? '' : (chip.id as 'vigente' | 'vencido' | 'no_vigente' | 'sin_codigo');
+    this.estado.set(this.estado() === id ? '' : id);
+  }
 
   /** Catálogo sin filtrar, para avisar si el código ya existe aunque haya una búsqueda activa. */
   private readonly codeCheckQuery = injectQuery(() => ({

@@ -39,7 +39,8 @@
          pantalla (`data-filters-end`, p. ej. «Marcar entrada»). En angosto cada pieza baja entera. -->
     <div class="flex flex-wrap items-end" [class]="compact ? 'gap-2' : 'gap-3'">
       @if (showSearch) {
-        <div class="min-w-0 flex-[7] basis-60">
+        <!-- Sin select, menos ancho mínimo: así «Limpiar» cabe al lado en el teléfono. -->
+        <div class="min-w-0 flex-[7]" [class]="showSelect ? 'basis-60' : 'basis-40'">
           <ng-container [ngTemplateOutlet]="search" />
         </div>
       }

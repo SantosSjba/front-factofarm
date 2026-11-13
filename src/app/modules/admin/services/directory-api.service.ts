@@ -2408,10 +2408,19 @@ export class DirectoryApiService {
     return this.http.post<{ ok: boolean }>(`${this.base}/compliance/pharmacist-licenses/${id}/remove`, {});
   }
 
-  listRegulatedPrices(search?: string) {
-    return this.http.get<RegulatedPriceDto[]>(`${this.base}/compliance/regulated-prices`, {
-      params: search ? { search } : {},
-    });
+  /** `estado`: vigente, vencido, no_vigente o sin_codigo (se filtra en el API). */
+  listRegulatedPrices(search?: string, estado?: string) {
+    const params: Record<string, string> = {};
+    if (search) params['search'] = search;
+    if (estado) params['estado'] = estado;
+    return this.http.get<RegulatedPriceDto[]>(`${this.base}/compliance/regulated-prices`, { params });
+  }
+
+  /** Conteos de todo el catálogo de precios regulados, por estado. */
+  regulatedPricesSummary() {
+    return this.http.get<{ total: number; vigente: number; vencido: number; noVigente: number; sinCodigo: number }>(
+      `${this.base}/compliance/regulated-prices/summary`,
+    );
   }
 
   upsertRegulatedPrice(body: UpsertRegulatedPriceRequest) {
