@@ -8,13 +8,16 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { customerTypeQueryKeys } from '../../../../core/query/customer-type-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import { customerQueryKeys } from '../../../../core/query/customer-query.keys';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -31,13 +34,14 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
+    TableDropdownComponent,
+    MenuItemComponent,
     ListFiltersComponent,
     PaginationComponent,
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
-    LabelComponent,
     IconComponent,
     HasPermissionDirective,
   ],
@@ -85,6 +89,38 @@ export class TipoClientesComponent {
     this.totalRows() === 0 ? 0 : (this.currentPage() - 1) * this.itemsPerPage,
   );
   protected readonly paginatedRows = computed(() => this.rows());
+
+  /** Mismo resumen que la pantalla Clientes (comparte caché): clientes por tipo. */
+  protected readonly customersSummaryQuery = injectQuery(() => ({
+    queryKey: [...customerQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.customersSummary()),
+  }));
+  /** Todos los tipos (suelen ser pocos) para los conteos del resumen; el listado sigue paginado. */
+  protected readonly allTypesQuery = injectQuery(() => ({
+    queryKey: [...customerTypeQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.listCustomerTypesPaged({ page: 1, pageSize: 100 })),
+  }));
+  private readonly countByType = computed(
+    () => new Map((this.customersSummaryQuery.data()?.byType ?? []).map((t) => [t.id, t.count])),
+  );
+  protected customersOf(id: string): number {
+    return this.countByType().get(id) ?? 0;
+  }
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const types = this.allTypesQuery.data();
+    const s = this.customersSummaryQuery.data();
+    if (!types || !s) return [];
+    // Con el resumen completo de clientes (no con la página de tipos): tipos con al menos un cliente.
+    const inUse = s.byType.length;
+    const assigned = s.byType.reduce((a, t) => a + t.count, 0);
+    return [
+      { id: 'types', label: 'Tipos registrados', count: types.total, icon: 'lucide:tags', clickable: false, tooltip: 'Tipos de cliente creados en tu empresa.' },
+      { id: 'in-use', label: 'En uso', count: inUse, tone: 'success', clickable: false, tooltip: 'Tipos que tienen al menos un cliente asignado.' },
+      { id: 'unused', label: 'Sin clientes', count: types.total - inUse, tone: 'neutral', clickable: false, tooltip: 'Tipos que ningún cliente usa todavía.' },
+      { id: 'no-type', label: 'Clientes sin tipo', count: Math.max(0, s.total - assigned), icon: 'lucide:user-x', clickable: false, tooltip: 'Clientes que aún no tienen un tipo asignado (se asigna al editar el cliente).' },
+    ];
+  });
 
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<CustomerTypeItemDto | null>(null);

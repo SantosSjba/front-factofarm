@@ -15,6 +15,7 @@ export const productQueryKeys = {
       filters.habilitado ?? 'all',
       filters.generico ?? 'all',
       filters.necesitaRecetaMedica ?? 'all',
+      filters.stockLevel ?? 'all',
       filters.page ?? 1,
       filters.pageSize ?? 10,
     ] as const,

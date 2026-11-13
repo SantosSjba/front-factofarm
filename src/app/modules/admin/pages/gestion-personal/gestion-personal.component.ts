@@ -206,9 +206,15 @@ export class GestionPersonalComponent {
   ];
   protected readonly leaveTypeFilter = signal<'' | StaffLeaveTypeDto>('');
   protected readonly leaveSearch = signal('');
+  // El estado se filtra en el API (así «Canceladas» también funciona); tipo y búsqueda, aquí.
   protected readonly leavesQuery = injectQuery(() => ({
-    queryKey: ['staff', 'leaves'] as const,
-    queryFn: () => firstValueFrom(this.api.listStaffLeaves()),
+    queryKey: ['staff', 'leaves', this.leaveStatusFilter()] as const,
+    queryFn: () => firstValueFrom(this.api.listStaffLeaves(undefined, this.leaveStatusFilter() || undefined)),
+  }));
+  /** Conteos de todas las licencias del local (no solo las que trae el listado). */
+  protected readonly leavesSummaryQuery = injectQuery(() => ({
+    queryKey: ['staff', 'leaves', 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.staffLeavesSummary()),
   }));
   protected readonly leaves = computed(() => {
     const f = this.leaveStatusFilter();
@@ -221,18 +227,19 @@ export class GestionPersonalComponent {
 
   /** Chips: total, por estado y por tipo (los conteos no dependen de los filtros aplicados). */
   protected readonly leaveChips = computed<SummaryChip[]>(() => {
-    const all = this.leavesQuery.data();
-    if (!all) return [];
+    const s = this.leavesSummaryQuery.data();
+    if (!s) return [];
     const f = this.leaveStatusFilter();
     const t = this.leaveTypeFilter();
-    const count = (pred: (l: StaffLeaveItemDto) => boolean) => all.filter(pred).length;
+    const byStatus = new Map(s.byStatus.map((x) => [x.estado, x.count]));
+    const byType = new Map(s.byType.map((x) => [x.tipo, x.count]));
     return [
-      { id: 'all', label: 'Total', count: all.length, icon: 'lucide:calendar-days', group: 'General', active: !f && !t, tooltip: 'Todas las licencias. Clic para quitar los filtros de estado y tipo.' },
+      { id: 'all', label: 'Total', count: s.total, icon: 'lucide:calendar-days', group: 'General', active: !f && !t, tooltip: 'Todas las licencias. Clic para quitar los filtros de estado y tipo.' },
       ...(Object.keys(LEAVE_STATUS) as StaffLeaveStatusDto[]).map((s) => ({
         id: 'status:' + s,
         // Mismo texto que el select de estado (en plural: «Aprobadas»…).
         label: this.leaveStatusOptions.find((o) => o.value === s)?.label ?? LEAVE_STATUS[s].label,
-        count: count((l) => l.estado === s),
+        count: byStatus.get(s) ?? 0,
         tone: LEAVE_STATUS[s].tone,
         group: 'Estado',
         active: f === s,
@@ -242,7 +249,7 @@ export class GestionPersonalComponent {
         .map((tp) => ({
           id: 'type:' + tp,
           label: LEAVE_TYPES[tp],
-          count: count((l) => l.tipo === tp),
+          count: byType.get(tp) ?? 0,
           icon: 'lucide:tag',
           group: 'Tipo',
           active: t === tp,

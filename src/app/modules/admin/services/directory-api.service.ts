@@ -459,9 +459,19 @@ export class DirectoryApiService {
     });
   }
 
-  listStaffLeaves(userId?: string) {
-    const params = userId ? { userId } : undefined;
+  /** Sin `estado` el API omite las canceladas; con `estado` filtra por él (incluida CANCELADO). */
+  listStaffLeaves(userId?: string, estado?: string) {
+    const params: Record<string, string> = {};
+    if (userId) params['userId'] = userId;
+    if (estado) params['estado'] = estado;
     return this.http.get<StaffLeaveItemDto[]>(`${this.base}/staff/leaves`, { params });
+  }
+
+  /** Conteos de todas las licencias del local, por estado y tipo. */
+  staffLeavesSummary() {
+    return this.http.get<{ total: number; byStatus: { estado: StaffLeaveStatusDto; count: number }[]; byType: { tipo: StaffLeaveTypeDto; count: number }[] }>(
+      `${this.base}/staff/leaves/summary`,
+    );
   }
 
   createStaffLeave(userId: string, body: { tipo: StaffLeaveTypeDto; fromDate: string; toDate: string; notas?: string }) {
@@ -911,6 +921,18 @@ export class DirectoryApiService {
     return this.http.delete<void>(`${this.base}/suppliers/${supplierId}/products/${productId}`);
   }
 
+  /** Conteos del padrón de clientes para la fila de resumen. */
+  customersSummary() {
+    return this.http.get<{
+      total: number;
+      enabled: number;
+      disabled: number;
+      withCredit: number;
+      byType: { id: string; nombre: string; count: number }[];
+      byZone: { id: string; nombre: string; count: number }[];
+    }>(`${this.base}/customers/summary`);
+  }
+
   listCustomers(filters?: CustomerListFiltersRequest) {
     const params: Record<string, string> = {};
     const search = filters?.search?.trim();
@@ -1114,9 +1136,22 @@ export class DirectoryApiService {
     if (filters?.necesitaRecetaMedica !== undefined) {
       params['necesitaRecetaMedica'] = String(filters.necesitaRecetaMedica);
     }
+    if (filters?.stockLevel) params['stockLevel'] = filters.stockLevel;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     return params;
+  }
+
+  /** Conteos del catálogo para la fila de resumen de Productos. */
+  productsSummary() {
+    return this.http.get<{
+      total: number;
+      enabled: number;
+      disabled: number;
+      generico: number;
+      receta: number;
+      stock: { agotado: number; critico: number; bajo: number; normal: number };
+    }>(`${this.base}/products/summary`);
   }
 
   listProducts(filters?: ProductListFiltersRequest) {
@@ -2320,6 +2355,18 @@ export class DirectoryApiService {
 
   getLpdpTreatmentMatrix() {
     return this.http.get<LpdTreatmentMatrixDto>(`${this.base}/compliance/lpdp/treatment-matrix`);
+  }
+
+  /** Conteos de todas las solicitudes ARCO (estado, derecho y fuera de plazo). */
+  arcoSummary() {
+    return this.http.get<{ total: number; overdue: number; byStatus: { status: ArcoRequestStatus; count: number }[]; byType: { requestType: ArcoRequestType; count: number }[] }>(
+      `${this.base}/compliance/lpdp/arco/summary`,
+    );
+  }
+
+  /** Conteos de todos los locales activos. */
+  establishmentsSummary() {
+    return this.http.get<{ total: number; hospital: number; botica: number; sinTitular: number }>(`${this.base}/establishments/summary`);
   }
 
   listArcoRequests(status?: string) {

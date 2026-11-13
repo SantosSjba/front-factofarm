@@ -1,212 +1,196 @@
 <app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
 <app-page-toolbar [excel]="false">
-  <h1
-    data-toolbar-title
-    class="text-lg font-semibold text-gray-800 dark:text-white/90"
-  >
-    Clientes
-  </h1>
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Clientes</h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <!-- Columnas visibles de la tabla (en teléfono también definen los datos de cada tarjeta). -->
+    <app-table-dropdown>
+      <div dropdown-button>
+        <app-button size="sm" variant="outline" startIconName="lucide:columns-3" endIconName="mdi:chevron-down" tooltip="Elige qué datos se muestran en la tabla.">Columnas</app-button>
+      </div>
+      <div dropdown-content>
+        @for (col of columns; track col.key) {
+          <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
+        }
+      </div>
+    </app-table-dropdown>
     <ng-container *appHasPermission="'customers.read'">
-      <app-button size="sm" variant="outline" (btnClick)="openExportModal()">
+      <app-button size="sm" variant="outline" tooltip="Descarga los clientes en Excel." (btnClick)="openExportModal()">
         <app-excel-icon />
         <span class="leading-none">Exportar</span>
       </app-button>
     </ng-container>
     <ng-container *appHasPermission="'customers.write'">
-      <app-button size="sm" variant="outline" (btnClick)="openImportModal()">
+      <app-button size="sm" variant="outline" tooltip="Carga o actualiza clientes desde un Excel." (btnClick)="openImportModal()">
         <app-excel-icon />
         <span class="leading-none">Importar</span>
       </app-button>
-      <app-button size="sm" (btnClick)="openCreateModal()">
-        <app-icon name="mdi:plus" width="18" height="18" />
-        <span class="leading-none">Nuevo</span>
-      </app-button>
+      <app-button size="sm" startIconName="mdi:account-plus-outline" (btnClick)="openCreateModal()">Nuevo cliente</app-button>
     </ng-container>
   </div>
 </app-page-toolbar>
 
+<!-- Un solo bloque de filtros compactos: búsqueda (y en qué campo), tipo, zona y estado, más el resumen en chips. -->
 <app-list-filters
+  compact
   [searchValue]="searchTerm()"
+  searchPlaceholder="Buscar cliente"
+  selectAriaLabel="Campo de búsqueda"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
-  searchPlaceholder="Buscar"
-  selectPlaceholder="Filtrar por"
-  clearLabel="Limpiar"
+  [selectShowPlaceholder]="false"
+  [showClear]="false"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de clientes"
+  summaryStorageKey="clientes"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
-  (clear)="clearFilters()"
-/>
-
-<div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-  <app-form-select
-    [value]="customerTypeId()"
-    [options]="customerTypeOptions()"
-    placeholder="Tipo de cliente"
-    (valueChange)="onTypeFilterChange($event)"
-  />
-  <app-form-select
-    [value]="zoneId()"
-    [options]="zoneOptions()"
-    placeholder="Zona"
-    (valueChange)="onZoneFilterChange($event)"
-  />
-  <app-form-select
-    [value]="estado()"
-    [options]="stateOptions"
-    placeholder="Estado"
-    (valueChange)="onStateFilterChange($event)"
-  />
-</div>
+>
+  <!-- Tipo, zona, estado y «Limpiar» siempre juntos: si no caben, bajan los cuatro. -->
+  <div data-filters class="flex min-w-[min(100%,24rem)] flex-[9] basis-[34rem] flex-wrap items-end gap-2">
+    <app-form-select class="min-w-0 flex-1 basis-36" compact ariaLabel="Tipo de cliente" [showPlaceholder]="false" [value]="customerTypeId()" [options]="customerTypeFilterOptions()" (valueChange)="onTypeFilterChange($event)" />
+    <app-form-select class="min-w-0 flex-1 basis-32" compact ariaLabel="Zona" [showPlaceholder]="false" [value]="zoneId()" [options]="zoneFilterOptions()" (valueChange)="onZoneFilterChange($event)" />
+    <app-form-select class="min-w-0 flex-1 basis-32" compact ariaLabel="Estado" [showPlaceholder]="false" [value]="estado()" [options]="stateOptions" (valueChange)="onStateFilterChange($event)" />
+    <app-button size="sm" variant="outline" startIconName="mdi:filter-remove-outline" tooltip="Quita la búsqueda y los filtros." (btnClick)="clearFilters()">Limpiar</app-button>
+  </div>
+</app-list-filters>
 
 @let listState = listQuery | queryPageState: totalRows();
 
-<app-component-card title="Listado de Clientes" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay clientes registrados"
-  (retry)="refetchRows()">
-  <div class="px-4 pt-4">
-    <div class="flex justify-end">
-      <app-table-dropdown>
-        <div dropdown-button>
-          <app-button size="sm" variant="primary" endIconName="mdi:chevron-down">Mostrar/Ocultar columnas</app-button>
-        </div>
-        <div dropdown-content>
-          @for (col of columns; track col.key) {
-            <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
-          }
-        </div>
-      </app-table-dropdown>
-    </div>
-  </div>
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  [emptyTitle]="hasFilters() ? 'Sin clientes con esos filtros' : 'No hay clientes registrados'"
+  emptyHint="Usa «Nuevo cliente» o «Importar» para registrarlos."
+  skeleton="table"
+  (retry)="refetchRows()"
+>
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
-      <table class="min-w-full text-left">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Clientes</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">#</th>
             @if (isVisible('nombre')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Nombre</th>
+              <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nombre</th>
             }
             @if (isVisible('codigoInterno')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Cód interno</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cód. interno</th>
             }
             @if (isVisible('tipoDocumento')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tipo de documento</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo de documento</th>
             }
             @if (isVisible('numeroDocumento')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Número</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Número</th>
             }
             @if (isVisible('observaciones')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Observaciones</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Observaciones</th>
             }
             @if (isVisible('zona')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Zona</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Zona</th>
             }
             @if (isVisible('sitioWeb')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">WebSite</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Sitio web</th>
             }
             @if (isVisible('puntos')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Puntos acumulados</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Puntos acumulados</th>
             }
             @if (isVisible('tipoCliente')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Tipo de cliente</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo de cliente</th>
             }
             @if (isVisible('diasCredito')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Días de crédito</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Días de crédito</th>
             }
             @if (isVisible('vendedor')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Vendedor asignado</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vendedor asignado</th>
             }
             @if (isVisible('correoElectronico')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Correo electrónico</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Correo electrónico</th>
             }
             @if (isVisible('telefono')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Teléfono</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Teléfono</th>
             }
             @if (isVisible('departamento')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Departamento</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Departamento</th>
             }
             @if (isVisible('provincia')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Provincia</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Provincia</th>
             }
             @if (isVisible('distrito')) {
-              <th class="px-5 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Distrito</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Distrito</th>
             }
-            <th class="px-5 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">Acciones</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of customers(); track row.id; let i = $index) {
-            <tr>
-              <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">
-                {{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
+          @for (row of customers(); track row.id) {
+            <tr [attr.data-row-tone]="row.habilitado ? null : 'muted'">
               @if (isVisible('nombre')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">{{ row.nombre }}</td>
+                <td class="px-5 py-4 text-theme-sm"><span class="block font-medium text-gray-800 dark:text-white/90">{{ row.nombre }}</span>@if (!row.habilitado) { <app-status-badge status="INHABILITADO" tone="neutral" label="Inhabilitado" /> }</td>
               }
               @if (isVisible('codigoInterno')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.codigoInterno || '—' }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.codigoInterno || '—' }}</td>
               }
               @if (isVisible('tipoDocumento')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ documentLabel(row) }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ documentLabel(row) }}</td>
               }
               @if (isVisible('numeroDocumento')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.numeroDocumento }}</td>
+                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ row.numeroDocumento }}</td>
               }
               @if (isVisible('observaciones')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.observaciones || '—' }}</td>
+                <td class="max-w-xs px-5 py-4 text-theme-sm">{{ row.observaciones || '—' }}</td>
               }
               @if (isVisible('zona')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.zone?.nombre || '—' }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.zone?.nombre || '—' }}</td>
               }
               @if (isVisible('sitioWeb')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.sitioWeb || '—' }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.sitioWeb || '—' }}</td>
               }
               @if (isVisible('puntos')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.puntosAcumulados }}</td>
+                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ row.puntosAcumulados }}</td>
               }
               @if (isVisible('tipoCliente')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ customerTypeLabel(row) }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ customerTypeLabel(row) }}</td>
               }
               @if (isVisible('diasCredito')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.diasCredito }}</td>
+                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ row.diasCredito }}</td>
               }
               @if (isVisible('vendedor')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.vendedorAsignado?.nombre || '—' }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.vendedorAsignado?.nombre || '—' }}</td>
               }
               @if (isVisible('correoElectronico')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.correoElectronico || '—' }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.correoElectronico || '—' }}</td>
               }
               @if (isVisible('telefono')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.telefono || '—' }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ row.telefono || '—' }}</td>
               }
               @if (isVisible('departamento')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ departmentLabel(row) }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ departmentLabel(row) }}</td>
               }
               @if (isVisible('provincia')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ provinceLabel(row) }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ provinceLabel(row) }}</td>
               }
               @if (isVisible('distrito')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-700 dark:text-gray-300">{{ districtLabel(row) }}</td>
+                <td class="px-5 py-4 text-theme-sm">{{ districtLabel(row) }}</td>
               }
               <td class="px-5 py-4 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
-                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical"></app-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones de ' + row.nombre"></app-button>
                     </div>
                     <div dropdown-content>
                       <ng-container *appHasPermission="'customers.write'">
-                        <app-menu-item (itemClick)="openEditModal(row)">Editar</app-menu-item>
-                        <app-menu-item (itemClick)="toggleStatus(row)">{{ row.habilitado ? 'Inhabilitar' : 'Habilitar' }}</app-menu-item>
-                        <app-menu-item (itemClick)="openBarcodeModal(row)">Cod. Barras</app-menu-item>
-                        <app-menu-item (itemClick)="openTagsModal(row)">Etiquetas</app-menu-item>
+                        <app-menu-item icon="mdi:pencil-outline" tooltip="Datos, dirección y contacto." (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                        <app-menu-item [icon]="row.habilitado ? 'mdi:account-off-outline' : 'mdi:account-check-outline'" [tooltip]="row.habilitado ? 'No se le podrá vender hasta habilitarlo.' : 'Se le podrá vender otra vez.'" (itemClick)="toggleStatus(row)">{{ row.habilitado ? 'Inhabilitar' : 'Habilitar' }}</app-menu-item>
+                        <app-menu-item icon="mdi:barcode" tooltip="Código de barras del cliente; se puede imprimir." (itemClick)="openBarcodeModal(row)">Código de barras</app-menu-item>
+                        <app-menu-item icon="mdi:tag-outline" tooltip="Palabras para agrupar o reconocer al cliente." (itemClick)="openTagsModal(row)">Etiquetas</app-menu-item>
                       </ng-container>
                       <ng-container *appHasPermission="'customers.delete'">
-                        <app-menu-item variant="danger" (itemClick)="openDeleteModal(row)">Eliminar</app-menu-item>
+                        <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Te pedirá confirmación." (itemClick)="openDeleteModal(row)">Eliminar</app-menu-item>
                       </ng-container>
                     </div>
                   </app-table-dropdown>
@@ -214,17 +198,13 @@
               </td>
             </tr>
           } @empty {
-            <tr>
-              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-                Sin coincidencias para los filtros aplicados.
-              </td>
-            </tr>
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination
   [totalItems]="totalRows()"
@@ -233,176 +213,91 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-7xl shadow-theme-lg" maxHeightClass="max-h-[min(95dvh,980px)]" bodyClass="custom-scrollbar">
+<!-- ========== NUEVO / EDITAR CLIENTE ========== -->
+<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-4xl shadow-theme-lg" maxHeightClass="max-h-[min(92dvh,900px)]" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0">
-    <app-modal-tab-header
-      [title]="editing() ? 'Editar Cliente' : 'Nuevo Cliente'"
-      [tabs]="customerTabs"
-      [activeId]="activeTab()"
-      (tabChange)="setTab($event)"
-    />
+    <app-modal-tab-header [title]="editing() ? 'Editar cliente' : 'Nuevo cliente'" [tabs]="customerTabs" [activeId]="activeTab()" (tabChange)="setTab($event)" />
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
     @if (activeTab() === 'datos') {
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <app-label required>Tipo Doc. Identidad</app-label>
-          <app-form-select className="mt-2" [value]="form().tipoDocumento" [options]="documentTypesQuery.data() ?? []" (valueChange)="onDocumentTypeChange($event)" />
-        </div>
-        <div>
-          <app-label for="cliente-numero-doc" required>Número</app-label>
-          <div class="mt-2 flex gap-2">
-            <app-input-field [maxLength]="30"
-              id="cliente-numero-doc"
-              className="flex-1"
-              [isRequired]="true"
-              autocomplete="off"
-              [value]="form().numeroDocumento"
-              (valueChange)="updateFormField('numeroDocumento', $event + '')"
-            />
-            <app-button startIconName="mdi:card-account-details-outline"
-              variant="outline"
-              [disabled]="!canConsultDocument() || isDocumentConsultPending()"
-              [loading]="isDocumentConsultPending()"
-              (btnClick)="consultDocument()"
-            >
+      <app-form-section compact icon="lucide:id-card" title="Identificación" description="Documento y nombre del cliente." [cols]="2">
+        <app-form-select compact label="Tipo doc. identidad" [required]="true" helpText="DNI para personas, RUC para empresas. Con DNI o RUC puedes consultar los datos en SUNAT / RENIEC." [value]="form().tipoDocumento" [options]="documentTypesQuery.data() ?? []" (valueChange)="onDocumentTypeChange($event)" />
+        <div class="min-w-0">
+          <app-label for="cliente-numero-doc" compact required helpText="Escribe el número y pulsa el botón para traer el nombre automáticamente.">Número</app-label>
+          <div class="flex gap-2">
+            <app-input-field class="min-w-0 flex-1" compact icon="lucide:hash" id="cliente-numero-doc" [maxLength]="30" [isRequired]="true" autocomplete="off" inputMode="numeric" [value]="form().numeroDocumento" (valueChange)="updateFormField('numeroDocumento', $event + '')" />
+            <app-button size="sm" variant="outline" startIconName="mdi:card-account-details-outline" [disabled]="!canConsultDocument() || isDocumentConsultPending()" [loading]="isDocumentConsultPending()" (btnClick)="consultDocument()">
               {{ isDocumentConsultPending() ? 'Consultando…' : consultDocumentLabel() }}
             </app-button>
           </div>
         </div>
-        <div>
-          <app-label for="cliente-nombre" required>Nombre</app-label>
-          <app-input-field [maxLength]="200"
-            id="cliente-nombre"
-            className="mt-2"
-            [isRequired]="true"
-            [value]="form().nombre"
-            (valueChange)="updateFormField('nombre', ($event + ''))"
-          />
-        </div>
-        <div>
-          <app-label>Nombre comercial</app-label>
-          <app-input-field [maxLength]="200" className="mt-2" [value]="form().nombreComercial ?? ''" (valueChange)="updateFormField('nombreComercial', ($event + ''))" />
-        </div>
-        <div>
-          <app-label>Días de crédito</app-label>
-          <app-input-field min="0" step="1" className="mt-2" type="number" [value]="form().diasCredito ?? 0" (valueChange)="updateFormField('diasCredito', +$event)" />
-        </div>
-        <div>
-          <app-label>Límite de crédito (S/)</app-label>
-          <app-input-field min="0" className="mt-2" type="number" [value]="form().limiteCredito ?? ''" (valueChange)="updateFormField('limiteCredito', $event === '' ? null : +$event)" />
-        </div>
-        <div>
-          <app-label>Código interno</app-label>
-          <app-input-field [maxLength]="30" className="mt-2" [value]="form().codigoInterno ?? ''" (valueChange)="updateFormField('codigoInterno', $event + '')" />
-        </div>
-        <div>
-          <app-label>Nacionalidad</app-label>
-          <app-form-select className="mt-2" [value]="form().nacionalidad ?? 'PERU'" [options]="nationalitiesQuery.data() ?? []" (valueChange)="updateFormField('nacionalidad', $event)" />
-        </div>
-        <div>
-          <app-label>Tipo de cliente</app-label>
+        <app-input-field compact icon="lucide:user" id="cliente-nombre" label="Nombre" [isRequired]="true" helpText="Nombre completo o razón social, como en su documento." [maxLength]="200" [value]="form().nombre" (valueChange)="updateFormField('nombre', $event + '')" />
+        <app-input-field compact icon="lucide:store" label="Nombre comercial" helpText="Opcional. Cómo se conoce al negocio, si es distinto de la razón social." [maxLength]="200" [value]="form().nombreComercial ?? ''" (valueChange)="updateFormField('nombreComercial', $event + '')" />
+      </app-form-section>
+
+      <app-form-section compact icon="lucide:wallet" title="Crédito y clasificación" [cols]="2">
+        <app-input-field compact icon="lucide:calendar-clock" type="number" min="0" step="1" label="Días de crédito" helpText="Plazo en días para pagar sus compras al crédito." [value]="form().diasCredito ?? 0" (valueChange)="updateFormField('diasCredito', +$event)" />
+        <app-input-field compact icon="lucide:banknote" type="number" min="0" label="Límite de crédito (S/)" helpText="Opcional. Monto máximo de crédito para el cliente." [value]="form().limiteCredito ?? ''" (valueChange)="updateFormField('limiteCredito', $event === '' ? null : +$event)" />
+        <app-input-field compact icon="lucide:hash" label="Código interno" helpText="Opcional. Código propio de tu farmacia para el cliente." [maxLength]="30" [value]="form().codigoInterno ?? ''" (valueChange)="updateFormField('codigoInterno', $event + '')" />
+        <app-form-select compact label="Nacionalidad" helpText="País de nacionalidad del cliente." [value]="form().nacionalidad ?? 'PERU'" [options]="nationalitiesQuery.data() ?? []" (valueChange)="updateFormField('nacionalidad', $event)" />
+        <div class="min-w-0">
+          <app-label compact helpText="Agrupa a los clientes (p. ej. mayorista). Con «+» creas un tipo nuevo.">Tipo de cliente</app-label>
           <div class="flex items-center gap-2">
-            <app-form-select className="flex-1" [value]="form().customerTypeId ?? ''" [options]="customerTypeOptions()" (valueChange)="updateFormField('customerTypeId', $event || null)" />
-            <app-quick-create entity="customerType" [iconOnly]="true" (created)="updateFormField('customerTypeId', $event.id || null)" />
+            <app-form-select class="min-w-0 flex-1" compact ariaLabel="Tipo de cliente" [value]="form().customerTypeId ?? ''" [options]="customerTypeOptions()" (valueChange)="updateFormField('customerTypeId', $event || null)" />
+            <app-quick-create compact entity="customerType" [iconOnly]="true" (created)="updateFormField('customerTypeId', $event.id || null)" />
           </div>
         </div>
-      </div>
+      </app-form-section>
     }
 
     @if (activeTab() === 'direccion') {
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div>
-          <app-label>País</app-label>
-          <app-form-select className="mt-2" [value]="'PERU'" [options]="[{value:'PERU',label:'PERU'}]" />
-        </div>
-        <div>
-          <app-label>Departamento</app-label>
-          <app-form-select className="mt-2" [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
-        </div>
-        <div>
-          <app-label>Provincia</app-label>
-          <app-form-select className="mt-2" [value]="provinceId()" [options]="provinceOptions()" [disabled]="!departmentId()" (valueChange)="onProvinceChange($event)" />
-        </div>
-        <div>
-          <app-label>Distrito</app-label>
-          <app-form-select className="mt-2" [value]="districtId()" [options]="districtOptions()" [disabled]="!provinceId()" (valueChange)="districtId.set($event)" />
-        </div>
-        <div class="md:col-span-4">
-          <app-label>Dirección</app-label>
-          <app-input-field [maxLength]="250" className="mt-2" [value]="form().addresses?.[0]?.direccion ?? ''" (valueChange)="updateMainAddressField('direccion', $event + '')" />
-        </div>
-        <div class="md:col-span-2">
-          <app-label>Teléfono</app-label>
-          <app-input-field [maxLength]="30" className="mt-2" [value]="form().addresses?.[0]?.telefono ?? ''" (valueChange)="updateMainAddressField('telefono', $event + '')" />
-        </div>
-        <div class="md:col-span-2">
-          <app-label>Correo electrónico</app-label>
-          <app-input-field type="email" [maxLength]="120" className="mt-2" [value]="form().addresses?.[0]?.correoElectronico ?? ''" (valueChange)="updateMainAddressField('correoElectronico', $event + '')" />
-        </div>
-        <div class="md:col-span-4">
-          <app-label>Correos opcionales</app-label>
-          <app-input-field [maxLength]="250" className="mt-2" [value]="form().addresses?.[0]?.correosOpcionales ?? ''" (valueChange)="updateMainAddressField('correosOpcionales', $event + '')" />
-        </div>
-      </div>
+      <app-form-section compact icon="lucide:map-pin" title="Dirección principal" description="Ubigeo, dirección y contacto principal." [cols]="4">
+        <app-form-select compact label="País" helpText="País de la dirección." [value]="'PERU'" [options]="[{ value: 'PERU', label: 'Perú' }]" />
+        <app-form-select compact label="Departamento" helpText="Primero el departamento; luego se habilita la provincia." [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
+        <app-form-select compact label="Provincia" helpText="Se habilita al elegir el departamento." [value]="provinceId()" [options]="provinceOptions()" [disabled]="!departmentId()" (valueChange)="onProvinceChange($event)" />
+        <app-form-select compact label="Distrito" helpText="Se habilita al elegir la provincia." [value]="districtId()" [options]="districtOptions()" [disabled]="!provinceId()" (valueChange)="districtId.set($event)" />
+        <app-input-field class="md:col-span-4" compact icon="lucide:map-pin" label="Dirección" helpText="Calle, número y referencia." [maxLength]="250" [value]="form().addresses?.[0]?.direccion ?? ''" (valueChange)="updateMainAddressField('direccion', $event + '')" />
+        <app-input-field class="md:col-span-2" compact icon="lucide:phone" inputMode="tel" label="Teléfono" helpText="Teléfono de contacto del cliente." [maxLength]="30" [value]="form().addresses?.[0]?.telefono ?? ''" (valueChange)="updateMainAddressField('telefono', $event + '')" />
+        <app-input-field class="md:col-span-2" compact icon="lucide:mail" type="email" label="Correo electrónico" helpText="Correo principal del cliente." [maxLength]="120" [value]="form().addresses?.[0]?.correoElectronico ?? ''" (valueChange)="updateMainAddressField('correoElectronico', $event + '')" />
+        <app-input-field class="md:col-span-4" compact icon="lucide:mails" label="Correos opcionales" helpText="Opcional. Otros correos separados por coma." [maxLength]="250" [value]="form().addresses?.[0]?.correosOpcionales ?? ''" (valueChange)="updateMainAddressField('correosOpcionales', $event + '')" />
+      </app-form-section>
 
-      <div class="mt-5 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-        <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Agregar dirección adicional</h4>
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <app-input-field [value]="extraAddress().direccion ?? ''" [maxLength]="250" placeholder="Dirección" (valueChange)="extraAddress.set({...extraAddress(), direccion: $event + ''})" />
-          <app-input-field [value]="extraAddress().telefono ?? ''" [maxLength]="30" placeholder="Teléfono" (valueChange)="extraAddress.set({...extraAddress(), telefono: $event + ''})" />
-          <app-input-field [value]="extraAddress().correoElectronico ?? ''" type="email" [maxLength]="120" placeholder="Correo electrónico" (valueChange)="extraAddress.set({...extraAddress(), correoElectronico: $event + ''})" />
-        </div>
-        <div class="mt-3">
-          <app-button variant="outline" size="sm" (btnClick)="addExtraAddress()">
-            <app-icon name="mdi:plus" width="16" height="16" />
-            <span>Agregar dirección</span>
-          </app-button>
+      <app-form-section compact icon="lucide:map-pinned" title="Direcciones adicionales" description="Otras direcciones de entrega del cliente." [cols]="3">
+        <app-input-field compact icon="lucide:map-pin" ariaLabel="Dirección adicional" placeholder="Dirección" [maxLength]="250" [value]="extraAddress().direccion ?? ''" (valueChange)="extraAddress.set({ ...extraAddress(), direccion: $event + '' })" />
+        <app-input-field compact icon="lucide:phone" ariaLabel="Teléfono de la dirección" placeholder="Teléfono" [maxLength]="30" [value]="extraAddress().telefono ?? ''" (valueChange)="extraAddress.set({ ...extraAddress(), telefono: $event + '' })" />
+        <app-input-field compact icon="lucide:mail" type="email" ariaLabel="Correo de la dirección" placeholder="Correo electrónico" [maxLength]="120" [value]="extraAddress().correoElectronico ?? ''" (valueChange)="extraAddress.set({ ...extraAddress(), correoElectronico: $event + '' })" />
+        <div class="md:col-span-3">
+          <app-button size="sm" variant="outline" startIconName="mdi:plus" (btnClick)="addExtraAddress()">Agregar dirección</app-button>
         </div>
         @if (extraAddresses().length) {
-          <div class="mt-4 space-y-2">
+          <ul class="space-y-2 md:col-span-3">
             @for (addr of extraAddresses(); track $index; let i = $index) {
-              <div class="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-gray-700">
-                <span>{{ addr.direccion || 'Sin dirección' }} | {{ addr.telefono || 'Sin teléfono' }} | {{ addr.correoElectronico || 'Sin correo' }}</span>
-                <app-button variant="link-danger" (btnClick)="removeExtraAddress(i)">Quitar</app-button>
-              </div>
+              <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2 text-theme-xs dark:border-gray-800">
+                <span class="min-w-0 break-words text-gray-700 dark:text-gray-300">{{ addr.direccion || 'Sin dirección' }} · {{ addr.telefono || 'Sin teléfono' }} · {{ addr.correoElectronico || 'Sin correo' }}</span>
+                <app-button size="xs" variant="link-danger" startIconName="mdi:close" (btnClick)="removeExtraAddress(i)">Quitar</app-button>
+              </li>
             }
-          </div>
+          </ul>
         }
-      </div>
+      </app-form-section>
     }
 
     @if (activeTab() === 'otros') {
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <app-label>Contacto Nombre y Apellido</app-label>
-          <app-input-field [maxLength]="200" className="mt-2" [value]="form().contactoNombre ?? ''" (valueChange)="updateFormField('contactoNombre', $event + '')" />
-        </div>
-        <div>
-          <app-label>Contacto Teléfono</app-label>
-          <app-input-field [maxLength]="30" className="mt-2" [value]="form().contactoTelefono ?? ''" (valueChange)="updateFormField('contactoTelefono', $event + '')" />
-        </div>
-        <div>
-          <app-label>Sitio Web</app-label>
-          <app-input-field [maxLength]="250" className="mt-2" [value]="form().sitioWeb ?? ''" (valueChange)="updateFormField('sitioWeb', $event + '')" />
-        </div>
-        <div>
-          <app-label>Observaciones</app-label>
-          <app-input-field [maxLength]="500" className="mt-2" [value]="form().observaciones ?? ''" (valueChange)="updateFormField('observaciones', $event + '')" />
-        </div>
-        <div>
-          <app-label>Vendedor</app-label>
-          <app-form-select className="mt-2" [value]="form().vendedorAsignadoId ?? ''" [options]="[{value:'',label:'Seleccionar'}, ...((sellersQuery.data() ?? []).map(x => ({ value: x.id, label: x.nombre })))]" (valueChange)="updateFormField('vendedorAsignadoId', $event || null)" />
-        </div>
-        <div>
-          <app-label>Zona</app-label>
+      <app-form-section compact icon="lucide:contact" title="Contacto y venta" [cols]="2">
+        <app-input-field compact icon="lucide:user" label="Contacto (nombre y apellido)" helpText="Opcional. Persona de contacto, útil para empresas." [maxLength]="200" [value]="form().contactoNombre ?? ''" (valueChange)="updateFormField('contactoNombre', $event + '')" />
+        <app-input-field compact icon="lucide:phone" inputMode="tel" label="Teléfono del contacto" helpText="Opcional." [maxLength]="30" [value]="form().contactoTelefono ?? ''" (valueChange)="updateFormField('contactoTelefono', $event + '')" />
+        <app-input-field compact icon="lucide:globe" label="Sitio web" helpText="Opcional." [maxLength]="250" placeholder="https://" [value]="form().sitioWeb ?? ''" (valueChange)="updateFormField('sitioWeb', $event + '')" />
+        <app-input-field compact icon="lucide:message-square" label="Observaciones" helpText="Opcional. Notas internas sobre el cliente." [maxLength]="500" [value]="form().observaciones ?? ''" (valueChange)="updateFormField('observaciones', $event + '')" />
+        <app-form-select compact label="Vendedor" helpText="Vendedor asignado a este cliente." [value]="form().vendedorAsignadoId ?? ''" [options]="sellerOptions()" (valueChange)="updateFormField('vendedorAsignadoId', $event || null)" />
+        <div class="min-w-0">
+          <app-label compact helpText="Zona o ruta del cliente. Con «+» creas una zona nueva.">Zona</app-label>
           <div class="flex items-center gap-2">
-            <app-form-select className="flex-1" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
-            <app-quick-create entity="customerZone" [iconOnly]="true" (created)="updateFormField('zoneId', $event.id || null)" />
+            <app-form-select class="min-w-0 flex-1" compact ariaLabel="Zona" [value]="form().zoneId ?? ''" [options]="zoneOptions()" (valueChange)="updateFormField('zoneId', $event || null)" />
+            <app-quick-create compact entity="customerZone" [iconOnly]="true" (created)="updateFormField('zoneId', $event.id || null)" />
           </div>
         </div>
         @if (!editing()) {
-          <div class="md:col-span-2 rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+          <div class="rounded-lg border border-gray-200 p-3 text-theme-sm md:col-span-2 dark:border-gray-800">
             <app-checkbox [checked]="lpdpConsentAccepted()" (checkedChange)="lpdpConsentAccepted.set($event)">
               Autorizo el tratamiento de mis datos personales conforme a la
               <a href="/legal/privacidad" target="_blank" rel="noopener" class="font-medium text-brand-600 underline">Política de privacidad (LPDP)</a>.
@@ -410,34 +305,51 @@
             </app-checkbox>
           </div>
         }
-      </div>
+      </app-form-section>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeFormModal()">Cancelar</app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submitForm()">
-      {{ saveMutation.isPending() ? 'Guardando…' : 'Guardar' }}
-    </app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submitForm()">
+        {{ saveMutation.isPending() ? 'Guardando…' : 'Guardar' }}
+      </app-button>
+    </div>
   </div>
 </app-modal>
 
-<app-modal compact [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Importar Clientes</h3>
+<!-- ========== IMPORTAR ========== -->
+<app-modal compact [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-2xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Importar clientes</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Crea o actualiza clientes desde un Excel. Revisa la vista previa antes de confirmar.</p>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-    <app-button variant="link" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
-    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-      <app-file-input variant="button" accept=".xlsx" icon="excel" buttonLabel="Seleccione un archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
-      <app-button startIconName="mdi:eye-outline" variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
-        {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
-      </app-button>
-    </div>
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-6">
+    <ol class="space-y-3">
+      <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-gray-800">
+        <span class="text-theme-sm text-gray-700 dark:text-gray-300"><strong class="font-medium">1.</strong> Descarga el formato y llénalo.</span>
+        <app-button size="sm" variant="outline" startIconName="mdi:download-outline" (btnClick)="downloadImportTemplate()">Descargar formato</app-button>
+      </li>
+      <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-gray-800">
+        <span class="text-theme-sm text-gray-700 dark:text-gray-300"><strong class="font-medium">2.</strong> Elige el archivo y revisa la vista previa.</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <app-file-input compact variant="button" accept=".xlsx" icon="excel" buttonLabel="Elegir archivo (xlsx)" [fileName]="importFile()?.name ?? ''" (fileChange)="onImportFileChange($event)" />
+          <app-button size="sm" startIconName="mdi:eye-outline" variant="outline" [disabled]="previewImportMutation.isPending() || !importFile()" [loading]="previewImportMutation.isPending()" (btnClick)="runImportPreview()">
+            {{ previewImportMutation.isPending() ? 'Validando…' : 'Vista previa' }}
+          </app-button>
+        </div>
+      </li>
+    </ol>
     @if (importPreviewResult(); as preview) {
-      <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-white/5">
-        <p><strong>Filas:</strong> {{ preview.totalRows }} · <strong>Crearían:</strong> {{ preview.created }} · <strong>Actualizarían:</strong> {{ preview.updated }}</p>
+      <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-theme-sm dark:border-gray-800 dark:bg-white/5">
+        <p class="flex flex-wrap gap-x-4 gap-y-1 text-gray-700 dark:text-gray-300">
+          <span><strong class="font-medium">Filas:</strong> {{ preview.totalRows }}</span>
+          <span><strong class="font-medium">Se crearían:</strong> {{ preview.created }}</span>
+          <span><strong class="font-medium">Se actualizarían:</strong> {{ preview.updated }}</span>
+        </p>
         @if (preview.errors.length) {
-          <ul class="mt-2 max-h-40 list-disc overflow-y-auto pl-5 text-theme-xs text-gray-600 dark:text-gray-400">
+          <ul class="mt-2 max-h-40 list-disc overflow-y-auto ps-5 text-theme-xs text-error-600 dark:text-error-400">
             @for (err of preview.errors.slice(0, 20); track err) {
               <li>{{ err }}</li>
             }
@@ -446,107 +358,92 @@
       </div>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">Cancelar</app-button>
-    <app-button startIconName="mdi:play-circle-outline" [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="importMutation.isPending()" (btnClick)="importOpen.set(false)">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:check" [disabled]="importMutation.isPending() || !importPreviewResult()" [loading]="importMutation.isPending()" (btnClick)="processImport()">
       {{ importMutation.isPending() ? 'Procesando…' : 'Confirmar importación' }}
     </app-button>
   </div>
 </app-modal>
 
-<app-modal compact [isOpen]="exportOpen()" (closed)="exportOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Exportar Clientes</h3>
+<!-- ========== EXPORTAR ========== -->
+<app-modal compact [isOpen]="exportOpen()" (closed)="exportOpen.set(false)" className="w-full max-w-2xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Exportar clientes</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Elige qué clientes incluir en el Excel.</p>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div>
-        <app-label>Período</app-label>
-        <app-form-select className="mt-2" [value]="exportForm().period || 'all'" [options]="[{value:'all',label:'Todos'},{value:'month',label:'Por mes'},{value:'between-months',label:'Entre meses'},{value:'seller',label:'Vendedor'}]" (valueChange)="onExportPeriodChange($event)" />
-      </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <app-form-select compact label="Período" helpText="Todos, los registrados en un mes, entre dos meses o los de un vendedor." [value]="exportForm().period || 'all'" [options]="exportPeriodOptions" (valueChange)="onExportPeriodChange($event)" />
       @if ((exportForm().period || 'all') === 'month') {
-        <div>
-          <app-label>Mes de</app-label>
-          <app-input-field className="mt-2" [value]="exportForm().month || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('month', $event + '')" />
-        </div>
+        <app-input-field compact icon="lucide:calendar" label="Mes" helpText="Formato MM/AAAA, por ejemplo 03/2026." placeholder="MM/AAAA" [value]="exportForm().month || ''" (valueChange)="updateExportField('month', $event + '')" />
       }
       @if ((exportForm().period || 'all') === 'between-months') {
-        <div>
-          <app-label>Mes de</app-label>
-          <app-input-field className="mt-2" [value]="exportForm().fromMonth || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('fromMonth', $event + '')" />
-        </div>
-        <div>
-          <app-label>Mes al</app-label>
-          <app-input-field className="mt-2" [value]="exportForm().toMonth || ''" placeholder="MM/YYYY" (valueChange)="updateExportField('toMonth', $event + '')" />
-        </div>
+        <app-input-field compact icon="lucide:calendar" label="Desde el mes" helpText="Formato MM/AAAA." placeholder="MM/AAAA" [value]="exportForm().fromMonth || ''" (valueChange)="updateExportField('fromMonth', $event + '')" />
+        <app-input-field compact icon="lucide:calendar" label="Hasta el mes" helpText="Formato MM/AAAA." placeholder="MM/AAAA" [value]="exportForm().toMonth || ''" (valueChange)="updateExportField('toMonth', $event + '')" />
       }
       @if ((exportForm().period || 'all') === 'seller') {
-        <div>
-          <app-label>Vendedor</app-label>
-          <app-form-select className="mt-2" [value]="exportForm().sellerId || ''" [options]="[{value:'',label:'Seleccionar'}, ...((sellersQuery.data() ?? []).map(x => ({ value: x.id, label: x.nombre })))]" (valueChange)="updateExportField('sellerId', $event || undefined)" />
-        </div>
+        <app-form-select compact label="Vendedor" helpText="Clientes asignados a este vendedor." [value]="exportForm().sellerId || ''" [options]="sellerOptions()" (valueChange)="updateExportField('sellerId', $event || undefined)" />
       }
     </div>
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="exportOpen.set(false)">Cancelar</app-button>
-    <app-button startIconName="mdi:play-circle-outline" (btnClick)="processExport()">Procesar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" (btnClick)="exportOpen.set(false)">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:download-outline" (btnClick)="processExport()">Exportar</app-button>
   </div>
 </app-modal>
 
+<!-- ========== ELIMINAR ========== -->
 <app-modal compact [isOpen]="deleteOpen()" (closed)="deleteOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar</h3>
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar cliente</h3>
   </div>
   <div data-modal-body class="px-4 py-4 text-theme-sm text-gray-700 dark:text-gray-300 sm:px-6">
-    ¿Desea eliminar el registro?
+    ¿Eliminar este cliente? Ya no aparecerá en la lista ni se le podrá vender. Si solo quieres pausarlo, usa «Inhabilitar».
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="deleteOpen.set(false)">Cancelar</app-button>
-    <app-button startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" (btnClick)="deleteOpen.set(false)">Cancelar</app-button>
+    <app-button size="sm" variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>
 </app-modal>
 
+<!-- ========== CÓDIGO DE BARRAS ========== -->
 <app-modal compact [isOpen]="barcodeOpen()" (closed)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
   </div>
-  <div data-modal-body class="px-4 py-4 sm:px-6">
-    <app-label>Código</app-label>
-    <app-input-field [maxLength]="60" className="mt-2" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
-    <div class="mt-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+  <div data-modal-body class="space-y-3 px-4 py-4 sm:px-6">
+    <app-input-field compact icon="mdi:barcode" label="Código" helpText="Letras y números; se dibuja abajo para revisar antes de guardar o imprimir." [maxLength]="60" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
+    <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
       @if (barcodeSvg()) {
         <div class="flex justify-center overflow-x-auto" [innerHTML]="barcodeSvg()"></div>
       } @else {
-        <p class="text-center text-theme-sm text-gray-500">Ingrese un código válido para previsualizar.</p>
+        <p class="text-center text-theme-sm text-gray-500">Escribe un código para ver la vista previa.</p>
       }
     </div>
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
-    <app-button variant="outline" (btnClick)="printBarcode()">
-      <app-icon name="mdi:printer-outline" width="16" height="16" />
-      <span>Imprimir</span>
-    </app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button size="sm" variant="outline" startIconName="mdi:printer-outline" (btnClick)="printBarcode()">Imprimir</app-button>
+    <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
 </app-modal>
 
+<!-- ========== ETIQUETAS ========== -->
 <app-modal compact [isOpen]="tagsOpen()" (closed)="tagsOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Etiquetas</h3>
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Etiquetas</h3>
   </div>
   <div data-modal-body class="px-4 py-4 sm:px-6">
-    <app-label>Etiquetas (separadas por coma)</app-label>
-    <app-input-field [maxLength]="500" className="mt-2" [value]="tagsValue()" (valueChange)="tagsValue.set($event + '')" />
+    <app-input-field compact icon="mdi:tag-outline" label="Etiquetas" helpText="Sepáralas con comas, por ejemplo: frecuente, delivery." [maxLength]="500" placeholder="frecuente, delivery" [value]="tagsValue()" (valueChange)="tagsValue.set($event + '')" />
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="tagsOpen.set(false)">Cancelar</app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="tagsMutation.isPending()" [loading]="tagsMutation.isPending()" (btnClick)="submitTags()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" (btnClick)="tagsOpen.set(false)">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="tagsMutation.isPending()" [loading]="tagsMutation.isPending()" (btnClick)="submitTags()">
       {{ tagsMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>

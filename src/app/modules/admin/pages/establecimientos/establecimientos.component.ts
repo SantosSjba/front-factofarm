@@ -130,25 +130,22 @@ export class EstablecimientosComponent {
     { value: 'hospital', label: 'Hospital / clínica' },
   ];
 
-  /** Todos los locales (suelen ser pocos) para los conteos del resumen; el listado sigue paginado en el API. */
+  /** Conteos de todos los locales activos, calculados en el API (no solo la página visible). */
   protected readonly summaryQuery = injectQuery(() => ({
     queryKey: [...establishmentQueryKeys.all, 'summary'] as const,
-    queryFn: () => firstValueFrom(this.api.listEstablishmentsPaged({ page: 1, pageSize: 100 })),
+    queryFn: () => firstValueFrom(this.api.establishmentsSummary()),
   }));
 
   protected readonly summaryChips = computed<SummaryChip[]>(() => {
-    const items = this.summaryQuery.data()?.items;
-    if (!items) return [];
+    const s = this.summaryQuery.data();
+    if (!s) return [];
     const h = this.hospitalFilter();
-    const inactive = items.filter((e) => e.activo === false).length;
-    const sinTitular = items.filter((e) => e.activo !== false && !e.titularPharmacistLicenseId).length;
-    const hospitals = items.filter((e) => e.esHospital).length;
+    const sinTitular = s.sinTitular;
+    const hospitals = s.hospital;
     return [
-      { id: 'all', label: 'Total', count: items.length, icon: 'lucide:store', group: 'General', active: h === 'all', tooltip: 'Todos los locales. Clic para quitar el filtro de tipo.' },
-      { id: 'active', label: 'Activos', count: items.length - inactive, tone: 'success', group: 'General', clickable: false, tooltip: 'Locales en uso: venden y aparecen en los selectores.' },
-      ...(inactive ? [{ id: 'inactive', label: 'Inactivos', count: inactive, tone: 'neutral' as const, group: 'General', clickable: false, tooltip: 'Locales desactivados: se conservan pero no operan.' }] : []),
+      { id: 'all', label: 'Total', count: s.total, icon: 'lucide:store', group: 'General', active: h === 'all', tooltip: 'Todos los locales activos. Clic para quitar el filtro de tipo.' },
       { id: 'no-titular', label: 'Sin farmacéutico titular', count: sinTitular, tone: sinTitular ? 'warning' : 'neutral', group: 'General', clickable: false, tooltip: 'Locales activos sin químico farmacéutico titular asignado. DIGEMID exige uno por local: asígnalo en «Editar».' },
-      { id: 'type:no-hospital', label: 'Farmacia / botica', count: items.length - hospitals, icon: 'lucide:pill', group: 'Tipo', active: h === 'no-hospital', tooltip: 'Ver solo farmacias y boticas (clic de nuevo para quitar).' },
+      { id: 'type:no-hospital', label: 'Farmacia / botica', count: s.botica, icon: 'lucide:pill', group: 'Tipo', active: h === 'no-hospital', tooltip: 'Ver solo farmacias y boticas (clic de nuevo para quitar).' },
       { id: 'type:hospital', label: 'Hospital / clínica', count: hospitals, icon: 'lucide:hospital', group: 'Tipo', active: h === 'hospital', tooltip: 'Ver solo hospitales, clínicas y microredes (clic de nuevo para quitar).' },
     ];
   });

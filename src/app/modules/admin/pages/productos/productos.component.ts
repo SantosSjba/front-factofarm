@@ -13,7 +13,9 @@ import { FilesApiService } from '../../../../core/services/files-api.service';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -41,7 +43,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendItem, LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { STOCK_LEVEL_LABELS, stockLevel, type StockLevel } from '../../../../core/utils/stock-level';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 import { SelectQuickAddComponent } from '../../../../shared/components/form/select-quick-add/select-quick-add.component';
@@ -156,7 +158,8 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
+    StatusBadgeComponent,
     ListFiltersComponent,
     PaginationComponent,
     TableDropdownComponent,
@@ -168,7 +171,6 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     InputFieldComponent,
     LabelComponent,
     FormSectionComponent,
-    ColorLegendComponent,
     SelectQuickAddComponent,
     ProductImportModalComponent,
     HelpHintComponent,
@@ -206,14 +208,66 @@ export class ProductosComponent {
     { value: 'codigoInterno', label: 'Cód. interno' },
     { value: 'codigoBarra', label: 'Cód. barras' },
     { value: 'descripcion', label: 'Descripción' },
-    { value: 'all', label: 'Todos' },
+    { value: 'all', label: 'Todos los campos' },
   ];
+
+  /** Conteos de todo el catálogo (no dependen de los filtros) para la fila de chips. */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: [...productQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.productsSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const hab = this.filterHabilitado();
+    const gen = this.filterGenerico();
+    const rec = this.filterReceta();
+    const st = this.filterStock();
+    return [
+      { id: 'all', label: 'Total', count: s.total, icon: 'lucide:package', group: 'General', active: hab === 'all' && gen === 'all' && rec === 'all' && !st, tooltip: 'Todo el catálogo. Clic para quitar los filtros de habilitado, genérico, receta y stock.' },
+      { id: 'hab:true', label: 'Habilitados', count: s.enabled, tone: 'success', group: 'General', active: hab === 'true', tooltip: 'Disponibles para vender. Clic para ver solo estos.' },
+      { id: 'hab:false', label: 'Inhabilitados', count: s.disabled, tone: 'neutral', group: 'General', active: hab === 'false', tooltip: 'No se venden hasta habilitarlos. Clic para ver solo estos.' },
+      { id: 'gen:true', label: 'Genéricos', count: s.generico, icon: 'lucide:pill', group: 'General', active: gen === 'true', tooltip: 'Productos marcados como genéricos. Clic para ver solo estos.' },
+      { id: 'rec:true', label: 'Con receta', count: s.receta, icon: 'lucide:file-text', group: 'General', active: rec === 'true', tooltip: 'Necesitan receta médica para venderse. Clic para ver solo estos.' },
+      // Niveles de stock de los habilitados: mismos colores que las filas de la tabla.
+      { id: 'st:agotado', label: STOCK_LEVEL_LABELS.agotado, count: s.stock.agotado, tone: 'error', group: 'Stock', active: st === 'agotado', tooltip: 'Habilitados sin stock en ningún almacén (filas en rojo). Clic para ver solo estos.' },
+      { id: 'st:critico', label: STOCK_LEVEL_LABELS.critico, count: s.stock.critico, tone: 'error', group: 'Stock', active: st === 'critico', tooltip: 'Habilitados en el stock mínimo o menos (filas en rojo claro). Clic para ver solo estos.' },
+      { id: 'st:bajo', label: STOCK_LEVEL_LABELS.bajo, count: s.stock.bajo, tone: 'warning', group: 'Stock', active: st === 'bajo', tooltip: 'Habilitados con hasta el doble del stock mínimo (filas en ámbar). El mínimo se cambia al editar el producto. Clic para ver solo estos.' },
+      { id: 'st:normal', label: STOCK_LEVEL_LABELS.normal, count: s.stock.normal, tone: 'success', group: 'Stock', active: st === 'normal', tooltip: 'Habilitados con más del doble del stock mínimo. Clic para ver solo estos.' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'all') {
+      this.filterHabilitado.set('all');
+      this.filterGenerico.set('all');
+      this.filterReceta.set('all');
+      this.filterStock.set('');
+      this.currentPage.set(1);
+      return;
+    }
+    if (chip.id.startsWith('st:')) {
+      const level = chip.id.slice(3) as 'agotado' | 'critico' | 'bajo' | 'normal';
+      this.filterStock.set(this.filterStock() === level ? '' : level);
+      this.currentPage.set(1);
+      return;
+    }
+    const [key, value] = chip.id.split(':') as ['hab' | 'gen' | 'rec', 'true' | 'false'];
+    const map = { hab: this.filterHabilitado, gen: this.filterGenerico, rec: this.filterReceta } as const;
+    const sig = map[key];
+    if (!sig) return;
+    sig.set(sig() === value ? 'all' : value);
+    this.currentPage.set(1);
+  }
 
   protected readonly filterCategoryId = signal('');
   protected readonly filterBrandId = signal('');
   protected readonly filterHabilitado = signal<'all' | 'true' | 'false'>('all');
   protected readonly filterGenerico = signal<'all' | 'true' | 'false'>('all');
   protected readonly filterReceta = signal<'all' | 'true' | 'false'>('all');
+  /** Nivel de stock elegido desde los chips (el API filtra solo habilitados). */
+  protected readonly filterStock = signal<'' | 'agotado' | 'critico' | 'bajo' | 'normal'>('');
 
   protected readonly boolFilterOptions = [
     { value: 'all', label: 'Todos' },
@@ -234,6 +288,7 @@ export class ProductosComponent {
       habilitado: hab === 'all' ? undefined : hab === 'true',
       generico: gen === 'all' ? undefined : gen === 'true',
       necesitaRecetaMedica: rec === 'all' ? undefined : rec === 'true',
+      stockLevel: this.filterStock() || undefined,
     };
   }
 
@@ -728,6 +783,7 @@ export class ProductosComponent {
         this.filterHabilitado() !== 'all',
         this.filterGenerico() !== 'all',
         this.filterReceta() !== 'all',
+        !!this.filterStock(),
       ].filter(Boolean).length,
   );
 
@@ -785,6 +841,7 @@ export class ProductosComponent {
     this.filterHabilitado.set('all');
     this.filterGenerico.set('all');
     this.filterReceta.set('all');
+    this.filterStock.set('');
     this.currentPage.set(1);
   }
 

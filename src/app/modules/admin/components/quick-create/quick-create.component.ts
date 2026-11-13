@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, booleanAttribute, computed, inject, signal } from '@angular/core';
 import { injectQueryClient } from '@tanstack/angular-query-experimental';
 import { Observable, firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
@@ -92,7 +92,7 @@ const opt = (v: string) => v.trim() || undefined;
   template: `
     <app-button
       *appHasPermission="config().permission"
-      [size]="iconOnly ? 'lg' : 'sm'"
+      [size]="iconOnly && !compact ? 'lg' : 'sm'"
       [iconOnly]="iconOnly"
       variant="outline"
       [startIconName]="config().icon"
@@ -138,8 +138,8 @@ const opt = (v: string) => v.trim() || undefined;
           }
         }
         <div class="flex justify-end gap-2 pt-2">
-          <app-button startIconName="mdi:close" variant="outline" (btnClick)="isOpen.set(false)">Cancelar</app-button>
-          <app-button startIconName="mdi:content-save-outline" [loading]="saving()" [disabled]="saving()" (btnClick)="save()">Guardar</app-button>
+          <app-button size="sm" startIconName="mdi:close" variant="outline" (btnClick)="isOpen.set(false)">Cancelar</app-button>
+          <app-button size="sm" startIconName="mdi:content-save-outline" [loading]="saving()" [disabled]="saving()" (btnClick)="save()">Guardar</app-button>
         </div>
       </div>
     </app-modal>
@@ -158,6 +158,8 @@ export class QuickCreateComponent {
   @Input() context: QuickCreateContext = {};
   /** Versión compacta junto a un select: muestra sólo "Nuevo" (el nombre completo va en el tooltip). */
   @Input() iconOnly = false;
+  /** Botón de 36px para ir junto a campos compactos (misma altura que el select). */
+  @Input({ transform: booleanAttribute }) compact = false;
   @Output() created = new EventEmitter<QuickCreated>();
 
   private readonly entityKey = signal<QuickCreateEntity>('customer');

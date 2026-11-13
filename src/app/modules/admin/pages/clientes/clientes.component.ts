@@ -16,7 +16,10 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
 import { NotifyService } from '../../../../core/services/notify.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -200,7 +203,9 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
+    StatusBadgeComponent,
+    FormSectionComponent,
     ListFiltersComponent,
     PaginationComponent,
     TableDropdownComponent,
@@ -293,27 +298,93 @@ export class ClientesComponent {
   }));
 
   protected readonly fieldFilterOptions = [
-    { value: 'nombre', label: 'Nombre' },
-    { value: 'numeroDocumento', label: 'Número documento' },
-    { value: 'codigoInterno', label: 'Cód. interno' },
-    { value: 'all', label: 'Todos' },
+    { value: 'nombre', label: 'Buscar en: nombre' },
+    { value: 'numeroDocumento', label: 'Buscar en: documento' },
+    { value: 'codigoInterno', label: 'Buscar en: cód. interno' },
+    { value: 'all', label: 'Buscar en: todo' },
   ];
+
+  /** Conteos de todo el padrón (no dependen de los filtros) para la fila de chips. */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: [...customerQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.customersSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const est = this.estado();
+    const type = this.customerTypeId();
+    const zone = this.zoneId();
+    return [
+      { id: 'all', label: 'Total', count: s.total, icon: 'lucide:users', group: 'General', active: est === 'all' && !type && !zone, tooltip: 'Todos los clientes. Clic para quitar los filtros de estado, tipo y zona.' },
+      { id: 'estado:habilitado', label: 'Habilitados', count: s.enabled, tone: 'success', group: 'General', active: est === 'habilitado', tooltip: 'Se les puede vender. Clic para ver solo estos.' },
+      { id: 'estado:inhabilitado', label: 'Inhabilitados', count: s.disabled, tone: 'neutral', group: 'General', active: est === 'inhabilitado', tooltip: 'No se les puede vender hasta habilitarlos. Clic para ver solo estos.' },
+      { id: 'credit', label: 'Con crédito', count: s.withCredit, icon: 'lucide:calendar-clock', group: 'General', clickable: false, tooltip: 'Clientes con días de crédito mayores a cero.' },
+      ...s.byType.map((t) => ({ id: 'type:' + t.id, label: t.nombre, count: t.count, icon: 'lucide:tag', group: 'Tipo', active: type === t.id, tooltip: `Ver solo clientes «${t.nombre}» (clic de nuevo para quitar).` })),
+      ...s.byZone.map((z) => ({ id: 'zone:' + z.id, label: z.nombre, count: z.count, icon: 'lucide:map-pin', group: 'Zona', active: zone === z.id, tooltip: `Ver solo clientes de la zona «${z.nombre}» (clic de nuevo para quitar).` })),
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'all') {
+      this.estado.set('all');
+      this.customerTypeId.set('');
+      this.zoneId.set('');
+    } else if (chip.id.startsWith('estado:')) {
+      const e = chip.id.slice(7) as 'habilitado' | 'inhabilitado';
+      this.estado.set(this.estado() === e ? 'all' : e);
+    } else if (chip.id.startsWith('type:')) {
+      const id = chip.id.slice(5);
+      this.customerTypeId.set(this.customerTypeId() === id ? '' : id);
+    } else if (chip.id.startsWith('zone:')) {
+      const id = chip.id.slice(5);
+      this.zoneId.set(this.zoneId() === id ? '' : id);
+    }
+    this.currentPage.set(1);
+  }
+
+  protected readonly hasFilters = computed(
+    () => !!(this.searchTerm().trim() || this.customerTypeId() || this.zoneId() || this.estado() !== 'all'),
+  );
 
   protected readonly customers = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
 
+  /** Filtro: «Todo tipo». En el formulario se usa `customerTypeFormOptions`. */
+  protected readonly customerTypeFilterOptions = computed<Option[]>(() => [
+    { value: '', label: 'Todo tipo' },
+    ...(this.customerTypesQuery.data() ?? []).map((x) => ({ value: x.id, label: x.descripcion })),
+  ]);
+  protected readonly zoneFilterOptions = computed<Option[]>(() => [
+    { value: '', label: 'Toda zona' },
+    ...(this.zonesQuery.data() ?? []).map((x) => ({ value: x.id, label: x.nombre })),
+  ]);
+
   protected readonly customerTypeOptions = computed<Option[]>(() => [
-    { value: '', label: 'Tipo de cliente' },
+    { value: '', label: 'Sin tipo' },
     ...(this.customerTypesQuery.data() ?? []).map((x) => ({ value: x.id, label: x.descripcion })),
   ]);
 
   protected readonly zoneOptions = computed<Option[]>(() => [
-    { value: '', label: 'Zona' },
+    { value: '', label: 'Sin zona' },
     ...(this.zonesQuery.data() ?? []).map((x) => ({ value: x.id, label: x.nombre })),
   ]);
 
-  protected readonly stateOptions: Option[] = [
+  /** Vendedores para el formulario y la exportación. */
+  protected readonly sellerOptions = computed<Option[]>(() => [
+    { value: '', label: 'Sin vendedor' },
+    ...(this.sellersQuery.data() ?? []).map((x) => ({ value: x.id, label: x.nombre })),
+  ]);
+  protected readonly exportPeriodOptions: Option[] = [
     { value: 'all', label: 'Todos' },
+    { value: 'month', label: 'Por mes' },
+    { value: 'between-months', label: 'Entre meses' },
+    { value: 'seller', label: 'Por vendedor' },
+  ];
+
+  protected readonly stateOptions: Option[] = [
+    { value: 'all', label: 'Todo estado' },
     { value: 'habilitado', label: 'Habilitados' },
     { value: 'inhabilitado', label: 'Inhabilitados' },
   ];

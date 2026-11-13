@@ -120,20 +120,28 @@ export class LpdpComponent {
   });
   protected readonly hasFilters = computed(() => !!(this.statusFilter() || this.typeFilter() || this.overdueOnly() || this.search().trim()));
 
-  /** Chips: total, fuera de plazo, por estado y por derecho (conteos sobre todas las solicitudes). */
+  /** Conteos de todas las solicitudes de la empresa (el listado trae las 200 más recientes). */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: ['compliance', 'arco', 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.arcoSummary()),
+  }));
+
+  /** Chips: total, fuera de plazo, por estado y por derecho. */
   protected readonly summaryChips = computed<SummaryChip[]>(() => {
-    const all = this.arcoQuery.data();
-    if (!all) return [];
+    const sum = this.summaryQuery.data();
+    if (!sum) return [];
     const f = this.statusFilter();
     const t = this.typeFilter();
-    const late = all.filter((r) => this.overdue(r)).length;
+    const late = sum.overdue;
+    const byStatus = new Map(sum.byStatus.map((x) => [x.status, x.count]));
+    const byType = new Map(sum.byType.map((x) => [x.requestType, x.count]));
     return [
-      { id: 'all', label: 'Total', count: all.length, icon: 'lucide:file-text', group: 'General', active: !f && !t && !this.overdueOnly(), tooltip: 'Todas las solicitudes. Clic para quitar los filtros de estado, derecho y plazo.' },
+      { id: 'all', label: 'Total', count: sum.total, icon: 'lucide:file-text', group: 'General', active: !f && !t && !this.overdueOnly(), tooltip: 'Todas las solicitudes. Clic para quitar los filtros de estado, derecho y plazo.' },
       { id: 'late', label: 'Fuera de plazo', count: late, tone: late ? 'error' : 'neutral', group: 'General', active: this.overdueOnly(), tooltip: 'Abiertas que pasaron su plazo legal (20 días hábiles para acceso, 10 para las demás). Clic para ver solo esas.' },
       ...(Object.keys(ARCO_STATUS) as ArcoRequestStatus[]).map((s) => ({
         id: 'status:' + s,
         label: ARCO_STATUS[s].label,
-        count: all.filter((r) => r.status === s).length,
+        count: byStatus.get(s) ?? 0,
         tone: ARCO_STATUS[s].tone,
         group: 'Estado',
         active: f === s,
@@ -142,7 +150,7 @@ export class LpdpComponent {
       ...(Object.keys(ARCO_TYPES) as ArcoRequestType[]).map((tp) => ({
         id: 'type:' + tp,
         label: ARCO_TYPES[tp].label,
-        count: all.filter((r) => r.requestType === tp).length,
+        count: byType.get(tp) ?? 0,
         icon: 'lucide:scale',
         group: 'Derecho',
         active: t === tp,

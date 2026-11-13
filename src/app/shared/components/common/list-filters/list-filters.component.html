@@ -25,7 +25,8 @@
     @if (open) {
       <div
         [id]="panelId"
-        class="mt-4 grid gap-3 border-t border-gray-100 pt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 dark:border-gray-800"
+        class="grid grid-cols-1 border-t border-gray-100 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 dark:border-gray-800"
+        [class]="compact ? 'mt-2.5 gap-2 pt-2.5' : 'mt-4 gap-3 pt-4'"
       >
         @if (showSelect) {
           <ng-container [ngTemplateOutlet]="select" />

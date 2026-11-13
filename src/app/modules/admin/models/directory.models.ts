@@ -1390,6 +1390,8 @@ export interface ProductListFiltersRequest {
   habilitado?: boolean;
   generico?: boolean;
   necesitaRecetaMedica?: boolean;
+  /** Nivel de stock (solo habilitados): agotado, crítico, bajo o normal. */
+  stockLevel?: 'agotado' | 'critico' | 'bajo' | 'normal';
   page?: number;
   pageSize?: number;
 }
