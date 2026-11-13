@@ -17,33 +17,41 @@
   </ol>
 </app-help-panel>
 
-@let k = kpis();
-<div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-  <app-kpi-tile label="Colegiaturas activas" [value]="k.activas" icon="mdi:card-account-details-outline" tone="brand" />
-  <app-kpi-tile label="Titulares de local" [value]="k.titulares" icon="mdi:store-check-outline" tone="success" />
-  <app-kpi-tile label="Por vencer" [value]="'' + k.porVencer" icon="mdi:calendar-clock" [tone]="k.porVencer ? 'warning' : 'gray'" sub="En 60 días" />
-  <app-kpi-tile label="Vencidas" [value]="'' + k.vencidas" icon="mdi:alert-circle-outline" [tone]="k.vencidas ? 'error' : 'gray'" />
-</div>
+<app-list-filters
+  compact
+  searchPlaceholder="Buscar por nombre, CQP o usuario"
+  [searchValue]="search()"
+  selectAriaLabel="Vigencia"
+  selectPlaceholder="Toda vigencia"
+  [selectValue]="vigenciaFilter()"
+  [selectOptions]="vigenciaOptions"
+  [selectShowPlaceholder]="false"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de colegiaturas"
+  summaryStorageKey="farmaceutico-titular"
+  (summaryChipClick)="onSummaryChip($event)"
+  (searchValueChange)="search.set($event)"
+  (selectValueChange)="vigenciaFilter.set($any($event))"
+  (clear)="clearFilters()"
+/>
 
 @let state = listQuery | queryPageState: licenses().length;
-<app-component-card
-  title="Colegiaturas"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="state.loading"
   [error]="state.error"
   [empty]="state.empty"
-  emptyTitle="Aún no registras colegiaturas"
+  [emptyTitle]="hasFilters() ? 'Sin colegiaturas con esos filtros' : 'Aún no registras colegiaturas'"
   emptyHint="Usa «Nueva colegiatura» para registrar al químico farmacéutico."
+  skeleton="table"
   (retry)="listQuery.refetch()"
 >
-  <div data-card-header-end><app-color-legend [items]="legend" /></div>
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Farmacéutico</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Farmacéutico</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Usuario</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Titular de</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vigencia</th>
@@ -88,7 +96,7 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <!-- ========== CREAR / EDITAR ========== -->
 @let f = form();
@@ -99,11 +107,11 @@
   <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
     @if (f) {
       <div class="grid gap-4 sm:grid-cols-2">
-        <app-input-field label="N.º de colegiatura (CQP)" [isRequired]="true" [maxLength]="20" [value]="f.colegiaturaCqp" [error]="!!errors().cqp" [hint]="errors().cqp || ''" (valueChange)="patch({ colegiaturaCqp: '' + $event })" />
-        <app-input-field label="Vigente hasta" type="date" helpText="Fecha de vencimiento de la habilitación." [value]="f.vigenciaHasta" (valueChange)="patch({ vigenciaHasta: '' + $event })" />
+        <app-input-field label="N.º de colegiatura (CQP)" helpText="Número del Colegio Químico Farmacéutico del Perú: de 3 a 20 letras o números, sin espacios." [isRequired]="true" [maxLength]="20" [value]="f.colegiaturaCqp" [error]="!!errors().cqp" [hint]="errors().cqp || ''" (valueChange)="patch({ colegiaturaCqp: '' + $event })" />
+        <app-input-field label="Vigente hasta" type="date" helpText="Fecha de vencimiento de la habilitación. Desde 60 días antes se marca «Por vencer»." [value]="f.vigenciaHasta" (valueChange)="patch({ vigenciaHasta: '' + $event })" />
       </div>
-      <app-input-field label="Nombre completo" [isRequired]="true" [maxLength]="200" [value]="f.fullName" [error]="!!errors().name" [hint]="errors().name || ''" (valueChange)="patch({ fullName: '' + $event })" />
-      <app-form-select label="Usuario del sistema" helpText="Su cuenta; con ella autoriza controlados en el Punto de venta." [showPlaceholder]="false" [options]="userOptions()" [value]="f.userId" (valueChange)="patch({ userId: $event })" />
+      <app-input-field label="Nombre completo" helpText="Tal como figura en la colegiatura." [isRequired]="true" [maxLength]="200" [value]="f.fullName" [error]="!!errors().name" [hint]="errors().name || ''" (valueChange)="patch({ fullName: '' + $event })" />
+      <app-form-select label="Usuario del sistema" helpText="Su cuenta; con ella autoriza controlados en el Punto de venta. Solo aparecen farmacéuticos, gerentes y administradores sin colegiatura vinculada." [showPlaceholder]="false" [options]="userOptions()" [value]="f.userId" (valueChange)="patch({ userId: $event })" />
       @if (f.id) {
         <app-checkbox label="Activa" [checked]="f.activo" (checkedChange)="patch({ activo: $event })" />
       }
@@ -111,9 +119,9 @@
   </div>
   <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="form.set(null)">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [loading]="saveMutation.isPending()" [disabled]="saveMutation.isPending()" (btnClick)="submit()">Guardar</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="saveMutation.isPending()" (btnClick)="form.set(null)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [loading]="saveMutation.isPending()" [disabled]="saveMutation.isPending()" (btnClick)="submit()">Guardar</app-button>
     </div>
   </div>
 </app-modal>
@@ -128,8 +136,8 @@
       ¿Eliminar la colegiatura CQP {{ d.colegiaturaCqp }} de <strong>{{ d.fullName }}</strong>? Si ya autorizó ventas o es titular de un local, mejor desactívala.
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="toDelete.set(null)">Cancelar</app-button>
-    <app-button variant="danger" startIconName="mdi:trash-can-outline" [loading]="deleteMutation.isPending()" [disabled]="deleteMutation.isPending()" (btnClick)="deleteMutation.mutate(toDelete()!.id)">Eliminar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="toDelete.set(null)">Cancelar</app-button>
+    <app-button size="sm" variant="danger" startIconName="mdi:trash-can-outline" [loading]="deleteMutation.isPending()" [disabled]="deleteMutation.isPending()" (btnClick)="deleteMutation.mutate(toDelete()!.id)">Eliminar</app-button>
   </div>
 </app-modal>

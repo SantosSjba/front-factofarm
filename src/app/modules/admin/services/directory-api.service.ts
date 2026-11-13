@@ -409,12 +409,14 @@ export class DirectoryApiService {
     return this.http.get<RoleTemplateDto[]>(`${this.base}/permissions/role-templates`);
   }
 
-  listStaffAttendance(filters?: { page?: number; pageSize?: number; userId?: string }) {
+  listStaffAttendance(filters?: { page?: number; pageSize?: number; userId?: string; open?: boolean }) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     if (filters?.userId) params['userId'] = filters.userId;
-    return this.http.get<PaginatedResponseDto<StaffAttendanceItemDto>>(`${this.base}/staff/attendance`, {
+    if (filters?.open) params['open'] = 'true';
+    /** `allCount` / `openNow`: todos los registros y quienes trabajan ahora, con el mismo filtro de empleado. */
+    return this.http.get<PaginatedResponseDto<StaffAttendanceItemDto> & { allCount: number; openNow: number }>(`${this.base}/staff/attendance`, {
       params,
     });
   }
@@ -498,6 +500,14 @@ export class DirectoryApiService {
 
   listAuditLogs(params?: Record<string, string>) {
     return this.http.get<AuditLogListResponseDto>(`${this.base}/audit-logs`, { params });
+  }
+
+  /** Eventos por acción y personas con los filtros dados (sin el de acción). */
+  getAuditSummary(params?: Record<string, string>) {
+    return this.http.get<{ total: number; users: number; byAction: { action: string; label: string; count: number }[] }>(
+      `${this.base}/audit-logs/summary`,
+      { params },
+    );
   }
 
   getAuditFacets() {

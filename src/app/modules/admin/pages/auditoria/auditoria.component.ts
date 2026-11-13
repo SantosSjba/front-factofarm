@@ -6,7 +6,6 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -22,6 +21,8 @@ import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pi
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
 import { downloadBlob } from '../../components/cash/cash-files';
 import type { AuditLogItemDto, PaginatedResponseDto } from '../../models/directory.models';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 /** Tono por tipo de acción: lo que borra o anula resalta. */
@@ -42,7 +43,7 @@ function actionTone(action: string): StatusTone {
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     ExcelIconComponent,
     FormSelectComponent,
     HelpPanelComponent,
@@ -85,11 +86,6 @@ export class AuditoriaComponent {
     { value: '', label: 'Todos los usuarios' },
     ...(this.usersQuery.data()?.items ?? []).map((u) => ({ value: u.id, label: u.nombre })),
   ]);
-  protected readonly activeFilterCount = computed(
-    () =>
-      [this.userId(), this.action(), this.entity()].filter(Boolean).length +
-      (this.dateFrom() !== this.locale.monthStartYmd() || this.dateTo() !== this.locale.todayYmd() ? 1 : 0),
-  );
 
   private params(): Record<string, string> {
     const p: Record<string, string> = {};
@@ -109,6 +105,42 @@ export class AuditoriaComponent {
       >,
   }));
   protected readonly rows = computed(() => this.logsQuery.data()?.items ?? []);
+
+  /** Resumen con los mismos filtros, salvo la acción: los chips cambian de una acción a otra. */
+  protected readonly summaryQuery = injectQuery(() => {
+    const { action: _omit, ...rest } = this.params();
+    return {
+      queryKey: ['audit-logs', 'summary', rest] as const,
+      queryFn: () => firstValueFrom(this.api.getAuditSummary(rest)),
+    };
+  });
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const action = this.action();
+    return [
+      { id: 'all', label: 'Eventos', count: s.total, icon: 'lucide:list', group: 'General', active: !action, tooltip: 'Eventos con los filtros de usuario, módulo y fechas. Clic para quitar el filtro de acción.' },
+      { id: 'users', label: 'Personas', count: s.users, icon: 'lucide:users', group: 'General', clickable: false, tooltip: 'Cuántas personas distintas hicieron esas acciones.' },
+      ...s.byAction.map((a) => ({
+        id: 'action:' + a.action,
+        label: a.label,
+        count: a.count,
+        tone: actionTone(a.action),
+        group: 'Acción',
+        active: action === a.action,
+        tooltip: `Ver solo «${a.label}» (clic de nuevo para quitar).`,
+      })),
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'all') this.setFilter('action', '');
+    else if (chip.id.startsWith('action:')) {
+      const a = chip.id.slice(7);
+      this.setFilter('action', this.action() === a ? '' : a);
+    }
+  }
   protected readonly total = computed(() => this.logsQuery.data()?.total ?? 0);
 
   protected setFilter(which: 'userId' | 'action' | 'entity' | 'dateFrom' | 'dateTo', v: string | number) {

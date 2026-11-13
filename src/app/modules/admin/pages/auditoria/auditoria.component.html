@@ -15,35 +15,46 @@
   </ol>
 </app-help-panel>
 
+<!-- Filtros siempre a la vista, en una fila que se acomoda; el resumen cuenta eventos por acción. -->
 <app-list-filters
-  collapsible
+  compact
   [showSearch]="false"
   [showSelect]="false"
-  [activeCount]="activeFilterCount()"
-  clearLabel="Limpiar"
+  [showClear]="false"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen del registro"
+  summaryStorageKey="auditoria"
+  (summaryChipClick)="onSummaryChip($event)"
   (clear)="clearFilters()"
 >
-  <app-form-select label="Usuario" [showPlaceholder]="false" [options]="userOptions()" [value]="userId()" (valueChange)="setFilter('userId', $event)" />
-  <app-form-select label="Acción" [showPlaceholder]="false" [options]="actionOptions()" [value]="action()" (valueChange)="setFilter('action', $event)" />
-  <app-form-select label="Módulo" [showPlaceholder]="false" [options]="entityOptions()" [value]="entity()" (valueChange)="setFilter('entity', $event)" />
-  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
-  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+  <div data-filters class="contents">
+    <app-form-select class="min-w-0 flex-1 basis-40" compact label="Usuario" helpText="Quién hizo la acción. «Todos» incluye también las acciones automáticas del sistema." [showPlaceholder]="false" [options]="userOptions()" [value]="userId()" (valueChange)="setFilter('userId', $event)" />
+    <app-form-select class="min-w-0 flex-1 basis-40" compact label="Acción" helpText="Tipo de acción: ingresar, crear, modificar, anular, eliminar…" [showPlaceholder]="false" [options]="actionOptions()" [value]="action()" (valueChange)="setFilter('action', $event)" />
+    <app-form-select class="min-w-0 flex-1 basis-40" compact label="Módulo" helpText="Parte del sistema donde ocurrió (ventas, productos, usuarios…)." [showPlaceholder]="false" [options]="entityOptions()" [value]="entity()" (valueChange)="setFilter('entity', $event)" />
+    <!-- Desde, Hasta y Limpiar siempre juntos: si no caben, bajan los tres (nunca queda «Limpiar» solo). -->
+    <div class="flex min-w-[min(100%,22rem)] flex-1 basis-96 flex-wrap items-end gap-2 sm:flex-nowrap sm:max-w-[28rem]">
+      <app-input-field class="min-w-0 flex-1 basis-0" compact label="Desde" helpText="Primer día a revisar (inclusive)." type="date" [max]="dateTo()" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+      <app-input-field class="min-w-0 flex-1 basis-0" compact label="Hasta" helpText="Último día a revisar (inclusive)." type="date" [min]="dateFrom()" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+      <!-- En el teléfono «Limpiar» va debajo, a todo el ancho; las fechas comparten la fila. -->
+      <div class="w-full sm:w-auto">
+        <app-button class="flex w-full" size="sm" className="w-full" variant="outline" startIconName="mdi:filter-remove-outline" tooltip="Quita los filtros y vuelve a este mes." (btnClick)="clearFilters()">Limpiar</app-button>
+      </div>
+    </div>
+  </div>
 </app-list-filters>
 
 @let state = logsQuery | queryPageState: total();
-<app-component-card
-  title="Registro"
-  [desc]="total() ? total() + ' eventos' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="state.loading"
   [error]="state.error"
   [empty]="state.empty"
   emptyTitle="Sin eventos con esos filtros"
   emptyHint="Prueba con otras fechas."
+  skeleton="table"
   (retry)="logsQuery.refetch()"
 >
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
@@ -76,35 +87,36 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 <app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
 
 <app-modal compact [isOpen]="!!detail()" (closed)="detail.set(null)" className="w-full max-w-2xl shadow-theme-lg" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     @if (detail(); as d) {
-      <div class="flex flex-wrap items-center gap-3 pe-12">
+      <div class="flex flex-wrap items-center gap-2 pe-12">
         <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ d.entityLabel ?? d.entity }}</h3>
         <app-status-badge [status]="d.action" [tone]="tone(d.action)" [label]="d.actionLabel ?? d.action" />
       </div>
-      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ d.createdAt | appDate: 'dd/MM/yyyy HH:mm:ss' }} · {{ d.user?.nombre ?? 'Sistema' }}</p>
     }
   </div>
-  <div data-modal-body class="space-y-4 px-4 py-4 text-sm sm:px-6">
+  <div data-modal-body class="space-y-3 px-4 py-3 text-sm sm:px-6 sm:py-4">
     @if (detail(); as d) {
-      <dl class="grid gap-3 sm:grid-cols-2">
-        <div><dt class="text-xs text-gray-500 dark:text-gray-400">Id del registro</dt><dd class="break-all">{{ d.entityId ?? '—' }}</dd></div>
-        <div><dt class="text-xs text-gray-500 dark:text-gray-400">IP</dt><dd>{{ d.ipAddress ?? '—' }}</dd></div>
-        <div class="sm:col-span-2"><dt class="text-xs text-gray-500 dark:text-gray-400">Equipo / navegador</dt><dd class="break-all">{{ d.userAgent ?? '—' }}</dd></div>
+      <dl class="grid gap-x-4 gap-y-2.5 rounded-xl border border-gray-100 p-3 sm:grid-cols-2 dark:border-gray-800">
+        <div><dt class="text-theme-xs text-gray-500 dark:text-gray-400">Usuario</dt><dd class="text-gray-800 dark:text-white/90">{{ d.user?.nombre ?? (d.userId ? 'Usuario eliminado' : 'Sistema') }}@if (d.user?.email) { <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ d.user?.email }}</span> }</dd></div>
+        <div><dt class="text-theme-xs text-gray-500 dark:text-gray-400">Fecha y hora</dt><dd class="text-gray-800 tabular-nums dark:text-white/90">{{ d.createdAt | appDate: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+        <div><dt class="text-theme-xs text-gray-500 dark:text-gray-400">IP</dt><dd class="text-gray-800 dark:text-white/90">{{ d.ipAddress ?? '—' }}</dd></div>
+        <div><dt class="text-theme-xs text-gray-500 dark:text-gray-400">Id del registro</dt><dd class="break-all font-mono text-theme-xs text-gray-700 dark:text-gray-300">{{ d.entityId ?? '—' }}</dd></div>
+        <div class="sm:col-span-2"><dt class="text-theme-xs text-gray-500 dark:text-gray-400">Equipo / navegador</dt><dd class="break-all text-theme-xs text-gray-700 dark:text-gray-300">{{ d.userAgent ?? '—' }}</dd></div>
       </dl>
       @if (d.diff) {
         <div>
-          <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Cambios registrados</p>
+          <p class="mb-1 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cambios registrados</p>
           <pre class="max-h-72 overflow-auto rounded-lg bg-gray-50 p-3 text-xs text-gray-700 dark:bg-white/[0.03] dark:text-gray-300">{{ d.diff | json }}</pre>
         </div>
       }
     }
   </div>
   <div data-modal-footer class="flex shrink-0 justify-end border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="detail.set(null)">Cerrar</app-button>
+    <app-button size="sm" variant="outline" startIconName="mdi:close" (btnClick)="detail.set(null)">Cerrar</app-button>
   </div>
 </app-modal>

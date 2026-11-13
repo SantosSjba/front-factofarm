@@ -6,8 +6,9 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
@@ -16,7 +17,7 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -27,7 +28,17 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 
 const PHARMACIST_ROLES = new Set(['FARMACEUTICO_TITULAR', 'FARMACEUTICO', 'GERENTE_SUCURSAL', 'ADMINISTRADOR', 'ADMIN_CADENA']);
 
-type Vigencia = { label: string; tone: StatusTone; row: LegendTone | null };
+type VigenciaKey = 'vigente' | 'por_vencer' | 'vencida' | 'sin_fecha' | 'inactiva';
+type Vigencia = { key: VigenciaKey; label: string; tone: StatusTone; row: LegendTone | null };
+
+/** Estados de vigencia en el orden del resumen y del select. */
+const VIGENCIAS: { key: VigenciaKey; label: string; tone: StatusTone; tooltip: string }[] = [
+  { key: 'vigente', label: 'Vigentes', tone: 'success', tooltip: 'Activas y con la habilitación al día.' },
+  { key: 'por_vencer', label: 'Por vencer', tone: 'warning', tooltip: 'Vencen en los próximos 60 días: renuévalas a tiempo.' },
+  { key: 'vencida', label: 'Vencidas', tone: 'error', tooltip: 'Ya vencieron: no pueden autorizar medicamentos controlados.' },
+  { key: 'sin_fecha', label: 'Sin fecha', tone: 'neutral', tooltip: 'Activas pero sin fecha de vencimiento registrada.' },
+  { key: 'inactiva', label: 'Inactivas', tone: 'neutral', tooltip: 'Desactivadas: se conservan pero no se usan.' },
+];
 type LicenseForm = { id: string | null; colegiaturaCqp: string; fullName: string; vigenciaHasta: string; userId: string; activo: boolean };
 
 /** Colegiaturas (CQP) de los químicos farmacéuticos: titulares de local y autorizadores de controlados. */
@@ -41,12 +52,11 @@ type LicenseForm = { id: string | null; colegiaturaCqp: string; fullName: string
     BreadcrumbInlineComponent,
     ButtonComponent,
     CheckboxComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
     FormSelectComponent,
     HelpPanelComponent,
     InputFieldComponent,
-    KpiTileComponent,
+    ListFiltersComponent,
+    PageStateComponent,
     MenuItemComponent,
     ModalComponent,
     PageToolbarComponent,
@@ -63,33 +73,85 @@ export class FarmaceuticoTitularComponent {
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Usuarios y establecimientos' }, { label: 'Farmacéutico titular' }];
   protected readonly canWrite = ['compliance.write', 'nav.farmaceutico_titular'].some((p) => this.auth.hasPermission(p));
-  protected readonly legend: LegendItem[] = [
-    { label: 'Colegiatura vencida', tone: 'error-light' },
-    { label: 'Vence en 60 días', tone: 'warning' },
-  ];
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['compliance', 'pharmacist-licenses'] as const,
     queryFn: () => firstValueFrom(this.api.listPharmacistLicenses(true)),
   }));
-  protected readonly licenses = computed(() => this.listQuery.data() ?? []);
-  protected readonly kpis = computed(() => {
-    const l = this.licenses().filter((x) => x.activo);
-    return {
-      activas: `${l.length}`,
-      titulares: `${l.filter((x) => (x.titularEstablishments ?? []).length).length}`,
-      porVencer: l.filter((x) => this.vigencia(x).tone === 'warning').length,
-      vencidas: l.filter((x) => this.vigencia(x).tone === 'error').length,
-    };
+  private readonly all = computed(() => this.listQuery.data() ?? []);
+
+  // ---------- Filtros y resumen ----------
+  protected readonly search = signal('');
+  protected readonly vigenciaFilter = signal<'' | VigenciaKey>('');
+  /** Solo quienes son titulares de algún local (desde el chip). */
+  protected readonly titularOnly = signal(false);
+  protected readonly vigenciaOptions = [{ value: '', label: 'Toda vigencia' }, ...VIGENCIAS.map((v) => ({ value: v.key, label: v.label }))];
+
+  protected readonly licenses = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    const v = this.vigenciaFilter();
+    const tit = this.titularOnly();
+    return this.all().filter(
+      (l) =>
+        (!v || this.vigencia(l).key === v) &&
+        (!tit || (l.titularEstablishments ?? []).length > 0) &&
+        (!q || `${l.fullName} ${l.colegiaturaCqp} ${l.user?.nombre ?? ''}`.toLowerCase().includes(q)),
+    );
+  });
+  protected readonly hasFilters = computed(() => !!(this.search().trim() || this.vigenciaFilter() || this.titularOnly()));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    if (!this.listQuery.data()) return [];
+    const all = this.all();
+    const v = this.vigenciaFilter();
+    return [
+      { id: 'all', label: 'Total', count: all.length, icon: 'lucide:id-card', group: 'General', active: !v && !this.titularOnly(), tooltip: 'Todas las colegiaturas. Clic para quitar los filtros de vigencia y titular.' },
+      {
+        id: 'titular',
+        label: 'Titulares de local',
+        count: all.filter((l) => (l.titularEstablishments ?? []).length).length,
+        icon: 'lucide:store',
+        group: 'General',
+        active: this.titularOnly(),
+        tooltip: 'Farmacéuticos asignados como titular de algún local (se elige en Establecimientos).',
+      },
+      ...VIGENCIAS.map((x) => ({
+        id: 'vig:' + x.key,
+        label: x.label,
+        count: all.filter((l) => this.vigencia(l).key === x.key).length,
+        tone: x.tone,
+        group: 'Vigencia',
+        active: v === x.key,
+        tooltip: `${x.tooltip} Clic para ver solo estas.`,
+      })),
+    ];
   });
 
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'all') {
+      this.vigenciaFilter.set('');
+      this.titularOnly.set(false);
+    } else if (chip.id === 'titular') {
+      this.titularOnly.set(!this.titularOnly());
+    } else if (chip.id.startsWith('vig:')) {
+      const k = chip.id.slice(4) as VigenciaKey;
+      this.vigenciaFilter.set(this.vigenciaFilter() === k ? '' : k);
+    }
+  }
+
+  protected clearFilters() {
+    this.search.set('');
+    this.vigenciaFilter.set('');
+    this.titularOnly.set(false);
+  }
+
   protected vigencia(l: PharmacistLicenseDto): Vigencia {
-    if (!l.activo) return { label: 'Inactiva', tone: 'neutral', row: 'muted' };
-    if (!l.vigenciaHasta) return { label: 'Sin fecha', tone: 'neutral', row: null };
+    if (!l.activo) return { key: 'inactiva', label: 'Inactiva', tone: 'neutral', row: 'muted' };
+    if (!l.vigenciaHasta) return { key: 'sin_fecha', label: 'Sin fecha', tone: 'neutral', row: null };
     const days = (new Date(l.vigenciaHasta).getTime() - Date.now()) / 86_400_000;
-    if (days < 0) return { label: 'Vencida', tone: 'error', row: 'error-light' };
-    if (days <= 60) return { label: `Vence en ${Math.ceil(days)} días`, tone: 'warning', row: 'warning' };
-    return { label: 'Vigente', tone: 'success', row: null };
+    if (days < 0) return { key: 'vencida', label: 'Vencida', tone: 'error', row: 'error-light' };
+    if (days <= 60) return { key: 'por_vencer', label: `Vence en ${Math.ceil(days)} días`, tone: 'warning', row: 'warning' };
+    return { key: 'vigente', label: 'Vigente', tone: 'success', row: null };
   }
 
   // ---------- Usuarios vinculables ----------
@@ -99,7 +161,7 @@ export class FarmaceuticoTitularComponent {
     queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 100 })),
   }));
   protected readonly userOptions = computed(() => {
-    const taken = new Set(this.licenses().filter((l) => l.userId && l.id !== this.form()?.id).map((l) => l.userId));
+    const taken = new Set(this.all().filter((l) => l.userId && l.id !== this.form()?.id).map((l) => l.userId));
     return [
       { value: '', label: 'Sin usuario' },
       ...(this.usersQuery.data()?.items ?? [])

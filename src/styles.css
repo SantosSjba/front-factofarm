@@ -460,6 +460,17 @@ layer(base);
   background-color: #344054;
 }
 
+/* Teléfonos: Safari (iOS) hace zoom al tocar un campo con letra menor a 16px y la página queda
+   ampliada, con desplazamiento lateral. En pantallas angostas los campos de texto usan 16px
+   (la altura compacta de 36px no cambia). Fuera de @layer para ganarle a `text-sm`. */
+@media (max-width: 639px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Modal compacto (`<app-modal compact>`): la mayoría de modales proyecta su propia
    cabecera/footer con `data-modal-header|footer`; aquí se achican sin tocar cada pantalla.
    Fuera de @layer para ganarle a las utilidades (py-4, sm:py-5, text-xl…). */

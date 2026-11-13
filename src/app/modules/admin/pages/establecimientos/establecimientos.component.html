@@ -16,12 +16,19 @@
 </app-help-panel>
 
 <app-list-filters
+  compact
   [searchValue]="searchTerm()"
   searchPlaceholder="Buscar por nombre, código o dirección"
+  selectAriaLabel="Tipo de local"
+  selectPlaceholder="Todos los tipos"
   [selectValue]="hospitalFilter()"
   [selectOptions]="hospitalFilterOptions"
-  selectPlaceholder="Todos los tipos"
+  [selectShowPlaceholder]="false"
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de locales"
+  summaryStorageKey="establecimientos"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onHospitalFilterChange($event)"
   (clear)="clearFilters()"
@@ -29,25 +36,24 @@
 
 @let listState = establishmentsQuery | queryPageState: totalFiltered();
 
-<app-component-card
-  title="Establecimientos"
-  [desc]="totalFiltered() ? totalFiltered() + ' en total' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay establecimientos registrados"
+  [emptyTitle]="searchTerm() || hospitalFilter() !== 'all' ? 'Sin locales con esos filtros' : 'No hay establecimientos registrados'"
+  emptyHint="Usa «Nuevo establecimiento» para registrar un local."
   skeleton="table"
   [skeletonCount]="6"
   (retry)="refetchEstablishments()"
 >
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Locales con su dirección, tipo y estado</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Establecimiento</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Establecimiento</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Dirección</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
@@ -71,7 +77,7 @@
                       <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones de ' + row.nombre"></app-button>
                     </div>
                     <div dropdown-content>
-                      <app-menu-item icon="mdi:pencil-outline" (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                      <app-menu-item icon="mdi:pencil-outline" tooltip="Datos, ubicación, titular y reglas del POS." (itemClick)="openEditModal(row)">Editar</app-menu-item>
                       <app-menu-item icon="mdi:format-list-numbered" tooltip="Prefijos de boletas, facturas y notas de venta." (itemClick)="openSeriesModal(row)">Series de comprobantes</app-menu-item>
                       <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Solo si no tiene ventas ni stock. Te pedirá confirmación." [disabled]="deleteEstablishmentMutation.isPending()" (itemClick)="openDeleteConfirm(row)">Eliminar</app-menu-item>
                     </div>
@@ -86,451 +92,178 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [totalItems]="totalFiltered()" [currentPage]="currentPage()" [pageSize]="itemsPerPage" (currentPageChange)="onPageChange($event)" />
 
+<!-- ========== NUEVO / EDITAR LOCAL ========== -->
 <app-modal compact
   [isOpen]="modalOpen()"
   (closed)="closeFormModal()"
-  className="w-full max-w-5xl shadow-theme-lg"
+  className="w-full max-w-4xl shadow-theme-lg"
   maxHeightClass="max-h-[min(90dvh,880px)]"
   bodyClass="custom-scrollbar"
 >
-  <div
-    data-modal-header
-    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
-  >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      {{ editing() ? 'Editar Establecimiento' : 'Nuevo Establecimiento' }}
-    </h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ editing() ? 'Editar establecimiento' : 'Nuevo establecimiento' }}</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Datos del local, su ubicación y las reglas del punto de venta.</p>
   </div>
 
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="md:col-span-2">
-        <app-label for="establecimiento-campo-1" required>Descripción</app-label>
-        <app-input-field [maxLength]="200" id="establecimiento-campo-1"
-          className="mt-2"
-          placeholder="Oficina Principal"
-          [value]="nombre()"
-          (valueChange)="nombre.set($event + '')"
-        />
+  <!-- Secciones con ícono; campos compactos con su ayuda. Una columna en teléfono. -->
+  <div data-modal-body class="min-h-0 space-y-5 divide-y divide-gray-100 px-4 py-4 dark:divide-gray-800 sm:px-6 [&>*+*]:pt-5">
+    <app-form-section compact icon="lucide:store" title="Datos del local" description="Nombre, código y tipo de establecimiento." [cols]="3">
+      <app-input-field class="md:col-span-2" compact icon="lucide:store" label="Descripción" [isRequired]="true" helpText="Nombre del local (aparece en menús, tickets y reportes)." [maxLength]="200" placeholder="Oficina Principal" [value]="nombre()" (valueChange)="nombre.set($event + '')" />
+      <app-input-field compact icon="lucide:hash" label="Código domicilio fiscal" helpText="Código de 4 dígitos del local ante SUNAT (anexo). El principal suele ser 0000." [maxLength]="20" placeholder="0000" [value]="codigo()" (valueChange)="codigo.set($event + '')" />
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 md:col-span-3">
+        <app-checkbox label="Hospital / Microred" helpText="Márcalo si el local es un hospital, clínica o microred." [checked]="esHospital()" (checkedChange)="esHospital.set($event)" />
+        <app-checkbox label="Sujeto al IGV - Ley 31556" helpText="Márcalo si el local está acogido a la Ley 31556 (dato del local)." [checked]="sujetoIgv31556()" (checkedChange)="sujetoIgv31556.set($event)" />
       </div>
-      <div>
-        <app-label for="establecimiento-campo-2">Código Domicilio Fiscal</app-label>
-        <app-input-field [maxLength]="20" id="establecimiento-campo-2"
-          className="mt-2"
-          placeholder="0000"
-          [value]="codigo()"
-          (valueChange)="codigo.set($event + '')"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-3">País</app-label>
-        <app-form-select id="establecimiento-campo-3"
-          className="mt-2"
-          [value]="pais()"
-          [showPlaceholder]="false"
-          [options]="[{ value: 'PERU', label: 'PERU' }]"
-          (valueChange)="pais.set($event)"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-4">Departamento</app-label>
-        <app-form-select id="establecimiento-campo-4"
-          className="mt-2"
-          [value]="departmentId()"
-          [options]="departmentOptions()"
-          (valueChange)="onDepartmentChange($event)"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-5">Provincia</app-label>
-        <app-form-select id="establecimiento-campo-5"
-          className="mt-2"
-          [value]="provinceId()"
-          [disabled]="!departmentId()"
-          [options]="provinceOptions()"
-          (valueChange)="onProvinceChange($event)"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-6">Distrito</app-label>
-        <app-form-select id="establecimiento-campo-6"
-          className="mt-2"
-          [value]="districtId()"
-          [disabled]="!provinceId()"
-          [options]="districtOptions()"
-          (valueChange)="districtId.set($event)"
-        />
-      </div>
-      <div class="md:col-span-2">
-        <app-label for="establecimiento-campo-7">Dirección Fiscal</app-label>
-        <app-input-field [maxLength]="250" id="establecimiento-campo-7"
-          className="mt-2"
-          [value]="direccionFiscal()"
-          (valueChange)="direccionFiscal.set($event + '')"
-        />
-      </div>
-      <div class="md:col-span-2">
-        <app-label for="establecimiento-campo-8">Dirección Comercial</app-label>
-        <app-input-field [maxLength]="250" id="establecimiento-campo-8"
-          className="mt-2"
-          [value]="direccionComercial()"
-          (valueChange)="direccionComercial.set($event + '')"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-9">Teléfono</app-label>
-        <app-input-field [maxLength]="30" id="establecimiento-campo-9"
-          className="mt-2"
-          [value]="telefono()"
-          (valueChange)="telefono.set($event + '')"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-10">Correo de contacto</app-label>
-        <app-input-field type="email" [maxLength]="120" id="establecimiento-campo-10"
-          type="email"
-          className="mt-2"
-          [value]="correoContacto()"
-          (valueChange)="correoContacto.set($event + '')"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-11">Dirección web</app-label>
-        <app-input-field [maxLength]="250" id="establecimiento-campo-11"
-          className="mt-2"
-          [value]="direccionWeb()"
-          (valueChange)="direccionWeb.set($event + '')"
-        />
-      </div>
-      <div class="md:col-span-3">
-        <app-label for="establecimiento-campo-12">Información adicional (Microred/Hospital)</app-label>
-        <app-input-field [maxLength]="250" id="establecimiento-campo-12"
-          className="mt-2"
-          [value]="informacionAdicional()"
-          (valueChange)="informacionAdicional.set($event + '')"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-13">URL Impresora</app-label>
-        <app-input-field [maxLength]="250" id="establecimiento-campo-13"
-          className="mt-2"
-          [value]="urlImpresora()"
-          (valueChange)="urlImpresora.set($event + '')"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-14">Nombre Impresora</app-label>
-        <app-input-field [maxLength]="150" id="establecimiento-campo-14"
-          className="mt-2"
-          [value]="nombreImpresora()"
-          (valueChange)="nombreImpresora.set($event + '')"
-        />
-      </div>
-      <div>
-        <app-label for="establecimiento-campo-15">Cliente por defecto</app-label>
-        <app-input-field [maxLength]="200" id="establecimiento-campo-15"
-          className="mt-2"
-          [value]="clienteDefault()"
-          (valueChange)="clienteDefault.set($event + '')"
-        />
-      </div>
-      <div class="md:col-span-3 flex flex-wrap gap-6 pt-2">
-        <app-checkbox
-          label="Sujeto al IGV - Ley 31556"
-          [checked]="sujetoIgv31556()"
-          (checkedChange)="sujetoIgv31556.set($event)"
-        />
-        <app-checkbox
-          label="Hospital / Microred"
-          [checked]="esHospital()"
-          (checkedChange)="esHospital.set($event)"
-        />
-      </div>
+    </app-form-section>
 
-      <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">Farmacéutico titular</h4>
-        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Químico farmacéutico responsable del local ante DIGEMID. Las colegiaturas se registran en «Farmacéutico titular».</p>
-        <app-form-select class="block md:max-w-md" ariaLabel="Farmacéutico titular" [showPlaceholder]="false" [options]="titularOptions()" [value]="titularLicenseId()" (valueChange)="titularLicenseId.set($event)" />
-      </div>
+    <app-form-section compact icon="lucide:map-pin" title="Ubicación" description="Ubigeo y direcciones del local." [cols]="4">
+      <app-form-select compact label="País" helpText="País del local." [value]="pais()" [showPlaceholder]="false" [options]="[{ value: 'PERU', label: 'Perú' }]" (valueChange)="pais.set($event)" />
+      <app-form-select compact label="Departamento" helpText="Primero el departamento; luego se habilita la provincia." [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
+      <app-form-select compact label="Provincia" helpText="Se habilita al elegir el departamento." [value]="provinceId()" [disabled]="!departmentId()" [options]="provinceOptions()" (valueChange)="onProvinceChange($event)" />
+      <app-form-select compact label="Distrito" helpText="Se habilita al elegir la provincia." [value]="districtId()" [disabled]="!provinceId()" [options]="districtOptions()" (valueChange)="districtId.set($event)" />
+      <app-input-field class="md:col-span-2" compact icon="lucide:map-pin" label="Dirección fiscal" helpText="La registrada en SUNAT; se usa en los comprobantes." [maxLength]="250" placeholder="Av. / Jr. / Calle, número" [value]="direccionFiscal()" (valueChange)="direccionFiscal.set($event + '')" />
+      <app-input-field class="md:col-span-2" compact icon="lucide:navigation" label="Dirección comercial" helpText="Opcional. Dónde atiende el local, si es distinta de la fiscal." [maxLength]="250" [value]="direccionComercial()" (valueChange)="direccionComercial.set($event + '')" />
+    </app-form-section>
 
-      <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">Pagos digitales POS</h4>
-        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-          Números que verá el cajero al cobrar (Yape / Plin). No integran pasarela; solo referencia para el cliente.
-        </p>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <app-label for="establecimiento-campo-16">Número Yape</app-label>
-            <app-input-field [maxLength]="15" inputMode="numeric" id="establecimiento-campo-16"
-              className="mt-2"
-              placeholder="9 dígitos, ej. 987654321"
-              [value]="posYapeNumero()"
-              (valueChange)="posYapeNumero.set($event + '')"
-            />
-          </div>
-          <div>
-            <app-label for="establecimiento-campo-17">Número Plin</app-label>
-            <app-input-field [maxLength]="15" inputMode="numeric" id="establecimiento-campo-17"
-              className="mt-2"
-              placeholder="9 dígitos, ej. 912345678"
-              [value]="posPlinNumero()"
-              (valueChange)="posPlinNumero.set($event + '')"
-            />
-          </div>
-        </div>
-      </div>
+    <app-form-section compact icon="lucide:phone" title="Contacto" [cols]="3">
+      <app-input-field compact icon="lucide:phone" inputMode="tel" label="Teléfono" helpText="Sale en el PDF de venta del local." [maxLength]="30" [value]="telefono()" (valueChange)="telefono.set($event + '')" />
+      <app-input-field compact icon="lucide:mail" type="email" label="Correo de contacto" helpText="Correo de contacto del local." [maxLength]="120" [value]="correoContacto()" (valueChange)="correoContacto.set($event + '')" />
+      <app-input-field compact icon="lucide:globe" label="Dirección web" helpText="Opcional. Web o redes del local." [maxLength]="250" placeholder="https://" [value]="direccionWeb()" (valueChange)="direccionWeb.set($event + '')" />
+      <app-input-field class="md:col-span-3" compact icon="lucide:info" label="Información adicional (Microred / Hospital)" helpText="Opcional. Datos extra del local, por ejemplo la microred a la que pertenece." [maxLength]="250" [value]="informacionAdicional()" (valueChange)="informacionAdicional.set($event + '')" />
+    </app-form-section>
 
-      <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">Validaciones del POS</h4>
-        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-          Active solo las validaciones que su farmacia necesita. Puede cambiarlas cuando quiera.
-        </p>
-        <div class="flex flex-col gap-2">
-          <app-checkbox
-            label="Exigir receta al vender productos marcados con receta"
-            [checked]="posRequirePrescription()"
-            (checkedChange)="posRequirePrescription.set($event)"
-          />
-          <app-checkbox
-            label="Exigir farmacéutico autorizador al vender medicamentos controlados"
-            [checked]="posRequireControlledApproval()"
-            (checkedChange)="posRequireControlledApproval.set($event)"
-          />
-          <app-checkbox
-            label="Bloquear ventas sobre el precio máximo regulado"
-            helpText="El Punto de Venta rechaza la venta si un producto supera el precio máximo registrado en Precios regulados DIGEMID para su código."
-            [checked]="blockSalesAboveRegulatedPrice()"
-            (checkedChange)="blockSalesAboveRegulatedPrice.set($event)"
-          />
-        </div>
-        <p class="mt-3 mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Exigir código / N° de operación en:</p>
+    <app-form-section compact icon="lucide:printer" title="Impresión y venta" description="Datos de referencia del local para imprimir y vender." [cols]="3">
+      <app-input-field compact icon="lucide:link" label="URL impresora" helpText="Opcional. Dirección de la impresora del local (dato de referencia)." [maxLength]="250" [value]="urlImpresora()" (valueChange)="urlImpresora.set($event + '')" />
+      <app-input-field compact icon="lucide:printer" label="Nombre impresora" helpText="Opcional. Nombre de la impresora del local (dato de referencia)." [maxLength]="150" [value]="nombreImpresora()" (valueChange)="nombreImpresora.set($event + '')" />
+      <app-input-field compact icon="lucide:user" label="Cliente por defecto" helpText="Opcional. Nombre del cliente habitual del local (dato de referencia)." [maxLength]="200" [value]="clienteDefault()" (valueChange)="clienteDefault.set($event + '')" />
+    </app-form-section>
+
+    <app-form-section compact icon="lucide:id-card" title="Farmacéutico titular" description="Químico farmacéutico responsable del local ante DIGEMID." [cols]="2">
+      <app-form-select compact label="Farmacéutico titular" helpText="Las colegiaturas se registran en «Farmacéutico titular». DIGEMID exige uno por local." [showPlaceholder]="false" [options]="titularOptions()" [value]="titularLicenseId()" (valueChange)="titularLicenseId.set($event)" />
+    </app-form-section>
+
+    <app-form-section compact icon="lucide:smartphone" title="Pagos digitales POS" description="Números que verá el cajero al cobrar (Yape / Plin). No es una pasarela de pago." [cols]="2">
+      <app-input-field compact icon="lucide:smartphone" inputMode="numeric" label="Número Yape" helpText="9 dígitos. Se muestra al cajero para indicárselo al cliente." [maxLength]="15" placeholder="987654321" [value]="posYapeNumero()" (valueChange)="posYapeNumero.set($event + '')" />
+      <app-input-field compact icon="lucide:smartphone" inputMode="numeric" label="Número Plin" helpText="9 dígitos. Se muestra al cajero para indicárselo al cliente." [maxLength]="15" placeholder="912345678" [value]="posPlinNumero()" (valueChange)="posPlinNumero.set($event + '')" />
+    </app-form-section>
+
+    <app-form-section compact icon="lucide:shield-check" title="Validaciones del POS" description="Activa solo las que tu farmacia necesita; puedes cambiarlas cuando quieras." [cols]="1">
+      <div class="grid gap-2.5">
+        <app-checkbox label="Exigir receta al vender productos marcados con receta" helpText="El Punto de venta pide los datos de la receta antes de vender esos productos." [checked]="posRequirePrescription()" (checkedChange)="posRequirePrescription.set($event)" />
+        <app-checkbox label="Exigir farmacéutico autorizador al vender medicamentos controlados" helpText="Un químico farmacéutico con colegiatura vigente debe autorizar la venta." [checked]="posRequireControlledApproval()" (checkedChange)="posRequireControlledApproval.set($event)" />
+        <app-checkbox label="Bloquear ventas sobre el precio máximo regulado" helpText="El Punto de Venta rechaza la venta si un producto supera el precio máximo registrado en Precios regulados DIGEMID para su código." [checked]="blockSalesAboveRegulatedPrice()" (checkedChange)="blockSalesAboveRegulatedPrice.set($event)" />
+      </div>
+      <fieldset class="min-w-0 rounded-lg border border-gray-200 px-3 pt-1 pb-3 dark:border-gray-800">
+        <legend class="px-1 text-theme-xs font-medium text-gray-700 dark:text-gray-400">Exigir código / N° de operación en</legend>
         <div class="flex flex-wrap gap-x-6 gap-y-2">
           @for (opt of referenceMethodOptions; track opt.value) {
-            <app-checkbox
-              [label]="opt.label"
-              [checked]="posPaymentReferenceMethods().includes(opt.value)"
-              (checkedChange)="toggleReferenceMethod(opt.value, $event)"
-            />
+            <app-checkbox [label]="opt.label" [checked]="posPaymentReferenceMethods().includes(opt.value)" (checkedChange)="toggleReferenceMethod(opt.value, $event)" />
           }
         </div>
-      </div>
+      </fieldset>
+    </app-form-section>
 
-      <div class="md:col-span-2 mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <h4 class="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y BPA</h4>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <app-label for="establecimiento-campo-18">Valorización de stock</app-label>
-            <app-form-select id="establecimiento-campo-18"
-              className="mt-2"
-              [value]="inventoryValuationMethod()"
-              [options]="valuationMethodOptions"
-              (valueChange)="inventoryValuationMethod.set($any($event))"
-            />
-          </div>
-          <div>
-            <app-label for="establecimiento-campo-19">Asignación de lotes en ventas</app-label>
-            <app-form-select id="establecimiento-campo-19"
-              className="mt-2"
-              [value]="inventoryLotAllocationMethod()"
-              [options]="lotAllocationOptions"
-              (valueChange)="inventoryLotAllocationMethod.set($any($event))"
-            />
-          </div>
-          <div>
-            <app-label for="establecimiento-campo-20">Umbral ajuste (2da autorización)</app-label>
-            <app-input-field min="0" id="establecimiento-campo-20"
-              className="mt-2"
-              type="number"
-              [value]="adjustmentQtyThreshold()"
-              (valueChange)="adjustmentQtyThreshold.set(+$event || 0)"
-            />
-          </div>
-          <div class="flex items-end">
-            <p class="text-sm text-gray-600 dark:text-gray-300">La venta de lotes vencidos está bloqueada de forma obligatoria.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <app-form-section compact icon="lucide:boxes" title="Inventario y BPA" description="La venta de lotes vencidos está bloqueada siempre." [cols]="3">
+      <app-form-select compact label="Valorización de stock" helpText="Cómo se calcula el costo del stock: PEPS (primeras entradas, primeras salidas) o promedio ponderado." [value]="inventoryValuationMethod()" [options]="valuationMethodOptions" (valueChange)="inventoryValuationMethod.set($any($event))" />
+      <app-form-select compact label="Asignación de lotes en ventas" helpText="Qué lote se descuenta al vender: FEFO (el que vence primero) o FIFO (el que ingresó primero)." [value]="inventoryLotAllocationMethod()" [options]="lotAllocationOptions" (valueChange)="inventoryLotAllocationMethod.set($any($event))" />
+      <app-input-field compact icon="lucide:scale" type="number" min="0" label="Umbral ajuste (2da autorización)" helpText="Ajustes de inventario por encima de esta cantidad necesitan la aprobación de una segunda persona." [value]="adjustmentQtyThreshold()" (valueChange)="adjustmentQtyThreshold.set(+$event || 0)" />
+    </app-form-section>
   </div>
 
-  <div
-    data-modal-footer
-    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
-  >
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="closeFormModal()">
-      Cancelar
-    </app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
-      {{ submitLabel() }}
-    </app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">{{ submitLabel() }}</app-button>
+    </div>
   </div>
 </app-modal>
 
-<app-modal compact
-  [isOpen]="deleteConfirmOpen()"
-  (closed)="closeDeleteConfirm()"
-  className="w-full max-w-lg shadow-theme-lg"
->
-  <div
-    data-modal-header
-    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5"
-  >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Confirmar eliminación
-    </h3>
+<!-- ========== ELIMINAR ========== -->
+<app-modal compact [isOpen]="deleteConfirmOpen()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar establecimiento</h3>
   </div>
   <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
     @if (deleting(); as row) {
-      ¿Seguro que desea eliminar el establecimiento <span class="font-semibold">{{ row.nombre }}</span>?
-      <p class="mt-2 text-theme-xs">La acción se aplica como borrado lógico.</p>
+      ¿Eliminar el local <span class="font-semibold text-gray-800 dark:text-white/90">{{ row.nombre }}</span>?
+      <p class="mt-2 text-theme-xs">Deja de aparecer en el sistema. Solo se puede si no tiene ventas ni stock.</p>
     }
   </div>
-  <div
-    data-modal-footer
-    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6"
-  >
-    <app-button startIconName="mdi:close"
-      variant="outline"
-      [disabled]="deleteEstablishmentMutation.isPending()"
-      (btnClick)="closeDeleteConfirm()"
-    >
-      Cancelar
-    </app-button>
-    <app-button startIconName="mdi:trash-can-outline"
-      [disabled]="deleteEstablishmentMutation.isPending()" [loading]="deleteEstablishmentMutation.isPending()"
-      (btnClick)="confirmDelete()"
-    >
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="deleteEstablishmentMutation.isPending()" (btnClick)="closeDeleteConfirm()">Cancelar</app-button>
+    <app-button size="sm" variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteEstablishmentMutation.isPending()" [loading]="deleteEstablishmentMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteEstablishmentMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>
 </app-modal>
 
+<!-- ========== SERIES ========== -->
 <app-modal compact
   [isOpen]="seriesModalOpen()"
   (closed)="closeSeriesModal()"
-  className="w-full max-w-6xl shadow-theme-lg"
+  className="w-full max-w-3xl shadow-theme-lg"
   maxHeightClass="max-h-[min(90dvh,900px)]"
   bodyClass="custom-scrollbar"
 >
-  <div
-    data-modal-header
-    class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5"
-  >
-    <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">
-      Series
-      @if (seriesHost(); as host) {
-        <span class="text-theme-sm font-normal text-gray-500">· {{ host.nombre }}</span>
-      }
-    </h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Series de comprobantes</h3>
+    @if (seriesHost(); as host) {
+      <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ host.nombre }} · prefijos de boletas, facturas y notas de venta.</p>
+    }
   </div>
 
-  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-8 sm:py-5">
-    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-6">
+    <!-- Agregar serie -->
+    <app-form-section compact icon="lucide:plus" title="Agregar serie" [cols]="1">
+      <div class="flex flex-wrap items-end gap-2">
+        <app-form-select class="min-w-0 flex-[2] basis-56" compact label="Tipo de documento" [required]="true" helpText="Boleta, factura, nota de venta… según lo que emitirá con esta serie." [value]="seriesDocumentType()" [options]="docTypeOptions()" (valueChange)="seriesDocumentType.set($event)" />
+        <app-input-field class="min-w-0 flex-1 basis-28" compact icon="lucide:hash" label="Número" [isRequired]="true" helpText="Prefijo de 4 caracteres. Facturas empiezan con F (F001), boletas con B (B001)." [maxLength]="20" placeholder="F001" [value]="seriesNumero()" (valueChange)="seriesNumero.set(($event + '').toUpperCase())" />
+        <div class="flex h-9 items-center">
+          <app-checkbox label="Contingencia" helpText="Serie para emitir cuando no hay conexión con SUNAT." [checked]="seriesContingencia()" (checkedChange)="seriesContingencia.set($event)" />
+        </div>
+        <app-button size="sm" startIconName="mdi:plus" [disabled]="createSeriesMutation.isPending()" [loading]="createSeriesMutation.isPending()" (btnClick)="addSeries()">Agregar</app-button>
+      </div>
+    </app-form-section>
+
+    <div class="ff-table-frame overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       <div class="max-w-full overflow-x-auto">
-        <table class="min-w-full text-left">
+        <table class="min-w-full text-start">
+          <caption class="sr-only">Series del local</caption>
           <thead class="border-b border-gray-100 dark:border-white/[0.05]">
             <tr>
-              <th class="px-4 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-                Tipo de documento
-              </th>
-              <th class="px-4 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">Número</th>
-              <th class="px-4 py-3 font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-                D. Contingencia
-              </th>
-              <th class="px-4 py-3 text-end font-medium text-theme-xs text-gray-500 dark:text-gray-400">
-                &nbsp;
-              </th>
+              <th data-card-role="title" class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo de documento</th>
+              <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Número</th>
+              <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Contingencia</th>
+              <th class="px-4 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
             @for (row of seriesRows(); track row.id) {
               <tr>
-                <td class="px-4 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                  {{ docTypeLabel(row.documentType) }}</td>
-                <td class="px-4 py-3 text-theme-sm text-gray-700 dark:text-gray-300">{{ row.numero }}</td>
-                <td class="px-4 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
-                  {{ row.esContingencia ? 'SI' : 'NO' }}</td>
+                <td class="px-4 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ docTypeLabel(row.documentType) }}</td>
+                <td class="px-4 py-3 font-mono text-theme-sm text-gray-700 dark:text-gray-300">{{ row.numero }}</td>
+                <td class="px-4 py-3 text-theme-sm">
+                  <app-status-badge [status]="row.esContingencia ? 'SI' : 'NO'" [tone]="row.esContingencia ? 'warning' : 'neutral'" [label]="row.esContingencia ? 'Sí' : 'No'" />
+                </td>
                 <td class="px-4 py-3 text-end">
-                  <app-button
-                    size="sm"
-                    variant="danger"
-                    [iconOnly]="true"
-                    startIconName="mdi:trash-can-outline"
-                    tooltip="Eliminar"
-                    [disabled]="deleteSeriesMutation.isPending()" [loading]="deleteSeriesMutation.isPending()"
-                    (btnClick)="removeSeries(row.id)"
-                  />
+                  <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:trash-can-outline" [tooltip]="'Eliminar la serie ' + row.numero" [disabled]="deleteSeriesMutation.isPending()" [loading]="deleteSeriesMutation.isPending()" (btnClick)="removeSeries(row.id)" />
                 </td>
               </tr>
             } @empty {
-            <tr>
-              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-                No hay series registradas para este establecimiento.
-              </td>
-            </tr>
-          }
+              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Este local aún no tiene series. Agrega la primera arriba.</td></tr>
+            }
           </tbody>
         </table>
       </div>
     </div>
-
-    <div class="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12">
-      <div class="md:col-span-5">
-        <app-label for="establecimiento-campo-21" required>Tipo de documento</app-label>
-        <app-form-select id="establecimiento-campo-21"
-          className="mt-2"
-          [value]="seriesDocumentType()"
-          [options]="docTypeOptions()"
-          (valueChange)="seriesDocumentType.set($event)"
-        />
-      </div>
-      <div class="md:col-span-3">
-        <app-label for="establecimiento-campo-22" required>Número</app-label>
-        <app-input-field [maxLength]="20" id="establecimiento-campo-22"
-          className="mt-2"
-          placeholder="F001"
-          [value]="seriesNumero()"
-          (valueChange)="seriesNumero.set(($event + '').toUpperCase())"
-        />
-      </div>
-      <div class="md:col-span-3 pt-2 md:pt-0">
-        <app-checkbox
-          label="Contingencia"
-          [checked]="seriesContingencia()"
-          (checkedChange)="seriesContingencia.set($event)"
-        />
-      </div>
-      <div class="md:col-span-1">
-        <app-button
-          className="w-full"
-          [disabled]="createSeriesMutation.isPending()" [loading]="createSeriesMutation.isPending()"
-          (btnClick)="addSeries()"
-        >
-          <app-icon name="mdi:content-save" width="18" height="18" />
-        </app-button>
-      </div>
-    </div>
-    @if (selectedDocTypeLabel()) {
-      <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-        Tipo seleccionado: {{ selectedDocTypeLabel() }}
-      </p>
-    }
   </div>
 
-  <div
-    data-modal-footer
-    class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-4"
-  >
-    <app-button startIconName="mdi:close"
-      variant="outline"
-      [disabled]="createSeriesMutation.isPending() || deleteSeriesMutation.isPending()"
-      (btnClick)="closeSeriesModal()"
-    >
-      Cerrar
-    </app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="createSeriesMutation.isPending() || deleteSeriesMutation.isPending()" (btnClick)="closeSeriesModal()">Cerrar</app-button>
   </div>
 </app-modal>

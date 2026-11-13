@@ -9,6 +9,7 @@
 
 <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="gestion-personal">
   <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Se trabaja con el <strong>personal de tu local</strong>: para otro local, entra con un usuario de ese local.</li>
     <li><strong>Asistencia:</strong> marca la entrada y la salida de cada persona; las horas se calculan solas.</li>
     <li><strong>Licencias:</strong> registra vacaciones, descansos médicos y permisos. Las aprueba otra persona, nunca quien la pide.</li>
     <li><strong>Horario y comisión:</strong> define los días y horas de trabajo y el % de comisión sobre lo vendido. <strong>Productividad</strong> muestra cuánto vendió cada uno y su comisión.</li>
@@ -19,26 +20,40 @@
 
 @switch (tab()) {
   @case ('asistencia') {
-    <div class="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-      <app-form-select class="w-full sm:w-72" label="Empleado" [showPlaceholder]="false" [options]="employeeFilterOptions()" [value]="attendanceUser()" (valueChange)="attendanceUser.set($event); attendancePage.set(1)" />
-      <app-button startIconName="mdi:login-variant" [disabled]="!attendanceUser() || punchMutation.isPending()" (btnClick)="punch('in')">Marcar entrada</app-button>
-      <app-button variant="outline" startIconName="mdi:logout-variant" [disabled]="!attendanceUser() || punchMutation.isPending()" (btnClick)="punch('out')">Marcar salida</app-button>
-    </div>
+    <!-- El select elige a la persona para filtrar y para marcar su entrada o salida. -->
+    <app-list-filters
+      compact
+      [showSearch]="false"
+      selectAriaLabel="Empleado"
+      selectPlaceholder="Todo el personal"
+      [selectValue]="attendanceUser()"
+      [selectOptions]="employeeFilterOptions()"
+      [selectShowPlaceholder]="false"
+      [summaryChips]="attendanceChips()"
+      summaryLabel="Resumen de asistencia"
+      summaryStorageKey="personal-asistencia"
+      (summaryChipClick)="onAttendanceChip($event)"
+      (selectValueChange)="attendanceUser.set($event); attendancePage.set(1)"
+      (clear)="clearAttendanceFilters()"
+    >
+      <!-- En angosto: los dos botones ocupan la fila, mitad y mitad. -->
+      <div data-filters-end class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+        <app-button size="sm" className="w-full" startIconName="mdi:login-variant" [tooltip]="attendanceUser() ? '' : 'Elige primero a la persona en el selector.'" [disabled]="!attendanceUser() || punchMutation.isPending()" (btnClick)="punch('in')">Marcar entrada</app-button>
+        <app-button size="sm" className="w-full" variant="outline" startIconName="mdi:logout-variant" [tooltip]="attendanceUser() ? '' : 'Elige primero a la persona en el selector.'" [disabled]="!attendanceUser() || punchMutation.isPending()" (btnClick)="punch('out')">Marcar salida</app-button>
+      </div>
+    </app-list-filters>
 
     @let attState = attendanceQuery | queryPageState: attendanceTotal();
-    <app-component-card
-      title="Registros de asistencia"
-      [desc]="openNow() ? openNow() + ' persona(s) trabajando ahora' : ''"
-      className="overflow-hidden"
-      [bodyClass]="'p-0 sm:p-0'"
+    <app-page-state
       [loading]="attState.loading"
       [error]="attState.error"
       [empty]="attState.empty"
-      emptyTitle="Sin registros de asistencia"
+      [emptyTitle]="attendanceOpenOnly() ? 'Nadie está trabajando ahora' : 'Sin registros de asistencia'"
       emptyHint="Elige a una persona y pulsa «Marcar entrada»."
+      skeleton="table"
       (retry)="attendanceQuery.refetch()"
     >
-      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="max-w-full overflow-x-auto">
           <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
             <thead class="border-b border-gray-100 dark:border-white/[0.05]">
@@ -64,28 +79,40 @@
           </table>
         </div>
       </div>
-    </app-component-card>
+    </app-page-state>
     <app-pagination [currentPage]="attendancePage()" [totalItems]="attendanceTotal()" [pageSize]="20" (currentPageChange)="attendancePage.set($event)" />
   }
 
   @case ('licencias') {
+    <app-list-filters
+      compact
+      searchPlaceholder="Buscar por empleado"
+      [searchValue]="leaveSearch()"
+      selectAriaLabel="Estado de la licencia"
+      selectPlaceholder="Todos los estados"
+      [selectValue]="leaveStatusFilter()"
+      [selectOptions]="leaveStatusOptions"
+      [selectShowPlaceholder]="false"
+      [summaryChips]="leaveChips()"
+      summaryLabel="Resumen de licencias"
+      summaryStorageKey="personal-licencias"
+      (summaryChipClick)="onLeaveChip($event)"
+      (searchValueChange)="leaveSearch.set($event)"
+      (selectValueChange)="leaveStatusFilter.set($any($event))"
+      (clear)="clearLeaveFilters()"
+    />
+
     @let leaveState = leavesQuery | queryPageState: leaves().length;
-    <app-component-card
-      title="Licencias y vacaciones"
-      [desc]="pendingLeaves() ? pendingLeaves() + ' por aprobar' : ''"
-      className="overflow-hidden"
-      [bodyClass]="'p-0 sm:p-0'"
+    <app-page-state
       [loading]="leaveState.loading"
       [error]="leaveState.error"
       [empty]="leaveState.empty"
-      [emptyTitle]="leaveStatusFilter() === 'SOLICITADO' ? 'No hay solicitudes por aprobar' : 'Sin licencias'"
+      [emptyTitle]="leaveStatusFilter() === 'SOLICITADO' ? 'No hay solicitudes por aprobar' : leaveStatusFilter() || leaveTypeFilter() || leaveSearch() ? 'Sin licencias con esos filtros' : 'Sin licencias'"
       emptyHint="Usa «Solicitar licencia» para registrar una."
+      skeleton="table"
       (retry)="leavesQuery.refetch()"
     >
-      <div data-card-header-end class="w-44">
-        <app-form-select ariaLabel="Filtrar licencias" [showPlaceholder]="false" [options]="leaveStatusOptions" [value]="leaveStatusFilter()" (valueChange)="leaveStatusFilter.set($any($event))" />
-      </div>
-      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="max-w-full overflow-x-auto">
           <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
             <thead class="border-b border-gray-100 dark:border-white/[0.05]">
@@ -138,12 +165,12 @@
           </table>
         </div>
       </div>
-    </app-component-card>
+    </app-page-state>
   }
 
   @case ('horarios') {
-    <div class="mb-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-      <app-form-select class="block w-full sm:w-72" label="Empleado" placeholder="Seleccionar" [options]="employeeOptions()" [value]="scheduleUser()" (valueChange)="pickScheduleUser($event)" />
+    <div class="mb-4 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]">
+      <app-form-select class="block w-full sm:w-72" compact label="Empleado" helpText="Persona cuyo horario y comisión quieres ver o cambiar." placeholder="Seleccionar" [options]="employeeOptions()" [value]="scheduleUser()" (valueChange)="pickScheduleUser($event)" />
     </div>
     @if (scheduleUser()) {
       <div class="grid gap-4 lg:grid-cols-3">
@@ -152,8 +179,8 @@
             @for (row of schedule(); track row.dayOfWeek) {
               <div class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 py-2">
                 <app-checkbox [label]="days[row.dayOfWeek]" [checked]="row.activo" (checkedChange)="patchDay(row.dayOfWeek, { activo: $event })" />
-                <app-input-field type="time" [ariaLabel]="days[row.dayOfWeek] + ' entrada'" [disabled]="!row.activo" [value]="row.startTime" (valueChange)="patchDay(row.dayOfWeek, { startTime: '' + $event })" />
-                <app-input-field type="time" [ariaLabel]="days[row.dayOfWeek] + ' salida'" [disabled]="!row.activo" [value]="row.endTime" (valueChange)="patchDay(row.dayOfWeek, { endTime: '' + $event })" />
+                <app-input-field type="time" compact [ariaLabel]="days[row.dayOfWeek] + ' entrada'" [disabled]="!row.activo" [value]="row.startTime" (valueChange)="patchDay(row.dayOfWeek, { startTime: '' + $event })" />
+                <app-input-field type="time" compact [ariaLabel]="days[row.dayOfWeek] + ' salida'" [disabled]="!row.activo" [value]="row.endTime" (valueChange)="patchDay(row.dayOfWeek, { endTime: '' + $event })" />
               </div>
             }
           </div>
@@ -166,7 +193,7 @@
           @if (isSelf()) {
             <p class="text-sm text-gray-500 dark:text-gray-400">Tu propia comisión la define otra persona.</p>
           } @else {
-            <app-input-field label="% de comisión" [isRequired]="true" type="number" min="0" max="100" step="0.1" [value]="commission() ?? ''" [error]="!!commissionError()" [hint]="commissionError()" (valueChange)="commission.set($event === '' ? null : +$event); commissionError.set('')" />
+            <app-input-field label="% de comisión" helpText="Porcentaje sobre el total de sus ventas del periodo. Se ve en «Productividad». Usa 0 si no tiene comisión." [isRequired]="true" type="number" min="0" max="100" step="0.1" [value]="commission() ?? ''" [error]="!!commissionError()" [hint]="commissionError()" (valueChange)="commission.set($event === '' ? null : +$event); commissionError.set('')" />
             <div class="mt-4 flex justify-end">
               <app-button startIconName="mdi:content-save-outline" [loading]="commissionMutation.isPending()" [disabled]="commissionMutation.isPending()" (btnClick)="saveCommission()">Guardar comisión</app-button>
             </div>
@@ -179,7 +206,7 @@
   }
 
   @case ('productividad') {
-    <app-period-filter [value]="period()" (change)="period.set($event)" />
+    <app-period-filter compact [value]="period()" (change)="period.set($event)" />
     @let k = productivityKpis();
     <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
       <app-kpi-tile label="Ventas" [value]="k.ventas" icon="mdi:receipt-text-outline" tone="brand" />
@@ -188,17 +215,15 @@
       <app-kpi-tile label="Más ventas" [value]="k.top" icon="mdi:trophy-outline" tone="warning" />
     </div>
     @let prodState = productivityQuery | queryPageState: employees().length;
-    <app-component-card
-      title="Por persona"
-      className="overflow-hidden"
-      [bodyClass]="'p-0 sm:p-0'"
+    <app-page-state
       [loading]="prodState.loading"
       [error]="prodState.error"
       [empty]="prodState.empty"
       emptyTitle="Sin ventas en el periodo"
+      skeleton="table"
       (retry)="productivityQuery.refetch()"
     >
-      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="max-w-full overflow-x-auto">
           <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
             <thead class="border-b border-gray-100 dark:border-white/[0.05]">
@@ -224,7 +249,7 @@
           </table>
         </div>
       </div>
-    </app-component-card>
+    </app-page-state>
   }
 }
 
@@ -235,13 +260,13 @@
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Queda por aprobar hasta que otra persona la revise.</p>
   </div>
   <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
-    <app-form-select label="Empleado" [required]="true" placeholder="Seleccionar" [options]="employeeOptions()" [value]="leaveUser()" [error]="!!leaveErrors().user" [hint]="leaveErrors().user || ''" (valueChange)="leaveUser.set($event); leaveErrors.set({})" />
-    <app-form-select label="Tipo" [required]="true" [showPlaceholder]="false" [options]="leaveTypeOptions" [value]="leaveTipo()" (valueChange)="leaveTipo.set($any($event))" />
+    <app-form-select label="Empleado" helpText="Persona que tomará la licencia. Otra persona la aprobará." [required]="true" placeholder="Seleccionar" [options]="employeeOptions()" [value]="leaveUser()" [error]="!!leaveErrors().user" [hint]="leaveErrors().user || ''" (valueChange)="leaveUser.set($event); leaveErrors.set({})" />
+    <app-form-select label="Tipo" helpText="Vacaciones, descanso médico, permiso u otro motivo." [required]="true" [showPlaceholder]="false" [options]="leaveTypeOptions" [value]="leaveTipo()" (valueChange)="leaveTipo.set($any($event))" />
     <div class="grid gap-4 sm:grid-cols-2">
-      <app-input-field label="Desde" [isRequired]="true" type="date" [value]="leaveFrom()" [error]="!!leaveErrors().from" [hint]="leaveErrors().from || ''" (valueChange)="leaveFrom.set('' + $event); leaveErrors.set({})" />
-      <app-input-field label="Hasta" [isRequired]="true" type="date" [min]="leaveFrom()" [value]="leaveTo()" [error]="!!leaveErrors().to" [hint]="leaveErrors().to || ''" (valueChange)="leaveTo.set('' + $event); leaveErrors.set({})" />
+      <app-input-field label="Desde" helpText="Primer día de la licencia (inclusive)." [isRequired]="true" type="date" [value]="leaveFrom()" [error]="!!leaveErrors().from" [hint]="leaveErrors().from || ''" (valueChange)="leaveFrom.set('' + $event); leaveErrors.set({})" />
+      <app-input-field label="Hasta" helpText="Último día de la licencia (inclusive). No puede ser antes de «Desde»." [isRequired]="true" type="date" [min]="leaveFrom()" [value]="leaveTo()" [error]="!!leaveErrors().to" [hint]="leaveErrors().to || ''" (valueChange)="leaveTo.set('' + $event); leaveErrors.set({})" />
     </div>
-    <app-text-area label="Notas" placeholder="Ej. Descanso médico por 3 días" [maxLength]="500" [rows]="2" [value]="leaveNotes()" (valueChange)="leaveNotes.set($event)" />
+    <app-text-area label="Notas" helpText="Opcional. Motivo o detalle para quien la aprueba (máx. 500 caracteres)." placeholder="Ej. Descanso médico por 3 días" [maxLength]="500" [rows]="2" [value]="leaveNotes()" (valueChange)="leaveNotes.set($event)" />
   </div>
   <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>

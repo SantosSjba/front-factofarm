@@ -5,8 +5,9 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
@@ -60,10 +61,10 @@ function businessDaysSince(iso: string): number {
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
     FormSelectComponent,
     HelpPanelComponent,
-    KpiTileComponent,
+    ListFiltersComponent,
+    PageStateComponent,
     MenuItemComponent,
     ModalComponent,
     PageToolbarComponent,
@@ -92,8 +93,12 @@ export class LpdpComponent {
 
   // ---------- ARCO ----------
   protected readonly statusFilter = signal<'' | ArcoRequestStatus>('');
+  protected readonly typeFilter = signal<'' | ArcoRequestType>('');
+  /** Solo abiertas que pasaron su plazo legal (desde el chip «Fuera de plazo»). */
+  protected readonly overdueOnly = signal(false);
+  protected readonly search = signal('');
   protected readonly statusOptions = [
-    { value: '', label: 'Todas' },
+    { value: '', label: 'Todos los estados' },
     ...(Object.keys(ARCO_STATUS) as ArcoRequestStatus[]).map((value) => ({ value, label: ARCO_STATUS[value].label })),
   ];
   protected readonly arcoQuery = injectQuery(() => ({
@@ -102,18 +107,72 @@ export class LpdpComponent {
   }));
   protected readonly requests = computed(() => {
     const f = this.statusFilter();
-    return (this.arcoQuery.data() ?? []).filter((r) => !f || r.status === f);
+    const t = this.typeFilter();
+    const late = this.overdueOnly();
+    const q = this.search().trim().toLowerCase();
+    return (this.arcoQuery.data() ?? []).filter(
+      (r) =>
+        (!f || r.status === f) &&
+        (!t || r.requestType === t) &&
+        (!late || this.overdue(r)) &&
+        (!q || `${r.customer?.nombre ?? ''} ${r.customer?.numeroDocumento ?? ''}`.toLowerCase().includes(q)),
+    );
   });
-  protected readonly kpis = computed(() => {
-    const all = this.arcoQuery.data() ?? [];
-    const open = all.filter((r) => r.status === 'PENDIENTE' || r.status === 'EN_PROCESO');
-    return {
-      abiertas: `${open.length}`,
-      vencidas: open.filter((r) => this.overdue(r)).length,
-      atendidas: `${all.filter((r) => r.status === 'COMPLETADA').length}`,
-      total: `${all.length}`,
-    };
+  protected readonly hasFilters = computed(() => !!(this.statusFilter() || this.typeFilter() || this.overdueOnly() || this.search().trim()));
+
+  /** Chips: total, fuera de plazo, por estado y por derecho (conteos sobre todas las solicitudes). */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const all = this.arcoQuery.data();
+    if (!all) return [];
+    const f = this.statusFilter();
+    const t = this.typeFilter();
+    const late = all.filter((r) => this.overdue(r)).length;
+    return [
+      { id: 'all', label: 'Total', count: all.length, icon: 'lucide:file-text', group: 'General', active: !f && !t && !this.overdueOnly(), tooltip: 'Todas las solicitudes. Clic para quitar los filtros de estado, derecho y plazo.' },
+      { id: 'late', label: 'Fuera de plazo', count: late, tone: late ? 'error' : 'neutral', group: 'General', active: this.overdueOnly(), tooltip: 'Abiertas que pasaron su plazo legal (20 días hábiles para acceso, 10 para las demás). Clic para ver solo esas.' },
+      ...(Object.keys(ARCO_STATUS) as ArcoRequestStatus[]).map((s) => ({
+        id: 'status:' + s,
+        label: ARCO_STATUS[s].label,
+        count: all.filter((r) => r.status === s).length,
+        tone: ARCO_STATUS[s].tone,
+        group: 'Estado',
+        active: f === s,
+        tooltip: `Ver solo solicitudes «${ARCO_STATUS[s].label.toLowerCase()}» (clic de nuevo para quitar).`,
+      })),
+      ...(Object.keys(ARCO_TYPES) as ArcoRequestType[]).map((tp) => ({
+        id: 'type:' + tp,
+        label: ARCO_TYPES[tp].label,
+        count: all.filter((r) => r.requestType === tp).length,
+        icon: 'lucide:scale',
+        group: 'Derecho',
+        active: t === tp,
+        tooltip: `${ARCO_TYPES[tp].hint} Clic para ver solo estas.`,
+      })),
+    ];
   });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'all') {
+      this.statusFilter.set('');
+      this.typeFilter.set('');
+      this.overdueOnly.set(false);
+    } else if (chip.id === 'late') {
+      this.overdueOnly.set(!this.overdueOnly());
+    } else if (chip.id.startsWith('status:')) {
+      const s = chip.id.slice(7) as ArcoRequestStatus;
+      this.statusFilter.set(this.statusFilter() === s ? '' : s);
+    } else if (chip.id.startsWith('type:')) {
+      const tp = chip.id.slice(5) as ArcoRequestType;
+      this.typeFilter.set(this.typeFilter() === tp ? '' : tp);
+    }
+  }
+
+  protected clearFilters() {
+    this.statusFilter.set('');
+    this.typeFilter.set('');
+    this.overdueOnly.set(false);
+    this.search.set('');
+  }
 
   protected typeLabel(t: ArcoRequestType) {
     return ARCO_TYPES[t]?.label ?? t;

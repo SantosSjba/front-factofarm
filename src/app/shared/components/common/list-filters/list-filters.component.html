@@ -17,7 +17,9 @@
           <app-badge size="sm" variant="solid" color="primary">{{ activeCount }}</app-badge>
         }
       </app-button>
-      <ng-container [ngTemplateOutlet]="clearButton" />
+      @if (showClear) {
+        <ng-container [ngTemplateOutlet]="clearButton" />
+      }
     </div>
 
     @if (open) {
@@ -32,20 +34,27 @@
       </div>
     }
   } @else {
-    <div class="grid grid-cols-1 md:grid-cols-12" [class]="compact ? 'gap-2' : 'gap-3'">
+    <!-- Fila que se acomoda: buscador (más ancho) + select + Limpiar + acciones propias de la
+         pantalla (`data-filters-end`, p. ej. «Marcar entrada»). En angosto cada pieza baja entera. -->
+    <div class="flex flex-wrap items-end" [class]="compact ? 'gap-2' : 'gap-3'">
       @if (showSearch) {
-        <div [class]="showSelect ? 'md:col-span-7' : 'md:col-span-10'">
+        <div class="min-w-0 flex-[7] basis-60">
           <ng-container [ngTemplateOutlet]="search" />
         </div>
       }
       @if (showSelect) {
-        <div class="md:col-span-3">
+        <!-- Sin buscador el select no se estira de más: deja espacio a las acciones. -->
+        <div class="min-w-0 flex-[3] basis-44" [class.sm:max-w-80]="!showSearch">
           <ng-container [ngTemplateOutlet]="select" />
         </div>
       }
-      <div class="md:col-span-2">
+      <!-- Filtros propios de la pantalla (fechas, más selects…): van antes de «Limpiar».
+           Usa `class="contents"` en el contenedor para que cada campo se acomode en la fila. -->
+      <ng-content select="[data-filters]"></ng-content>
+      @if (showClear) {
         <ng-container [ngTemplateOutlet]="clearButton" />
-      </div>
+      }
+      <ng-content select="[data-filters-end]"></ng-content>
     </div>
   }
 
@@ -90,6 +99,7 @@
 <ng-template #select>
   <app-form-select
     [compact]="compact"
+    [ariaLabel]="selectAriaLabel"
     [label]="selectLabel"
     [helpText]="selectHelpText"
     [value]="selectValue"
@@ -105,8 +115,6 @@
     [size]="compact ? 'sm' : 'lg'"
     variant="outline"
     startIconName="mdi:filter-remove-outline"
-    [class]="collapsible ? '' : 'w-full'"
-    [className]="collapsible ? '' : 'w-full'"
     (btnClick)="onClear()"
   >
     {{ clearLabel }}

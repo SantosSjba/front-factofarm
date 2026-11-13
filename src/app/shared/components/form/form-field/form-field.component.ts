@@ -9,14 +9,9 @@ import { LabelComponent } from '../label/label.component';
   standalone: true,
   imports: [CommonModule, LabelComponent, HelpHintComponent],
   template: `
-    <div class="flex flex-col gap-1.5" [ngClass]="className">
+    <div class="flex flex-col" [class.gap-1.5]="!compact" [class.gap-1]="compact" [ngClass]="className">
       @if (label) {
-        <div class="flex items-center gap-1.5">
-          <app-label [for]="for" [required]="required">{{ label }}</app-label>
-          @if (helpText) {
-            <app-help-hint [text]="helpText" [iconSize]="16" />
-          }
-        </div>
+        <app-label [for]="for" [required]="required" [helpText]="helpText" [compact]="compact" [className]="compact ? 'mb-0' : ''">{{ label }}</app-label>
       }
       <ng-content />
     </div>
@@ -30,4 +25,6 @@ export class FormFieldComponent {
   @Input() helpText = '';
   /** Marca el campo como obligatorio (asterisco en el label). */
   @Input({ transform: booleanAttribute }) required = false;
+  /** Etiqueta de 12px y menos espacio hasta el campo (pon `compact` también en el campo). */
+  @Input({ transform: booleanAttribute }) compact = false;
 }

@@ -21,30 +21,36 @@
 
 @switch (tab()) {
   @case ('arco') {
-    @let k = kpis();
-    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <app-kpi-tile label="Por atender" [value]="k.abiertas" icon="mdi:inbox-arrow-down" tone="brand" />
-      <app-kpi-tile label="Fuera de plazo" [value]="'' + k.vencidas" icon="mdi:alarm" [tone]="k.vencidas ? 'error' : 'gray'" />
-      <app-kpi-tile label="Atendidas" [value]="k.atendidas" icon="mdi:check-circle-outline" tone="success" />
-      <app-kpi-tile label="Total" [value]="k.total" icon="mdi:file-document-multiple-outline" tone="gray" />
-    </div>
+    <!-- Resumen en chips (total, fuera de plazo, estado y derecho) dentro de la misma tarjeta del filtro. -->
+    <app-list-filters
+      compact
+      searchPlaceholder="Buscar por cliente o documento"
+      [searchValue]="search()"
+      selectAriaLabel="Estado de la solicitud"
+      selectPlaceholder="Todos los estados"
+      [selectValue]="statusFilter()"
+      [selectOptions]="statusOptions"
+      [selectShowPlaceholder]="false"
+      [summaryChips]="summaryChips()"
+      summaryLabel="Resumen de solicitudes"
+      summaryStorageKey="lpdp-arco"
+      (summaryChipClick)="onSummaryChip($event)"
+      (searchValueChange)="search.set($event)"
+      (selectValueChange)="statusFilter.set($any($event))"
+      (clear)="clearFilters()"
+    />
 
     @let st = arcoQuery | queryPageState: requests().length;
-    <app-component-card
-      title="Solicitudes"
-      className="overflow-hidden"
-      [bodyClass]="'p-0 sm:p-0'"
+    <app-page-state
       [loading]="st.loading"
       [error]="st.error"
       [empty]="st.empty"
-      emptyTitle="No hay solicitudes ARCO"
+      [emptyTitle]="hasFilters() ? 'Sin solicitudes con esos filtros' : 'No hay solicitudes ARCO'"
       emptyHint="Regístralas cuando un cliente lo pida en el local o por escrito."
+      skeleton="table"
       (retry)="arcoQuery.refetch()"
     >
-      <div data-card-header-end class="w-40">
-        <app-form-select ariaLabel="Filtrar solicitudes" [showPlaceholder]="false" [options]="statusOptions" [value]="statusFilter()" (valueChange)="statusFilter.set($any($event))" />
-      </div>
-      <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="max-w-full overflow-x-auto">
           <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
             <thead class="border-b border-gray-100 dark:border-white/[0.05]">
@@ -107,13 +113,21 @@
           </table>
         </div>
       </div>
-    </app-component-card>
+    </app-page-state>
   }
 
   @case ('tratamiento') {
-    <app-component-card title="Qué datos usamos y para qué" [desc]="matrixQuery.data() ? 'Versión ' + matrixQuery.data()!.version + ' · cifrado de datos de salud ' + (matrixQuery.data()!.encryptionEnabled ? 'activo' : 'no configurado') : ''" className="overflow-hidden" [bodyClass]="'p-0 sm:p-0'" [loading]="matrixQuery.isPending()" [error]="matrixQuery.isError() ? 'No se pudo cargar la información' : null" (retry)="matrixQuery.refetch()">
+    <app-page-state [loading]="matrixQuery.isPending()" [error]="matrixQuery.isError() ? 'No se pudo cargar la información' : null" skeleton="table" (retry)="matrixQuery.refetch()">
       @if (matrixQuery.data(); as m) {
-        <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+        <!-- Datos de la matriz en una línea, sin tarjeta: el título ya está en la pestaña. -->
+        <div class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+          <span>Qué datos personales usa el sistema, para qué y cuánto tiempo se guardan.</span>
+          <span class="inline-flex items-center gap-1.5">Versión <strong class="font-medium text-gray-700 dark:text-gray-300">{{ m.version }}</strong></span>
+          <span class="inline-flex items-center gap-1.5">Cifrado de datos de salud
+            <app-status-badge [status]="m.encryptionEnabled ? 'ACTIVO' : 'INACTIVO'" [tone]="m.encryptionEnabled ? 'success' : 'warning'" [label]="m.encryptionEnabled ? 'Activo' : 'No configurado'" />
+          </span>
+        </div>
+        <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="max-w-full overflow-x-auto">
             <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
               <thead class="border-b border-gray-100 dark:border-white/[0.05]">
@@ -140,24 +154,48 @@
           </div>
         </div>
       }
-    </app-component-card>
+    </app-page-state>
   }
 
   @case ('conservacion') {
-    <app-component-card title="Clientes que ya no necesitamos conservar" [desc]="retentionQuery.data()?.policy ?? ''" [loading]="retentionQuery.isPending()" [error]="retentionQuery.isError() ? 'No se pudo cargar la información' : null" (retry)="retentionQuery.refetch()">
+    <app-page-state
+      [loading]="retentionQuery.isPending()"
+      [error]="retentionQuery.isError() ? 'No se pudo cargar la información' : null"
+      [empty]="!!retentionQuery.data() && !retentionQuery.data()!.candidates.length"
+      emptyTitle="Ningún cliente supera el plazo de conservación"
+      [emptyHint]="retentionQuery.data()?.policy ?? ''"
+      skeleton="table"
+      (retry)="retentionQuery.refetch()"
+    >
       @if (retentionQuery.data(); as r) {
-        <ul class="divide-y divide-gray-100 text-sm dark:divide-white/[0.05]">
-          @for (c of r.candidates; track c.id) {
-            <li class="flex flex-wrap items-center justify-between gap-2 py-2">
-              <span><span class="font-medium text-gray-800 dark:text-white/90">{{ c.nombre }}</span> <span class="text-gray-500">· {{ c.numeroDocumento }}</span></span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">Sin movimiento desde {{ c.updatedAt | appDate: 'dd/MM/yyyy' }}</span>
-            </li>
-          } @empty {
-            <li class="py-4 text-center text-gray-500">Ningún cliente supera el plazo de conservación.</li>
-          }
-        </ul>
+        <p class="mb-3 text-theme-xs text-gray-500 dark:text-gray-400">
+          <strong class="font-medium text-gray-700 dark:text-gray-300">{{ r.candidates.length }} {{ r.candidates.length === 1 ? 'cliente' : 'clientes' }}</strong> {{ r.candidates.length === 1 ? 'ya no necesita' : 'ya no necesitan' }} conservarse. {{ r.policy }}
+        </p>
+        <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="max-w-full overflow-x-auto">
+            <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+              <caption class="sr-only">Clientes sin movimiento que superan el plazo de conservación</caption>
+              <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+                <tr>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Documento</th>
+                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Sin movimiento desde</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                @for (c of r.candidates; track c.id) {
+                  <tr>
+                    <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ c.nombre }}</td>
+                    <td class="px-5 py-3 text-theme-sm">{{ c.numeroDocumento || '—' }}</td>
+                    <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ c.updatedAt | appDate: 'dd/MM/yyyy' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
       }
-    </app-component-card>
+    </app-page-state>
   }
 }
 
@@ -173,17 +211,17 @@
         <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="customer.set(null)">Cambiar</app-button>
       </div>
     } @else {
-      <app-search-select label="Cliente" [required]="true" placeholder="Nombre, DNI o RUC" emptyText="No se encontró el cliente." [options]="customerOptions()" [loading]="customersQuery.isFetching()" (searchChange)="customerTerm.set($event)" (selected)="customer.set($event); newError.set('')" />
+      <app-search-select label="Cliente" helpText="Escribe al menos 2 letras del nombre, DNI o RUC y elige al cliente que hace el pedido." [required]="true" placeholder="Nombre, DNI o RUC" emptyText="No se encontró el cliente." [options]="customerOptions()" [loading]="customersQuery.isFetching()" (searchChange)="customerTerm.set($event)" (selected)="customer.set($event); newError.set('')" />
       @if (newError()) { <p class="text-xs font-medium text-error-600 dark:text-error-400">{{ newError() }}</p> }
     }
-    <app-form-select label="Derecho que ejerce" [required]="true" [showPlaceholder]="false" [options]="typeOptions" [value]="newType()" [hint]="typeHint(newType())" (valueChange)="newType.set($any($event))" />
-    <app-text-area label="Detalle del pedido" placeholder="Qué pide exactamente y cómo lo hizo (presencial, correo…)" [maxLength]="1000" [rows]="3" [value]="newDetails()" (valueChange)="newDetails.set($event)" />
+    <app-form-select label="Derecho que ejerce" helpText="Acceso: plazo de 20 días hábiles. Rectificación, cancelación y oposición: 10 días hábiles." [required]="true" [showPlaceholder]="false" [options]="typeOptions" [value]="newType()" [hint]="typeHint(newType())" (valueChange)="newType.set($any($event))" />
+    <app-text-area label="Detalle del pedido" helpText="Opcional. Qué pidió exactamente y por qué medio (máx. 1000 caracteres)." placeholder="Qué pide exactamente y cómo lo hizo (presencial, correo…)" [maxLength]="1000" [rows]="3" [value]="newDetails()" (valueChange)="newDetails.set($event)" />
   </div>
   <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="newOpen.set(false)">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [loading]="createMutation.isPending()" [disabled]="createMutation.isPending()" (btnClick)="submitNew()">Registrar</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="createMutation.isPending()" (btnClick)="newOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [loading]="createMutation.isPending()" [disabled]="createMutation.isPending()" (btnClick)="submitNew()">Registrar</app-button>
     </div>
   </div>
 </app-modal>
@@ -197,16 +235,16 @@
     }
   </div>
   <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
-    <app-form-select label="Estado" [required]="true" [showPlaceholder]="false" [options]="processOptions" [value]="processStatus()" (valueChange)="processStatus.set($any($event)); processError.set('')" />
+    <app-form-select label="Estado" helpText="En proceso: ya se está revisando. Atendida: se cumplió el pedido. Rechazada: no procede (explica el motivo)." [required]="true" [showPlaceholder]="false" [options]="processOptions" [value]="processStatus()" (valueChange)="processStatus.set($any($event)); processError.set('')" />
     @if (processing()?.requestType === 'CANCELACION' && processStatus() === 'COMPLETADA') {
       <p class="rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
         Al marcarla como atendida el cliente se da de baja: deja de aparecer en la lista y ya no se le puede vender a su nombre.
       </p>
     }
-    <app-text-area label="Respuesta al cliente" [required]="processStatus() === 'RECHAZADA'" helpText="Queda guardada con la solicitud." [maxLength]="1000" [rows]="3" [value]="processNotes()" [error]="!!processError()" [hint]="processError()" (valueChange)="processNotes.set($event); processError.set('')" />
+    <app-text-area label="Respuesta al cliente" [required]="processStatus() === 'RECHAZADA'" helpText="Queda guardada con la solicitud. Es obligatoria si la rechazas." [maxLength]="1000" [rows]="3" [value]="processNotes()" [error]="!!processError()" [hint]="processError()" (valueChange)="processNotes.set($event); processError.set('')" />
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="processMutation.isPending()" (btnClick)="processing.set(null)">Cancelar</app-button>
-    <app-button [variant]="processing()?.requestType === 'CANCELACION' && processStatus() === 'COMPLETADA' ? 'danger' : 'primary'" startIconName="mdi:content-save-outline" [loading]="processMutation.isPending()" [disabled]="processMutation.isPending()" (btnClick)="submitProcess()">Guardar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="processMutation.isPending()" (btnClick)="processing.set(null)">Cancelar</app-button>
+    <app-button size="sm" [variant]="processing()?.requestType === 'CANCELACION' && processStatus() === 'COMPLETADA' ? 'danger' : 'primary'" startIconName="mdi:content-save-outline" [loading]="processMutation.isPending()" [disabled]="processMutation.isPending()" (btnClick)="submitProcess()">Guardar</app-button>
   </div>
 </app-modal>

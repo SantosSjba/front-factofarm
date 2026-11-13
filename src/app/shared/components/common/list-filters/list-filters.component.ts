@@ -28,10 +28,14 @@ export class ListFiltersComponent implements OnInit {
   @Input() showSearch = true;
   /** Etiqueta del select (recomendada en modo plegable). */
   @Input() selectLabel = '';
+  /** Nombre accesible del select cuando no lleva etiqueta visible. */
+  @Input() selectAriaLabel = '';
   /** Falso cuando `selectOptions` ya incluye la opción por defecto. */
   @Input() selectShowPlaceholder = true;
 
   @Input() clearLabel = 'Limpiar';
+  /** Falso cuando la pantalla pone su propio «Limpiar» junto a sus filtros (para que bajen juntos). */
+  @Input() showClear = true;
   /** Versión compacta: campos y botones de 36px, menos padding (como los botones `size="sm"` de la barra). */
   @Input({ transform: booleanAttribute }) compact = false;
   /** Ayuda (tooltip) junto a la etiqueta del select (requiere `selectLabel`). */

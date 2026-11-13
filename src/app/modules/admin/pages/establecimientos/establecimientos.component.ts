@@ -10,16 +10,17 @@ import {
   isOptionalUrl,
 } from '../../../../core/utils/form-validators';
 import { establishmentQueryKeys } from '../../../../core/query/establishment-query.keys';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { NotifyService } from '../../../../core/services/notify.service';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
@@ -46,13 +47,13 @@ import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
+    FormSectionComponent,
     ListFiltersComponent,
     PaginationComponent,
     ModalComponent,
     ButtonComponent,
     IconComponent,
-    LabelComponent,
     InputFieldComponent,
     FormSelectComponent,
     CheckboxComponent,
@@ -124,10 +125,41 @@ export class EstablecimientosComponent {
   protected readonly itemsPerPage = 10;
   protected readonly establishments = computed(() => this.establishmentsQuery.data()?.items ?? []);
   protected readonly hospitalFilterOptions = [
-    { value: 'all', label: 'Todos' },
-    { value: 'hospital', label: 'Solo hospitales' },
-    { value: 'no-hospital', label: 'No hospital' },
+    { value: 'all', label: 'Todos los tipos' },
+    { value: 'no-hospital', label: 'Farmacia / botica' },
+    { value: 'hospital', label: 'Hospital / clínica' },
   ];
+
+  /** Todos los locales (suelen ser pocos) para los conteos del resumen; el listado sigue paginado en el API. */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: [...establishmentQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.listEstablishmentsPaged({ page: 1, pageSize: 100 })),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const items = this.summaryQuery.data()?.items;
+    if (!items) return [];
+    const h = this.hospitalFilter();
+    const inactive = items.filter((e) => e.activo === false).length;
+    const sinTitular = items.filter((e) => e.activo !== false && !e.titularPharmacistLicenseId).length;
+    const hospitals = items.filter((e) => e.esHospital).length;
+    return [
+      { id: 'all', label: 'Total', count: items.length, icon: 'lucide:store', group: 'General', active: h === 'all', tooltip: 'Todos los locales. Clic para quitar el filtro de tipo.' },
+      { id: 'active', label: 'Activos', count: items.length - inactive, tone: 'success', group: 'General', clickable: false, tooltip: 'Locales en uso: venden y aparecen en los selectores.' },
+      ...(inactive ? [{ id: 'inactive', label: 'Inactivos', count: inactive, tone: 'neutral' as const, group: 'General', clickable: false, tooltip: 'Locales desactivados: se conservan pero no operan.' }] : []),
+      { id: 'no-titular', label: 'Sin farmacéutico titular', count: sinTitular, tone: sinTitular ? 'warning' : 'neutral', group: 'General', clickable: false, tooltip: 'Locales activos sin químico farmacéutico titular asignado. DIGEMID exige uno por local: asígnalo en «Editar».' },
+      { id: 'type:no-hospital', label: 'Farmacia / botica', count: items.length - hospitals, icon: 'lucide:pill', group: 'Tipo', active: h === 'no-hospital', tooltip: 'Ver solo farmacias y boticas (clic de nuevo para quitar).' },
+      { id: 'type:hospital', label: 'Hospital / clínica', count: hospitals, icon: 'lucide:hospital', group: 'Tipo', active: h === 'hospital', tooltip: 'Ver solo hospitales, clínicas y microredes (clic de nuevo para quitar).' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'all') this.onHospitalFilterChange('all');
+    else if (chip.id.startsWith('type:')) {
+      const t = chip.id.slice(5);
+      this.onHospitalFilterChange(this.hospitalFilter() === t ? 'all' : t);
+    }
+  }
   protected readonly totalFiltered = computed(() => this.establishmentsQuery.data()?.total ?? 0);
   protected readonly totalPages = computed(() => this.establishmentsQuery.data()?.totalPages ?? 1);
   protected readonly pageStart = computed(() =>

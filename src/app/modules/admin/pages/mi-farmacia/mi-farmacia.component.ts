@@ -23,7 +23,8 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import type {
   BillingProviderType,
   SalePdfFormat,
@@ -50,7 +51,8 @@ import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/
     CheckboxComponent,
     ImageSquarePickerComponent,
     ButtonComponent,
-    HelpHintComponent,
+    IconComponent,
+    LabelComponent,
   ],
   templateUrl: './mi-farmacia.component.html',
 })

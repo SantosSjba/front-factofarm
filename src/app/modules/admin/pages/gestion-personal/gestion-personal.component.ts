@@ -8,6 +8,9 @@ import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -65,6 +68,8 @@ const LEAVE_STATUS: Record<StaffLeaveStatusDto, { label: string; tone: StatusTon
     HelpPanelComponent,
     InputFieldComponent,
     KpiTileComponent,
+    ListFiltersComponent,
+    PageStateComponent,
     MenuItemComponent,
     ModalComponent,
     PageToolbarComponent,
@@ -98,9 +103,12 @@ export class GestionPersonalComponent {
   private readonly isChain = hasChainScope(this.auth.user()?.role);
 
   // ---------- Empleados ----------
+  // Asistencia, licencias, horarios y productividad trabajan sobre el local de quien inició sesión
+  // (el API rechaza a personas de otro local): el selector solo lista a ese personal.
+  private readonly myEstablishmentId = this.auth.user()?.establecimientoId ?? '';
   protected readonly usersQuery = injectQuery(() => ({
-    queryKey: ['staff', 'users'] as const,
-    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 100 })),
+    queryKey: ['staff', 'users', this.myEstablishmentId] as const,
+    queryFn: () => firstValueFrom(this.api.listUsers({ pageSize: 100, establishmentId: this.myEstablishmentId || undefined })),
   }));
   protected readonly employeeOptions = computed(() =>
     (this.usersQuery.data()?.items ?? []).map((u) => ({ value: u.id, label: u.nombre })),
@@ -110,13 +118,58 @@ export class GestionPersonalComponent {
   // ---------- Asistencia ----------
   protected readonly attendanceUser = signal('');
   protected readonly attendancePage = signal(1);
+  /** Solo quienes siguen trabajando (sin salida); se activa desde el chip. */
+  protected readonly attendanceOpenOnly = signal(false);
   protected readonly attendanceQuery = injectQuery(() => ({
-    queryKey: ['staff', 'attendance', this.attendanceUser(), this.attendancePage()] as const,
-    queryFn: () => firstValueFrom(this.api.listStaffAttendance({ page: this.attendancePage(), pageSize: 20, userId: this.attendanceUser() || undefined })),
+    queryKey: ['staff', 'attendance', this.attendanceUser(), this.attendanceOpenOnly(), this.attendancePage()] as const,
+    queryFn: () =>
+      firstValueFrom(
+        this.api.listStaffAttendance({
+          page: this.attendancePage(),
+          pageSize: 20,
+          userId: this.attendanceUser() || undefined,
+          open: this.attendanceOpenOnly(),
+        }),
+      ),
   }));
   protected readonly attendanceRows = computed(() => this.attendanceQuery.data()?.items ?? []);
   protected readonly attendanceTotal = computed(() => this.attendanceQuery.data()?.total ?? 0);
-  protected readonly openNow = computed(() => this.attendanceRows().filter((r) => !r.checkOutAt).length);
+  protected readonly openNow = computed(() => this.attendanceQuery.data()?.openNow ?? 0);
+  private readonly employeeName = computed(() => this.employeeOptions().find((o) => o.value === this.attendanceUser())?.label ?? '');
+
+  protected readonly attendanceChips = computed<SummaryChip[]>(() => {
+    if (!this.attendanceQuery.data()) return [];
+    const who = this.employeeName();
+    return [
+      {
+        id: 'all',
+        label: who ? `Registros de ${who}` : 'Registros',
+        count: this.attendanceQuery.data()?.allCount ?? 0,
+        icon: 'lucide:list',
+        active: !this.attendanceOpenOnly(),
+        tooltip: 'Todas las entradas y salidas registradas.',
+      },
+      {
+        id: 'open',
+        label: 'Trabajando ahora',
+        count: this.openNow(),
+        tone: 'success',
+        active: this.attendanceOpenOnly(),
+        tooltip: 'Marcaron entrada y aún no su salida. Clic para ver solo esos registros.',
+      },
+    ];
+  });
+
+  protected onAttendanceChip(chip: SummaryChip) {
+    this.attendanceOpenOnly.set(chip.id === 'open' ? !this.attendanceOpenOnly() : false);
+    this.attendancePage.set(1);
+  }
+
+  protected clearAttendanceFilters() {
+    this.attendanceUser.set('');
+    this.attendanceOpenOnly.set(false);
+    this.attendancePage.set(1);
+  }
 
   protected hours(row: StaffAttendanceItemDto): string {
     const end = row.checkOutAt ? new Date(row.checkOutAt).getTime() : Date.now();
@@ -145,20 +198,78 @@ export class GestionPersonalComponent {
   // ---------- Licencias ----------
   protected readonly leaveStatusFilter = signal<'' | StaffLeaveStatusDto>('SOLICITADO');
   protected readonly leaveStatusOptions = [
+    { value: '', label: 'Todos los estados' },
     { value: 'SOLICITADO', label: 'Por aprobar' },
     { value: 'APROBADO', label: 'Aprobadas' },
     { value: 'RECHAZADO', label: 'Rechazadas' },
-    { value: '', label: 'Todas' },
+    { value: 'CANCELADO', label: 'Canceladas' },
   ];
+  protected readonly leaveTypeFilter = signal<'' | StaffLeaveTypeDto>('');
+  protected readonly leaveSearch = signal('');
   protected readonly leavesQuery = injectQuery(() => ({
     queryKey: ['staff', 'leaves'] as const,
     queryFn: () => firstValueFrom(this.api.listStaffLeaves()),
   }));
   protected readonly leaves = computed(() => {
     const f = this.leaveStatusFilter();
-    return (this.leavesQuery.data() ?? []).filter((l) => !f || l.estado === f);
+    const t = this.leaveTypeFilter();
+    const q = this.leaveSearch().trim().toLowerCase();
+    return (this.leavesQuery.data() ?? []).filter(
+      (l) => (!f || l.estado === f) && (!t || l.tipo === t) && (!q || l.user.nombre.toLowerCase().includes(q)),
+    );
   });
-  protected readonly pendingLeaves = computed(() => (this.leavesQuery.data() ?? []).filter((l) => l.estado === 'SOLICITADO').length);
+
+  /** Chips: total, por estado y por tipo (los conteos no dependen de los filtros aplicados). */
+  protected readonly leaveChips = computed<SummaryChip[]>(() => {
+    const all = this.leavesQuery.data();
+    if (!all) return [];
+    const f = this.leaveStatusFilter();
+    const t = this.leaveTypeFilter();
+    const count = (pred: (l: StaffLeaveItemDto) => boolean) => all.filter(pred).length;
+    return [
+      { id: 'all', label: 'Total', count: all.length, icon: 'lucide:calendar-days', group: 'General', active: !f && !t, tooltip: 'Todas las licencias. Clic para quitar los filtros de estado y tipo.' },
+      ...(Object.keys(LEAVE_STATUS) as StaffLeaveStatusDto[]).map((s) => ({
+        id: 'status:' + s,
+        // Mismo texto que el select de estado (en plural: «Aprobadas»…).
+        label: this.leaveStatusOptions.find((o) => o.value === s)?.label ?? LEAVE_STATUS[s].label,
+        count: count((l) => l.estado === s),
+        tone: LEAVE_STATUS[s].tone,
+        group: 'Estado',
+        active: f === s,
+        tooltip: `Ver solo licencias con estado «${LEAVE_STATUS[s].label.toLowerCase()}» (clic de nuevo para quitar).`,
+      })),
+      ...(Object.keys(LEAVE_TYPES) as StaffLeaveTypeDto[])
+        .map((tp) => ({
+          id: 'type:' + tp,
+          label: LEAVE_TYPES[tp],
+          count: count((l) => l.tipo === tp),
+          icon: 'lucide:tag',
+          group: 'Tipo',
+          active: t === tp,
+          tooltip: `Ver solo ${LEAVE_TYPES[tp].toLowerCase()} (clic de nuevo para quitar).`,
+        }))
+        .filter((c) => c.count > 0),
+    ];
+  });
+
+  protected onLeaveChip(chip: SummaryChip) {
+    if (chip.id === 'all') {
+      this.leaveStatusFilter.set('');
+      this.leaveTypeFilter.set('');
+    } else if (chip.id.startsWith('status:')) {
+      const s = chip.id.slice(7) as StaffLeaveStatusDto;
+      this.leaveStatusFilter.set(this.leaveStatusFilter() === s ? '' : s);
+    } else if (chip.id.startsWith('type:')) {
+      const tp = chip.id.slice(5) as StaffLeaveTypeDto;
+      this.leaveTypeFilter.set(this.leaveTypeFilter() === tp ? '' : tp);
+    }
+  }
+
+  protected clearLeaveFilters() {
+    this.leaveStatusFilter.set('');
+    this.leaveTypeFilter.set('');
+    this.leaveSearch.set('');
+  }
   protected leaveTypeLabel(t: StaffLeaveTypeDto) {
     return LEAVE_TYPES[t] ?? t;
   }

@@ -1,27 +1,16 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="breadcrumbSegments" />
-</div>
+<app-breadcrumb-inline [segments]="breadcrumbSegments" />
 
 <app-page-toolbar>
-  <h1
-    data-toolbar-title
-    class="text-lg font-semibold text-gray-800 dark:text-white/90"
-  >
-    Mi farmacia
-  </h1>
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Mi farmacia</h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <app-button
-      size="sm"
-      variant="outline"
-      startIconName="mdi:file-document-outline"
-      (btnClick)="goToCpeBandeja()"
-    >
+    <app-button size="sm" variant="outline" startIconName="mdi:file-document-outline" tooltip="Comprobantes electrónicos enviados a SUNAT y su estado." (btnClick)="goToCpeBandeja()">
       Bandeja CPE
     </app-button>
     <app-button
       size="sm"
       startIconName="mdi:content-save-outline"
-      [disabled]="saving() || !profileQuery.isSuccess()" [loading]="saving() || profileQuery.isPending()"
+      [disabled]="saving() || !profileQuery.isSuccess()"
+      [loading]="saving() || profileQuery.isPending()"
       (btnClick)="submit()"
     >
       {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
@@ -38,329 +27,241 @@
 </app-help-panel>
 
 @if (profileQuery.isError()) {
-  <app-component-card
-    title="No se pudo cargar"
-    [error]="'No se pudo cargar el perfil de la farmacia'"
-    (retry)="profileQuery.refetch()"
-  />
+  <app-component-card compact title="No se pudo cargar" icon="lucide:alert-triangle" [error]="'No se pudo cargar el perfil de la farmacia'" (retry)="profileQuery.refetch()" />
 } @else {
-  <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-    <app-component-card
-      title="Identidad del local"
-      helpText="Logo, nombre comercial y datos de contacto que representan a su farmacia en el sistema."
-      [loading]="profileQuery.isPending()"
-    >
-      <app-form-stack>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
-          <div>
-            <div class="mb-2 flex items-center gap-1.5">
-              <p class="text-theme-sm font-medium text-gray-700 dark:text-gray-200">Logo</p>
-              <app-help-hint
-                text="Se usa en tickets y documentos. Recomendado: PNG o JPG cuadrado, fondo claro."
-                [iconSize]="16"
-              />
-            </div>
-            <app-image-square-picker
-              [previewUrl]="logoPreview()"
-              sizeClass="h-28 w-28"
-              ariaLabel="Subir logo de la farmacia"
-              (fileSelected)="onLogoFile($event)"
-            />
-            @if (logoPreview()) {
-              <app-button variant="link-danger" className="mt-2" (btnClick)="clearLogo()">Quitar logo</app-button>
-            }
-            @if (logoUploadError()) {
-              <p class="mt-1 text-theme-xs text-error-600">{{ logoUploadError() }}</p>
-            }
-          </div>
-          <div class="min-w-0 flex-1 space-y-4">
-            <app-form-field
-              label="Nombre del local"
-              helpText="Nombre comercial de esta sede (aparece en menús y reportes)."
-             required>
-              <app-input-field [maxLength]="200"
-                [value]="nombre()"
-                placeholder="Ej. Botica San Martín — Local 1"
-                (valueChange)="nombre.set('' + $event)"
-              />
-            </app-form-field>
-            <app-form-field
-              label="Código sede"
-              helpText="Código interno corto del local (ej. 0001)."
-            >
-              <app-input-field [maxLength]="20"
-                [value]="codigo()"
-                placeholder="0001"
-                (valueChange)="codigo.set('' + $event)"
-              />
-            </app-form-field>
-            <app-form-field
-              label="Formato PDF de venta / nota"
-              helpText="Aplica al PDF generado por FactoFarm (nota de venta o voucher interno). El PDF oficial del OSE/SUNAT no cambia."
-            >
-              <app-form-select
-                [showPlaceholder]="false"
-                [options]="salePdfFormatOptions()"
-                [value]="salePdfFormat()"
-                (valueChange)="salePdfFormat.set($any($event))"
-              />
-            </app-form-field>
-            <app-form-field
-              label="Zona horaria"
-              helpText="Define el día comercial del local (dashboard, reportes, PLE/SUNAT y PDF). Por defecto America/Lima."
-            >
-              <app-form-select
-                [showPlaceholder]="false"
-                [options]="timeZoneOptions()"
-                [value]="timeZone()"
-                (valueChange)="timeZone.set('' + $event)"
-              />
-            </app-form-field>
-          </div>
-        </div>
-
-        <app-form-row>
-          <app-form-field label="Teléfono">
-            <app-input-field [maxLength]="40" [value]="telefono()" (valueChange)="telefono.set('' + $event)" />
-          </app-form-field>
-          <app-form-field label="Correo de contacto">
-            <app-input-field [maxLength]="200"
-              type="email"
-              [value]="correoContacto()"
-              (valueChange)="correoContacto.set('' + $event)"
-            />
-          </app-form-field>
-        </app-form-row>
-
-        <app-form-field label="Sitio web">
-          <app-input-field [maxLength]="200"
-            [value]="direccionWeb()"
-            placeholder="https://"
-            (valueChange)="direccionWeb.set('' + $event)"
-          />
-        </app-form-field>
-
-        <app-form-field
-          label="Registro DIGEMID"
-          helpText="Número de registro sanitario del establecimiento ante DIGEMID (si aplica)."
-        >
-          <app-input-field [maxLength]="80"
-            [value]="numeroRegistroDigemid()"
-            (valueChange)="numeroRegistroDigemid.set('' + $event)"
-          />
-        </app-form-field>
-
-        <app-form-field label="Información adicional">
-          <app-text-area [maxLength]="1000"
-            [value]="informacionAdicional()"
-            [rows]="3"
-            (valueChange)="informacionAdicional.set('' + $event)"
-          />
-        </app-form-field>
-      </app-form-stack>
-    </app-component-card>
-
-    <div class="space-y-5">
+  <!-- Dos columnas en escritorio (identidad | facturación y dirección); una sola en tablet y teléfono.
+       Todo compacto: secciones con ícono, campos de 36px con ícono y etiqueta de 12px con su ayuda. -->
+  <!-- grid-cols-1 + min-w-0: la columna nunca crece más que la pantalla por un texto largo (evita scroll lateral en teléfono). -->
+  <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+    <div class="min-w-0 space-y-4">
+      <!-- ===== Identidad ===== -->
       <app-component-card
-        title="Datos de facturación"
-        helpText="RUC y razón social del emisor SUNAT."
+        compact
+        class="!mb-0"
+        icon="lucide:store"
+        title="Identidad del local"
+        desc="Logo, nombre y datos de contacto que ven tus clientes."
+        helpText="Logo, nombre comercial y datos de contacto que representan a su farmacia en el sistema."
         [loading]="profileQuery.isPending()"
+        skeleton="spinner"
       >
-        <app-form-stack>
-          <app-form-row>
-            <app-form-field
-              label="RUC emisor"
-              helpText="RUC de 11 dígitos con el que emitirá boletas y facturas."
-            >
-              <app-input-field [maxLength]="11" inputMode="numeric"
-                [value]="rucEmisor()"
-                placeholder="20XXXXXXXXX"
-                (valueChange)="rucEmisor.set('' + $event)"
-              />
+        <app-form-stack compact>
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div class="flex shrink-0 flex-col items-center gap-1.5 sm:items-start">
+              <app-label compact helpText="Se usa en tickets y documentos. Recomendado: PNG o JPG cuadrado, fondo claro.">Logo</app-label>
+              <app-image-square-picker [previewUrl]="logoPreview()" sizeClass="h-24 w-24" ariaLabel="Subir logo de la farmacia" (fileSelected)="onLogoFile($event)" />
+              @if (logoPreview()) {
+                <app-button size="xs" variant="link-danger" startIconName="mdi:trash-can-outline" (btnClick)="clearLogo()">Quitar logo</app-button>
+              }
+              @if (logoUploadError()) {
+                <p class="text-theme-xs text-error-600 dark:text-error-400">{{ logoUploadError() }}</p>
+              }
+            </div>
+            <app-form-stack compact className="min-w-0 flex-1">
+              <app-form-field compact label="Nombre del local" helpText="Nombre comercial de esta sede (aparece en menús, tickets y reportes)." required>
+                <app-input-field compact icon="lucide:store" [maxLength]="200" [value]="nombre()" placeholder="Ej. Botica San Martín — Local 1" (valueChange)="nombre.set('' + $event)" />
+              </app-form-field>
+              <app-form-row compact>
+                <app-form-field compact label="Código sede" helpText="Código interno corto del local (ej. 0001).">
+                  <app-input-field compact icon="lucide:hash" [maxLength]="20" [value]="codigo()" placeholder="0001" (valueChange)="codigo.set('' + $event)" />
+                </app-form-field>
+                <app-form-field compact label="Registro DIGEMID" helpText="Número de registro sanitario del establecimiento ante DIGEMID (si aplica).">
+                  <app-input-field compact icon="lucide:shield-check" [maxLength]="80" [value]="numeroRegistroDigemid()" (valueChange)="numeroRegistroDigemid.set('' + $event)" />
+                </app-form-field>
+              </app-form-row>
+            </app-form-stack>
+          </div>
+
+          <app-form-row compact>
+            <app-form-field compact label="Teléfono" helpText="Sale en el PDF de venta para que el cliente pueda comunicarse.">
+              <app-input-field compact icon="lucide:phone" inputMode="tel" [maxLength]="40" [value]="telefono()" placeholder="Ej. 01 234 5678" (valueChange)="telefono.set('' + $event)" />
             </app-form-field>
-            <app-form-field
-              label="Razón social"
-              helpText="Nombre legal registrado en SUNAT."
-            >
-              <app-input-field [maxLength]="200"
-                [value]="razonSocialEmisor()"
-                (valueChange)="razonSocialEmisor.set('' + $event)"
-              />
+            <app-form-field compact label="Correo de contacto" helpText="Correo de contacto del local.">
+              <app-input-field compact icon="lucide:mail" type="email" [maxLength]="200" [value]="correoContacto()" placeholder="contacto@mifarmacia.pe" (valueChange)="correoContacto.set('' + $event)" />
             </app-form-field>
           </app-form-row>
+
+          <app-form-field compact label="Sitio web" helpText="Opcional. Dirección web o redes de la farmacia.">
+            <app-input-field compact icon="lucide:globe" [maxLength]="200" [value]="direccionWeb()" placeholder="https://" (valueChange)="direccionWeb.set('' + $event)" />
+          </app-form-field>
+
+          <app-form-field compact label="Información adicional" helpText="Opcional. Datos extra del local (horario, referencias…) para consulta interna.">
+            <app-text-area compact [maxLength]="1000" [value]="informacionAdicional()" [rows]="2" (valueChange)="informacionAdicional.set('' + $event)" />
+          </app-form-field>
         </app-form-stack>
       </app-component-card>
 
+      <!-- ===== Documentos y horario ===== -->
       <app-component-card
+        compact
+        class="!mb-0"
+        icon="lucide:settings-2"
+        title="Documentos y horario"
+        desc="Formato del PDF de venta y zona horaria del local."
+        [loading]="profileQuery.isPending()"
+        skeleton="spinner"
+      >
+        <app-form-row compact>
+          <app-form-field compact label="Formato PDF de venta / nota" helpText="Aplica al PDF generado por FactoFarm (nota de venta o voucher interno). El PDF oficial del OSE/SUNAT no cambia.">
+            <app-form-select compact [showPlaceholder]="false" [options]="salePdfFormatOptions()" [value]="salePdfFormat()" (valueChange)="salePdfFormat.set($any($event))" />
+          </app-form-field>
+          <app-form-field compact label="Zona horaria" helpText="Define el día comercial del local (dashboard, reportes, PLE/SUNAT y PDF). Por defecto America/Lima.">
+            <app-form-select compact [showPlaceholder]="false" [options]="timeZoneOptions()" [value]="timeZone()" (valueChange)="timeZone.set('' + $event)" />
+          </app-form-field>
+        </app-form-row>
+      </app-component-card>
+    </div>
+
+    <div class="min-w-0 space-y-4">
+      <!-- ===== Facturación ===== -->
+      <app-component-card
+        compact
+        class="!mb-0"
+        icon="lucide:landmark"
+        title="Datos de facturación"
+        desc="Emisor ante SUNAT."
+        helpText="RUC y razón social del emisor SUNAT."
+        [loading]="profileQuery.isPending()"
+        skeleton="spinner"
+      >
+        <app-form-row compact>
+          <app-form-field compact label="RUC emisor" helpText="RUC de 11 dígitos con el que emitirá boletas y facturas.">
+            <app-input-field compact icon="lucide:building-2" [maxLength]="11" inputMode="numeric" [value]="rucEmisor()" placeholder="20XXXXXXXXX" (valueChange)="rucEmisor.set('' + $event)" />
+          </app-form-field>
+          <app-form-field compact label="Razón social" helpText="Nombre legal registrado en SUNAT.">
+            <app-input-field compact icon="lucide:briefcase" [maxLength]="200" [value]="razonSocialEmisor()" (valueChange)="razonSocialEmisor.set('' + $event)" />
+          </app-form-field>
+        </app-form-row>
+      </app-component-card>
+
+      <!-- ===== Facturación electrónica ===== -->
+      <app-component-card
+        compact
+        class="!mb-0"
+        icon="lucide:file-check-2"
         title="Facturación electrónica (OSE / SUNAT)"
+        desc="Conecta tu proveedor para emitir boletas y facturas."
         helpText="Primero configure su cuenta en el panel del proveedor (Factiliza, Nubefact o APIsPERU). Aquí solo pega URL y token; FactoFarm emite los CPE. Sin OSE puede vender con nota de venta."
         [loading]="profileQuery.isPending()"
+        skeleton="spinner"
       >
-        <app-form-stack>
+        <app-form-stack compact>
+          <!-- Estado de la conexión -->
           <div
-            class="rounded-xl border px-4 py-3 text-theme-sm"
+            class="flex items-start gap-2 rounded-lg border px-3 py-2 text-theme-xs"
             [class]="
               electronicInvoicingEnabled()
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200'
-                : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200'
+                ? 'border-success-200 bg-success-50 text-success-800 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-300'
+                : 'border-warning-200 bg-warning-50 text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300'
             "
+            role="status"
           >
+            <app-icon [name]="electronicInvoicingEnabled() ? 'lucide:circle-check' : 'lucide:info'" iconClass="mt-px size-4 shrink-0" />
             @if (electronicInvoicingEnabled()) {
               <p>
-                CPE activa con
-                <span class="font-medium">{{ billingProvider() }}</span>
-                · credenciales
-                {{ hasOseCredentials() ? 'listas' : 'pendientes' }}.
-                FactoFarm usará el panel del proveedor para emitir a SUNAT.
+                CPE activa con <span class="font-medium">{{ billingProvider() }}</span> · credenciales
+                {{ hasOseCredentials() ? 'listas' : 'pendientes' }}. FactoFarm usará el panel del proveedor para emitir a SUNAT.
               </p>
             } @else {
               <p>
-                Sin CPE: las ventas pueden emitirse como
-                <span class="font-medium">nota de venta</span>
-                (no van a SUNAT). Cuando tenga cuenta y token en el panel del proveedor, elíjalo abajo.
+                Sin CPE: las ventas pueden emitirse como <span class="font-medium">nota de venta</span> (no van a SUNAT). Cuando tenga
+                cuenta y token en el panel del proveedor, elíjalo abajo.
               </p>
             }
           </div>
 
-          <app-form-field label="Proveedor OSE / PSE" [helpText]="providerSelectHelp()">
-            <app-form-select
-              [value]="billingProvider()"
-              [options]="providerOptions()"
-              (valueChange)="onProviderChange($event)"
-            />
+          <app-form-field compact label="Proveedor OSE / PSE" [helpText]="providerSelectHelp()">
+            <app-form-select compact [value]="billingProvider()" [options]="providerOptions()" (valueChange)="onProviderChange($event)" />
           </app-form-field>
 
-          <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ providerHelp() }}</p>
-
-          @if (capabilityNotes().length) {
-            <ul class="list-disc space-y-1 pl-5 text-theme-xs text-gray-600 dark:text-gray-300">
-              @for (note of capabilityNotes(); track note) {
-                <li>{{ note }}</li>
+          @if (providerHelp() || capabilityNotes().length) {
+            <div class="space-y-1 text-theme-xs text-gray-500 dark:text-gray-400">
+              @if (providerHelp()) {
+                <p>{{ providerHelp() }}</p>
               }
-            </ul>
+              @if (capabilityNotes().length) {
+                <ul class="list-disc space-y-0.5 ps-5">
+                  @for (note of capabilityNotes(); track note) {
+                    <li>{{ note }}</li>
+                  }
+                </ul>
+              }
+            </div>
           }
 
           @if (needsOseCredentials()) {
-            <app-form-field label="URL API" [helpText]="apiUrlHelp()">
-              <app-input-field [maxLength]="500"
-                [value]="apiUrl()"
-                [placeholder]="defaultApiUrlHint()"
-                (valueChange)="apiUrl.set('' + $event)"
-              />
+            <app-form-field compact label="URL API" [helpText]="apiUrlHelp()">
+              <app-input-field compact icon="lucide:link" [maxLength]="500" [value]="apiUrl()" [placeholder]="defaultApiUrlHint()" (valueChange)="apiUrl.set('' + $event)" />
             </app-form-field>
 
-            <app-form-field
-              label="URL consulta (RUC / CPE)"
-              helpText="Opcional. Solo si su proveedor da API de consulta aparte (p. ej. Factiliza: https://api.factiliza.com/v1)."
-            >
-              <app-input-field [maxLength]="500"
-                [value]="consultaApiUrl()"
-                placeholder="https://…"
-                (valueChange)="consultaApiUrl.set('' + $event)"
-              />
+            <app-form-field compact label="URL consulta (RUC / CPE)" helpText="Opcional. Solo si su proveedor da API de consulta aparte (p. ej. Factiliza: https://api.factiliza.com/v1).">
+              <app-input-field compact icon="lucide:search" [maxLength]="500" [value]="consultaApiUrl()" placeholder="https://…" (valueChange)="consultaApiUrl.set('' + $event)" />
             </app-form-field>
 
-            <app-form-field label="Token API" [helpText]="apiTokenHelp()" [required]="!hasOseCredentials()">
+            <app-form-field compact label="Token API" [helpText]="apiTokenHelp()" [required]="!hasOseCredentials()">
               <app-input-field
+                compact
+                icon="lucide:key-round"
                 type="password"
                 [value]="apiToken()"
-                [placeholder]="
-                  hasOseCredentials()
-                    ? '•••••••• (ya configurado · deje vacío para no cambiar)'
-                    : 'Pegue el token generado en el panel del proveedor'
-                "
+                [placeholder]="hasOseCredentials() ? '•••••••• (ya configurado · deje vacío para no cambiar)' : 'Pegue el token generado en el panel del proveedor'"
                 (valueChange)="apiToken.set('' + $event)"
               />
             </app-form-field>
 
-            <div class="space-y-3">
-              <app-checkbox
-                label="Modo sandbox / pruebas"
-                [checked]="modoSandbox()"
-                (checkedChange)="modoSandbox.set($event)"
-              />
-              <app-checkbox
-                label="Emitir boleta/factura automáticamente al vender"
-                [checked]="autoEmitOnSale()"
-                (checkedChange)="autoEmitOnSale.set($event)"
-              />
-              <app-checkbox
-                label="Intentar emitir nota de venta electrónica (si el OSE lo soporta)"
-                [checked]="emitNotaVenta()"
-                (checkedChange)="emitNotaVenta.set($event)"
-              />
-              <app-checkbox
-                label="Aplicar detracción en facturas ≥ S/ 700"
-                [checked]="applyDetraccion()"
-                (checkedChange)="applyDetraccion.set($event)"
-              />
-              <app-checkbox
-                label="Emitir guía de remisión al despachar traslado"
-                [checked]="autoEmitGuiaOnTransfer()"
-                (checkedChange)="autoEmitGuiaOnTransfer.set($event)"
-              />
-            </div>
+            <!-- Opciones de emisión agrupadas en un recuadro -->
+            <fieldset class="min-w-0 rounded-lg border border-gray-200 px-3 pt-1 pb-3 dark:border-gray-800">
+              <legend class="px-1 text-theme-xs font-medium text-gray-700 dark:text-gray-400">Opciones de emisión</legend>
+              <div class="grid gap-2.5">
+                <app-checkbox label="Modo sandbox / pruebas" helpText="Envía al entorno de pruebas del proveedor: los comprobantes no tienen validez ante SUNAT." [checked]="modoSandbox()" (checkedChange)="modoSandbox.set($event)" />
+                <app-checkbox label="Emitir boleta/factura automáticamente al vender" helpText="Al cerrar la venta se envía a SUNAT sin pasos extra." [checked]="autoEmitOnSale()" (checkedChange)="autoEmitOnSale.set($event)" />
+                <app-checkbox label="Intentar emitir nota de venta electrónica (si el OSE lo soporta)" helpText="Si el proveedor no la admite, la nota de venta queda solo en FactoFarm." [checked]="emitNotaVenta()" (checkedChange)="emitNotaVenta.set($event)" />
+                <app-checkbox label="Aplicar detracción en facturas ≥ S/ 700" helpText="Agrega la detracción en facturas desde S/ 700 cuando corresponda." [checked]="applyDetraccion()" (checkedChange)="applyDetraccion.set($event)" />
+                <app-checkbox label="Emitir guía de remisión al despachar traslado" helpText="Al despachar un traslado entre locales se emite su guía de remisión electrónica." [checked]="autoEmitGuiaOnTransfer()" (checkedChange)="autoEmitGuiaOnTransfer.set($event)" />
+              </div>
+            </fieldset>
           }
         </app-form-stack>
       </app-component-card>
 
+      <!-- ===== Dirección ===== -->
       <app-component-card
+        compact
+        class="!mb-0"
+        icon="lucide:map-pin"
         title="Dirección fiscal"
+        desc="Ubigeo y direcciones de comprobantes y reportes."
         helpText="Ubigeo y direcciones que se usan en comprobantes y reportes."
         [loading]="profileQuery.isPending()"
+        skeleton="spinner"
       >
-        <app-form-stack>
-          <app-form-row>
-            <app-form-field label="Departamento">
-              <app-form-select
-                [value]="departmentId()"
-                [options]="departmentOptions()"
-                (valueChange)="onDepartmentChange($event)"
-              />
+        <app-form-stack compact>
+          <app-form-row compact [cols]="3">
+            <app-form-field compact label="Departamento" helpText="Primero el departamento; luego se habilita la provincia.">
+              <app-form-select compact [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
             </app-form-field>
-            <app-form-field label="Provincia">
-              <app-form-select
-                [value]="provinceId()"
-                [options]="provinceOptions()"
-                [disabled]="!departmentId()"
-                (valueChange)="onProvinceChange($event)"
-              />
+            <app-form-field compact label="Provincia" helpText="Se habilita al elegir el departamento.">
+              <app-form-select compact [value]="provinceId()" [options]="provinceOptions()" [disabled]="!departmentId()" (valueChange)="onProvinceChange($event)" />
+            </app-form-field>
+            <app-form-field compact label="Distrito" helpText="Se habilita al elegir la provincia.">
+              <app-form-select compact [value]="districtId()" [options]="districtOptions()" [disabled]="!provinceId()" (valueChange)="districtId.set($event)" />
             </app-form-field>
           </app-form-row>
 
-          <app-form-field label="Distrito">
-            <app-form-select
-              [value]="districtId()"
-              [options]="districtOptions()"
-              [disabled]="!provinceId()"
-              (valueChange)="districtId.set($event)"
-            />
+          <app-form-field compact label="Dirección fiscal" helpText="La registrada en SUNAT para el RUC; sale en boletas y facturas.">
+            <app-input-field compact icon="lucide:map-pin" [maxLength]="500" [value]="direccionFiscal()" placeholder="Av. / Jr. / Calle, número, urbanización" (valueChange)="direccionFiscal.set('' + $event)" />
           </app-form-field>
 
-          <app-form-field label="Dirección fiscal">
-            <app-input-field [maxLength]="500"
-              [value]="direccionFiscal()"
-              (valueChange)="direccionFiscal.set('' + $event)"
-            />
-          </app-form-field>
-
-          <app-form-field label="Dirección comercial">
-            <app-input-field [maxLength]="500"
-              [value]="direccionComercial()"
-              (valueChange)="direccionComercial.set('' + $event)"
-            />
+          <app-form-field compact label="Dirección comercial" helpText="Opcional. Dónde atiende el local, si es distinta de la fiscal.">
+            <app-input-field compact icon="lucide:navigation" [maxLength]="500" [value]="direccionComercial()" (valueChange)="direccionComercial.set('' + $event)" />
           </app-form-field>
         </app-form-stack>
       </app-component-card>
     </div>
   </div>
 
-  <div class="mt-5 flex justify-end">
-    <app-button
-      startIconName="mdi:content-save-outline"
-      [disabled]="saving() || profileQuery.isPending()" [loading]="profileQuery.isPending()"
-      (btnClick)="submit()"
-    >
+  <div class="mt-4 flex justify-end">
+    <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="saving() || profileQuery.isPending()" [loading]="saving()" (btnClick)="submit()">
       {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
     </app-button>
   </div>
