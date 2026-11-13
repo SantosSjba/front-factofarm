@@ -91,7 +91,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
       </app-component-card>
     </app-page-state>
 
-    <app-modal title="Nuevo convenio" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
+    <app-modal compact title="Nuevo convenio" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-4">
         <div>
           <app-label required>Código</app-label>

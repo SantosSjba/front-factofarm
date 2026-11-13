@@ -639,7 +639,7 @@
       </app-button>
     </div>
   }
-    <app-modal [isOpen]="cashOpenModal()" (closed)="cashOpenModal.set(false)" className="w-full max-w-md shadow-theme-lg" title="Abrir caja">
+    <app-modal compact [isOpen]="cashOpenModal()" (closed)="cashOpenModal.set(false)" className="w-full max-w-md shadow-theme-lg" title="Abrir caja">
     <div data-modal-body class="px-4 py-4 sm:px-6">
       <app-cash-open-form [stacked]="true" [allowCreate]="false" (opened)="cashOpenModal.set(false)" />
     </div>
@@ -648,7 +648,7 @@
 </app-page-state>
 </div>
 
-<app-modal [isOpen]="payModalOpen()" (closed)="payModalOpen.set(false)" className="w-full max-w-xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar" ariaLabel="Cobrar venta">
+<app-modal compact [isOpen]="payModalOpen()" (closed)="payModalOpen.set(false)" className="w-full max-w-xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar" ariaLabel="Cobrar venta">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="inline-flex items-center gap-2 pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       <app-icon name="mdi:cash-multiple" iconClass="size-5 text-brand-500" />
@@ -825,7 +825,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="!!lotModalProductId()" (closed)="closeLotModal()" className="w-full max-w-lg" ariaLabel="Selección de lotes">
+<app-modal compact [isOpen]="!!lotModalProductId()" (closed)="closeLotModal()" className="w-full max-w-lg" ariaLabel="Selección de lotes">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="inline-flex items-center gap-2 pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       <app-icon name="mdi:barcode-scan" iconClass="size-5 text-brand-500" />
@@ -883,7 +883,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="!!substituteModalProductId()" (closed)="closeSubstituteModal()" className="w-full max-w-lg" ariaLabel="Sustitutos genéricos o bioequivalentes">
+<app-modal compact [isOpen]="!!substituteModalProductId()" (closed)="closeSubstituteModal()" className="w-full max-w-lg" ariaLabel="Sustitutos genéricos o bioequivalentes">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="inline-flex items-center gap-2 pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       <app-icon name="mdi:molecule" iconClass="size-5 text-brand-500" />

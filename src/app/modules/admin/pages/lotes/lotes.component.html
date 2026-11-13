@@ -114,7 +114,7 @@
 <app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />
 
 <!-- ========== CORREGIR VENCIMIENTO ========== -->
-<app-modal [isOpen]="!!expiryTarget()" (closed)="!expiryMutation.isPending() && expiryTarget.set(null)" className="w-full max-w-lg">
+<app-modal compact [isOpen]="!!expiryTarget()" (closed)="!expiryMutation.isPending() && expiryTarget.set(null)" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Corregir vencimiento</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ expiryTarget()?.producto }} · Lote {{ expiryTarget()?.codigoLote }}</p>
@@ -138,7 +138,7 @@
 </app-modal>
 
 <!-- ========== SIMULAR SALIDA ========== -->
-<app-modal [isOpen]="simOpen()" (closed)="simOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="simOpen()" (closed)="simOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Simular salida</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Mira de qué lotes saldría una venta. No mueve stock.</p>

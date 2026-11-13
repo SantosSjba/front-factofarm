@@ -79,7 +79,7 @@
 </app-component-card>
 <app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
 
-<app-modal [isOpen]="!!detail()" (closed)="detail.set(null)" className="w-full max-w-2xl shadow-theme-lg" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="!!detail()" (closed)="detail.set(null)" className="w-full max-w-2xl shadow-theme-lg" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     @if (detail(); as d) {
       <div class="flex flex-wrap items-center gap-3 pe-12">

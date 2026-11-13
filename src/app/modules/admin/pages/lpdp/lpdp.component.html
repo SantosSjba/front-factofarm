@@ -162,7 +162,7 @@
 }
 
 <!-- ========== NUEVA SOLICITUD ========== -->
-<app-modal [isOpen]="newOpen()" (closed)="newOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="newOpen()" (closed)="newOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva solicitud ARCO</h3>
   </div>
@@ -189,7 +189,7 @@
 </app-modal>
 
 <!-- ========== ATENDER ========== -->
-<app-modal [isOpen]="!!processing()" (closed)="processing.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!processing()" (closed)="processing.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Atender solicitud</h3>
     @if (processing(); as p) {

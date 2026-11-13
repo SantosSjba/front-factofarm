@@ -14,17 +14,19 @@
     aria-modal="true"
     [attr.aria-label]="title || ariaLabel"
     tabindex="-1"
+    [attr.data-modal-compact]="compact ? '' : null"
     [ngClass]="panelClasses()"
   >
     @if (showCloseButton && !isFullscreen) {
     <button
       type="button"
       (click)="closed.emit()"
-      class="absolute end-3 top-3 z-10 flex size-9 cursor-pointer items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+      [class]="compact ? 'end-2 top-2 size-8' : 'end-3 top-3 size-9'"
+      class="absolute z-10 flex cursor-pointer items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
       aria-label="Cerrar"
     >
       <svg
-        class="size-5"
+        [attr.class]="compact ? 'size-4' : 'size-5'"
         width="24"
         height="24"
         viewBox="0 0 24 24"
@@ -43,10 +45,13 @@
     }
 
     @if (title) {
-    <div class="flex shrink-0 flex-col gap-2 px-6 pt-6 pe-10 text-start sm:px-10 sm:pt-10">
-      <h3 class="text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">{{ title }}</h3>
+    <div
+      class="flex shrink-0 flex-col text-start"
+      [class]="compact ? 'gap-0.5 px-4 pt-4 pe-11 sm:px-6 sm:pt-5' : 'gap-2 px-6 pt-6 pe-10 sm:px-10 sm:pt-10'"
+    >
+      <h3 class="font-semibold text-gray-800 dark:text-white/90" [class]="compact ? 'text-lg' : 'text-xl sm:text-2xl'">{{ title }}</h3>
       @if (description) {
-      <p class="text-sm text-gray-500 dark:text-gray-400">{{ description }}</p>
+      <p class="text-gray-500 dark:text-gray-400" [class]="compact ? 'text-theme-xs' : 'text-sm'">{{ description }}</p>
       }
     </div>
     }
@@ -54,7 +59,7 @@
 
     <div
       class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
-      [ngClass]="bodyClass || (title ? 'px-6 py-5 sm:px-10 sm:pb-10' : null)"
+      [ngClass]="bodyClass || (title ? (compact ? 'px-4 py-4 sm:px-6 sm:pb-6' : 'px-6 py-5 sm:px-10 sm:pb-10') : null)"
     >
       <ng-content select="[data-modal-body]"></ng-content>
       <ng-content></ng-content>

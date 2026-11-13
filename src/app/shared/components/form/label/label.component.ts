@@ -16,6 +16,8 @@ export class LabelComponent {
   @Input() className = '';
   /** Muestra el asterisco de campo obligatorio. */
   @Input({ transform: booleanAttribute }) required = false;
+  /** Versión compacta: texto 12px y menos espacio hacia el campo (filtros, pantallas chicas). */
+  @Input({ transform: booleanAttribute }) compact = false;
   /** Ayuda en tooltip a la altura del label. */
   @Input() helpText = '';
 

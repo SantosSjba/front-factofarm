@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, booleanAttribute } from '@angular/core';
 import { SelectFieldComponent } from '../../ui/select/select-field.component';
 import { LabelComponent } from '../label/label.component';
 
@@ -34,6 +34,8 @@ export class FormSelectComponent {
   /** Ayuda en tooltip junto al label. */
   @Input() helpText = '';
   @Input() required = false;
+  /** Versión compacta (h-9, label 12px): filtros, barras de herramientas y pantallas chicas. */
+  @Input({ transform: booleanAttribute }) compact = false;
   @Output() valueChange = new EventEmitter<string>();
 
   /** El `id` estático también queda en el host: el botón necesita uno propio para el <label for>. */
@@ -45,7 +47,7 @@ export class FormSelectComponent {
     const state = this.error
       ? 'border-error-500 ring-3 ring-error-500/20 hover:border-error-500 focus:border-error-500 focus:ring-error-500/20 dark:border-error-500/50 dark:ring-error-500/40'
       : '';
-    return `h-11 ${state} ${this.className}`.replace(/\s+/g, ' ').trim();
+    return `${this.compact ? '' : 'h-11'} ${state} ${this.className}`.replace(/\s+/g, ' ').trim();
   }
 
   /** Texto del option vacío: @Input placeholder o label del primer option con value ''. */

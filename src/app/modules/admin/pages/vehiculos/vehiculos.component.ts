@@ -89,7 +89,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
         <app-pagination class="mt-4" [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
       }
     </app-component-card>
-    <app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
+    <app-modal compact [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold">{{ editing() ? 'Editar vehículo' : 'Nuevo vehículo' }}</h3>
         <app-form-field label="Transportista">

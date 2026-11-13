@@ -179,7 +179,7 @@
 <app-sale-void-modal [sale]="voidTarget()" (closed)="voidTarget.set(null)" />
 
 <!-- ========== APROBAR ========== -->
-<app-modal [isOpen]="!!approveTarget()" (closed)="approveTarget.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!approveTarget()" (closed)="approveTarget.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Aprobar anulación</h3>
     @if (approveTarget(); as a) {
@@ -204,7 +204,7 @@
 </app-modal>
 
 <!-- ========== RECHAZAR ========== -->
-<app-modal [isOpen]="!!rejectTarget()" (closed)="rejectTarget.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!rejectTarget()" (closed)="rejectTarget.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Rechazar solicitud</h3>
     @if (rejectTarget(); as r) {

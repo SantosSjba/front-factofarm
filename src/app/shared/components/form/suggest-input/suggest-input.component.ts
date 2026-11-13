@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, Output, booleanAttribute, signal } from '@angular/core';
 import { ClickOutsideDirective } from '../../../directives/click-outside.directive';
 import { OptionItemComponent, OptionListComponent } from '../../ui/option-list/option-list.component';
 import { InputFieldComponent } from '../input/input-field.component';
@@ -18,6 +18,7 @@ export type SuggestOption = { value: string; label: string; meta?: string };
     <div class="relative" clickOutside [clickOutsideActive]="open()" (clickOutside)="open.set(false)">
       <app-input-field
         autocomplete="off"
+        [compact]="compact"
         [label]="label"
         [helpText]="helpText"
         [isRequired]="required"
@@ -56,6 +57,8 @@ export class SuggestInputComponent implements OnDestroy {
   @Input() loading = false;
   @Input() disabled = false;
   @Input() maxLength?: number;
+  /** Versión compacta (h-9, label 12px): filtros, barras de herramientas y pantallas chicas. */
+  @Input({ transform: booleanAttribute }) compact = false;
 
   /** Cada cambio del texto. */
   @Output() valueChange = new EventEmitter<string>();

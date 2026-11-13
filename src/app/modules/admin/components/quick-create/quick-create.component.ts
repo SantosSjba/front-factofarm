@@ -101,7 +101,7 @@ const opt = (v: string) => v.trim() || undefined;
       (btnClick)="open()"
       >{{ iconOnly ? '' : config().button }}</app-button
     >
-    <app-modal [isOpen]="isOpen()" (closed)="isOpen.set(false)" className="w-full max-w-lg">
+    <app-modal compact [isOpen]="isOpen()" (closed)="isOpen.set(false)" className="w-full max-w-lg">
       <div class="space-y-3 p-6">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ config().title }}</h3>
         @for (f of config().fields; track f.key) {

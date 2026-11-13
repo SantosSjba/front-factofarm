@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, booleanAttribute } from '@angular/core';
 
 export interface CountryCode {
   code: string;
@@ -19,6 +19,8 @@ export class PhoneInputComponent implements OnInit {
   @Input() countries: CountryCode[] = [];
   @Input() placeholder: string = '+1 (555) 000-0000';
   @Input() selectPosition: 'start' | 'end' = 'start';
+  /** Versión compacta (h-9). */
+  @Input({ transform: booleanAttribute }) compact = false;
   @Output() phoneChange = new EventEmitter<string>();
 
   selectedCountry: string = '';

@@ -116,7 +116,7 @@
 <app-pagination [totalItems]="totalRows()" [currentPage]="page()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
 
 <!-- ========== DETALLE ========== -->
-<app-modal [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-4xl shadow-theme-lg" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-4xl shadow-theme-lg" bodyClass="custom-scrollbar">
   @let po = detailQuery.data();
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <div class="flex flex-wrap items-center gap-3 pe-12">
@@ -259,7 +259,7 @@
 </app-modal>
 
 <!-- ========== CONFIRMAR ACCIÓN ========== -->
-<app-modal [isOpen]="!!pendingAction()" (closed)="closeAction()" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!pendingAction()" (closed)="closeAction()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ actionCopy()?.title }}</h3>
   </div>
@@ -291,7 +291,7 @@
 </app-modal>
 
 <!-- ========== NUEVA ORDEN ========== -->
-<app-modal
+<app-modal compact
   [isOpen]="createOpen()"
   (closed)="closeCreate()"
   className="w-full max-w-4xl"

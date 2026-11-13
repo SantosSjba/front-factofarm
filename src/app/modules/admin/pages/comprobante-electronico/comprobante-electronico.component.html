@@ -125,7 +125,7 @@
 
 <!-- ========== DETALLE ========== -->
 @let doc = detailQuery.data();
-<app-modal [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     @if (doc) {
       <div class="flex flex-wrap items-center gap-3 pe-12">
@@ -246,7 +246,7 @@
 <app-sale-void-modal [sale]="voidSale()" (closed)="voidSale.set(null)" />
 
 <!-- ========== COMUNICACIÓN DE BAJA ========== -->
-<app-modal [isOpen]="!!bajaDoc()" (closed)="bajaDoc.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!bajaDoc()" (closed)="bajaDoc.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Comunicar baja a SUNAT</h3>
     @if (bajaDoc(); as b) {
@@ -264,7 +264,7 @@
 </app-modal>
 
 <!-- ========== CONFIGURACIÓN ========== -->
-<app-modal [isOpen]="configOpen()" (closed)="configOpen.set(false)" className="w-full max-w-3xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="configOpen()" (closed)="configOpen.set(false)" className="w-full max-w-3xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Facturación electrónica</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">También puedes configurarla en <a routerLink="/mi-farmacia" class="text-brand-600 underline dark:text-brand-400">Mi farmacia</a>.</p>
@@ -314,7 +314,7 @@
 </app-modal>
 
 <!-- ========== COMPROBANTE ESPECIAL ========== -->
-<app-modal [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Comprobante especial</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Retenciones, percepciones, liquidaciones de compra y guías de transportista.</p>

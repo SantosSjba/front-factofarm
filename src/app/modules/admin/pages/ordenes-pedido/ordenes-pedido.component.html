@@ -90,7 +90,7 @@
 </app-page-state>
 
 @if (detailId()) {
-  <app-modal [isOpen]="true" (closed)="closeDetail()" [title]="detail() ? 'Pedido ' + detail()!.numero : 'Detalle pedido'" className="w-full max-w-2xl">
+  <app-modal compact [isOpen]="true" (closed)="closeDetail()" [title]="detail() ? 'Pedido ' + detail()!.numero : 'Detalle pedido'" className="w-full max-w-2xl">
     @if (detailQuery.isPending()) {
       <p class="text-sm text-gray-500">Cargando…</p>
     } @else if (detail(); as order) {
@@ -162,7 +162,7 @@
   </app-modal>
 }
 
-<app-modal title="Nuevo pedido delivery" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
+<app-modal compact title="Nuevo pedido delivery" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
   <div class="grid gap-3 sm:grid-cols-2">
     <div class="sm:col-span-2">
       <app-label required>Almacén</app-label>

@@ -26,6 +26,8 @@ export class ModalTabHeaderComponent {
   readonly hostClass = input(
     'shrink-0 border-b border-gray-100 px-4 pb-4 pt-4 dark:border-gray-800 sm:px-8 sm:pb-5 sm:pt-6',
   );
+  /** Versión compacta: título 18px y menos padding (lo activa también `app-modal compact`). */
+  readonly compact = input(false);
   readonly tabs = input.required<TabStripItem[]>();
   readonly activeId = input.required<string>();
   readonly tabChange = output<string>();

@@ -92,7 +92,7 @@
 
 <!-- ========== CREAR / EDITAR ========== -->
 @let f = form();
-<app-modal [isOpen]="!!f" (closed)="form.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!f" (closed)="form.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ f?.id ? 'Editar colegiatura' : 'Nueva colegiatura' }}</h3>
   </div>
@@ -119,7 +119,7 @@
 </app-modal>
 
 <!-- ========== ELIMINAR ========== -->
-<app-modal [isOpen]="!!toDelete()" (closed)="toDelete.set(null)" className="w-full max-w-md shadow-theme-lg">
+<app-modal compact [isOpen]="!!toDelete()" (closed)="toDelete.set(null)" className="w-full max-w-md shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar colegiatura</h3>
   </div>

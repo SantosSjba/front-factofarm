@@ -144,7 +144,7 @@
 <app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event); selected.set([])" />
 
 <!-- ========== NUEVA CUENTA ========== -->
-<app-modal [isOpen]="accountOpen()" (closed)="accountOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="accountOpen()" (closed)="accountOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva cuenta</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Empieza con saldo 0; el saldo sube y baja con cada movimiento.</p>
@@ -165,7 +165,7 @@
 </app-modal>
 
 <!-- ========== NUEVO MOVIMIENTO ========== -->
-<app-modal [isOpen]="movOpen()" (closed)="movOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="movOpen()" (closed)="movOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo movimiento</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se registra con la fecha y hora de ahora.</p>

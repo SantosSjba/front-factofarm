@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, booleanAttribute } from '@angular/core';
 import { ClickOutsideDirective } from '../../../directives/click-outside.directive';
 
 export interface Option {
@@ -24,6 +24,8 @@ export class MultiSelectComponent implements OnInit {
   @Input() disabled: boolean = false;
   @Input() required = false;
   @Input() placeholder = 'Seleccione opciones';
+  /** Versión compacta (alto mínimo h-9, label y chips más chicos). */
+  @Input({ transform: booleanAttribute }) compact = false;
   @Output() selectionChange = new EventEmitter<string[]>();
 
   readonly labelId = 'multi-select-' + crypto.randomUUID();

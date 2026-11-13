@@ -1,5 +1,5 @@
 
-import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy, booleanAttribute } from '@angular/core';
 import flatpickr from 'flatpickr';
 
 @Component({
@@ -14,6 +14,8 @@ export class TimePickerComponent implements AfterViewInit, OnDestroy {
   @Input() label: string = 'Time Select Input';
   @Input() placeholder: string = 'Select time';
   @Input() defaultTime?: string | Date;
+  /** Versión compacta (h-9, label 12px). */
+  @Input({ transform: booleanAttribute }) compact = false;
 
   @Output() timeChange = new EventEmitter<string>();
 

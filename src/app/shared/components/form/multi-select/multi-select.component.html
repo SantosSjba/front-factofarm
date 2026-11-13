@@ -2,13 +2,15 @@
   role="group"
   data-slot="field"
   data-orientation="vertical"
-  class="group/field flex w-full flex-col gap-2 *:w-full [&>.sr-only]:w-auto"
+  [class.gap-2]="!compact" [class.gap-1.5]="compact"
+  class="group/field flex w-full flex-col *:w-full [&>.sr-only]:w-auto"
 >
   @if (label) {
     <span
       [id]="labelId"
       data-slot="field-label"
-      class="flex w-fit gap-1 text-sm leading-snug font-medium text-gray-700 select-none dark:text-gray-400"
+      [class]="compact ? 'text-theme-xs' : 'text-sm leading-snug'"
+      class="flex w-fit gap-1 font-medium text-gray-700 select-none dark:text-gray-400"
     >
       {{ label }}
       @if (required) {
@@ -27,16 +29,18 @@
       [attr.aria-disabled]="disabled"
       (keydown.enter)="onTriggerKey($event)"
       (keydown.space)="onTriggerKey($event)"
-      class="group/select-trigger flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-[10px] border border-gray-300 bg-white py-1.5 ps-3 pe-3.5 text-sm font-normal text-gray-800 shadow-theme-xs outline-hidden transition-all duration-200 select-none hover:border-gray-400 hover:bg-gray-50/50 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:border-gray-600 dark:hover:bg-gray-800/50 dark:focus:border-brand-500/40"
+      [class]="compact ? 'min-h-9 rounded-lg py-1 ps-2.5 pe-2.5' : 'min-h-11 rounded-[10px] py-1.5 ps-3 pe-3.5'"
+      class="group/select-trigger flex w-full min-w-0 items-center justify-between gap-2 border border-gray-300 bg-white text-sm font-normal text-gray-800 shadow-theme-xs outline-hidden transition-all duration-200 select-none hover:border-gray-400 hover:bg-gray-50/50 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:border-gray-600 dark:hover:bg-gray-800/50 dark:focus:border-brand-500/40"
       [ngClass]="disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
     >
-      <div class="flex flex-1 flex-wrap items-center gap-2">
+      <div class="flex flex-1 flex-wrap items-center" [class.gap-2]="!compact" [class.gap-1]="compact">
         @if (selectedValuesText.length === 0) {
           <span class="text-gray-400 dark:text-gray-500">{{ placeholder }}</span>
         } @else {
           @for (text of selectedValuesText; track $index; let i = $index) {
             <span
-              class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 py-1 ps-2.5 pe-1.5 text-sm font-normal text-gray-800 dark:border-gray-800 dark:bg-white/5 dark:text-white/90"
+              [class]="compact ? 'py-0.5 ps-2 pe-1 text-theme-xs' : 'py-1 ps-2.5 pe-1.5 text-sm'"
+              class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 font-normal text-gray-800 dark:border-gray-800 dark:bg-white/5 dark:text-white/90"
             >
               <span>{{ text }}</span>
               <button

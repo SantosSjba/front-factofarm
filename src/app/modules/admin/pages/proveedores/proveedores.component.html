@@ -187,7 +187,7 @@
 />
 
 <!-- ========== DETALLE: ÓRDENES DE COMPRA Y PRODUCTOS ========== -->
-<app-modal [isOpen]="!!detailSupplier()" (closed)="closeDetail()" className="w-full max-w-4xl shadow-theme-lg" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="!!detailSupplier()" (closed)="closeDetail()" className="w-full max-w-4xl shadow-theme-lg" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
       title="Historial del proveedor"
@@ -307,7 +307,7 @@
 </app-modal>
 
 <!-- ========== CONFIRMACIÓN ========== -->
-<app-modal [isOpen]="!!confirmTarget()" (closed)="closeConfirm()" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!confirmTarget()" (closed)="closeConfirm()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       @if (confirmAction() === 'delete') {
@@ -343,7 +343,7 @@
 </app-modal>
 
 <!-- ========== FORMULARIO ========== -->
-<app-modal
+<app-modal compact
   [isOpen]="formOpen()"
   (closed)="closeFormModal()"
   className="w-full max-w-4xl"

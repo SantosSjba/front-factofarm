@@ -2,6 +2,7 @@
   [value]="value"
   [options]="options"
   [placeholder]="placeholder"
-  [triggerClass]="'h-11 ' + className"
+  [triggerClass]="(compact ? '' : 'h-11 ') + className"
+  [compact]="compact"
   (valueChange)="onChange($event)"
 />

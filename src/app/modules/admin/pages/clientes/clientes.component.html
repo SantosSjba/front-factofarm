@@ -233,7 +233,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-7xl shadow-theme-lg" maxHeightClass="max-h-[min(95dvh,980px)]" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-7xl shadow-theme-lg" maxHeightClass="max-h-[min(95dvh,980px)]" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
       [title]="editing() ? 'Editar Cliente' : 'Nuevo Cliente'"
@@ -421,7 +421,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
+<app-modal compact [isOpen]="importOpen()" (closed)="importOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Importar Clientes</h3>
   </div>
@@ -454,7 +454,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="exportOpen()" (closed)="exportOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
+<app-modal compact [isOpen]="exportOpen()" (closed)="exportOpen.set(false)" className="w-full max-w-4xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Exportar Clientes</h3>
   </div>
@@ -494,7 +494,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="deleteOpen()" (closed)="deleteOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="deleteOpen()" (closed)="deleteOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar</h3>
   </div>
@@ -509,7 +509,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="barcodeOpen()" (closed)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
+<app-modal compact [isOpen]="barcodeOpen()" (closed)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
   </div>
@@ -536,7 +536,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="tagsOpen()" (closed)="tagsOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="tagsOpen()" (closed)="tagsOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Etiquetas</h3>
   </div>

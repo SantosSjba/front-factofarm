@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, booleanAttribute, signal } from '@angular/core';
 import { ClickOutsideDirective } from '../../../directives/click-outside.directive';
 import { OptionItemComponent, OptionListComponent } from '../../ui/option-list/option-list.component';
 import { InputFieldComponent } from '../input/input-field.component';
@@ -18,6 +18,7 @@ export type SearchSelectOption = { value: string; label: string; meta?: string }
     <div class="relative" clickOutside [clickOutsideActive]="open()" (clickOutside)="open.set(false)">
       <app-input-field
         icon="lucide:search"
+        [compact]="compact"
         [label]="label"
         [helpText]="helpText"
         [isRequired]="required"
@@ -47,6 +48,8 @@ export class SearchSelectComponent implements OnChanges, OnDestroy {
   @Input() options: SearchSelectOption[] = [];
   @Input() loading = false;
   @Input() disabled = false;
+  /** Versión compacta (h-9, label 12px): filtros, barras de herramientas y pantallas chicas. */
+  @Input({ transform: booleanAttribute }) compact = false;
   /** Al cambiar este número se vacía el campo (p. ej. tras agregar la opción elegida). */
   @Input() resetToken = 0;
   /** Texto con el que queda el campo al reiniciarse; si no está vacío, la lista se abre sola. */

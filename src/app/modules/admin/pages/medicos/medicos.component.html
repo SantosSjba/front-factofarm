@@ -74,7 +74,7 @@
   }
 </app-component-card>
 
-<app-modal [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
+<app-modal compact [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
   <div class="space-y-3 p-6">
     <h3 class="text-lg font-semibold">{{ editing() ? 'Editar médico' : 'Nuevo médico' }}</h3>
     <app-form-field label="CMP" required helpText="Número de colegiatura del Colegio Médico del Perú.">

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, booleanAttribute } from '@angular/core';
 import { ButtonComponent } from '../../ui/button/button.component';
 import { InputFieldComponent } from '../input/input-field.component';
 
@@ -10,7 +10,7 @@ import { InputFieldComponent } from '../input/input-field.component';
   host: { class: 'inline-flex items-center gap-1.5' },
   template: `
     <app-button
-      [size]="size"
+      [size]="isCompact ? 'sm' : 'lg'"
       variant="outline"
       [iconOnly]="true"
       startIconName="mdi:minus"
@@ -24,12 +24,13 @@ import { InputFieldComponent } from '../input/input-field.component';
       [min]="'' + min"
       step="1"
       [ariaLabel]="ariaLabel"
-      [className]="'text-center ' + (size === 'sm' ? 'h-9!' : '')"
+      className="text-center"
+      [compact]="isCompact"
       [value]="value"
       (valueChange)="change(+$event)"
     />
     <app-button
-      [size]="size"
+      [size]="isCompact ? 'sm' : 'lg'"
       variant="outline"
       [iconOnly]="true"
       startIconName="mdi:plus"
@@ -42,6 +43,12 @@ export class QuantityStepperComponent {
   @Input() value = 1;
   @Input() min = 1;
   @Input() size: 'sm' | 'lg' = 'lg';
+  /** Versión compacta; equivale a `size="sm"`. */
+  @Input({ transform: booleanAttribute }) compact = false;
+
+  protected get isCompact(): boolean {
+    return this.compact || this.size === 'sm';
+  }
   @Input() ariaLabel = 'Cantidad';
   @Output() valueChange = new EventEmitter<number>();
 

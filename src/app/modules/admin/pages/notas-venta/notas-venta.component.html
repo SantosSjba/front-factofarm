@@ -139,7 +139,7 @@
 <!-- ========== DETALLE ========== -->
 @let row = detailRow();
 @let sale = detailQuery.data();
-<app-modal [isOpen]="!!row" (closed)="detailRow.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar" ariaLabel="Detalle de venta">
+<app-modal compact [isOpen]="!!row" (closed)="detailRow.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar" ariaLabel="Detalle de venta">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     @if (row) {
       <div class="flex flex-wrap items-center gap-3 pe-12">
@@ -278,7 +278,7 @@
 <app-sale-void-modal [sale]="voidTarget()" (closed)="voidTarget.set(null)" />
 
 <!-- ========== CAMBIAR A BOLETA / FACTURA ========== -->
-<app-modal [isOpen]="!!convertRow()" (closed)="convertRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!convertRow()" (closed)="convertRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Cambiar a boleta o factura</h3>
     @if (convertRow(); as c) {
@@ -297,7 +297,7 @@
 
 <!-- ========== DEVOLUCIÓN ========== -->
 @let ret = returnSaleQuery.data();
-<app-modal [isOpen]="!!returnSaleId()" (closed)="closeReturn()" className="w-full max-w-3xl" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="!!returnSaleId()" (closed)="closeReturn()" className="w-full max-w-3xl" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Devolver productos</h3>
     @if (ret) {
@@ -366,7 +366,7 @@
 </app-modal>
 
 <!-- ========== NOTA DE DÉBITO ========== -->
-<app-modal [isOpen]="!!debitRow()" (closed)="debitRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!debitRow()" (closed)="debitRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nota de débito</h3>
     @if (debitRow(); as d) {

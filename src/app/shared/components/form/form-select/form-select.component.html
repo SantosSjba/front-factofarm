@@ -1,5 +1,5 @@
 @if (label) {
-  <app-label [for]="triggerId || undefined" [required]="required" [helpText]="helpText">{{ label }}</app-label>
+  <app-label [for]="triggerId || undefined" [required]="required" [helpText]="helpText" [compact]="compact">{{ label }}</app-label>
 }
 <app-select-field
   [buttonId]="triggerId"
@@ -9,11 +9,14 @@
   [placeholder]="effectivePlaceholder"
   [disabled]="disabled"
   [triggerClass]="triggerClass"
+  [compact]="compact"
   (valueChange)="valueChange.emit($event)"
 />
 @if (hint) {
   <p
-    class="mt-2 text-xs"
+    class="text-xs"
+    [class.mt-2]="!compact"
+    [class.mt-1]="compact"
     [attr.role]="error ? 'alert' : null"
     [ngClass]="error ? 'text-error-500 dark:text-error-400' : 'text-gray-500 dark:text-gray-400'"
   >

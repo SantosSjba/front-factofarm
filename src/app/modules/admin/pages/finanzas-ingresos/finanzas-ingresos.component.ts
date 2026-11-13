@@ -114,7 +114,7 @@ import { MONTH_NAMES, soles } from '../../utils/finance-labels';
       }
     </app-page-state>
 
-    <app-modal [isOpen]="!!editing()" (closed)="editing.set(null)" className="w-full max-w-lg shadow-theme-lg">
+    <app-modal compact [isOpen]="!!editing()" (closed)="editing.set(null)" className="w-full max-w-lg shadow-theme-lg">
       <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
         <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Presupuesto de {{ editing() ? monthName(editing()!.mes) : '' }} {{ anio() }}</h3>
         @if (editing(); as e) {

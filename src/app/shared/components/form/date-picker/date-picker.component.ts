@@ -1,5 +1,5 @@
 
-import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy, booleanAttribute } from '@angular/core';
 import flatpickr from 'flatpickr';
 import { LabelComponent } from '../label/label.component';
 import "flatpickr/dist/flatpickr.css";
@@ -18,6 +18,8 @@ export class DatePickerComponent implements AfterViewInit, OnDestroy {
   @Input() label?: string;
   @Input() required = false;
   @Input() placeholder?: string;
+  /** Versión compacta (h-9, label 12px): filtros, barras de herramientas y pantallas chicas. */
+  @Input({ transform: booleanAttribute }) compact = false;
   @Output() dateChange = new EventEmitter<any>();
 
   @ViewChild('dateInput', { static: false }) dateInput!: ElementRef<HTMLInputElement>;

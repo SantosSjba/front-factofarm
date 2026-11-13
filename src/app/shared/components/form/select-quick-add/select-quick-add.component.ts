@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, booleanAttribute } from '@angular/core';
 import { ButtonComponent } from '../../ui/button/button.component';
 import { FormSelectComponent } from '../form-select/form-select.component';
 import { InputFieldComponent } from '../input/input-field.component';
@@ -20,10 +20,11 @@ import { InputFieldComponent } from '../input/input-field.component';
         [value]="value"
         [options]="options"
         [disabled]="disabled"
+        [compact]="compact"
         (valueChange)="valueChange.emit($event)"
       />
       <app-button
-        size="lg"
+        [size]="compact ? 'sm' : 'lg'"
         variant="outline"
         [iconOnly]="true"
         [startIconName]="open ? 'mdi:close' : 'mdi:plus'"
@@ -39,10 +40,11 @@ import { InputFieldComponent } from '../input/input-field.component';
           [ariaLabel]="addLabel"
           [placeholder]="addLabel"
           [maxLength]="maxLength"
+          [compact]="compact"
           [value]="newValue"
           (valueChange)="newValueChange.emit($event + '')"
         />
-        <app-button size="lg" [disabled]="saving || disabled" [loading]="saving" (btnClick)="add.emit()">Agregar</app-button>
+        <app-button [size]="compact ? 'sm' : 'lg'" [disabled]="saving || disabled" [loading]="saving" (btnClick)="add.emit()">Agregar</app-button>
       </div>
     }
   `,
@@ -61,6 +63,8 @@ export class SelectQuickAddComponent {
   @Input() newValue = '';
   @Input() saving = false;
   @Input() maxLength = 120;
+  /** Versión compacta (h-9, label 12px): filtros, barras de herramientas y pantallas chicas. */
+  @Input({ transform: booleanAttribute }) compact = false;
 
   @Output() valueChange = new EventEmitter<string>();
   @Output() openChange = new EventEmitter<boolean>();

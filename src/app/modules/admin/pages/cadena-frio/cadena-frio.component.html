@@ -169,7 +169,7 @@
 }
 
 <!-- ========== REGISTRAR TEMPERATURA ========== -->
-<app-modal [isOpen]="logOpen()" (closed)="!logMutation.isPending() && logOpen.set(false)" className="w-full max-w-lg">
+<app-modal compact [isOpen]="logOpen()" (closed)="!logMutation.isPending() && logOpen.set(false)" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Registrar temperatura</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se guarda con la fecha y hora de ahora y tu usuario.</p>
@@ -214,7 +214,7 @@
 </app-modal>
 
 <!-- ========== ZONA ========== -->
-<app-modal [isOpen]="!!zoneForm()" (closed)="!saveZoneMutation.isPending() && zoneForm.set(null)" className="w-full max-w-lg">
+<app-modal compact [isOpen]="!!zoneForm()" (closed)="!saveZoneMutation.isPending() && zoneForm.set(null)" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ zoneForm()?.id ? 'Editar zona' : 'Nueva zona' }}</h3>
   </div>
@@ -249,7 +249,7 @@
 </app-modal>
 
 <!-- ========== ELIMINAR ZONA ========== -->
-<app-modal [isOpen]="!!zoneToDelete()" (closed)="!deleteZoneMutation.isPending() && zoneToDelete.set(null)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="!!zoneToDelete()" (closed)="!deleteZoneMutation.isPending() && zoneToDelete.set(null)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar zona</h3>
   </div>

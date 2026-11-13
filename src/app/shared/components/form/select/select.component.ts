@@ -1,5 +1,5 @@
 
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, booleanAttribute } from '@angular/core';
 import { SelectFieldComponent } from '../../ui/select/select-field.component';
 
 export interface Option {
@@ -18,6 +18,8 @@ export class SelectComponent implements OnInit {
   @Input() className: string = '';
   @Input() defaultValue: string = '';
   @Input() value: string = '';
+  /** Versión compacta (h-9). */
+  @Input({ transform: booleanAttribute }) compact = false;
 
   @Output() valueChange = new EventEmitter<string>();
 

@@ -44,7 +44,7 @@ const SUNAT_VOIDABLE = new Set(['ACEPTADO', 'OBSERVADO', 'CONTINGENCIA']);
   standalone: true,
   imports: [CurrencyPipe, ButtonComponent, ModalComponent, TextAreaComponent],
   template: `
-    <app-modal [isOpen]="!!sale()" (closed)="close()" className="w-full max-w-lg shadow-theme-lg">
+    <app-modal compact [isOpen]="!!sale()" (closed)="close()" className="w-full max-w-lg shadow-theme-lg">
       <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
         <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ direct() ? 'Anular venta' : 'Solicitar anulación' }}</h3>
         @if (sale(); as s) {

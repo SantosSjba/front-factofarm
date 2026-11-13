@@ -33,20 +33,29 @@ const TONES: Record<KpiTone, string> = {
       <ng-container [ngTemplateOutlet]="body" />
     }
     <ng-template #body>
+      <!-- @container: el tamaño del monto y del ícono depende del ancho de la tarjeta, no de la pantalla. -->
       <div
-        class="flex h-full items-start gap-2.5 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]"
+        class="@container flex h-full items-start gap-2.5 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]"
         [class.hover:border-brand-300]="!!allowedLink()"
         [attr.title]="hint() || null"
       >
         @if (icon()) {
-          <span class="flex size-8 shrink-0 items-center justify-center rounded-lg" [class]="toneClass()">
+          <span class="hidden size-8 shrink-0 items-center justify-center rounded-lg @[13rem]:flex" [class]="toneClass()">
             <app-icon [name]="icon()!" iconClass="size-4" />
           </span>
         }
         <div class="min-w-0 flex-1">
-          <p class="truncate text-theme-xs text-gray-500 dark:text-gray-400">{{ label() }}</p>
+          <p class="flex min-w-0 items-center gap-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+            @if (icon()) {
+              <!-- Tarjeta angosta: ícono chico junto a la etiqueta y el monto usa todo el ancho. -->
+              <span class="flex size-5 shrink-0 items-center justify-center rounded-md @[13rem]:hidden" [class]="toneClass()">
+                <app-icon [name]="icon()!" iconClass="size-3" />
+              </span>
+            }
+            <span class="truncate">{{ label() }}</span>
+          </p>
           <p class="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 leading-tight">
-            <span class="text-lg font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ value() }}</span>
+            <span class="min-w-0 text-[length:clamp(0.9375rem,7cqi,1.125rem)] font-semibold tabular-nums text-gray-800 [overflow-wrap:anywhere] dark:text-white/90">{{ value() }}</span>
             @if (deltaText(); as d) {
               <span class="text-[11px] font-medium tabular-nums" [class]="d.cls">{{ d.text }}</span>
             }

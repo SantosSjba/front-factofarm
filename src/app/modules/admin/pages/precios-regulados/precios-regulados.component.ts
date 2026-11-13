@@ -134,7 +134,7 @@ export function regulatedPriceStatus(
       </div>
     </app-component-card>
 
-    <app-modal [isOpen]="formOpen()" (closed)="closeForm()" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
+    <app-modal compact [isOpen]="formOpen()" (closed)="closeForm()" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
       <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-8 sm:py-5 dark:border-gray-800">
         <h3 class="pe-10 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo precio regulado</h3>
         <p class="mt-1 pe-10 text-sm text-gray-500 dark:text-gray-400">El precio máximo se compara con las ventas de los productos que tengan este código.</p>

@@ -116,7 +116,7 @@
 </app-page-state>
 
 <!-- ========== INGRESO / EGRESO ========== -->
-<app-modal [isOpen]="movOpen()" (closed)="movOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="movOpen()" (closed)="movOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ingreso o egreso de efectivo</h3>
     @if (summary(); as sum) {
@@ -138,7 +138,7 @@
 </app-modal>
 
 <!-- ========== IMPRESORA Y PERIFÉRICOS ========== -->
-<app-modal [isOpen]="hardwareOpen()" (closed)="hardwareOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
+<app-modal compact [isOpen]="hardwareOpen()" (closed)="hardwareOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Impresora y periféricos</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se guarda para esta caja: {{ session()?.cashRegister?.nombre }}.</p>

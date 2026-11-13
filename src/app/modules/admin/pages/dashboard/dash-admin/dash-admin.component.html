@@ -7,56 +7,71 @@
   }
 </div>
 
-<!-- Un solo filtro para todo el dashboard -->
+<!-- Un solo filtro para todo el dashboard.
+     Periodo a la izquierda; fechas y usuario forman un grupo que llena el resto de la fila
+     o baja completo a la siguiente: nunca queda un campo suelto con un hueco al lado. -->
 <section class="mb-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]" aria-label="Filtros del dashboard">
-  <div class="flex flex-wrap items-end gap-x-3 gap-y-2">
-    <div class="min-w-0">
+  <div class="flex flex-wrap items-end gap-x-3 gap-y-2.5">
+    <div class="min-w-0 max-w-full">
       <p class="mb-1.5 text-theme-xs font-medium text-gray-700 dark:text-gray-400">Periodo</p>
       <app-chart-tab ariaLabel="Periodo del dashboard" [options]="periods" [value]="periodOption()" (valueChange)="setPeriod($event)" />
     </div>
-    @if (periodOption() === 'dia') {
-      <app-input-field
-        class="w-full sm:w-44"
-        label="Día"
-        type="date"
-        [max]="today"
-        [error]="!!dateError()"
-        [hint]="dateError()"
-        [value]="day()"
-        (valueChange)="day.set($event + '')"
+    <!-- Ancho mínimo = todos sus campos en una fila: si no caben junto al periodo, el grupo baja entero. -->
+    <div
+      class="flex flex-1 flex-wrap items-end gap-x-3 gap-y-2.5"
+      [class]="periodOption() === 'rango' ? 'min-w-[min(100%,30rem)]' : periodOption() === 'dia' ? 'min-w-[min(100%,21rem)]' : 'min-w-[min(100%,11rem)]'"
+    >
+      @if (periodOption() === 'dia') {
+        <app-input-field
+          class="min-w-36 flex-1 basis-36 sm:max-w-48"
+          compact
+          label="Día"
+          type="date"
+          [max]="today"
+          [error]="!!dateError()"
+          [hint]="dateError()"
+          [value]="day()"
+          (valueChange)="day.set($event + '')"
+        />
+      }
+      @if (periodOption() === 'rango') {
+        <!-- Desde y Hasta siempre juntos en la misma fila. -->
+        <div class="flex min-w-[min(100%,18rem)] flex-[2] basis-72 gap-3 sm:max-w-96">
+          <app-input-field
+            class="min-w-0 flex-1"
+            compact
+            label="Desde"
+            type="date"
+            [max]="rangeTo() || today"
+            [error]="!!dateError()"
+            [value]="rangeFrom()"
+            (valueChange)="rangeFrom.set($event + '')"
+          />
+          <app-input-field
+            class="min-w-0 flex-1"
+            compact
+            label="Hasta"
+            type="date"
+            [min]="rangeFrom()"
+            [max]="today"
+            [error]="!!dateError()"
+            [hint]="dateError()"
+            [value]="rangeTo()"
+            (valueChange)="rangeTo.set($event + '')"
+          />
+        </div>
+      }
+      <app-form-select
+        class="min-w-44 flex-1 basis-48 sm:max-w-72"
+        compact
+        label="Usuario"
+        helpText="Con un usuario: sus ventas como vendedor y los egresos de las cajas que abrió. Inventario, cajas abiertas y cuentas siempre son de toda la empresa."
+        [options]="userOptions()"
+        [showPlaceholder]="false"
+        [value]="userId()"
+        (valueChange)="userId.set($event || 'all')"
       />
-    }
-    @if (periodOption() === 'rango') {
-      <app-input-field
-        class="w-full sm:w-44"
-        label="Desde"
-        type="date"
-        [max]="rangeTo() || today"
-        [error]="!!dateError()"
-        [value]="rangeFrom()"
-        (valueChange)="rangeFrom.set($event + '')"
-      />
-      <app-input-field
-        class="w-full sm:w-44"
-        label="Hasta"
-        type="date"
-        [min]="rangeFrom()"
-        [max]="today"
-        [error]="!!dateError()"
-        [hint]="dateError()"
-        [value]="rangeTo()"
-        (valueChange)="rangeTo.set($event + '')"
-      />
-    }
-    <app-form-select
-      class="w-full sm:ms-auto sm:w-56"
-      label="Usuario"
-      helpText="Con un usuario: sus ventas como vendedor y los egresos de las cajas que abrió. Inventario, cajas abiertas y cuentas siempre son de toda la empresa."
-      [options]="userOptions()"
-      [showPlaceholder]="false"
-      [value]="userId()"
-      (valueChange)="userId.set($event || 'all')"
-    />
+    </div>
   </div>
   @if (data(); as d) {
     <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
@@ -76,12 +91,14 @@
   (retry)="overviewQuery.refetch()"
 >
   @if (data(); as d) {
-    <div class="space-y-3" [class.opacity-60]="overviewQuery.isFetching()">
+    <div class="@container space-y-3" [class.opacity-60]="overviewQuery.isFetching()">
       <!-- Resumen financiero del periodo -->
       <div>
         <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Resumen financiero · {{ periodLabel() }}</h2>
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+        <!-- 5 tarjetas: 2+2+1 ancha (móvil) · 3+2 (mediano, grilla de 6) · 5 en fila (ancho). -->
+        <div class="grid grid-cols-2 gap-2 @xl:grid-cols-6 @6xl:grid-cols-5">
           <app-kpi-tile
+            class="@xl:col-span-2 @6xl:col-span-1"
             label="Ventas"
             icon="lucide:shopping-cart"
             [value]="money(d.period.total)"
@@ -91,6 +108,7 @@
             link="/notas-venta"
           />
           <app-kpi-tile
+            class="@xl:col-span-2 @6xl:col-span-1"
             label="Costo"
             icon="lucide:package"
             tone="gray"
@@ -99,6 +117,7 @@
             hint="Unidades vendidas por el costo unitario del producto (o su precio de compra). Los productos sin costo no suman."
           />
           <app-kpi-tile
+            class="@xl:col-span-2 @6xl:col-span-1"
             label="Ganancia"
             icon="lucide:trending-up"
             tone="success"
@@ -107,6 +126,7 @@
             hint="Ventas menos costo de lo vendido."
           />
           <app-kpi-tile
+            class="@xl:col-span-3 @6xl:col-span-1"
             label="Gastos"
             icon="lucide:wallet"
             tone="error"
@@ -116,7 +136,7 @@
             link="/historial-cajas"
           />
           <app-kpi-tile
-            class="col-span-2 sm:col-span-1"
+            class="col-span-2 @xl:col-span-3 @6xl:col-span-1"
             label="Neto"
             icon="lucide:badge-dollar-sign"
             [tone]="netNegative() ? 'error' : 'success'"
@@ -146,7 +166,7 @@
       </div>
 
       <!-- Operación del periodo y caja de ahora -->
-      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div class="grid grid-cols-2 gap-2 @4xl:grid-cols-4">
         <app-kpi-tile
           label="Ticket promedio"
           icon="lucide:receipt"
@@ -181,14 +201,14 @@
       </div>
 
       <!-- Tendencia + medios de pago -->
-      <div class="grid gap-3 lg:grid-cols-3">
+      <div class="grid gap-3 @4xl:grid-cols-3">
         @if (isSingleDay()) {
           <!-- Un solo día no forma una línea: se ve mejor por hora. -->
-          <app-dash-panel class="lg:col-span-2" [title]="'Ventas por hora · ' + periodLabel()" hint="Monto vendido en cada hora del día elegido.">
+          <app-dash-panel class="@4xl:col-span-2" [title]="'Ventas por hora · ' + periodLabel()" hint="Monto vendido en cada hora del día elegido.">
             <app-hour-columns [hours]="d.hours" [format]="moneyFn" />
           </app-dash-panel>
         } @else {
-          <app-dash-panel class="lg:col-span-2" [title]="'Ventas por día · ' + periodLabel()" hint="Pasa el cursor por el gráfico para ver el monto y la cantidad de ventas de cada día.">
+          <app-dash-panel class="@4xl:col-span-2" [title]="'Ventas por día · ' + periodLabel()" hint="Pasa el cursor por el gráfico para ver el monto y la cantidad de ventas de cada día.">
             <app-dashboard-sales-chart [points]="d.trend" [height]="200" />
           </app-dash-panel>
         }
@@ -197,7 +217,7 @@
         </app-dash-panel>
       </div>
 
-      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div class="grid gap-3 @2xl:grid-cols-2 @5xl:grid-cols-3">
         @if (!isSingleDay()) {
           <app-dash-panel title="Horas pico" hint="Monto vendido por hora del día en el periodo.">
             <app-hour-columns [hours]="d.hours" [format]="moneyFn" />
@@ -206,13 +226,13 @@
         <app-dash-panel title="Por comprobante" link="/comprobante-electronico" linkText="Comprobantes">
           <app-bar-list [rows]="rows(d.documents)" ariaLabel="Ventas por tipo de comprobante" />
         </app-dash-panel>
-        <app-dash-panel title="Por vendedor" [class]="isSingleDay() ? '' : 'md:col-span-2 xl:col-span-1'">
+        <app-dash-panel title="Por vendedor" [class]="isSingleDay() ? '' : '@2xl:col-span-2 @5xl:col-span-1'">
           <app-bar-list [rows]="rows(d.sellers)" ariaLabel="Ventas por vendedor" />
         </app-dash-panel>
       </div>
 
-      <div class="grid gap-3 lg:grid-cols-3">
-        <app-dash-panel class="lg:col-span-2" title="Productos más vendidos" link="/reportes" linkText="Reportes">
+      <div class="grid gap-3 @4xl:grid-cols-3">
+        <app-dash-panel class="@4xl:col-span-2" title="Productos más vendidos" link="/reportes" linkText="Reportes">
           <app-bar-list [rows]="productRows()" ariaLabel="Productos más vendidos por monto" />
         </app-dash-panel>
         <app-dash-panel title="Cajas abiertas" link="/historial-cajas" linkText="Historial">
@@ -237,8 +257,10 @@
       <!-- Inventario y finanzas -->
       <div>
         <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y cuentas <span class="font-normal text-gray-500 dark:text-gray-400">· estado actual, no depende del periodo</span></h2>
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+        <!-- Montos arriba (inventario ancho + cobrar + pagar) y conteos abajo: filas siempre completas. -->
+        <div class="grid grid-cols-2 gap-2 @2xl:grid-cols-4">
           <app-kpi-tile
+            class="col-span-2"
             label="Valor inventario"
             icon="lucide:boxes"
             tone="info"
@@ -247,10 +269,6 @@
             hint="Stock actual × costo unitario (o precio de compra)."
             link="/reporte-inventario"
           />
-          <app-kpi-tile label="Stock bajo mínimo" icon="lucide:trending-down" tone="warning" [value]="num(d.inventory.lowStock)" sub="productos" link="/productos" />
-          <app-kpi-tile label="Agotados" icon="lucide:package-x" tone="error" [value]="num(d.inventory.outOfStock)" sub="sin stock" link="/productos" />
-          <app-kpi-tile label="Lotes vencidos" icon="lucide:calendar-x" tone="error" [value]="num(d.inventory.expiredLots)" sub="con stock" link="/lotes" [queryParams]="{ expiry: 'expired' }" />
-          <app-kpi-tile label="Vencen en 30 días" icon="lucide:calendar-clock" tone="warning" [value]="num(d.inventory.expiringLots30)" sub="lotes" link="/lotes" [queryParams]="{ expiry: '30' }" />
           <app-kpi-tile
             label="Por cobrar"
             icon="lucide:hand-coins"
@@ -267,6 +285,10 @@
             [sub]="num(d.finance.payableCount) + ' cuentas · ' + num(d.finance.payableOverdue) + ' vencidas'"
             link="/cuentas-pagar"
           />
+          <app-kpi-tile label="Stock bajo mínimo" icon="lucide:trending-down" tone="warning" [value]="num(d.inventory.lowStock)" sub="productos" link="/productos" />
+          <app-kpi-tile label="Agotados" icon="lucide:package-x" tone="error" [value]="num(d.inventory.outOfStock)" sub="sin stock" link="/productos" />
+          <app-kpi-tile label="Lotes vencidos" icon="lucide:calendar-x" tone="error" [value]="num(d.inventory.expiredLots)" sub="con stock" link="/lotes" [queryParams]="{ expiry: 'expired' }" />
+          <app-kpi-tile label="Vencen en 30 días" icon="lucide:calendar-clock" tone="warning" [value]="num(d.inventory.expiringLots30)" sub="lotes" link="/lotes" [queryParams]="{ expiry: '30' }" />
         </div>
       </div>
 

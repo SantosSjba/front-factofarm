@@ -204,7 +204,7 @@
   </div>
 </ng-template>
 
-<app-modal [isOpen]="inboundOpen()" (closed)="closeInboundModal()" className="w-full max-w-3xl shadow-theme-lg">
+<app-modal compact [isOpen]="inboundOpen()" (closed)="closeInboundModal()" className="w-full max-w-3xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Registrar ingreso de stock</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Suma unidades al almacén y deja el movimiento en el kardex.</p>
@@ -386,7 +386,7 @@
 
 <app-withdrawal-modal [open]="withdrawalOpen()" [preset]="withdrawalPreset()" (closed)="withdrawalOpen.set(false)" />
 
-<app-modal [isOpen]="adjustmentOpen()" (closed)="closeAdjustmentModal()" className="w-full max-w-3xl shadow-theme-lg">
+<app-modal compact [isOpen]="adjustmentOpen()" (closed)="closeAdjustmentModal()" className="w-full max-w-3xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajustar stock según conteo físico</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Si la diferencia alcanza el límite del establecimiento, el ajuste espera la aprobación de otro usuario.</p>
@@ -464,7 +464,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-2xl shadow-theme-lg">
+<app-modal compact [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-2xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ importTitle() }}</h3>
   </div>
@@ -515,7 +515,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="pendingOpen()" (closed)="closePendingAdjustmentsModal()" className="w-full max-w-5xl shadow-theme-lg">
+<app-modal compact [isOpen]="pendingOpen()" (closed)="closePendingAdjustmentsModal()" className="w-full max-w-5xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajustes pendientes de aprobación</h3>
   </div>

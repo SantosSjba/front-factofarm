@@ -229,7 +229,7 @@
 }
 
 <!-- ========== SOLICITAR LICENCIA ========== -->
-<app-modal [isOpen]="leaveOpen()" (closed)="leaveOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="leaveOpen()" (closed)="leaveOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Solicitar licencia</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Queda por aprobar hasta que otra persona la revise.</p>
@@ -253,7 +253,7 @@
 </app-modal>
 
 <!-- ========== APROBAR / RECHAZAR / CANCELAR ========== -->
-<app-modal [isOpen]="!!decide()" (closed)="decide.set(null)" className="w-full max-w-md shadow-theme-lg">
+<app-modal compact [isOpen]="!!decide()" (closed)="decide.set(null)" className="w-full max-w-md shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       {{ decide()?.estado === 'APROBADO' ? 'Aprobar licencia' : decide()?.estado === 'RECHAZADO' ? 'Rechazar licencia' : 'Cancelar licencia' }}

@@ -142,7 +142,7 @@
   </app-component-card>
 }
 
-<app-modal [isOpen]="createOpen()" title="Registrar evento adverso" (closed)="createOpen.set(false)">
+<app-modal compact [isOpen]="createOpen()" title="Registrar evento adverso" (closed)="createOpen.set(false)">
   <div class="space-y-3">
     <app-input-field label="Producto" placeholder="Buscar y seleccionar producto" [isRequired]="true" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" (keydown.enter)="searchProducts()" />
     @if (productOptions().length) { <app-option-list>@for (p of productOptions(); track p.id) {
@@ -158,7 +158,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="notifyOpen()" title="Notificación DIGEMID" (closed)="notifyOpen.set(false)">
+<app-modal compact [isOpen]="notifyOpen()" title="Notificación DIGEMID" (closed)="notifyOpen.set(false)">
   <div class="space-y-3">
     <app-input-field label="N° reporte DIGEMID" [isRequired]="true" [maxLength]="40" [value]="digemidReportNumber()" (valueChange)="digemidReportNumber.set('' + $event)" />
     <app-text-area label="Medidas correctivas" [maxLength]="2000" [rows]="3" [value]="medidasCorrectivas()" (valueChange)="medidasCorrectivas.set($event)" />

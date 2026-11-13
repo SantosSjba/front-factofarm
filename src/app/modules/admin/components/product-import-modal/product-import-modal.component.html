@@ -1,6 +1,6 @@
 @let m = info();
 
-<app-modal [isOpen]="open()" (closed)="close()" className="w-full max-w-2xl">
+<app-modal compact [isOpen]="open()" (closed)="close()" className="w-full max-w-2xl">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Importar: {{ m.label }}</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ m.steps }}</p>

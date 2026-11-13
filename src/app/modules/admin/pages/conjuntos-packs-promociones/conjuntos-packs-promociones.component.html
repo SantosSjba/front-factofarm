@@ -176,7 +176,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-2xl">
+<app-modal compact [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-2xl">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       Importar: {{ importModeLabel(importMode()) }}
@@ -214,7 +214,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg">
+<app-modal compact [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar pack</h3>
   </div>
@@ -229,7 +229,7 @@
   </div>
 </app-modal>
 
-<app-modal
+<app-modal compact
   [isOpen]="formOpen()"
   (closed)="closeFormModal()"
   className="w-full max-w-4xl"

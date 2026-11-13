@@ -209,7 +209,7 @@
   </app-component-card>
 }
 
-<app-modal [isOpen]="confirmOpen()" (closed)="!receiveMutation.isPending() && confirmOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="confirmOpen()" (closed)="!receiveMutation.isPending() && confirmOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Confirmar recepción</h3>
   </div>

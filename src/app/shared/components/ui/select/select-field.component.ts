@@ -17,7 +17,7 @@ export interface SelectFieldOption {
       [itemToString]="itemToString"
       (valueChange)="onValueChange($event)"
     >
-      <app-select-trigger [buttonId]="buttonId || autoId" [ariaLabel]="ariaLabel" [className]="triggerClass">
+      <app-select-trigger [buttonId]="buttonId || autoId" [ariaLabel]="ariaLabel" [className]="triggerClass" [compact]="compact">
         <app-select-value [placeholder]="placeholder" />
       </app-select-trigger>
       <app-select-content *appSelectPortal>
@@ -44,6 +44,8 @@ export class SelectFieldComponent {
   @Input() placeholder = 'Select Option';
   @Input() ariaLabel = '';
   @Input() disabled = false;
+  /** Versión compacta (h-9). */
+  @Input() compact = false;
   /** Extra classes appended to the trigger button. */
   @Input() triggerClass = '';
   @Output() valueChange = new EventEmitter<string>();

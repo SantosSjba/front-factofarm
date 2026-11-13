@@ -313,7 +313,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal [isOpen]="historyOpen()" (closed)="closeHistoryModal()" className="w-full max-w-6xl shadow-theme-lg">
+<app-modal compact [isOpen]="historyOpen()" (closed)="closeHistoryModal()" className="w-full max-w-6xl shadow-theme-lg">
   <div data-modal-header class="shrink-0">
     <app-modal-tab-header
       title="Historial"
@@ -493,7 +493,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="stockOpen()" (closed)="closeStockModal()" className="w-full max-w-3xl shadow-theme-lg">
+<app-modal compact [isOpen]="stockOpen()" (closed)="closeStockModal()" className="w-full max-w-3xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-6">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Stock de {{ stockProduct()?.nombre }}</h3>
     <p class="text-theme-xs text-gray-500">Total: <span class="font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ stockProduct()?.totalStock }}</span> unidades</p>
@@ -606,7 +606,7 @@
 
 <app-product-import-modal [open]="importOpen()" [mode]="importMode()" (closed)="importOpen.set(false)" />
 
-<app-modal [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
+<app-modal compact [isOpen]="confirmOpen()" (closed)="closeConfirmModal()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ confirmActionTitle() }}</h3>
   </div>
@@ -624,7 +624,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="barcodeOpen()" (closed)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
+<app-modal compact [isOpen]="barcodeOpen()" (closed)="closeBarcodeModal()" className="w-full max-w-xl shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pr-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
   </div>
@@ -650,7 +650,7 @@
   </div>
 </app-modal>
 
-<app-modal
+<app-modal compact
   [isOpen]="formOpen()"
   (closed)="closeFormModal()"
   className="w-full max-w-4xl"

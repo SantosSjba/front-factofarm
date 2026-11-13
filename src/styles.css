@@ -460,6 +460,32 @@ layer(base);
   background-color: #344054;
 }
 
+/* Modal compacto (`<app-modal compact>`): la mayoría de modales proyecta su propia
+   cabecera/footer con `data-modal-header|footer`; aquí se achican sin tocar cada pantalla.
+   Fuera de @layer para ganarle a las utilidades (py-4, sm:py-5, text-xl…). */
+[data-modal-compact] > [data-modal-header].py-4,
+[data-modal-compact] > [data-modal-header] > app-modal-tab-header > div {
+  padding-top: calc(var(--spacing) * 3);
+  padding-bottom: calc(var(--spacing) * 3);
+}
+[data-modal-compact] > [data-modal-header] :is(h1, h2, h3) {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+}
+[data-modal-compact] > [data-modal-header] :is(h1, h2, h3) + p {
+  margin-top: calc(var(--spacing) * 0.5);
+  font-size: var(--text-theme-xs);
+  line-height: var(--text-theme-xs--line-height);
+}
+[data-modal-compact] > [data-modal-header] > app-modal-tab-header > div > .mt-4 {
+  margin-top: calc(var(--spacing) * 2.5);
+}
+[data-modal-compact] > [data-modal-footer].py-4 {
+  padding-top: calc(var(--spacing) * 2.5);
+  padding-bottom: calc(var(--spacing) * 2.5);
+  gap: calc(var(--spacing) * 2);
+}
+
 @layer utilities {
   /* Contorno luminoso sobre el logo (respeta el alpha del PNG/SVG).
      No forzar display en .logo-dark-glow: pelea con utilities responsive. */

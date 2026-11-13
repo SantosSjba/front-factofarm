@@ -159,7 +159,7 @@
   </div>
 </app-component-card>
 
-<app-modal [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-xl">
+<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-xl">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ formTitle() }}</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ formDescription() }}</p>
@@ -195,7 +195,7 @@
   </div>
 </app-modal>
 
-<app-modal [isOpen]="!!deleteTarget()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg">
+<app-modal compact [isOpen]="!!deleteTarget()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar categoría</h3>
   </div>

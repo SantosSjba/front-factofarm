@@ -11,6 +11,7 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
+  booleanAttribute,
   inject,
 } from '@angular/core';
 import { BodyScrollLockService } from '../../../services/body-scroll-lock.service';
@@ -41,6 +42,11 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
   @Input() title = '';
   /** Subtítulo opcional bajo el título. */
   @Input() description = '';
+  /**
+   * Versión compacta: cabecera (título 18px, menos padding), botón cerrar y footer más bajos.
+   * También ajusta los `[data-modal-header]` / `[data-modal-footer]` proyectados (ver `styles.css`).
+   */
+  @Input({ transform: booleanAttribute }) compact = false;
 
   @ViewChild('dialogPanel') private dialogPanel?: ElementRef<HTMLElement>;
 

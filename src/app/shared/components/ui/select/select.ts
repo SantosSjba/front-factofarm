@@ -80,9 +80,12 @@ export class SelectTriggerComponent {
   @Input() buttonId = `app-select-trigger-${SelectTriggerComponent.nextId++}`;
   @Input() ariaLabel = '';
   @Input() className = '';
+  /** Versión compacta (h-9). */
+  @Input() compact = false;
 
   get triggerClass(): string {
-    return `group/select-trigger flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-[10px] border border-gray-300 bg-white py-2.5 ps-4 pe-3.5 text-sm font-normal text-gray-800 shadow-theme-xs outline-hidden transition-all duration-200 select-none hover:border-gray-400 hover:bg-gray-50/50 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:border-gray-600 dark:hover:bg-gray-800/50 dark:focus:border-brand-500/40 *:data-[slot=select-value]:line-clamp-1 ${this.className}`.trim();
+    const size = this.compact ? 'h-9 rounded-lg py-1.5 ps-3 pe-2.5' : 'rounded-[10px] py-2.5 ps-4 pe-3.5';
+    return `group/select-trigger flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 ${size} border border-gray-300 bg-white text-sm font-normal text-gray-800 shadow-theme-xs outline-hidden transition-all duration-200 select-none hover:border-gray-400 hover:bg-gray-50/50 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:hover:border-gray-600 dark:hover:bg-gray-800/50 dark:focus:border-brand-500/40 *:data-[slot=select-value]:line-clamp-1 ${this.className}`.trim();
   }
 }
 
