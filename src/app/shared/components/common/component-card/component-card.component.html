@@ -1,5 +1,6 @@
 <div class="h-full rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] {{ className }}">
-  <!-- Card Header -->
+  <!-- Card Header: se omite sin título (p. ej. la tabla principal, cuando el título ya está en la barra de la página). -->
+  @if (title || desc) {
   <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-5">
     <div class="min-w-0">
       <div class="flex items-center gap-1.5">
@@ -19,10 +20,12 @@
     <!-- Contenido al lado del título: leyendas, resúmenes… -->
     <ng-content select="[data-card-header-end]"></ng-content>
   </div>
+  }
 
   <!-- Card Body -->
   <div
-    class="border-t border-gray-100 dark:border-gray-800"
+    [class.border-t]="!!(title || desc)"
+    class="border-gray-100 dark:border-gray-800"
     [ngClass]="bodyClass !== '' ? bodyClass : 'p-4 sm:p-6'"
   >
     <app-page-state

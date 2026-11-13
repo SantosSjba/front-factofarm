@@ -15,7 +15,8 @@ import { PageStateComponent } from '../page-state/page-state.component';
   styles: ``,
 })
 export class ComponentCardComponent {
-  @Input() title!: string;
+  /** Vacío = sin encabezado. */
+  @Input() title = '';
   @Input() desc: string = '';
   /** Texto de ayuda mostrado en tooltip junto al título. */
   @Input() helpText = '';

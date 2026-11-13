@@ -1,4 +1,4 @@
-<app-modal
+<app-modal compact
   [isOpen]="isOpen()"
   (closed)="onClose()"
   className="w-full max-w-4xl shadow-theme-lg"
@@ -19,7 +19,7 @@
     @if (activeTab() === 'datos') {
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         <div (focusout)="onFieldBlur('nombre')">
-          <app-label for="usuario-campo-1" required>Nombre</app-label>
+          <app-label for="usuario-campo-1" required helpText="Nombre con el que aparece en ventas, cajas y reportes.">Nombre</app-label>
           <app-input-field [maxLength]="150" id="usuario-campo-1"
             className="mt-1.5"
             placeholder="Nombre completo"
@@ -30,7 +30,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('email')">
-          <app-label for="usuario-campo-2" required>Correo electrónico</app-label>
+          <app-label for="usuario-campo-2" required helpText="Con este correo ingresa al sistema. No puede repetirse con otra cuenta.">Correo electrónico</app-label>
           <app-input-field [maxLength]="150" id="usuario-campo-2"
             type="email"
             className="mt-1.5"
@@ -42,7 +42,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('establecimientoId')">
-          <app-label for="usuario-campo-3" required>Establecimiento</app-label>
+          <app-label for="usuario-campo-3" required helpText="Local donde trabaja: define sus series de comprobantes, su caja y el stock que ve.">Establecimiento</app-label>
           <app-form-select id="usuario-campo-3"
             className="mt-1.5"
             [value]="establecimientoId()"
@@ -53,7 +53,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('role')">
-          <app-label for="usuario-campo-4" required>Perfil</app-label>
+          <app-label for="usuario-campo-4" required helpText="El perfil trae los permisos típicos del puesto. Después puedes ajustarlos en la pestaña «Permisos».">Perfil</app-label>
           <app-form-select id="usuario-campo-4"
             className="mt-1.5"
             [value]="role()"
@@ -66,7 +66,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('password')">
-          <app-label for="usuario-campo-5" [required]="!isEditing()">{{ passwordLabel() }}</app-label>
+          <app-label for="usuario-campo-5" [required]="!isEditing()" helpText="Mínimo 8 caracteres, con mayúscula, minúscula, número y un carácter especial (por ejemplo ! o #). Al editar, déjala vacía para no cambiarla.">{{ passwordLabel() }}</app-label>
           <app-input-field id="usuario-campo-5"
             type="password"
             [maxLength]="100"
@@ -79,7 +79,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('password2')">
-          <app-label for="usuario-campo-6" [required]="!isEditing() || !!password()">Confirmar contraseña</app-label>
+          <app-label for="usuario-campo-6" [required]="!isEditing() || !!password()" helpText="Escribe la misma contraseña otra vez para evitar errores de tipeo.">Confirmar contraseña</app-label>
           <app-input-field id="usuario-campo-6"
             type="password"
             [maxLength]="100"
@@ -116,7 +116,7 @@
     @if (activeTab() === 'personales') {
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         <div (focusout)="onFieldBlur('tipoDoc')">
-          <app-label for="usuario-campo-7" [required]="!!numeroDoc().trim()">Tipo Doc. Identidad</app-label>
+          <app-label for="usuario-campo-7" [required]="!!numeroDoc().trim()" helpText="Documento de la persona. Si lo eliges, el número es obligatorio.">Tipo Doc. Identidad</app-label>
           <app-form-select id="usuario-campo-7"
             className="mt-1.5"
             [value]="tipoDoc()"
@@ -127,7 +127,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('numeroDoc')">
-          <app-label for="usuario-campo-8" [required]="!!tipoDoc()">Número</app-label>
+          <app-label for="usuario-campo-8" [required]="!!tipoDoc()" helpText="DNI: 8 dígitos. Carnet de extranjería o pasaporte: según el documento.">Número</app-label>
           <app-input-field [maxLength]="20" id="usuario-campo-8"
             className="mt-1.5"
             [value]="numeroDoc()"
@@ -137,7 +137,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('nombres')">
-          <app-label for="usuario-campo-9">Nombres</app-label>
+          <app-label for="usuario-campo-9" helpText="Nombres tal como figuran en su documento de identidad.">Nombres</app-label>
           <app-input-field [maxLength]="120" id="usuario-campo-9"
             className="mt-1.5"
             [value]="nombres()"
@@ -147,7 +147,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('apellidos')">
-          <app-label for="usuario-campo-10">Apellidos</app-label>
+          <app-label for="usuario-campo-10" helpText="Apellidos según su documento.">Apellidos</app-label>
           <app-input-field [maxLength]="120" id="usuario-campo-10"
             className="mt-1.5"
             [value]="apellidos()"
@@ -157,7 +157,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('fechaNac')">
-          <app-label for="usuario-campo-11">Fecha de nacimiento</app-label>
+          <app-label for="usuario-campo-11" helpText="Opcional. Dato del legajo del trabajador.">Fecha de nacimiento</app-label>
           <app-input-field id="usuario-campo-11"
             type="date"
             className="mt-1.5"
@@ -168,7 +168,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('emailPersonal')">
-          <app-label for="usuario-campo-12">Correo electrónico personal</app-label>
+          <app-label for="usuario-campo-12" helpText="Correo personal de contacto. No se usa para ingresar al sistema.">Correo electrónico personal</app-label>
           <app-input-field [maxLength]="150" id="usuario-campo-12"
             type="email"
             className="mt-1.5"
@@ -179,7 +179,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('celPersonal')">
-          <app-label for="usuario-campo-13">Nº Celular personal</app-label>
+          <app-label for="usuario-campo-13" helpText="Celular personal, solo para contacto interno.">Nº Celular personal</app-label>
           <app-input-field [maxLength]="16" inputMode="tel" id="usuario-campo-13"
             className="mt-1.5"
             [value]="celPersonal()"
@@ -189,7 +189,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('direccion')">
-          <app-label for="usuario-campo-14">Dirección</app-label>
+          <app-label for="usuario-campo-14" helpText="Dirección de domicilio del trabajador.">Dirección</app-label>
           <app-input-field [maxLength]="250" id="usuario-campo-14"
             className="mt-1.5"
             [value]="direccion()"
@@ -199,7 +199,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('emailCorp')">
-          <app-label for="usuario-campo-15">Correo electrónico corporativo</app-label>
+          <app-label for="usuario-campo-15" helpText="Correo de la empresa, si tiene uno distinto al de ingreso.">Correo electrónico corporativo</app-label>
           <app-input-field [maxLength]="150" id="usuario-campo-15"
             type="email"
             className="mt-1.5"
@@ -210,7 +210,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('celCorp')">
-          <app-label for="usuario-campo-16">Nº Celular corporativo</app-label>
+          <app-label for="usuario-campo-16" helpText="Celular que le da la empresa, si tiene.">Nº Celular corporativo</app-label>
           <app-input-field [maxLength]="16" inputMode="tel" id="usuario-campo-16"
             className="mt-1.5"
             [value]="celCorp()"
@@ -220,7 +220,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('fechaContratacion')">
-          <app-label for="usuario-campo-17">Fecha de contratación</app-label>
+          <app-label for="usuario-campo-17" helpText="Opcional. Fecha en que empezó a trabajar en la empresa.">Fecha de contratación</app-label>
           <app-input-field id="usuario-campo-17"
             type="date"
             className="mt-1.5"
@@ -231,7 +231,7 @@
           />
         </div>
         <div (focusout)="onFieldBlur('cargo')">
-          <app-label for="usuario-campo-18">Cargo</app-label>
+          <app-label for="usuario-campo-18" helpText="Puesto que aparece junto a su nombre en la lista (por ejemplo «Químico farmacéutico»).">Cargo</app-label>
           <app-input-field [maxLength]="120" id="usuario-campo-18"
             className="mt-1.5"
             [value]="cargo()"
@@ -241,7 +241,7 @@
           />
         </div>
         <div class="md:col-span-2">
-          <app-label>Foto</app-label>
+          <app-label helpText="Imagen cuadrada (JPG o PNG). Se muestra en la lista de usuarios y en su perfil.">Foto</app-label>
           <div class="mt-1.5">
             @if (fotoUploadError()) {
               <p class="text-theme-xs mb-2 text-red-600 dark:text-red-400">{{ fotoUploadError() }}</p>
@@ -250,10 +250,7 @@
               [previewUrl]="fotoPreview()"
               (fileSelected)="onFotoFile($event)"
             >
-              <p>
-                Se sube al servidor; el id queda en <code class="text-xs">fotoArchivoId</code> para guardar el
-                usuario.
-              </p>
+              <p>Imagen cuadrada en JPG o PNG. Se guarda al presionar «Guardar».</p>
             </app-image-square-picker>
           </div>
         </div>

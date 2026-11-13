@@ -107,7 +107,7 @@
   (currentPageChange)="onPageChange($event)"
 />
 
-<app-modal
+<app-modal compact
   [isOpen]="modalOpen()"
   (closed)="closeFormModal()"
   className="w-full max-w-3xl shadow-theme-lg"
@@ -145,7 +145,7 @@
   </div>
 </app-modal>
 
-<app-modal
+<app-modal compact
   [isOpen]="deleteConfirmOpen()"
   (closed)="closeDeleteConfirm()"
   className="w-full max-w-lg shadow-theme-lg"

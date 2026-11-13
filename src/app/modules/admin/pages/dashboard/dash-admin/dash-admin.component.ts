@@ -138,7 +138,7 @@ export class DashAdminComponent {
     const sales = Number(p?.total ?? 0);
     return sales ? ((Number(p?.profit ?? 0) / sales) * 100).toFixed(1) : null;
   });
-  protected readonly netNegative = computed(() => Number(this.overviewQuery.data()?.period.net ?? 0) < 0);
+  protected readonly netNegative = computed(() => Number(this.overviewQuery.data()?.period?.net ?? 0) < 0);
   protected readonly suspects = computed(() => this.overviewQuery.data()?.costAboveSalePrice ?? []);
   protected readonly suspectsExcess = computed(() => this.suspects().reduce((a, p) => a + Number(p.exceso), 0));
 
@@ -163,10 +163,16 @@ export class DashAdminComponent {
 
   protected readonly chainQuery = injectQuery(() => ({
     queryKey: ['dashboard', 'chain-summary'] as const,
+    // Ventas por sucursal: solo con la sección de ventas.
+    enabled: this.sections().ventas,
     queryFn: () => firstValueFrom(this.api.getDashboardChainSummary()),
   }));
 
   protected readonly data = computed(() => this.overviewQuery.data());
+  /** Secciones permitidas (las decide el API). Hasta que llegue la respuesta no se muestra ninguna. */
+  protected readonly sections = computed(
+    () => this.overviewQuery.data()?.sections ?? { ventas: false, margenes: false, caja: false, inventario: false, cuentas: false },
+  );
 
   protected readonly money = (v: number | string | null | undefined) => this.locale.formatCurrency(Number(v ?? 0));
   protected readonly num = (v: number | string | null | undefined) => this.locale.formatNumber(Number(v ?? 0));

@@ -90,8 +90,17 @@ export interface UserListItemDto {
 export interface UserListFiltersRequest {
   search?: string;
   role?: UserRoleDto | 'all';
+  establishmentId?: string;
   page?: number;
   pageSize?: number;
+}
+
+/** Conteos de la fila de resumen de Usuarios. */
+export interface UserSummaryDto {
+  total: number;
+  byRole: { role: UserRoleDto; count: number }[];
+  byEstablishment: { id: string; nombre: string; count: number }[];
+  withOpenCash: number;
 }
 
 export interface PaginatedResponseDto<T> {
@@ -399,7 +408,9 @@ export interface DashboardOverviewDto {
   /** Productos vendidos con costo mayor al precio cobrado (suele ser el costo del paquete). */
   costAboveSalePrice: { id: string; nombre: string; costo: string; precio: string; cantidad: string; exceso: string }[];
   timeZone: string;
-  today: { total: string; count: number; avgTicket: string; yesterdayTotal: string; yesterdayCount: number };
+  /** Secciones que el usuario puede ver (permisos «Panel general: …»); las demás llegan en null. */
+  sections: DashboardSectionsDto;
+  today: { total: string; count: number; avgTicket: string; yesterdayTotal: string; yesterdayCount: number } | null;
   period: {
     total: string;
     count: number;
@@ -410,16 +421,16 @@ export interface DashboardOverviewDto {
     voidedCount: number;
     unitsSold: string;
     newCustomers: number;
-    grossMargin: string;
+    grossMargin: string | null;
     grossMarginPct: string | null;
     marginCoveragePct: string | null;
-    /** Costo de lo vendido, ganancia (ventas − costo), egresos de caja y neto (ganancia − gastos). */
-    cost: string;
-    profit: string;
-    expenses: string;
-    expensesCount: number;
-    net: string;
-  };
+    /** Costo de lo vendido, ganancia (ventas − costo), egresos de caja y neto (ganancia − gastos). null = sin permiso. */
+    cost: string | null;
+    profit: string | null;
+    expenses: string | null;
+    expensesCount: number | null;
+    net: string | null;
+  } | null;
   trend: DashboardSalesTrendPointDto[];
   payments: DashboardBreakdownDto[];
   documents: DashboardBreakdownDto[];
@@ -430,7 +441,7 @@ export interface DashboardOverviewDto {
     open: number;
     expectedCash: string;
     sessions: Array<{ id: string; caja: string; usuario: string; openedAt: string; efectivoEsperado: string }>;
-  };
+  } | null;
   inventory: {
     units: string;
     costValue: string;
@@ -439,7 +450,7 @@ export interface DashboardOverviewDto {
     outOfStock: number;
     expiredLots: number;
     expiringLots30: number;
-  };
+  } | null;
   finance: {
     receivable: string;
     receivableCount: number;
@@ -447,7 +458,15 @@ export interface DashboardOverviewDto {
     payable: string;
     payableCount: number;
     payableOverdue: number;
-  };
+  } | null;
+}
+
+export interface DashboardSectionsDto {
+  ventas: boolean;
+  margenes: boolean;
+  caja: boolean;
+  inventario: boolean;
+  cuentas: boolean;
 }
 
 export interface PlatformOverviewDto {

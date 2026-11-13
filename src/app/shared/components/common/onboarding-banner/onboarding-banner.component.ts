@@ -38,8 +38,11 @@ const STORAGE_KEY = 'factofarm.onboarding.dismissed';
 export class OnboardingBannerComponent {
   private readonly auth = inject(AuthService);
 
+  /** Solo para quien configura la empresa: los pasos (local, series…) piden ese acceso. */
   protected readonly visible = signal(
-    !this.auth.isPlatformAdmin() && localStorage.getItem(STORAGE_KEY) !== '1',
+    !this.auth.isPlatformAdmin() &&
+      this.auth.hasPermission('nav.establecimientos') &&
+      localStorage.getItem(STORAGE_KEY) !== '1',
   );
 
   protected dismiss(): void {

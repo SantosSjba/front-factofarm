@@ -90,7 +90,7 @@
 
 <app-pagination [totalItems]="totalFiltered()" [currentPage]="currentPage()" [pageSize]="itemsPerPage" (currentPageChange)="onPageChange($event)" />
 
-<app-modal
+<app-modal compact
   [isOpen]="modalOpen()"
   (closed)="closeFormModal()"
   className="w-full max-w-5xl shadow-theme-lg"
@@ -370,7 +370,7 @@
   </div>
 </app-modal>
 
-<app-modal
+<app-modal compact
   [isOpen]="deleteConfirmOpen()"
   (closed)="closeDeleteConfirm()"
   className="w-full max-w-lg shadow-theme-lg"
@@ -409,7 +409,7 @@
   </div>
 </app-modal>
 
-<app-modal
+<app-modal compact
   [isOpen]="seriesModalOpen()"
   (closed)="closeSeriesModal()"
   className="w-full max-w-6xl shadow-theme-lg"

@@ -412,12 +412,12 @@ layer(base);
   }
 }
 
-/* Scroll visible del sidebar: en laptops con touchpad el usuario necesita
-   ver y arrastrar la barra para recorrer menús largos.
+/* Barra de scroll siempre visible (sidebar, cuerpo de modales…): hay usuarios que no
+   usan el gesto de dos dedos del touchpad y necesitan ver y arrastrar la barra.
    En Chromium/Safari, `scrollbar-width`/`scrollbar-color` anulan los estilos
    ::-webkit-scrollbar y en macOS dejan la barra superpuesta (se oculta sola);
    por eso allí se restablecen a `auto` y se usa la barra clásica estilizada. */
-@utility sidebar-scrollbar {
+@utility scrollbar-visible {
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
@@ -1178,6 +1178,15 @@ pre[class*="language-"].line-numbers {
      pie      → acciones con varios botones · metadatos (ID) */
 .ff-table-host {
   min-width: 0;
+}
+
+/* Marco de una tabla suelta (sin app-component-card): con la tabla en modo tarjetas el marco
+   sobra, porque cada fila ya es una tarjeta con su propio borde. */
+.ff-table-frame:has(> * > table.ff-table-is-cards),
+.ff-table-frame:has(> table.ff-table-is-cards) {
+  border-width: 0;
+  border-radius: 0;
+  background-color: transparent;
 }
 
 /* En tarjetas no hay columnas: los controles de la tabla (p. ej. "Columnas") se ocultan. */

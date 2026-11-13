@@ -136,6 +136,7 @@ import type {
   UpdateUserRequest,
   UserListItemDto,
   UserListResponseDto,
+  UserSummaryDto,
   DashboardStatsDto,
   DashboardChainSummaryDto,
   DashboardSalesTrendDto,
@@ -325,9 +326,14 @@ export class DirectoryApiService {
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.role && filters.role !== 'all') params['role'] = filters.role;
+    if (filters?.establishmentId) params['establishmentId'] = filters.establishmentId;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     return this.http.get<UserListResponseDto>(`${this.base}/users`, { params });
+  }
+
+  usersSummary() {
+    return this.http.get<UserSummaryDto>(`${this.base}/users/summary`);
   }
 
   createUser(body: CreateUserRequest) {

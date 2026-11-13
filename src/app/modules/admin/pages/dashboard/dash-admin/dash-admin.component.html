@@ -7,6 +7,8 @@
   }
 </div>
 
+<!-- Periodo y usuario solo afectan ventas y caja: sin esas secciones no se muestran. -->
+@if (!data() || sections().ventas || sections().caja) {
 <!-- Un solo filtro para todo el dashboard.
      Periodo a la izquierda; fechas y usuario forman un grupo que llena el resto de la fila
      o baja completo a la siguiente: nunca queda un campo suelto con un hueco al lado. -->
@@ -80,6 +82,7 @@
     </p>
   }
 </section>
+}
 
 <app-onboarding-banner />
 
@@ -92,58 +95,67 @@
 >
   @if (data(); as d) {
     <div class="@container space-y-3" [class.opacity-60]="overviewQuery.isFetching()">
+      <!-- Cada sección depende de su permiso «Panel general: …»; el API manda null en las que no.
+           Filas con flex-wrap: las tarjetas de la última fila se estiran, así nunca queda un hueco
+           aunque falten tarjetas por permisos. -->
+      @if (d.period; as p) {
       <!-- Resumen financiero del periodo -->
       <div>
-        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Resumen financiero · {{ periodLabel() }}</h2>
-        <!-- 5 tarjetas: 2+2+1 ancha (móvil) · 3+2 (mediano, grilla de 6) · 5 en fila (ancho). -->
-        <div class="grid grid-cols-2 gap-2 @xl:grid-cols-6 @6xl:grid-cols-5">
+        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">{{ d.sections.margenes || d.sections.caja ? 'Resumen financiero' : 'Ventas' }} · {{ periodLabel() }}</h2>
+        <div class="flex flex-wrap gap-2">
           <app-kpi-tile
-            class="@xl:col-span-2 @6xl:col-span-1"
+            class="min-w-0 flex-1 basis-40"
             label="Ventas"
             icon="lucide:shopping-cart"
-            [value]="money(d.period.total)"
-            [delta]="delta(d.period.total, d.period.prevTotal)"
-            [sub]="ventas(d.period.count) + ' · antes ' + money(d.period.prevTotal)"
+            [value]="money(p.total)"
+            [delta]="delta(p.total, p.prevTotal)"
+            [sub]="ventas(p.count) + ' · antes ' + money(p.prevTotal)"
             hint="Ventas completadas del periodo, sin anuladas. Se compara con el periodo anterior de la misma duración."
             link="/notas-venta"
           />
-          <app-kpi-tile
-            class="@xl:col-span-2 @6xl:col-span-1"
-            label="Costo"
-            icon="lucide:package"
-            tone="gray"
-            [value]="money(d.period.cost)"
-            [sub]="d.period.marginCoveragePct ? 'Con costo: ' + d.period.marginCoveragePct + '% de lo vendido' : 'Sin ventas en el periodo'"
-            hint="Unidades vendidas por el costo unitario del producto (o su precio de compra). Los productos sin costo no suman."
-          />
-          <app-kpi-tile
-            class="@xl:col-span-2 @6xl:col-span-1"
-            label="Ganancia"
-            icon="lucide:trending-up"
-            tone="success"
-            [value]="money(d.period.profit)"
-            [sub]="profitPct() ? profitPct() + '% de las ventas' : 'Ventas − costo'"
-            hint="Ventas menos costo de lo vendido."
-          />
-          <app-kpi-tile
-            class="@xl:col-span-3 @6xl:col-span-1"
-            label="Gastos"
-            icon="lucide:wallet"
-            tone="error"
-            [value]="money(d.period.expenses)"
-            [sub]="num(d.period.expensesCount) + (d.period.expensesCount === 1 ? ' egreso' : ' egresos') + ' de caja'"
-            hint="Egresos registrados en caja durante el periodo."
-            link="/historial-cajas"
-          />
-          <app-kpi-tile
-            class="col-span-2 @xl:col-span-3 @6xl:col-span-1"
-            label="Neto"
-            icon="lucide:badge-dollar-sign"
-            [tone]="netNegative() ? 'error' : 'success'"
-            [value]="money(d.period.net)"
-            sub="Ganancia − gastos"
-            hint="Lo que queda del periodo después del costo de lo vendido y los gastos de caja."
-          />
+          @if (d.sections.margenes) {
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Costo"
+              icon="lucide:package"
+              tone="gray"
+              [value]="money(p.cost)"
+              [sub]="p.marginCoveragePct ? 'Con costo: ' + p.marginCoveragePct + '% de lo vendido' : 'Sin ventas en el periodo'"
+              hint="Unidades vendidas por el costo unitario del producto (o su precio de compra). Los productos sin costo no suman."
+            />
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Ganancia"
+              icon="lucide:trending-up"
+              tone="success"
+              [value]="money(p.profit)"
+              [sub]="profitPct() ? profitPct() + '% de las ventas' : 'Ventas − costo'"
+              hint="Ventas menos costo de lo vendido."
+            />
+          }
+          @if (d.sections.caja) {
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Gastos"
+              icon="lucide:wallet"
+              tone="error"
+              [value]="money(p.expenses)"
+              [sub]="num(p.expensesCount) + (p.expensesCount === 1 ? ' egreso' : ' egresos') + ' de caja'"
+              hint="Egresos registrados en caja durante el periodo."
+              link="/historial-cajas"
+            />
+          }
+          @if (d.sections.margenes && d.sections.caja) {
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Neto"
+              icon="lucide:badge-dollar-sign"
+              [tone]="netNegative() ? 'error' : 'success'"
+              [value]="money(p.net)"
+              sub="Ganancia − gastos"
+              hint="Lo que queda del periodo después del costo de lo vendido y los gastos de caja."
+            />
+          }
         </div>
 
         @if (suspects().length) {
@@ -164,42 +176,54 @@
           </div>
         }
       </div>
+      }
 
       <!-- Operación del periodo y caja de ahora -->
-      <div class="grid grid-cols-2 gap-2 @4xl:grid-cols-4">
-        <app-kpi-tile
-          label="Ticket promedio"
-          icon="lucide:receipt"
-          tone="info"
-          [value]="money(d.period.avgTicket)"
-          [sub]="'por venta en ' + periodLabel()"
-        />
-        <app-kpi-tile
-          label="Unidades vendidas"
-          icon="lucide:boxes"
-          tone="info"
-          [value]="num(d.period.unitsSold)"
-          [sub]="num(d.period.newCustomers) + (d.period.newCustomers === 1 ? ' cliente nuevo' : ' clientes nuevos')"
-        />
-        <app-kpi-tile
-          label="Anuladas"
-          icon="lucide:ban"
-          tone="error"
-          [value]="money(d.period.voidedTotal)"
-          [sub]="ventas(d.period.voidedCount) + ' anuladas'"
-          link="/anulaciones"
-        />
-        <app-kpi-tile
-          label="Efectivo en caja ahora"
-          icon="lucide:banknote"
-          tone="warning"
-          [value]="money(d.cash.expectedCash)"
-          [sub]="d.cash.open ? num(d.cash.open) + (d.cash.open === 1 ? ' caja abierta' : ' cajas abiertas') : 'Sin cajas abiertas'"
-          hint="Efectivo que debería haber ahora en las gavetas abiertas. No depende del periodo."
-          link="/caja-chica-pos"
-        />
-      </div>
+      @if (d.period || d.cash) {
+        <div class="flex flex-wrap gap-2">
+          @if (d.period; as p) {
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Ticket promedio"
+              icon="lucide:receipt"
+              tone="info"
+              [value]="money(p.avgTicket)"
+              [sub]="'por venta en ' + periodLabel()"
+            />
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Unidades vendidas"
+              icon="lucide:boxes"
+              tone="info"
+              [value]="num(p.unitsSold)"
+              [sub]="num(p.newCustomers) + (p.newCustomers === 1 ? ' cliente nuevo' : ' clientes nuevos')"
+            />
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Anuladas"
+              icon="lucide:ban"
+              tone="error"
+              [value]="money(p.voidedTotal)"
+              [sub]="ventas(p.voidedCount) + ' anuladas'"
+              link="/anulaciones"
+            />
+          }
+          @if (d.cash; as cash) {
+            <app-kpi-tile
+              class="min-w-0 flex-1 basis-40"
+              label="Efectivo en caja ahora"
+              icon="lucide:banknote"
+              tone="warning"
+              [value]="money(cash.expectedCash)"
+              [sub]="cash.open ? num(cash.open) + (cash.open === 1 ? ' caja abierta' : ' cajas abiertas') : 'Sin cajas abiertas'"
+              hint="Efectivo que debería haber ahora en las gavetas abiertas. No depende del periodo."
+              link="/caja-chica-pos"
+            />
+          }
+        </div>
+      }
 
+      @if (d.sections.ventas) {
       <!-- Tendencia + medios de pago -->
       <div class="grid gap-3 @4xl:grid-cols-3">
         @if (isSingleDay()) {
@@ -231,14 +255,21 @@
         </app-dash-panel>
       </div>
 
-      <div class="grid gap-3 @4xl:grid-cols-3">
-        <app-dash-panel class="@4xl:col-span-2" title="Productos más vendidos" link="/reportes" linkText="Reportes">
-          <app-bar-list [rows]="productRows()" ariaLabel="Productos más vendidos por monto" />
-        </app-dash-panel>
-        <app-dash-panel title="Cajas abiertas" link="/historial-cajas" linkText="Historial">
-          @if (d.cash.sessions.length) {
+      }
+
+      @if (d.sections.ventas || d.cash) {
+        <!-- Con las dos: productos 2/3 y cajas 1/3. Con una sola, ocupa todo el ancho. -->
+        <div class="grid gap-3" [class]="d.sections.ventas && d.cash ? '@4xl:grid-cols-3' : ''">
+          @if (d.sections.ventas) {
+            <app-dash-panel [class]="d.cash ? '@4xl:col-span-2' : ''" title="Productos más vendidos" link="/reportes" linkText="Reportes">
+              <app-bar-list [rows]="productRows()" ariaLabel="Productos más vendidos por monto" />
+            </app-dash-panel>
+          }
+          @if (d.cash; as cash) {
+    <app-dash-panel title="Cajas abiertas" link="/historial-cajas" linkText="Historial">
+          @if (cash.sessions.length) {
             <ul class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              @for (s of d.cash.sessions; track s.id) {
+              @for (s of cash.sessions; track s.id) {
                 <li class="flex items-center justify-between gap-2 py-1.5 text-theme-xs">
                   <div class="min-w-0">
                     <p class="truncate font-medium text-gray-800 dark:text-white/90">{{ s.caja }}</p>
@@ -252,47 +283,57 @@
             <p class="py-3 text-center text-theme-xs text-gray-500">No hay cajas abiertas.</p>
           }
         </app-dash-panel>
-      </div>
+          }
+        </div>
+      }
 
-      <!-- Inventario y finanzas -->
+      <!-- Inventario y cuentas: estado actual, no depende del periodo -->
+      @if (d.inventory || d.finance) {
       <div>
-        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">Inventario y cuentas <span class="font-normal text-gray-500 dark:text-gray-400">· estado actual, no depende del periodo</span></h2>
+        <h2 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-white/90">{{ d.inventory && d.finance ? 'Inventario y cuentas' : d.inventory ? 'Inventario' : 'Cuentas por cobrar y pagar' }} <span class="font-normal text-gray-500 dark:text-gray-400">· estado actual, no depende del periodo</span></h2>
         <!-- Montos arriba (inventario ancho + cobrar + pagar) y conteos abajo: filas siempre completas. -->
-        <div class="grid grid-cols-2 gap-2 @2xl:grid-cols-4">
-          <app-kpi-tile
-            class="col-span-2"
-            label="Valor inventario"
-            icon="lucide:boxes"
-            tone="info"
-            [value]="money(d.inventory.costValue)"
-            [sub]="'A precio venta ' + money(d.inventory.saleValue)"
-            hint="Stock actual × costo unitario (o precio de compra)."
-            link="/reporte-inventario"
-          />
-          <app-kpi-tile
-            label="Por cobrar"
-            icon="lucide:hand-coins"
-            tone="brand"
-            [value]="money(d.finance.receivable)"
-            [sub]="num(d.finance.receivableCount) + ' cuentas · ' + num(d.finance.receivableOverdue) + ' vencidas'"
-            link="/cuentas-cobrar"
-          />
-          <app-kpi-tile
-            label="Por pagar"
-            icon="lucide:landmark"
-            tone="gray"
-            [value]="money(d.finance.payable)"
-            [sub]="num(d.finance.payableCount) + ' cuentas · ' + num(d.finance.payableOverdue) + ' vencidas'"
-            link="/cuentas-pagar"
-          />
-          <app-kpi-tile label="Stock bajo mínimo" icon="lucide:trending-down" tone="warning" [value]="num(d.inventory.lowStock)" sub="productos" link="/productos" />
-          <app-kpi-tile label="Agotados" icon="lucide:package-x" tone="error" [value]="num(d.inventory.outOfStock)" sub="sin stock" link="/productos" />
-          <app-kpi-tile label="Lotes vencidos" icon="lucide:calendar-x" tone="error" [value]="num(d.inventory.expiredLots)" sub="con stock" link="/lotes" [queryParams]="{ expiry: 'expired' }" />
-          <app-kpi-tile label="Vencen en 30 días" icon="lucide:calendar-clock" tone="warning" [value]="num(d.inventory.expiringLots30)" sub="lotes" link="/lotes" [queryParams]="{ expiry: '30' }" />
+        <div class="grid grid-cols-2 gap-2" [class]="d.inventory ? '@2xl:grid-cols-4' : ''">
+          @if (d.inventory; as inv) {
+            <app-kpi-tile
+              [class]="d.finance ? 'col-span-2' : 'col-span-2 @2xl:col-span-4'"
+              label="Valor inventario"
+              icon="lucide:boxes"
+              tone="info"
+              [value]="money(inv.costValue)"
+              [sub]="'A precio venta ' + money(inv.saleValue)"
+              hint="Stock actual × costo unitario (o precio de compra)."
+              link="/reporte-inventario"
+            />
+          }
+          @if (d.finance; as fin) {
+            <app-kpi-tile
+              label="Por cobrar"
+              icon="lucide:hand-coins"
+              tone="brand"
+              [value]="money(fin.receivable)"
+              [sub]="num(fin.receivableCount) + ' cuentas · ' + num(fin.receivableOverdue) + ' vencidas'"
+              link="/cuentas-cobrar"
+            />
+            <app-kpi-tile
+              label="Por pagar"
+              icon="lucide:landmark"
+              tone="gray"
+              [value]="money(fin.payable)"
+              [sub]="num(fin.payableCount) + ' cuentas · ' + num(fin.payableOverdue) + ' vencidas'"
+              link="/cuentas-pagar"
+            />
+          }
+          @if (d.inventory; as inv) {
+            <app-kpi-tile label="Stock bajo mínimo" icon="lucide:trending-down" tone="warning" [value]="num(inv.lowStock)" sub="productos" link="/productos" />
+            <app-kpi-tile label="Agotados" icon="lucide:package-x" tone="error" [value]="num(inv.outOfStock)" sub="sin stock" link="/productos" />
+            <app-kpi-tile label="Lotes vencidos" icon="lucide:calendar-x" tone="error" [value]="num(inv.expiredLots)" sub="con stock" link="/lotes" [queryParams]="{ expiry: 'expired' }" />
+            <app-kpi-tile label="Vencen en 30 días" icon="lucide:calendar-clock" tone="warning" [value]="num(inv.expiringLots30)" sub="lotes" link="/lotes" [queryParams]="{ expiry: '30' }" />
+          }
         </div>
       </div>
+      }
 
-      @if (showChain()) {
+      @if (showChain() && d.sections.ventas) {
         <app-dash-panel [title]="'Sucursales · últimos ' + (chainQuery.data()?.periodDays ?? 30) + ' días'">
           <div class="overflow-x-auto">
             <table class="min-w-full text-left text-theme-xs">

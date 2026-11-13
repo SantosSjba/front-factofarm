@@ -18,12 +18,17 @@
 </app-help-panel>
 
 <app-list-filters
+  compact
   [searchValue]="searchTerm()"
   searchPlaceholder="Buscar por nombre o correo"
   [selectValue]="roleFilter()"
   [selectOptions]="roleFilterOptions"
   [selectShowPlaceholder]="false"
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de usuarios"
+  summaryStorageKey="usuarios"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onRoleFilterChange($event)"
   (clear)="clearFilters()"
@@ -31,21 +36,18 @@
 
 @let listState = usersQuery | queryPageState: totalUsers();
 
-<app-component-card
-  title="Usuarios"
-  [desc]="totalUsers() ? totalUsers() + ' en total' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título «Usuarios» ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  [emptyTitle]="searchTerm() || roleFilter() !== 'all' ? 'Sin usuarios con esos filtros' : 'Aún no hay usuarios'"
+  [emptyTitle]="searchTerm() || roleFilter() !== 'all' || establishmentFilter() ? 'Sin usuarios con esos filtros' : 'Aún no hay usuarios'"
   emptyHint="Usa «Nuevo usuario» para crear la primera cuenta."
   skeleton="table"
   [skeletonCount]="8"
   (retry)="refetchUsers()"
 >
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <caption class="sr-only">Usuarios con su rol, cargo y establecimiento</caption>
@@ -104,7 +106,7 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [totalItems]="totalUsers()" [currentPage]="currentPage()" [pageSize]="itemsPerPage" (currentPageChange)="onPageChange($event)" />
 

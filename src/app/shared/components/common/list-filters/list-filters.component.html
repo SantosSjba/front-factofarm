@@ -1,11 +1,11 @@
-<div class="mb-5 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+<div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" [class]="compact ? 'mb-4 p-3' : 'mb-5 p-4'">
   @if (collapsible) {
-    <div class="flex flex-wrap items-start gap-3">
+    <div class="flex flex-wrap items-start" [class]="compact ? 'gap-2' : 'gap-3'">
       @if (showSearch) {
         <ng-container [ngTemplateOutlet]="search" />
       }
       <app-button
-        size="lg"
+        [size]="compact ? 'sm' : 'lg'"
         variant="outline"
         startIconName="lucide:list-filter"
         [ariaExpanded]="open"
@@ -32,7 +32,7 @@
       </div>
     }
   } @else {
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
+    <div class="grid grid-cols-1 md:grid-cols-12" [class]="compact ? 'gap-2' : 'gap-3'">
       @if (showSearch) {
         <div [class]="showSelect ? 'md:col-span-7' : 'md:col-span-10'">
           <ng-container [ngTemplateOutlet]="search" />
@@ -48,11 +48,36 @@
       </div>
     </div>
   }
+
+  @if (summaryChips.length) {
+    <div class="border-t border-gray-100 dark:border-gray-800" [class]="compact ? 'mt-2.5 pt-2.5' : 'mt-3 pt-3'">
+      <button
+        type="button"
+        class="inline-flex cursor-pointer items-center gap-1 rounded-md text-theme-xs font-medium text-gray-500 hover:text-gray-800 focus-visible:outline-2 focus-visible:outline-brand-500 dark:text-gray-400 dark:hover:text-white/90"
+        [attr.aria-expanded]="summaryOpen"
+        [attr.aria-controls]="summaryPanelId"
+        (click)="toggleSummary()"
+      >
+        <app-icon name="lucide:chevron-down" [iconClass]="'size-3.5 transition-transform ' + (summaryOpen ? '' : '-rotate-90')" />
+        {{ summaryOpen ? summaryLabel : 'Mostrar ' + summaryLabel.toLowerCase() }}
+      </button>
+      @if (summaryOpen) {
+        <app-summary-chips
+          [id]="summaryPanelId"
+          class="mt-2"
+          [chips]="summaryChips"
+          [ariaLabel]="summaryLabel"
+          (chipClick)="summaryChipClick.emit($event)"
+        />
+      }
+    </div>
+  }
 </div>
 
 <ng-template #search>
   <app-input-field
     icon="lucide:search"
+    [compact]="compact"
     [class]="collapsible ? 'basis-full sm:basis-auto' : ''"
     [className]="collapsible ? 'flex-1' : ''"
     [value]="searchValue"
@@ -64,7 +89,9 @@
 
 <ng-template #select>
   <app-form-select
+    [compact]="compact"
     [label]="selectLabel"
+    [helpText]="selectHelpText"
     [value]="selectValue"
     [placeholder]="selectPlaceholder"
     [options]="selectOptions"
@@ -75,7 +102,7 @@
 
 <ng-template #clearButton>
   <app-button
-    size="lg"
+    [size]="compact ? 'sm' : 'lg'"
     variant="outline"
     startIconName="mdi:filter-remove-outline"
     [class]="collapsible ? '' : 'w-full'"

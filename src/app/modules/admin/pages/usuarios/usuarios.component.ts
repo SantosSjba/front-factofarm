@@ -3,7 +3,7 @@ import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pi
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
@@ -12,6 +12,7 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { UserListItemDto, UserRoleDto } from '../../models/directory.models';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { AvatarTextComponent } from '../../../../shared/components/ui/avatar/avatar-text.component';
 import { UsuarioFormModalComponent } from './usuario-form-modal/usuario-form-modal.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
@@ -33,7 +34,7 @@ import { canChangeAccess, canDeleteUser, canManageUser, roleTone } from '../../u
   imports: [
     QueryPageStatePipe,
     CommonModule,
-    ComponentCardComponent,
+    PageStateComponent,
     BreadcrumbInlineComponent,
     ListFiltersComponent,
     PaginationComponent,
@@ -78,6 +79,7 @@ export class UsuariosComponent {
     queryKey: userQueryKeys.list({
       search: this.searchTerm().trim(),
       role: this.roleFilter(),
+      establishmentId: this.establishmentFilter(),
       page: this.currentPage(),
     }),
     queryFn: () =>
@@ -85,11 +87,82 @@ export class UsuariosComponent {
         this.api.listUsers({
           search: this.searchTerm(),
           role: this.roleFilter() as UserRoleDto | 'all',
+          establishmentId: this.establishmentFilter() || undefined,
           page: this.currentPage(),
           pageSize: this.itemsPerPage,
         }),
       ),
   }));
+
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: userQueryKeys.summary(),
+    queryFn: () => firstValueFrom(this.api.usersSummary()),
+  }));
+
+  /** Chips de resumen: total, por rol, por local (si hay más de uno) y con caja abierta. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const role = this.roleFilter();
+    const est = this.establishmentFilter();
+    const chips: SummaryChip[] = [
+      {
+        id: 'all',
+        label: 'Total',
+        count: s.total,
+        icon: 'lucide:users',
+        group: 'General',
+        active: role === 'all' && !est,
+        tooltip: 'Todas las cuentas de la empresa. Clic para quitar los filtros de rol y local.',
+      },
+      ...s.byRole.map((r) => ({
+        id: 'role:' + r.role,
+        label: userRoleLabel(r.role),
+        count: r.count,
+        tone: roleTone(r.role),
+        group: 'Rol',
+        active: role === r.role,
+        tooltip: `Ver solo ${userRoleLabel(r.role).toLowerCase()} (clic de nuevo para quitar).`,
+      })),
+    ];
+    if (s.byEstablishment.length > 1) {
+      chips.push(
+        ...s.byEstablishment.map((e) => ({
+          id: 'est:' + e.id,
+          label: e.nombre,
+          count: e.count,
+          icon: 'lucide:store',
+          group: 'Local',
+          active: est === e.id,
+          tooltip: `Ver solo usuarios de ${e.nombre} (clic de nuevo para quitar).`,
+        })),
+      );
+    }
+    chips.push({
+      id: 'cash',
+      label: 'Con caja abierta',
+      count: s.withOpenCash,
+      icon: 'lucide:banknote',
+      group: 'General',
+      clickable: false,
+      tooltip: 'Usuarios que tienen una caja abierta ahora. No se pueden eliminar hasta cerrarla.',
+    });
+    return chips;
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'all') {
+      this.roleFilter.set('all');
+      this.establishmentFilter.set('');
+    } else if (chip.id.startsWith('role:')) {
+      const role = chip.id.slice(5);
+      this.roleFilter.set(this.roleFilter() === role ? 'all' : role);
+    } else if (chip.id.startsWith('est:')) {
+      const id = chip.id.slice(4);
+      this.establishmentFilter.set(this.establishmentFilter() === id ? '' : id);
+    }
+    this.currentPage.set(1);
+  }
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [
     { label: 'Usuarios y establecimientos' },
@@ -103,6 +176,8 @@ export class UsuariosComponent {
   protected readonly deletingUser = signal<UserListItemDto | null>(null);
   protected readonly searchTerm = signal('');
   protected readonly roleFilter = signal('all');
+  /** Se elige desde los chips de local. */
+  protected readonly establishmentFilter = signal('');
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = 10;
   protected readonly roleFilterOptions = [
@@ -187,6 +262,7 @@ export class UsuariosComponent {
   protected clearFilters() {
     this.searchTerm.set('');
     this.roleFilter.set('all');
+    this.establishmentFilter.set('');
     this.currentPage.set(1);
   }
 

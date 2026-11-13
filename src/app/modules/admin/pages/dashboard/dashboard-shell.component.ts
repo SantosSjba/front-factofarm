@@ -8,6 +8,15 @@ import { DashCashierComponent } from './dash-cashier/dash-cashier.component';
 import { DashWarehouseComponent } from './dash-warehouse/dash-warehouse.component';
 import { DashAccountantComponent } from './dash-accountant/dash-accountant.component';
 
+/** Permisos «Panel general: …» (ver api: common/permissions/dashboard-sections.ts). */
+const DASHBOARD_SECTION_CODES = [
+  'nav.dashboard_ventas',
+  'nav.dashboard_margenes',
+  'nav.dashboard_caja',
+  'nav.dashboard_inventario',
+  'nav.dashboard_cuentas',
+];
+
 @Component({
   selector: 'app-dashboard-shell',
   standalone: true,
@@ -54,6 +63,9 @@ export class DashboardShellComponent {
     | 'warehouse'
     | 'accountant' {
     const role = this.auth.user()?.role ?? '';
+    if (role === 'ADMINISTRADOR' || role === 'ADMIN_CADENA') return 'admin';
+    // Con alguna sección del panel general, ve ese panel (solo con lo permitido) en vez del de su rol.
+    if (DASHBOARD_SECTION_CODES.some((code) => this.auth.hasPermission(code))) return 'admin';
     if (role === 'CAJERO' || role === 'VENDEDOR') return 'cashier';
     if (
       role === 'FARMACEUTICO' ||
