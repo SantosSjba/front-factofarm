@@ -51,7 +51,7 @@
           <p class="text-sm text-gray-600 dark:text-gray-300">Esta sesión ya está cerrada.</p>
         } @else {
           @if (forced()) {
-            <div class="mb-4 rounded-xl border border-warning-500 bg-warning-50 p-3 text-sm text-gray-700 dark:border-warning-500/30 dark:bg-warning-500/15 dark:text-gray-200">
+            <div class="mb-3 rounded-xl border border-warning-500 bg-warning-50 p-3 text-sm text-gray-700 dark:border-warning-500/30 dark:bg-warning-500/15 dark:text-gray-200">
               <p class="font-semibold">Esta caja la abrió {{ s.user.nombre }}.</p>
               <p class="mt-0.5">El cierre quedará registrado a tu nombre como cierre forzado, con el motivo que indiques.</p>
             </div>
@@ -63,7 +63,7 @@
             </p>
           }
 
-          <dl class="mb-4 space-y-1 rounded-lg bg-gray-50 p-3 text-sm dark:bg-white/[0.03]">
+          <dl class="mb-3 space-y-1 rounded-lg bg-gray-50 p-3 text-sm dark:bg-white/[0.03]">
             <div class="flex justify-between"><dt>Monto inicial</dt><dd class="tabular-nums">{{ s.resumenEfectivo.apertura | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
             <div class="flex justify-between"><dt>(+) Ventas en efectivo</dt><dd class="tabular-nums">{{ s.resumenEfectivo.ventasEfectivo | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
             <div class="flex justify-between"><dt>(+) Ingresos de caja</dt><dd class="tabular-nums">{{ s.resumenEfectivo.ingresos | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
@@ -79,9 +79,12 @@
             }
           </dl>
 
-          <app-form-stack>
-            <app-form-field label="Efectivo contado (S/)" required>
+          <app-form-stack compact>
+            <app-form-field compact label="Efectivo contado (S/)" required helpText="Cuenta los billetes y monedas de la gaveta y anota el total.">
               <app-input-field
+                compact
+                icon="mdi:cash"
+                ariaLabel="Efectivo contado"
                 type="number"
                 min="0"
                 step="0.01"
@@ -105,8 +108,9 @@
                 }
               </p>
             }
-            <app-form-field label="Observaciones" [required]="notasRequired()">
+            <app-form-field compact label="Observaciones" [required]="notasRequired()" helpText="Obligatorio si el contado no cuadra con el esperado. Sale en el reporte de caja.">
               <app-text-area
+                compact
                 [rows]="2"
                 [maxLength]="500"
                 [value]="notas()"
@@ -115,8 +119,9 @@
               />
             </app-form-field>
             @if (forced()) {
-              <app-form-field label="Motivo del cierre forzado" required>
+              <app-form-field compact label="Motivo del cierre forzado" required helpText="Por qué cierras la caja de otro usuario. Queda registrado a tu nombre.">
                 <app-text-area
+                  compact
                   [rows]="2"
                   [maxLength]="500"
                   [value]="motivo()"
@@ -131,15 +136,16 @@
     }
   </div>
 
-  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     @if (result()) {
-      <app-button startIconName="mdi:printer-outline" variant="outline" [disabled]="printing()" (btnClick)="print('ticket')">Ticket</app-button>
-      <app-button startIconName="mdi:file-pdf-box" variant="outline" [disabled]="printing()" (btnClick)="print('a4')">Arqueo PDF</app-button>
-      <app-button startIconName="mdi:check" (btnClick)="close()">Listo</app-button>
+      <app-button size="sm" startIconName="mdi:printer-outline" variant="outline" [disabled]="printing()" (btnClick)="print('ticket')">Ticket</app-button>
+      <app-button size="sm" startIconName="mdi:file-pdf-box" variant="outline" [disabled]="printing()" (btnClick)="print('a4')">Arqueo PDF</app-button>
+      <app-button size="sm" startIconName="mdi:check" (btnClick)="close()">Listo</app-button>
     } @else {
-      <app-button startIconName="mdi:close" variant="outline" (btnClick)="close()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:close" variant="outline" (btnClick)="close()">Cancelar</app-button>
       @if (summary()?.estado === 'ABIERTA') {
         <app-button
+          size="sm"
           startIconName="mdi:cash-lock"
           [variant]="forced() ? 'danger' : 'primary'"
           [disabled]="closeMutation.isPending()"

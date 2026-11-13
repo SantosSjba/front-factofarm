@@ -23,12 +23,12 @@ const MOVEMENT_LABELS: Record<string, string> = {
   selector: 'app-cash-session-summary',
   standalone: true,
   imports: [AppDatePipe, CurrencyPipe, KeyValuePipe, NgClass, StatusBadgeComponent],
-  host: { class: 'block space-y-6' },
+  host: { class: 'block space-y-4' },
   template: `
     @let s = summary();
-    <div class="grid gap-4 lg:grid-cols-2">
-      <section class="rounded-2xl border border-gray-200 p-4 text-sm dark:border-gray-800">
-        <h4 class="mb-3 font-medium text-gray-800 dark:text-white/90">Arqueo de efectivo</h4>
+    <div class="grid gap-3 lg:grid-cols-2">
+      <section class="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-800">
+        <h4 class="mb-2 font-medium text-gray-800 dark:text-white/90">Arqueo de efectivo</h4>
         <dl class="space-y-1.5">
           <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Monto inicial</dt><dd class="tabular-nums">{{ s.resumenEfectivo.apertura | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
           <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">(+) Ventas en efectivo</dt><dd class="tabular-nums">{{ s.resumenEfectivo.ventasEfectivo | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
@@ -46,8 +46,8 @@ const MOVEMENT_LABELS: Record<string, string> = {
           }
         </dl>
       </section>
-      <section class="rounded-2xl border border-gray-200 p-4 text-sm dark:border-gray-800">
-        <h4 class="mb-3 font-medium text-gray-800 dark:text-white/90">Ventas por medio de pago ({{ s.numVentas }})</h4>
+      <section class="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-800">
+        <h4 class="mb-2 font-medium text-gray-800 dark:text-white/90">Ventas por medio de pago ({{ s.numVentas }})</h4>
         <dl class="space-y-1.5">
           @for (entry of s.totalesPorMetodo | keyvalue; track entry.key) {
             <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{{ payLabel(entry.key) }}</dt><dd class="tabular-nums">{{ entry.value | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>

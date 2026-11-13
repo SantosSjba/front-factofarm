@@ -18,7 +18,6 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
 import { ValidationBypassActionComponent } from '../../../../shared/components/ui/validation-bypass-action/validation-bypass-action.component';
 import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
@@ -146,7 +145,6 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
     CommonModule,
     CurrencyPipe,
     ButtonComponent,
-    HelpHintComponent,
     ValidationBypassActionComponent,
     IconComponent,
     FormSelectComponent,

@@ -17,31 +17,35 @@ import { QuickCreateComponent } from '../quick-create/quick-create.component';
   standalone: true,
   imports: [CommonModule, FormFieldComponent, FormSelectComponent, InputFieldComponent, ButtonComponent, QuickCreateComponent],
   template: `
-    <div class="grid gap-4" [ngClass]="stacked ? 'grid-cols-1' : 'sm:grid-cols-2 lg:max-w-xl'">
-      <app-form-field label="Caja" required>
+    <div class="grid gap-3" [ngClass]="stacked ? 'grid-cols-1' : 'sm:grid-cols-2 lg:max-w-xl'">
+      <app-form-field compact label="Caja" required helpText="Caja (gaveta) con la que vas a cobrar en este turno.">
         <div class="flex items-center gap-2">
           <app-form-select
-            className="flex-1"
+            class="min-w-0 flex-1"
+            compact
+            ariaLabel="Caja"
             placeholder="Seleccionar caja"
             [options]="registerOptions()"
             [value]="cashRegisterId()"
             (valueChange)="cashRegisterId.set($event)"
           />
           @if (allowCreate) {
-            <app-quick-create entity="cashRegister" [iconOnly]="true" (created)="cashRegisterId.set($event.id)" />
+            <app-quick-create compact entity="cashRegister" [iconOnly]="true" (created)="cashRegisterId.set($event.id)" />
           }
         </div>
       </app-form-field>
-      <app-form-field label="Monto inicial (S/)">
-        <app-input-field
-          type="number"
-          min="0"
-          step="0.01"
-          inputMode="decimal"
-          [value]="montoApertura()"
-          (valueChange)="montoApertura.set(+$event)"
-        />
-      </app-form-field>
+      <app-input-field
+        compact
+        icon="mdi:cash"
+        label="Monto inicial (S/)"
+        helpText="Efectivo con el que empiezas (el sencillo). Puede ser 0."
+        type="number"
+        min="0"
+        step="0.01"
+        inputMode="decimal"
+        [value]="montoApertura()"
+        (valueChange)="montoApertura.set(+$event)"
+      />
       @if (busyBy(); as who) {
         <p class="text-sm text-amber-700 dark:text-amber-400" [ngClass]="stacked ? '' : 'sm:col-span-2'">
           Esta caja está abierta por {{ who }}. Debe cerrarla ese usuario o un supervisor.
@@ -49,6 +53,7 @@ import { QuickCreateComponent } from '../quick-create/quick-create.component';
       }
       <div [ngClass]="stacked ? '' : 'sm:col-span-2'">
         <app-button
+          size="sm"
           startIconName="mdi:cash-register"
           variant="primary"
           [disabled]="!cashRegisterId() || openMutation.isPending()"

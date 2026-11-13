@@ -5,7 +5,6 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
-import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
@@ -21,6 +20,7 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -52,6 +52,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     FormSectionComponent,
     FormSelectComponent,
     HelpPanelComponent,
+    IconComponent,
     InputFieldComponent,
     KpiTileComponent,
     MenuItemComponent,
@@ -68,7 +69,6 @@ export class CajaChicaPosComponent {
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly auth = inject(AuthService);
-  private readonly locale = inject(LocaleService);
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [{ label: 'Ventas' }, { label: 'Caja' }];
@@ -112,12 +112,6 @@ export class CajaChicaPosComponent {
     void this.registersQuery.refetch();
     void this.sessionQuery.refetch();
   }
-
-  /** La sesión viene de un día anterior: hay que cerrarla con su arqueo. */
-  protected readonly fromPreviousDay = computed(() => {
-    const s = this.session();
-    return !!s && this.locale.todayYmd(new Date(s.openedAt)) !== this.locale.todayYmd();
-  });
 
   // ---------- Cierre / reportes ----------
   protected readonly closeId = signal<string | null>(null);

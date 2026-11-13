@@ -7,9 +7,9 @@
       <a routerLink="/historial-cajas"><app-button size="sm" variant="outline" startIconName="mdi:history">Historial de cajas</app-button></a>
     }
     @if (session(); as s) {
-      <app-button size="sm" variant="outline" startIconName="mdi:printer-settings" (btnClick)="openHardware()">Impresora</app-button>
-      <app-button size="sm" variant="outline" startIconName="mdi:swap-vertical" (btnClick)="openMovement('EGRESO')">Ingreso o egreso</app-button>
-      <app-button size="sm" startIconName="mdi:cash-lock" (btnClick)="closeId.set(s.id)">Cerrar caja</app-button>
+      <app-button size="sm" variant="outline" startIconName="mdi:printer-settings" tooltip="Ancho del ticket, impresión al cobrar, gaveta y otros equipos de esta caja." (btnClick)="openHardware()">Impresora</app-button>
+      <app-button size="sm" variant="outline" startIconName="mdi:swap-vertical" tooltip="Efectivo que entra o sale de la gaveta y no es una venta." (btnClick)="openMovement('EGRESO')">Ingreso o egreso</app-button>
+      <app-button size="sm" startIconName="mdi:cash-lock" tooltip="Cuenta el efectivo y cierra el turno con su arqueo." (btnClick)="closeId.set(s.id)">Cerrar caja</app-button>
     }
   </div>
 </app-page-toolbar>
@@ -23,37 +23,35 @@
 </app-help-panel>
 
 <app-page-state [loading]="registersQuery.isPending() || sessionQuery.isPending()" [error]="initError()" [showRetry]="true" (retry)="refetchInit()">
-  <div class="mb-4"><app-cash-open-sessions-banner /></div>
+  <app-cash-open-sessions-banner />
 
   @if (!session()) {
-    <app-component-card title="Abrir caja" desc="Elige la caja y cuenta el efectivo con el que empiezas." data-tour="cash-open">
+    <app-component-card compact icon="mdi:cash-register" title="Abrir caja" desc="Elige la caja y cuenta el efectivo con el que empiezas." data-tour="cash-open">
       <app-cash-open-form />
     </app-component-card>
   } @else {
     @let s = session()!;
-    <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm dark:border-gray-800 dark:bg-white/[0.03]" data-tour="cash-session">
+    <!-- Si la caja viene de un día anterior, el aviso de arriba ya lo dice: aquí no se repite. -->
+    <div class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-white/[0.03]" data-tour="cash-session">
       <app-status-badge status="ABIERTA" tone="success" label="Abierta" />
       <span class="font-medium text-gray-800 dark:text-white/90">{{ s.cashRegister.nombre }}</span>
-      <span class="text-gray-500 dark:text-gray-400">desde {{ s.openedAt | appDate: 'dd/MM/yyyy HH:mm' }}</span>
-      @if (fromPreviousDay()) {
-        <span class="font-medium text-warning-600 dark:text-warning-400">· Abierta desde un día anterior: ciérrala con su arqueo.</span>
-      }
+      <span class="text-theme-xs text-gray-500 dark:text-gray-400">desde {{ s.openedAt | appDate: 'dd/MM/yyyy HH:mm' }}</span>
     </div>
 
-    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="mb-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       <app-kpi-tile label="Efectivo en caja" [value]="money(summary()?.saldoActual ?? s.montoApertura)" icon="mdi:cash" tone="success" hint="Lo que debería haber en la gaveta ahora." />
-      <app-kpi-tile label="Vendido en la sesión" [value]="money(summary()?.totalVentas ?? 0)" [sub]="(summary()?.numVentas ?? 0) + ' ventas'" icon="mdi:cart-outline" tone="brand" />
-      <app-kpi-tile label="Monto inicial" [value]="money(s.montoApertura)" icon="mdi:cash-register" tone="gray" />
-      <app-kpi-tile label="Ingresos y egresos" [value]="money(movimientosManuales())" [sub]="summary()?.ventasAnuladas ? summary()!.ventasAnuladas + ' venta(s) anulada(s)' : null" icon="mdi:swap-vertical" [tone]="movimientosManuales() < 0 ? 'warning' : 'gray'" />
+      <app-kpi-tile label="Vendido en la sesión" [value]="money(summary()?.totalVentas ?? 0)" [sub]="(summary()?.numVentas ?? 0) + ' ventas'" icon="mdi:cart-outline" tone="brand" hint="Total vendido en esta caja, con todos los medios de pago." />
+      <app-kpi-tile label="Monto inicial" [value]="money(s.montoApertura)" icon="mdi:cash-register" tone="gray" hint="Efectivo con el que se abrió la caja." />
+      <app-kpi-tile label="Ingresos y egresos" [value]="money(movimientosManuales())" [sub]="summary()?.ventasAnuladas ? summary()!.ventasAnuladas + ' venta(s) anulada(s)' : null" icon="mdi:swap-vertical" [tone]="movimientosManuales() < 0 ? 'warning' : 'gray'" hint="Ingresos menos egresos de efectivo que no son ventas." />
     </div>
 
     @if (summaryQuery.isError()) {
       <p class="text-sm text-error-600 dark:text-error-400">No se pudo cargar el detalle de la caja. <app-button size="sm" variant="outline" (btnClick)="summaryQuery.refetch()">Reintentar</app-button></p>
     } @else if (summary(); as sum) {
-      <app-component-card title="Detalle de la sesión">
+      <app-component-card compact icon="mdi:clipboard-text-outline" title="Detalle de la sesión">
         <div data-card-header-end class="flex gap-2">
-          <app-button size="sm" variant="outline" startIconName="mdi:printer-outline" (btnClick)="printReport(s.id, 'ticket')">Ticket</app-button>
-          <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" (btnClick)="printReport(s.id, 'a4')">PDF</app-button>
+          <app-button size="sm" variant="outline" startIconName="mdi:printer-outline" tooltip="Imprime el arqueo actual en ticket." (btnClick)="printReport(s.id, 'ticket')">Ticket</app-button>
+          <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" tooltip="Reporte de la caja en PDF (A4)." (btnClick)="printReport(s.id, 'a4')">PDF</app-button>
         </div>
         <app-cash-session-summary [summary]="sum" />
       </app-component-card>
@@ -62,14 +60,23 @@
 
   @if (recentQuery.data(); as recent) {
     @if (recent.items.length) {
-      <app-component-card [title]="recent.supervisor ? 'Últimas cajas' : 'Mis últimas cajas'" className="mt-4 overflow-hidden" [bodyClass]="'p-0 sm:p-0'">
-        <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+      <!-- Tabla directa con un subtítulo (sin tarjeta alrededor). -->
+      <div class="mt-4 mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="flex items-center gap-1.5 text-sm font-medium text-gray-800 dark:text-white/90">
+          <app-icon name="mdi:history" iconClass="size-4 text-gray-500 dark:text-gray-400" />
+          {{ recent.supervisor ? 'Últimas cajas' : 'Mis últimas cajas' }}
+        </h2>
+        @if (canSeeHistory) {
+          <a routerLink="/historial-cajas" class="text-theme-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400">Ver historial completo</a>
+        }
+      </div>
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="max-w-full overflow-x-auto">
             <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
               <thead class="border-b border-gray-100 dark:border-white/[0.05]">
                 <tr>
                   <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Apertura</th>
-                  <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Caja</th>
+                  <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Caja</th>
                   @if (recent.supervisor) { <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cajero</th> }
                   <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
                   <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Diferencia</th>
@@ -79,14 +86,14 @@
               <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 @for (row of recent.items; track row.id) {
                   <tr>
-                    <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.openedAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
-                    <td class="px-5 py-4 text-theme-sm">{{ row.cashRegister.nombre }}</td>
-                    @if (recent.supervisor) { <td class="px-5 py-4 text-theme-sm">{{ row.user.nombre }}</td> }
-                    <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row)" [label]="statusLabel(row)" /></td>
-                    <td class="px-5 py-4 text-end text-theme-sm tabular-nums" [ngClass]="diffClass(row.diferenciaArqueo)">
+                    <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ row.openedAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="px-5 py-3 text-theme-sm">{{ row.cashRegister.nombre }}</td>
+                    @if (recent.supervisor) { <td class="px-5 py-3 text-theme-sm">{{ row.user.nombre }}</td> }
+                    <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row)" [label]="statusLabel(row)" /></td>
+                    <td class="px-5 py-3 text-end text-theme-sm tabular-nums" [ngClass]="diffClass(row.diferenciaArqueo)">
                       {{ row.diferenciaArqueo === null ? '—' : (row.diferenciaArqueo | currency: 'PEN' : 'symbol' : '1.2-2') }}
                     </td>
-                    <td class="px-5 py-4 text-end">
+                    <td class="px-5 py-3 text-end">
                       <div class="inline-flex justify-end">
                         <app-table-dropdown>
                           <div dropdown-button>
@@ -94,10 +101,10 @@
                           </div>
                           <div dropdown-content>
                             @if (row.canClose) {
-                              <app-menu-item icon="mdi:cash-lock" (itemClick)="closeId.set(row.id)">{{ row.isMine ? 'Cerrar con arqueo' : 'Cierre forzado' }}</app-menu-item>
+                              <app-menu-item icon="mdi:cash-lock" [tooltip]="row.isMine ? 'Cuenta el efectivo y cierra la caja.' : 'Cierra la caja de otro usuario; queda a tu nombre.'" (itemClick)="closeId.set(row.id)">{{ row.isMine ? 'Cerrar con arqueo' : 'Cierre forzado' }}</app-menu-item>
                             }
-                            <app-menu-item icon="mdi:printer-outline" (itemClick)="printReport(row.id, 'ticket')">Imprimir arqueo (ticket)</app-menu-item>
-                            <app-menu-item icon="mdi:file-pdf-box" (itemClick)="printReport(row.id, 'a4')">Reporte PDF</app-menu-item>
+                            <app-menu-item icon="mdi:printer-outline" tooltip="Arqueo de esta caja en ticket." (itemClick)="printReport(row.id, 'ticket')">Imprimir arqueo (ticket)</app-menu-item>
+                            <app-menu-item icon="mdi:file-pdf-box" tooltip="Reporte de esta caja en PDF (A4)." (itemClick)="printReport(row.id, 'a4')">Reporte PDF</app-menu-item>
                           </div>
                         </app-table-dropdown>
                       </div>
@@ -107,8 +114,7 @@
               </tbody>
             </table>
           </div>
-        </div>
-      </app-component-card>
+      </div>
     }
   }
 
@@ -123,40 +129,40 @@
       <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Efectivo en caja: {{ sum.saldoActual | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
     }
   </div>
-  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
-    <app-form-select label="Tipo" [required]="true" [showPlaceholder]="false" [options]="movTipoOptions" [value]="movTipo()" (valueChange)="movTipo.set($any($event)); movErrors.set({})" />
-    <app-input-field label="Monto (S/)" [isRequired]="true" type="number" min="0" step="0.01" inputMode="decimal" [value]="movMonto() ?? ''" [error]="!!movErrors().monto" [hint]="movErrors().monto || ''" (valueChange)="movMonto.set($event === '' ? null : +$event); movErrors.update(e => ({ ...e, monto: undefined }))" />
-    <app-text-area label="Motivo" [required]="true" placeholder="Ej. Pago de movilidad, sencillo para cambio" [maxLength]="500" [rows]="2" [value]="movComentario()" [error]="!!movErrors().comentario" [hint]="movErrors().comentario || ''" (valueChange)="movComentario.set($event); movErrors.update(e => ({ ...e, comentario: undefined }))" />
+  <div data-modal-body class="space-y-3 px-4 py-4 sm:px-6">
+    <app-form-select compact label="Tipo" [required]="true" helpText="Egreso: sale efectivo de la gaveta. Ingreso: entra efectivo." [showPlaceholder]="false" [options]="movTipoOptions" [value]="movTipo()" (valueChange)="movTipo.set($any($event)); movErrors.set({})" />
+    <app-input-field compact icon="mdi:cash" label="Monto (S/)" [isRequired]="true" helpText="Solo efectivo. Un egreso no puede pasar de lo que hay en la caja." type="number" min="0" step="0.01" inputMode="decimal" [value]="movMonto() ?? ''" [error]="!!movErrors().monto" [hint]="movErrors().monto || ''" (valueChange)="movMonto.set($event === '' ? null : +$event); movErrors.update(e => ({ ...e, monto: undefined }))" />
+    <app-text-area compact label="Motivo" [required]="true" helpText="Sale en el reporte de caja; sé claro para el arqueo." placeholder="Ej. Pago de movilidad, sencillo para cambio" [maxLength]="500" [rows]="2" [value]="movComentario()" [error]="!!movErrors().comentario" [hint]="movErrors().comentario || ''" (valueChange)="movComentario.set($event); movErrors.update(e => ({ ...e, comentario: undefined }))" />
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="movementMutation.isPending()" (btnClick)="movOpen.set(false)">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [loading]="movementMutation.isPending()" [disabled]="movementMutation.isPending()" (btnClick)="submitMovement()">Registrar</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="movementMutation.isPending()" (btnClick)="movOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [loading]="movementMutation.isPending()" [disabled]="movementMutation.isPending()" (btnClick)="submitMovement()">Registrar</app-button>
     </div>
   </div>
 </app-modal>
 
 <!-- ========== IMPRESORA Y PERIFÉRICOS ========== -->
 <app-modal compact [isOpen]="hardwareOpen()" (closed)="hardwareOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Impresora y periféricos</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se guarda para esta caja: {{ session()?.cashRegister?.nombre }}.</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-8 px-4 py-5 sm:px-8">
-    <app-form-section title="Ticket" [cols]="2">
-      <app-form-select label="Ancho del papel" [showPlaceholder]="false" [options]="paperWidthOptions" [value]="hardwarePaperWidth()" (valueChange)="hardwarePaperWidth.set($any($event))" />
-      <app-input-field label="Nombre de la impresora" helpText="Opcional. Vacío: se imprime desde el navegador." [maxLength]="120" [value]="hardwarePrinterName()" (valueChange)="hardwarePrinterName.set('' + $event)" />
-      <app-checkbox class="sm:col-span-2" label="Imprimir el ticket al cobrar" [checked]="hardwareAutoPrint()" (checkedChange)="hardwareAutoPrint.set($event)" />
-      <app-checkbox class="sm:col-span-2" label="Abrir la gaveta al imprimir" [checked]="hardwareOpenDrawer()" (checkedChange)="hardwareOpenDrawer.set($event)" />
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+    <app-form-section compact icon="mdi:receipt-text-outline" title="Ticket" [cols]="2">
+      <app-form-select compact label="Ancho del papel" helpText="Ancho del rollo de la ticketera." [showPlaceholder]="false" [options]="paperWidthOptions" [value]="hardwarePaperWidth()" (valueChange)="hardwarePaperWidth.set($any($event))" />
+      <app-input-field compact icon="mdi:printer-outline" label="Nombre de la impresora" helpText="Opcional. Vacío: se imprime desde el navegador." [maxLength]="120" [value]="hardwarePrinterName()" (valueChange)="hardwarePrinterName.set('' + $event)" />
+      <app-checkbox class="sm:col-span-2" label="Imprimir el ticket al cobrar" helpText="Al cobrar en el punto de venta se abre la impresión del ticket." [checked]="hardwareAutoPrint()" (checkedChange)="hardwareAutoPrint.set($event)" />
+      <app-checkbox class="sm:col-span-2" label="Abrir la gaveta al imprimir" helpText="Solo si la gaveta está conectada a la ticketera." [checked]="hardwareOpenDrawer()" (checkedChange)="hardwareOpenDrawer.set($event)" />
     </app-form-section>
-    <app-form-section title="Otros equipos" [cols]="1">
+    <app-form-section compact icon="mdi:devices" title="Otros equipos" [cols]="1">
       <app-checkbox label="Lector de código de barras" helpText="Lectores que escriben como teclado (la mayoría)." [checked]="hardwareWedge()" (checkedChange)="hardwareWedge.set($event)" />
       <app-checkbox label="Pantalla para el cliente" helpText="Abre /pos-pantalla-cliente en un segundo monitor." [checked]="hardwareCustomerDisplay()" (checkedChange)="hardwareCustomerDisplay.set($event)" />
     </app-form-section>
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" [disabled]="hardwareMutation.isPending()" (btnClick)="hardwareOpen.set(false)">Cancelar</app-button>
-    <app-button startIconName="mdi:content-save-outline" [loading]="hardwareMutation.isPending()" [disabled]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">Guardar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="hardwareMutation.isPending()" (btnClick)="hardwareOpen.set(false)">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:content-save-outline" [loading]="hardwareMutation.isPending()" [disabled]="hardwareMutation.isPending()" (btnClick)="hardwareMutation.mutate()">Guardar</app-button>
   </div>
 </app-modal>
