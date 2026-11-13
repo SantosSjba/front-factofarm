@@ -66,7 +66,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
     @if (s.pagosDigitales.length) {
       <section>
         <h4 class="mb-2 text-sm font-medium text-gray-800 dark:text-white/90">Códigos de operación (para conciliar)</h4>
-        <div class="max-h-64 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <div class="ff-table-frame max-h-64 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
           <table class="w-full min-w-[420px] text-sm text-gray-700 dark:text-gray-300">
             <thead class="sticky top-0 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
               <tr>
@@ -93,12 +93,12 @@ const MOVEMENT_LABELS: Record<string, string> = {
 
     <section>
       <h4 class="mb-2 text-sm font-medium text-gray-800 dark:text-white/90">Movimientos de caja</h4>
-      <div class="max-h-72 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+      <div class="ff-table-frame max-h-72 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
         <table class="w-full min-w-[520px] text-sm text-gray-700 dark:text-gray-300">
           <thead class="sticky top-0 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
             <tr>
               <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Hora</th>
-              <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Tipo</th>
+              <th data-card-role="title" class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Tipo</th>
               <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Medio</th>
               <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Detalle</th>
               <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Monto</th>
@@ -124,7 +124,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
     @if (s.ventas.length) {
       <section>
         <h4 class="mb-2 text-sm font-medium text-gray-800 dark:text-white/90">Ventas de la sesión</h4>
-        <div class="max-h-72 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <div class="ff-table-frame max-h-72 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
           <table class="w-full min-w-[420px] text-sm text-gray-700 dark:text-gray-300">
             <thead class="sticky top-0 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
               <tr>

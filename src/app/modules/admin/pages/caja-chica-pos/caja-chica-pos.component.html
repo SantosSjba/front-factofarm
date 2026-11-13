@@ -2,12 +2,14 @@
 
 <app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Caja</h1>
-  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-1.5 sm:gap-2">
     @if (canSeeHistory) {
       <a routerLink="/historial-cajas"><app-button size="sm" variant="outline" startIconName="mdi:history">Historial de cajas</app-button></a>
     }
     @if (session(); as s) {
-      <app-button size="sm" variant="outline" startIconName="mdi:printer-settings" tooltip="Ancho del ticket, impresión al cobrar, gaveta y otros equipos de esta caja." (btnClick)="openHardware()">Impresora</app-button>
+      <!-- En teléfono solo el ícono, para que las tres acciones quepan en una fila. -->
+      <app-button class="sm:hidden" size="sm" variant="outline" startIconName="mdi:printer-settings" [iconOnly]="true" tooltip="Impresora: ancho del ticket, impresión al cobrar, gaveta y otros equipos." (btnClick)="openHardware()" />
+      <app-button class="hidden sm:inline-flex" size="sm" variant="outline" startIconName="mdi:printer-settings" tooltip="Ancho del ticket, impresión al cobrar, gaveta y otros equipos de esta caja." (btnClick)="openHardware()">Impresora</app-button>
       <app-button size="sm" variant="outline" startIconName="mdi:swap-vertical" tooltip="Efectivo que entra o sale de la gaveta y no es una venta." (btnClick)="openMovement('EGRESO')">Ingreso o egreso</app-button>
       <app-button size="sm" startIconName="mdi:cash-lock" tooltip="Cuenta el efectivo y cierra el turno con su arqueo." (btnClick)="closeId.set(s.id)">Cerrar caja</app-button>
     }
@@ -130,7 +132,7 @@
     }
   </div>
   <div data-modal-body class="space-y-3 px-4 py-4 sm:px-6">
-    <app-form-select compact label="Tipo" [required]="true" helpText="Egreso: sale efectivo de la gaveta. Ingreso: entra efectivo." [showPlaceholder]="false" [options]="movTipoOptions" [value]="movTipo()" (valueChange)="movTipo.set($any($event)); movErrors.set({})" />
+    <app-form-select compact label="Tipo" [required]="true" helpText="Egreso: pagos, movilidad, depósito al banco. Ingreso: sencillo, reposición de efectivo." [showPlaceholder]="false" [options]="movTipoOptions" [value]="movTipo()" (valueChange)="movTipo.set($any($event)); movErrors.set({})" />
     <app-input-field compact icon="mdi:cash" label="Monto (S/)" [isRequired]="true" helpText="Solo efectivo. Un egreso no puede pasar de lo que hay en la caja." type="number" min="0" step="0.01" inputMode="decimal" [value]="movMonto() ?? ''" [error]="!!movErrors().monto" [hint]="movErrors().monto || ''" (valueChange)="movMonto.set($event === '' ? null : +$event); movErrors.update(e => ({ ...e, monto: undefined }))" />
     <app-text-area compact label="Motivo" [required]="true" helpText="Sale en el reporte de caja; sé claro para el arqueo." placeholder="Ej. Pago de movilidad, sencillo para cambio" [maxLength]="500" [rows]="2" [value]="movComentario()" [error]="!!movErrors().comentario" [hint]="movErrors().comentario || ''" (valueChange)="movComentario.set($event); movErrors.update(e => ({ ...e, comentario: undefined }))" />
   </div>

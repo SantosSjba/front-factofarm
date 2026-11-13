@@ -144,8 +144,8 @@ export class CajaChicaPosComponent {
   protected readonly movComentario = signal('');
   protected readonly movErrors = signal<{ monto?: string; comentario?: string }>({});
   protected readonly movTipoOptions = [
-    { value: 'EGRESO', label: 'Egreso: sale efectivo (pagos, movilidad, depósito…)' },
-    { value: 'INGRESO', label: 'Ingreso: entra efectivo (sencillo, reposición…)' },
+    { value: 'EGRESO', label: 'Egreso: sale efectivo' },
+    { value: 'INGRESO', label: 'Ingreso: entra efectivo' },
   ];
 
   protected openMovement(tipo: 'INGRESO' | 'EGRESO') {
