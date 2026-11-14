@@ -1607,8 +1607,17 @@ export interface ServiceHistoryStockItemDto {
 export interface ServiceListFiltersRequest {
   search?: string;
   field?: 'all' | 'nombre' | 'codigoInterno' | 'codigoBarra' | 'codigoBusqueda' | 'descripcion';
+  /** Filtro por estado (chips del resumen). */
+  estado?: 'habilitado' | 'inhabilitado';
   page?: number;
   pageSize?: number;
+}
+
+/** `GET /services/summary`: totales de todas las páginas. */
+export interface ServiceSummaryDto {
+  total: number;
+  habilitados: number;
+  inhabilitados: number;
 }
 
 export interface ServiceAttributeInput {
@@ -1773,8 +1782,19 @@ export interface SeriesListResponseDto {
 export interface SeriesListFiltersRequest {
   search?: string;
   field?: 'all' | 'serie' | 'producto' | 'estado';
+  /** Filtro por estado (chips del resumen). */
+  estado?: ProductSerialStatus;
   page?: number;
   pageSize?: number;
+}
+
+/** `GET /series/summary`: cantidad por estado (todas las series, sin paginar). */
+export interface SeriesSummaryDto {
+  total: number;
+  disponible: number;
+  reservado: number;
+  vendido: number;
+  anulado: number;
 }
 
 export interface InventoryMovementListItemDto {

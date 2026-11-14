@@ -22,6 +22,8 @@ export class PrincipiosActivosComponent {
     singular: 'principio activo',
     article: 'el',
     newLabel: 'Nuevo principio activo',
+    icon: 'mdi:molecule',
+    newIcon: 'mdi:plus',
     helpStorageKey: 'principios-activos',
     help: [
       'Lista de referencia de principios activos, compartida por todas las farmacias.',

@@ -7,7 +7,8 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { categoryQueryKeys } from '../../../../core/query/category-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -51,7 +52,7 @@ type TreeRow = {
     BadgeComponent,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     FormSelectComponent,
     HasPermissionDirective,
     HelpPanelComponent,
@@ -107,6 +108,17 @@ export class CategoriasComponent {
   protected readonly emptyCount = computed(
     () => [...this.index().values()].filter((e) => e.totalItems === 0).length,
   );
+
+  /** Resumen del árbol completo (no depende de la búsqueda ni de lo abierto). */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    if (!this.treeQuery.data()) return [];
+    return [
+      { id: 'total', label: 'Categorías', count: this.totalCount(), icon: 'mdi:tag-multiple-outline', tone: 'neutral' },
+      { id: 'roots', label: 'Principales', count: this.rootCount(), icon: 'mdi:folder-outline', tone: 'info' },
+      { id: 'sub', label: 'Subcategorías', count: this.totalCount() - this.rootCount(), icon: 'mdi:file-tree-outline', tone: 'neutral' },
+      { id: 'empty', label: 'Vacías', count: this.emptyCount(), icon: 'mdi:tag-off-outline', tone: this.emptyCount() ? 'warning' : 'neutral', tooltip: 'Sin productos ni servicios asignados.' },
+    ];
+  });
 
   /** Con búsqueda: ids que coinciden más sus ancestros, para no perder el contexto. */
   private readonly searchVisibleIds = computed<{ matches: Set<string>; visible: Set<string> } | null>(() => {

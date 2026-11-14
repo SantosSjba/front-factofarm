@@ -22,6 +22,8 @@ export class ZonasComponent {
     singular: 'zona',
     article: 'la',
     newLabel: 'Nueva zona',
+    icon: 'mdi:map-marker-outline',
+    newIcon: 'mdi:plus',
     helpStorageKey: 'zonas',
     help: [
       'Las zonas agrupan a tus clientes por sector o distrito, por ejemplo para organizar el reparto o la cobranza.',

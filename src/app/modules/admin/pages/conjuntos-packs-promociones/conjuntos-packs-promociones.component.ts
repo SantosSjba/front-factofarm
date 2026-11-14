@@ -9,7 +9,8 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { FilesApiService } from '../../../../core/services/files-api.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -66,6 +67,7 @@ const formSchema = yup.object({
 });
 
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 import { QuantityStepperComponent } from '../../../../shared/components/form/quantity-stepper/quantity-stepper.component';
 import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
@@ -81,6 +83,7 @@ import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/ta
   standalone: true,
   imports: [
     ExcelIconComponent,
+    IconComponent,
     AlertComponent,
     FormSectionComponent,
     HelpHintComponent,
@@ -96,7 +99,7 @@ import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/ta
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     ListFiltersComponent,
     TableDropdownComponent,
     PaginationComponent,
@@ -127,7 +130,7 @@ export class ConjuntosPacksPromocionesComponent {
     { value: 'nombre', label: 'Nombre' },
     { value: 'codigoInterno', label: 'Cód. Interno' },
     { value: 'descripcion', label: 'Descripción' },
-    { value: 'all', label: 'Todos' },
+    { value: 'all', label: 'Todos los campos' },
   ];
 
   protected readonly columns: CompoundColumnConfig[] = [
@@ -163,6 +166,22 @@ export class ConjuntosPacksPromocionesComponent {
       queryKey: compoundProductQueryKeys.list(filters),
       queryFn: () => firstValueFrom(this.api.listCompoundProducts(filters)),
     };
+  });
+
+  /** Total sin búsqueda (todas las páginas): base del resumen. */
+  private readonly totalQuery = injectQuery(() => ({
+    queryKey: [...compoundProductQueryKeys.all, 'total'] as const,
+    queryFn: () => firstValueFrom(this.api.listCompoundProducts({ page: 1, pageSize: 1 })),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const total = this.totalQuery.data()?.total;
+    if (total == null) return [];
+    const chips: SummaryChip[] = [{ id: 'total', label: 'Registrados', count: total, icon: 'mdi:package-variant-closed', tone: 'neutral' }];
+    if (this.searchTerm().trim()) {
+      chips.push({ id: 'match', label: 'Coinciden con la búsqueda', count: this.listQuery.data()?.total ?? 0, icon: 'lucide:search', tone: 'info' });
+    }
+    return chips;
   });
 
   protected readonly unitsQuery = injectQuery(() => ({

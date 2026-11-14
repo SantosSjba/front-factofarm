@@ -22,6 +22,8 @@ export class UnidadesComponent {
     singular: 'unidad',
     article: 'la',
     newLabel: 'Nueva unidad',
+    icon: 'mdi:scale-balance',
+    newIcon: 'mdi:plus',
     helpStorageKey: 'unidades',
     help: [
       'Unidades de medida con su código de SUNAT, compartidas por todas las farmacias.',
@@ -31,7 +33,7 @@ export class UnidadesComponent {
     writePermission: 'units.write',
     global: true,
     fields: [
-      { key: 'codigo', label: 'Código', maxLength: 20, helpText: 'Código del catálogo de unidades de SUNAT. Va en los comprobantes electrónicos, así que debe ser el oficial.', placeholder: 'Ej.: NIU, BX, ZZ' },
+      { key: 'codigo', label: 'Código', icon: 'mdi:barcode', maxLength: 20, helpText: 'Código del catálogo de unidades de SUNAT. Va en los comprobantes electrónicos, así que debe ser el oficial.', placeholder: 'Ej.: NIU, BX, ZZ' },
       { key: 'nombre', label: 'Nombre', maxLength: 120, helpText: 'Cómo la verás al elegirla. Ej.: Unidades, Caja, Servicio.', placeholder: 'Ej.: Caja' }
     ],
     searchPlaceholder: 'Buscar por código o nombre',

@@ -10,6 +10,7 @@ export const serviceQueryKeys = {
       'list',
       filters.search ?? '',
       filters.field ?? 'nombre',
+      filters.estado ?? 'todos',
       filters.page ?? 1,
       filters.pageSize ?? 10,
     ] as const,

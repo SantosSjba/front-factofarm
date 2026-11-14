@@ -22,6 +22,8 @@ export class ViasAdministracionComponent {
     singular: 'vía de administración',
     article: 'la',
     newLabel: 'Nueva vía de administración',
+    icon: 'mdi:needle',
+    newIcon: 'mdi:plus',
     helpStorageKey: 'vias-administracion',
     help: [
       'Lista de referencia de vías de administración (oral, tópica, intramuscular…), compartida por todas las farmacias.',

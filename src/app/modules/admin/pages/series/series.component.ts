@@ -7,7 +7,9 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { seriesQueryKeys } from '../../../../core/query/series-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -19,7 +21,6 @@ import type { ProductSerialStatus, SeriesListFiltersRequest, SeriesListItemDto }
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
-import { BadgeComponent, type BadgeColor } from '../../../../shared/components/ui/badge/badge.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
@@ -28,7 +29,6 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
   selector: 'app-series',
   standalone: true,
   imports: [
-    BadgeComponent,
     ExcelIconComponent,
     HelpPanelComponent,
     MenuItemComponent,
@@ -36,7 +36,8 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
+    StatusBadgeComponent,
     ListFiltersComponent,
     PaginationComponent,
     TableDropdownComponent,
@@ -63,14 +64,16 @@ export class SeriesComponent {
   protected readonly fieldFilterOptions = [
     { value: 'serie', label: 'Serie' },
     { value: 'producto', label: 'Producto' },
-    { value: 'estado', label: 'Estado' },
-    { value: 'all', label: 'Todos' },
+    { value: 'all', label: 'Serie o producto' },
   ];
+  /** Filtro por estado desde los chips del resumen. */
+  protected readonly estado = signal<ProductSerialStatus | null>(null);
 
   protected readonly listQuery = injectQuery(() => {
     const filters: SeriesListFiltersRequest = {
       search: this.searchTerm().trim() || undefined,
       field: this.filterField(),
+      estado: this.estado() ?? undefined,
       page: this.currentPage(),
       pageSize: this.itemsPerPage,
     };
@@ -82,6 +85,36 @@ export class SeriesComponent {
 
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
+
+  /** Resumen por estado de todas las series (no solo la página visible). */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: [...seriesQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.seriesSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const current = this.estado();
+    const chip = (id: ProductSerialStatus | 'all', label: string, count: number, icon: string, tone: StatusTone, tooltip: string): SummaryChip => ({
+      id, label, count, icon, tone, clickable: true, tooltip,
+      active: id === 'all' ? current === null : current === id,
+    });
+    const chips = [
+      chip('all', 'Total', s.total, 'mdi:barcode', 'neutral', 'Ver todas las series.'),
+      chip('DISPONIBLE', 'Disponibles', s.disponible, 'mdi:check-circle-outline', 'success', 'Listas para vender.'),
+      chip('RESERVADO', 'Reservadas', s.reservado, 'mdi:clock-outline', 'warning', 'Apartadas en una venta en curso.'),
+      chip('VENDIDO', 'Vendidas', s.vendido, 'mdi:cart-check', 'info', 'Ya se vendieron.'),
+    ];
+    if (s.anulado) chips.push(chip('ANULADO', 'Anuladas', s.anulado, 'mdi:cancel', 'neutral', 'Series anuladas.'));
+    return chips;
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const next = chip.id === 'all' ? null : (chip.id as ProductSerialStatus);
+    this.estado.set(this.estado() === next ? null : next);
+    this.currentPage.set(1);
+  }
 
   protected readonly confirmOpen = signal(false);
   protected readonly confirmTarget = signal<SeriesListItemDto | null>(null);
@@ -125,6 +158,7 @@ export class SeriesComponent {
   protected clearFilters() {
     this.searchTerm.set('');
     this.filterField.set('serie');
+    this.estado.set(null);
     this.currentPage.set(1);
   }
 
@@ -136,11 +170,11 @@ export class SeriesComponent {
     return this.locale.formatDate(v, { dateStyle: 'short' });
   }
 
-  protected estadoColor(estado: ProductSerialStatus): BadgeColor {
+  protected estadoTone(estado: ProductSerialStatus): StatusTone {
     if (estado === 'DISPONIBLE') return 'success';
     if (estado === 'RESERVADO') return 'warning';
     if (estado === 'VENDIDO') return 'info';
-    return 'light';
+    return 'neutral';
   }
 
   /** Por qué no se puede cambiar ni eliminar (vendida o reservada), o cadena vacía. Lo exige el API. */
@@ -214,6 +248,7 @@ export class SeriesComponent {
         this.api.exportSeries({
           search: this.searchTerm().trim() || undefined,
           field: this.filterField(),
+          estado: this.estado() ?? undefined,
         }),
       );
       const url = URL.createObjectURL(blob);

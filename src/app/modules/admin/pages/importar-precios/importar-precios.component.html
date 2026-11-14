@@ -5,7 +5,10 @@
     Importar precios
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <app-button size="sm" variant="outline" (btnClick)="importOpen.set(true)"><app-excel-icon /> Importar precios</app-button>
+    <app-button size="sm" variant="outline" tooltip="Abre la ventana para descargar la plantilla y cargar el Excel." (btnClick)="importOpen.set(true)">
+      <app-excel-icon />
+      <span class="leading-none">Importar precios</span>
+    </app-button>
   </div>
 </app-page-toolbar>
 
@@ -17,25 +20,25 @@
   </ol>
 </app-help-panel>
 
-<app-component-card title="Actualizar precios desde Excel" desc="Cambia el precio de venta y, si viene en el archivo, el de compra. No crea productos.">
-  <ol class="grid gap-4 sm:grid-cols-3">
-    <li class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-      <p class="text-sm font-semibold text-gray-800 dark:text-white/90">1. Descarga la plantilla</p>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Pulsa «Importar precios» arriba: la plantilla está en esa ventana. Llénala sin cambiar sus columnas.</p>
-    </li>
-    <li class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-      <p class="text-sm font-semibold text-gray-800 dark:text-white/90">2. Revisa la vista previa</p>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Al elegir el archivo verás cuántos productos cambiarían y qué filas tienen errores.</p>
-    </li>
-    <li class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-      <p class="text-sm font-semibold text-gray-800 dark:text-white/90">3. Confirma</p>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Solo se actualizan las filas válidas. Las demás se listan para que las corrijas.</p>
-    </li>
+<!-- Pasos compactos con ícono; el resultado de la última carga aparece debajo. -->
+<app-component-card compact icon="mdi:cash-sync" title="Actualizar precios desde Excel" desc="Cambia el precio de venta y, si viene en el archivo, el de compra. No crea productos.">
+  <ol class="grid gap-3 sm:grid-cols-3">
+    @for (step of steps; track step.title; let i = $index) {
+      <li class="flex items-start gap-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800">
+        <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+          <app-icon [name]="step.icon" iconClass="size-4" />
+        </span>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-gray-800 dark:text-white/90">{{ i + 1 }}. {{ step.title }}</p>
+          <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ step.text }}</p>
+        </div>
+      </li>
+    }
   </ol>
 
   @if (lastResult(); as r) {
     <app-alert
-      class="mt-6 block"
+      class="mt-4 block"
       [variant]="r.errors.length ? 'warning' : 'success'"
       title="Última importación"
       [message]="'Filas: ' + r.totalRows + ' · Actualizados: ' + r.updated + ' · Con error: ' + r.errors.length"

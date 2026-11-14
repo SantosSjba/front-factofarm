@@ -6,7 +6,7 @@
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <ng-container *appHasPermission="'categories.write'">
-      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">Nueva categoría</app-button>
+      <app-button size="sm" startIconName="mdi:folder-plus-outline" (btnClick)="openCreateModal()">Nueva categoría</app-button>
     </ng-container>
   </div>
 </app-page-toolbar>
@@ -19,45 +19,48 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador compacto, expandir/contraer y resumen en chips (todo el árbol, no solo lo visible). -->
 <app-list-filters
+  compact
   [showSelect]="false"
   searchPlaceholder="Buscar categoría"
   clearLabel="Limpiar"
   [searchValue]="searchTerm()"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de categorías"
+  summaryStorageKey="categorias"
   (searchValueChange)="onSearchChange($event)"
   (clear)="clearFilters()"
-/>
+>
+  @if (hasCollapsible() && !searchTerm().trim()) {
+    <div data-filters-end class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" startIconName="mdi:unfold-more-horizontal" tooltip="Abre todas las categorías para ver sus subcategorías." (btnClick)="expandAll()">Expandir todo</app-button>
+      <app-button size="sm" variant="outline" startIconName="mdi:unfold-less-horizontal" tooltip="Muestra solo las categorías principales." (btnClick)="collapseAll()">Contraer todo</app-button>
+    </div>
+  }
+</app-list-filters>
 
 @let treeState = treeQuery | queryPageState: totalCount();
 
-<app-component-card
-  title="Árbol de categorías"
-  [desc]="totalCount() ? totalCount() + (totalCount() === 1 ? ' categoría' : ' categorías') + ' · ' + rootCount() + (rootCount() === 1 ? ' principal' : ' principales') + (emptyCount() ? ' · ' + emptyCount() + (emptyCount() === 1 ? ' vacía' : ' vacías') : '') : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="treeState.loading"
   [error]="treeState.error"
   [empty]="treeState.empty"
   emptyTitle="Aún no hay categorías"
   emptyHint="Usa «Nueva categoría» para crear la primera."
+  skeleton="table"
   (retry)="refetchTree()"
 >
-  @if (hasCollapsible() && !searchTerm().trim()) {
-    <div data-card-header-end class="flex items-center gap-2">
-      <app-button size="sm" variant="outline" startIconName="mdi:unfold-more-horizontal" (btnClick)="expandAll()">Expandir todo</app-button>
-      <app-button size="sm" variant="outline" startIconName="mdi:unfold-less-horizontal" (btnClick)="collapseAll()">Contraer todo</app-button>
-    </div>
-  }
-
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Categoría</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Categoría</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Contenido</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Subcategorías</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Creada</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha de registro</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
@@ -127,7 +130,7 @@
                   <ng-container *appHasPermission="'categories.write'">
                     <app-table-dropdown>
                       <div dropdown-button>
-                        <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + row.node.nombre"></app-button>
+                        <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones de ' + row.node.nombre"></app-button>
                       </div>
                       <div dropdown-content>
                         <app-menu-item icon="mdi:folder-plus-outline" tooltip="Crea una categoría dentro de esta." (itemClick)="openCreateModal(row)">Agregar subcategoría</app-menu-item>
@@ -136,7 +139,7 @@
                         <app-menu-item
                           variant="danger"
                           icon="mdi:trash-can-outline"
-                          [tooltip]="blockReason || 'Quita la categoría. Te pedirá confirmación.'"
+                          [tooltip]="blockReason || 'Te pedirá confirmación.'"
                           [disabled]="!!blockReason"
                           (itemClick)="openDeleteConfirm(row)"
                         >Eliminar</app-menu-item>
@@ -157,18 +160,22 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
-<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-xl">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+<!-- ========== NUEVA / EDITAR ========== -->
+<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ formTitle() }}</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ formDescription() }}</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-5 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-3 px-4 py-4 sm:px-6">
     <app-input-field
+      compact
+      icon="mdi:tag-outline"
       label="Nombre"
       [isRequired]="true"
-      helpText="Se guarda en mayúsculas. No puede repetirse con otra categoría. Ej.: Analgésicos, Cuidado del bebé."
+      helpText="Se guarda en mayúsculas. No puede repetirse con otra categoría."
+      placeholder="Ej.: Analgésicos, Cuidado del bebé"
       [maxLength]="120"
       [value]="nombre()"
       [error]="!!nombreError()"
@@ -176,6 +183,7 @@
       (valueChange)="nombre.set($event + ''); nombreError.set('')"
     />
     <app-form-select
+      compact
       label="Dentro de"
       helpText="Elige otra categoría para que esta sea su subcategoría, o «Ninguna» para que sea principal. No puedes elegir una de sus propias subcategorías."
       [value]="parentId()"
@@ -184,27 +192,29 @@
       (valueChange)="parentId.set($event)"
     />
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
-        {{ isSaving() ? (editingId() ? 'Actualizando…' : 'Guardando…') : (editingId() ? 'Guardar cambios' : 'Guardar categoría') }}
+    <div class="flex items-center gap-2">
+      <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
+        {{ isSaving() ? (editingId() ? 'Actualizando…' : 'Guardando…') : (editingId() ? 'Guardar cambios' : 'Guardar') }}
       </app-button>
     </div>
   </div>
 </app-modal>
 
-<app-modal compact [isOpen]="!!deleteTarget()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
+<!-- ========== ELIMINAR ========== -->
+<app-modal compact [isOpen]="!!deleteTarget()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar categoría</h3>
   </div>
-  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 sm:px-6 dark:text-gray-300">
-    ¿Eliminar «{{ deleteTarget()?.path }}»? Dejará de aparecer al elegir la categoría de un producto.
+  <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
+    ¿Eliminar <span class="font-semibold text-gray-800 dark:text-white/90">{{ deleteTarget()?.path }}</span>?
+    <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">Dejará de aparecer al elegir la categoría de un producto.</p>
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
-    <app-button variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="closeDeleteConfirm()">Cancelar</app-button>
-    <app-button variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="closeDeleteConfirm()">Cancelar</app-button>
+    <app-button size="sm" variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>

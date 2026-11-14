@@ -22,6 +22,8 @@ export class FormasFarmaceuticasComponent {
     singular: 'forma farmacéutica',
     article: 'la',
     newLabel: 'Nueva forma farmacéutica',
+    icon: 'mdi:pill',
+    newIcon: 'mdi:plus',
     helpStorageKey: 'formas-farmaceuticas',
     help: [
       'Lista de referencia de formas farmacéuticas (tableta, jarabe, ampolla…), compartida por todas las farmacias.',

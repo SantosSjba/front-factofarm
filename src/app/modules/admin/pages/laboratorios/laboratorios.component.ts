@@ -22,6 +22,8 @@ export class LaboratoriosComponent {
     singular: 'laboratorio',
     article: 'el',
     newLabel: 'Nuevo laboratorio',
+    icon: 'mdi:flask-outline',
+    newIcon: 'mdi:plus',
     helpStorageKey: 'laboratorios',
     help: [
       'Lista de referencia de laboratorios fabricantes, compartida por todas las farmacias.',

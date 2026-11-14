@@ -8,6 +8,7 @@ export const seriesQueryKeys = {
       'list',
       filters.search?.trim() ?? '',
       filters.field ?? 'serie',
+      filters.estado ?? 'todos',
       filters.page ?? 1,
       filters.pageSize ?? 10,
     ] as const,

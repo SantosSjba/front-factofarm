@@ -9,7 +9,8 @@ export type SummaryChipTone = StatusTone;
 export interface SummaryChip {
   id: string;
   label: string;
-  count: number | string;
+  /** Vacío = chip solo informativo, sin número (p. ej. «Catálogo compartido»). */
+  count?: number | string | null;
   icon?: string;
   tone?: SummaryChipTone;
   /** Resaltado: el filtro de este chip está aplicado. */
@@ -83,7 +84,9 @@ const DOT: Record<SummaryChipTone, string> = {
         <span class="size-1.5 shrink-0 rounded-full" [class]="dot(chip)" aria-hidden="true"></span>
       }
       <span class="whitespace-nowrap">{{ chip.label }}</span>
-      <span class="font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ chip.count }}</span>
+      @if (chip.count != null && chip.count !== '') {
+        <span class="font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ chip.count }}</span>
+      }
     </ng-template>
   `,
 })

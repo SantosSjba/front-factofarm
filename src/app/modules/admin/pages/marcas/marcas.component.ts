@@ -22,6 +22,8 @@ export class MarcasComponent {
     singular: 'marca',
     article: 'la',
     newLabel: 'Nueva marca',
+    icon: 'mdi:tag-outline',
+    newIcon: 'mdi:plus',
     helpStorageKey: 'marcas',
     help: [
       'Aquí registras las marcas o laboratorios fabricantes de lo que vendes.',

@@ -29,7 +29,6 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { ModalTabHeaderComponent } from '../../../../shared/components/ui/modal-tab-header/modal-tab-header.component';
 import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
@@ -215,7 +214,6 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     FormSelectComponent,
     InputFieldComponent,
     LabelComponent,
-    IconComponent,
     HasPermissionDirective,
   ],
   templateUrl: './clientes.component.html',

@@ -120,9 +120,11 @@ import type {
   ServiceListFiltersRequest,
   ServiceListItemDto,
   ServiceListResponseDto,
+  ServiceSummaryDto,
   SeriesListFiltersRequest,
   SeriesListItemDto,
   SeriesListResponseDto,
+  SeriesSummaryDto,
   UbigeoDepartmentDto,
   UbigeoDistrictDto,
   UbigeoProvinceDto,
@@ -1318,9 +1320,14 @@ export class DirectoryApiService {
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.estado) params['estado'] = filters.estado;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     return this.http.get<ServiceListResponseDto>(`${this.base}/services`, { params });
+  }
+
+  servicesSummary() {
+    return this.http.get<ServiceSummaryDto>(`${this.base}/services/summary`);
   }
 
   createService(body: CreateServiceRequest) {
@@ -1430,9 +1437,14 @@ export class DirectoryApiService {
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.estado) params['estado'] = filters.estado;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     return this.http.get<SeriesListResponseDto>(`${this.base}/series`, { params });
+  }
+
+  seriesSummary() {
+    return this.http.get<SeriesSummaryDto>(`${this.base}/series/summary`);
   }
 
   updateSeriesStatus(id: string, estado: 'DISPONIBLE' | 'RESERVADO' | 'VENDIDO' | 'ANULADO', vendido: boolean) {
@@ -1448,6 +1460,7 @@ export class DirectoryApiService {
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.estado) params['estado'] = filters.estado;
     return this.http.get(`${this.base}/series/export`, {
       params,
       responseType: 'blob',

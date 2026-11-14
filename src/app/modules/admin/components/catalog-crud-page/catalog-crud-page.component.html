@@ -8,7 +8,7 @@
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <ng-container *appHasPermission="cfg.writePermission">
-      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">{{ cfg.newLabel }}</app-button>
+      <app-button size="sm" [startIconName]="cfg.newIcon ?? 'mdi:plus'" (btnClick)="openCreateModal()">{{ cfg.newLabel }}</app-button>
     </ng-container>
   </div>
 </app-page-toolbar>
@@ -21,7 +21,9 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador compacto y resumen en chips (cuenta todas las páginas, no solo la visible). -->
 <app-list-filters
+  compact
   [collapsible]="searchOptions().length > 1"
   [showSelect]="searchOptions().length > 1"
   [activeCount]="filterField() && filterField() !== defaultField() ? 1 : 0"
@@ -31,7 +33,11 @@
   [selectShowPlaceholder]="false"
   [searchPlaceholder]="cfg.searchPlaceholder ?? 'Buscar ' + cfg.singular"
   selectLabel="Buscar por"
+  selectAriaLabel="Buscar por"
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  [summaryLabel]="'Resumen de ' + cfg.title.toLowerCase()"
+  [summaryStorageKey]="cfg.helpStorageKey"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
@@ -39,39 +45,27 @@
 
 @let listState = listQuery | queryPageState: totalRows();
 
-<app-component-card
-  [title]="'Listado de ' + cfg.title.toLowerCase()"
-  [desc]="totalRows() ? totalRows() + ' en total' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   [emptyTitle]="searchTerm().trim() ? 'Sin coincidencias para tu búsqueda' : 'Aún no hay ' + cfg.title.toLowerCase()"
   [emptyHint]="searchTerm().trim() ? 'Prueba con otro texto.' : 'Usa «' + cfg.newLabel + '» para registrar ' + (cfg.article === 'la' ? 'la primera.' : 'el primero.')"
+  skeleton="table"
   (retry)="refetchRows()"
 >
-  @if (cfg.global) {
-    <div data-card-header-end class="flex items-center gap-1.5">
-      <app-badge size="sm" color="info">Catálogo compartido</app-badge>
-      <app-help-hint
-        text="Es el mismo para todas las farmacias. Puedes agregar nuevos; solo el equipo de FactoFarm corrige o elimina, para que nadie cambie un dato que otros usan."
-        [iconSize]="15"
-      />
-    </div>
-  }
-
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">{{ cfg.title }}</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">#</th>
-            @for (field of cfg.fields; track field.key) {
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">{{ field.label }}</th>
+            @for (field of cfg.fields; track field.key; let first = $first) {
+              <th [attr.data-card-role]="first ? 'title' : null" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">{{ field.label }}</th>
             }
             @if (showCreatedAt()) {
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Creado</th>
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha de registro</th>
             }
             @if (canManageRows()) {
               <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
@@ -79,31 +73,30 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of rows(); track row.id; let i = $index) {
+          @for (row of rows(); track row.id) {
             <tr>
-              <td class="px-5 py-4 text-theme-sm tabular-nums">{{ pageStart() + i + 1 }}</td>
               @for (field of cfg.fields; track field.key; let first = $first) {
                 <td
-                  class="px-5 py-4 text-theme-sm"
+                  class="px-5 py-3 text-theme-sm"
                   [class.font-medium]="first"
                   [class.text-gray-800]="first"
                   [class.dark:text-white/90]="first"
                 >{{ cell(row, field.key) }}</td>
               }
               @if (showCreatedAt()) {
-                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.createdAt | appDate: 'dd/MM/yyyy' }}</td>
+                <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ row.createdAt | appDate: 'dd/MM/yyyy' }}</td>
               }
               @if (canManageRows()) {
-                <td class="px-5 py-4 text-end">
+                <td class="px-5 py-3 text-end">
                   <div class="inline-flex justify-end">
                     <ng-container *appHasPermission="cfg.writePermission">
                       <app-table-dropdown>
                         <div dropdown-button>
-                          <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + rowLabel(row)"></app-button>
+                          <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones de ' + rowLabel(row)"></app-button>
                         </div>
                         <div dropdown-content>
                           <app-menu-item icon="mdi:pencil-outline" [tooltip]="'Corrige ' + (cfg.article === 'la' ? 'esta ' : 'este ') + cfg.singular + '.'" (itemClick)="openEditModal(row)">Editar</app-menu-item>
-                          <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Quítalo del listado. Te pedirá confirmación." (itemClick)="openDeleteConfirm(row)">Eliminar</app-menu-item>
+                          <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Te pedirá confirmación." (itemClick)="openDeleteConfirm(row)">Eliminar</app-menu-item>
                         </div>
                       </app-table-dropdown>
                     </ng-container>
@@ -113,16 +106,14 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
-                Sin coincidencias para los filtros aplicados.
-              </td>
+              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para la búsqueda.</td>
             </tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination
   [totalItems]="totalRows()"
@@ -131,8 +122,9 @@
   (currentPageChange)="currentPage.set($event)"
 />
 
-<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-xl">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+<!-- ========== NUEVO / EDITAR ========== -->
+<app-modal compact [isOpen]="formOpen()" (closed)="closeFormModal()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">
       {{ editing() ? 'Editar ' + cfg.singular : cfg.newLabel }}
     </h3>
@@ -140,9 +132,11 @@
       <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ rowLabel(row) }}</p>
     }
   </div>
-  <div data-modal-body class="min-h-0 space-y-5 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-3 px-4 py-4 sm:px-6">
     @for (field of cfg.fields; track field.key) {
       <app-input-field
+        compact
+        [icon]="field.icon ?? cfg.icon ?? 'mdi:tag-outline'"
         [label]="field.label"
         [isRequired]="true"
         [helpText]="field.helpText"
@@ -155,27 +149,29 @@
       />
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
-        {{ isSaving() ? (editing() ? 'Actualizando…' : 'Guardando…') : (editing() ? 'Guardar cambios' : 'Guardar ' + cfg.singular) }}
+    <div class="flex items-center gap-2">
+      <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="isSaving()" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
+        {{ isSaving() ? (editing() ? 'Actualizando…' : 'Guardando…') : (editing() ? 'Guardar cambios' : 'Guardar') }}
       </app-button>
     </div>
   </div>
 </app-modal>
 
-<app-modal compact [isOpen]="!!deleteTarget()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-gray-800">
+<!-- ========== ELIMINAR ========== -->
+<app-modal compact [isOpen]="!!deleteTarget()" (closed)="closeDeleteConfirm()" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Eliminar {{ cfg.singular }}</h3>
   </div>
-  <div data-modal-body class="px-4 py-4 text-sm text-gray-700 sm:px-6 dark:text-gray-300">
-    ¿Eliminar «{{ rowLabel(deleteTarget()) }}»? Dejará de aparecer al elegir{{ cfg.article === 'la' ? 'la' : 'lo' }} en los productos. Si algún producto {{ cfg.article === 'la' ? 'la' : 'lo' }} usa, no se podrá eliminar.
+  <div data-modal-body class="min-h-0 px-4 py-4 text-theme-sm text-gray-600 dark:text-gray-400 sm:px-6">
+    ¿Eliminar <span class="font-semibold text-gray-800 dark:text-white/90">{{ rowLabel(deleteTarget()) }}</span>?
+    <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">Si algún producto {{ cfg.article === 'la' ? 'la' : 'lo' }} usa, no se podrá eliminar.</p>
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
-    <app-button variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="closeDeleteConfirm()">Cancelar</app-button>
-    <app-button variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="deleteMutation.isPending()" (btnClick)="closeDeleteConfirm()">Cancelar</app-button>
+    <app-button size="sm" variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="confirmDelete()">
       {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
     </app-button>
   </div>

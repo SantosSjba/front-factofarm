@@ -5,7 +5,18 @@
     Servicios
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
-    <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">Nuevo</app-button>
+    <!-- Columnas visibles de la tabla (en teléfono también definen los datos de cada tarjeta). -->
+    <app-table-dropdown>
+      <div dropdown-button>
+        <app-button size="sm" variant="outline" startIconName="lucide:columns-3" endIconName="mdi:chevron-down" tooltip="Elige qué datos se muestran en la tabla.">Columnas</app-button>
+      </div>
+      <div dropdown-content>
+        @for (col of columns; track col.key) {
+          <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
+        }
+      </div>
+    </app-table-dropdown>
+    <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">Nuevo servicio</app-button>
   </div>
 </app-page-toolbar>
 
@@ -17,16 +28,21 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador compacto y resumen (todas las páginas); los chips filtran por estado. -->
 <app-list-filters
-  collapsible
-  [activeCount]="filterField() !== 'nombre' ? 1 : 0"
+  compact
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
   [selectShowPlaceholder]="false"
-  searchPlaceholder="Buscar"
-  selectLabel="Buscar por"
+  searchPlaceholder="Buscar servicio"
+  selectAriaLabel="Buscar por"
+  selectHelpText="En qué dato buscar el texto escrito."
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de servicios"
+  summaryStorageKey="servicios"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
@@ -34,44 +50,22 @@
 
 @let listState = listQuery | queryPageState: totalRows();
 
-<app-component-card
-  title="Listado de servicios"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="Aún no hay servicios"
-  emptyHint="Usa «Nuevo» para crear el primero."
+  [emptyTitle]="searchTerm().trim() || estado() ? 'Sin servicios con esos filtros' : 'Aún no hay servicios'"
+  emptyHint="Usa «Nuevo servicio» para crear el primero."
+  skeleton="table"
   (retry)="refetchRows()"
 >
-  <app-color-legend
-    data-card-header-end
-    ariaLabel="Leyenda del listado"
-    [items]="rowLegend"
-    helpText="Un servicio inhabilitado queda guardado pero fuera de uso. Se vuelve a habilitar desde el menú de acciones."
-  />
-  <div class="px-3 pt-3 sm:px-4" data-table-only>
-    <div class="flex justify-end">
-      <app-table-dropdown>
-        <div dropdown-button>
-          <app-button size="sm" variant="outline" endIconName="mdi:chevron-down">Columnas</app-button>
-        </div>
-        <div dropdown-content>
-          @for (col of columns; track col.key) {
-            <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
-          }
-        </div>
-      </app-table-dropdown>
-    </div>
-  </div>
-
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Servicios</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">#</th>
             @if (isVisible('codigoInterno')) {
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cód. Interno</th>
             }
@@ -79,12 +73,11 @@
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Unidad</th>
             }
             @if (isVisible('nombre')) {
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nombre</th>
+              <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nombre</th>
             }
             @if (isVisible('descripcion')) {
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Descripción</th>
             }
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Historial</th>
             @if (isVisible('precioVenta')) {
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Precio de venta</th>
             }
@@ -113,67 +106,53 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of services(); track row.id; let i = $index) {
+          @for (row of services(); track row.id) {
             <tr [attr.data-row-tone]="rowTone(row)">
-              <td class="px-5 py-4 text-theme-sm">{{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
               @if (isVisible('codigoInterno')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.codigoInterno || '—' }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.codigoInterno || '—' }}</td>
               }
               @if (isVisible('unidad')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.unit.codigo }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.unit.codigo }}</td>
               }
               @if (isVisible('nombre')) {
-                <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
-                  <div class="flex min-w-0 items-center gap-2">
-                    <span class="min-w-0 truncate">{{ row.nombre }}</span>
-                    @if (!row.habilitado) {
-                      <span
-                        class="inline-flex shrink-0 items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-500/20 dark:text-red-300"
-                      >
-                        Inhabilitado
-                      </span>
-                    }
-                  </div>
-                </td>
+                <td class="px-5 py-3 text-theme-sm"><span class="block font-medium text-gray-800 dark:text-white/90">{{ row.nombre }}</span>@if (!row.habilitado) { <app-status-badge status="INHABILITADO" tone="neutral" label="Inhabilitado" /> }</td>
               }
               @if (isVisible('descripcion')) {
-                <td data-card-wide class="px-5 py-4 text-theme-sm">{{ row.descripcion || '—' }}</td>
+                <td data-card-wide class="px-5 py-3 text-theme-sm">{{ row.descripcion || '—' }}</td>
               }
-              <td class="px-5 py-4">
-                <app-button size="sm" variant="primary" [iconOnly]="true" startIconName="mdi:history" [tooltip]="'Historial de ' + row.nombre" (btnClick)="openHistoryModal(row)"></app-button>
-              </td>
               @if (isVisible('precioVenta')) {
-                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ formatSalePrice(row) }}</td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums">{{ formatSalePrice(row) }}</td>
               }
               @if (isVisible('tieneIgvVenta')) {
-                <td class="px-5 py-4 text-theme-sm">{{ siNo(row.incluyeIgvVenta) }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ siNo(row.incluyeIgvVenta) }}</td>
               }
               @if (isVisible('codigoSunat')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.codigoSunat || '—' }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.codigoSunat || '—' }}</td>
               }
               @if (isVisible('precioCompra')) {
-                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ formatPurchasePrice(row) }}</td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums">{{ formatPurchasePrice(row) }}</td>
               }
               @if (isVisible('tieneIgvCompra')) {
-                <td class="px-5 py-4 text-theme-sm">{{ siNo(row.incluyeIgvCompra) }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ siNo(row.incluyeIgvCompra) }}</td>
               }
               @if (isVisible('modelo')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.modelo || '—' }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.modelo || '—' }}</td>
               }
               @if (isVisible('marca')) {
-                <td class="px-5 py-4 text-theme-sm">{{ marcaLabel(row) }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ marcaLabel(row) }}</td>
               }
               @if (isVisible('registroSanitario')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.registroSanitario || '—' }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.registroSanitario || '—' }}</td>
               }
-              <td class="px-5 py-4 text-end">
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
-                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [id]="'service-actions-' + row.id" [tooltip]="'Acciones para ' + row.nombre"></app-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [id]="'service-actions-' + row.id" [tooltip]="'Acciones de ' + row.nombre"></app-button>
                     </div>
                     <div dropdown-content>
                       <app-menu-item icon="mdi:pencil-outline" tooltip="Abre el servicio para cambiar sus datos y su precio." (itemClick)="openEditModal(row)">Editar</app-menu-item>
+                      <app-menu-item icon="mdi:history" tooltip="Movimientos registrados de este servicio." (itemClick)="openHistoryModal(row)">Historial</app-menu-item>
                       <app-menu-item icon="mdi:content-copy" tooltip="Crea al instante una copia con «(Copia)» en el nombre." [disabled]="duplicateMutation.isPending() || statusMutation.isPending() || deleteMutation.isPending()" [loading]="duplicateMutation.isPending()" (itemClick)="duplicateServiceRow(row)">{{ duplicateMutation.isPending() ? 'Duplicando...' : 'Duplicar' }}</app-menu-item>
                       <app-menu-item [icon]="row.habilitado ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" [tooltip]="row.habilitado ? 'Lo deja fuera de uso, sin borrarlo. Puedes habilitarlo después.' : 'Vuelve a estar disponible.'" [disabled]="statusMutation.isPending() || deleteMutation.isPending()" [loading]="statusMutation.isPending()" (itemClick)="toggleServiceStatus(row, 'service-actions-' + row.id)">{{
                           statusMutation.isPending()
@@ -181,7 +160,7 @@
                             : (row.habilitado ? 'Inhabilitar' : 'Habilitar')
                         }}</app-menu-item>
                       <app-menu-item icon="mdi:barcode" tooltip="Registra el código de barras, mira cómo queda e imprímelo." (itemClick)="openBarcodeModal(row)">Código de barras</app-menu-item>
-                      <app-menu-item icon="mdi:trash-can-outline" tooltip="Quita el servicio del listado. Te pedirá confirmación." variant="danger" [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()" (itemClick)="deleteServiceRow(row, 'service-actions-' + row.id)">{{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}</app-menu-item>
+                      <app-menu-item icon="mdi:trash-can-outline" tooltip="Te pedirá confirmación." variant="danger" [disabled]="deleteMutation.isPending() || statusMutation.isPending()" [loading]="deleteMutation.isPending()" (itemClick)="deleteServiceRow(row, 'service-actions-' + row.id)">{{ deleteMutation.isPending() ? 'Eliminando...' : 'Eliminar' }}</app-menu-item>
                       <app-menu-item icon="mdi:tag-outline" tooltip="Imprime una etiqueta con el código de barras. Necesita que el servicio lo tenga." (itemClick)="printServiceLabels(row, 'single')">Etiquetas</app-menu-item>
                       <app-menu-item icon="mdi:tag-outline" tooltip="Imprime 1 etiqueta por hoja. Necesita código de barras." (itemClick)="printServiceLabels(row, '1x1')">Etiquetas 1x1</app-menu-item>
                       <app-menu-item icon="mdi:tag-multiple-outline" tooltip="Imprime 2 etiquetas en una fila. Necesita código de barras." (itemClick)="printServiceLabels(row, '1x2')">Etiquetas 1x2</app-menu-item>
@@ -193,7 +172,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
+              <td colspan="99" class="px-5 py-3 text-center text-theme-sm text-gray-500">
                 Sin coincidencias para los filtros aplicados.
               </td>
             </tr>
@@ -202,7 +181,7 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination
   [totalItems]="totalRows()"
@@ -221,7 +200,7 @@
       (tabChange)="setHistoryTab($event)"
     />
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
     @if (historyTab() === 'stock') {
       <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
         <table class="w-full min-w-[520px] text-sm text-gray-700 dark:text-gray-300">
@@ -261,8 +240,8 @@
       </p>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="closeHistoryModal()">Cerrar</app-button>
   </div>
 </app-modal>
 
@@ -273,9 +252,9 @@
   <div data-modal-body class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
     {{ confirmActionMessage() }}
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
-    <app-button
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="closeConfirmModal()">Cancelar</app-button>
+    <app-button size="sm"
       [variant]="confirmAction() === 'delete' ? 'danger' : 'primary'"
       [startIconName]="confirmAction() === 'delete' ? 'mdi:trash-can-outline' : 'mdi:check'"
       [disabled]="deleteMutation.isPending() || statusMutation.isPending()"
@@ -292,7 +271,7 @@
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Código de barras</h3>
   </div>
   <div data-modal-body class="px-4 py-4 sm:px-6">
-    <app-input-field label="Código" helpText="Un código propio para el servicio. Aquí ves cómo quedará la etiqueta antes de imprimirla." [maxLength]="60" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
+    <app-input-field icon="mdi:barcode" compact label="Código" helpText="Un código propio para el servicio. Aquí ves cómo quedará la etiqueta antes de imprimirla." [maxLength]="60" [value]="barcodeValue()" (valueChange)="onBarcodeInputChange($event)" />
     <div class="mt-4 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
       @if (barcodeSvg()) {
         <div class="flex justify-center overflow-x-auto" [innerHTML]="barcodeSvg()"></div>
@@ -301,10 +280,10 @@
       }
     </div>
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
-    <app-button variant="outline" startIconName="mdi:printer-outline" (btnClick)="printBarcode()">Imprimir</app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="closeBarcodeModal()">Cancelar</app-button>
+    <app-button size="sm" variant="outline" startIconName="mdi:printer-outline" (btnClick)="printBarcode()">Imprimir</app-button>
+    <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="barcodeMutation.isPending()" [loading]="barcodeMutation.isPending()" (btnClick)="submitBarcode()">
       {{ barcodeMutation.isPending() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </div>
@@ -330,25 +309,25 @@
       (tabChange)="setTab($event)"
     />
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
     <!-- ========== DATOS PRINCIPALES ========== -->
     @if (activeTab() === 'general') {
       @if (generalCatalogsLoading()) {
         <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Cargando catálogos…</p>
       }
-      <div class="space-y-8">
-        <app-form-section title="Servicio" description="Cómo se llama y cómo se identifica." [cols]="2">
+      <div class="space-y-5">
+        <app-form-section icon="mdi:room-service-outline" compact title="Servicio" description="Cómo se llama y cómo se identifica." [cols]="2">
           <div class="relative md:col-span-2">
-            <app-label helpText="Escribe un código o parte de él: si ya existe un servicio parecido te lo sugerimos y puedes copiar sus datos para no escribirlos otra vez.">Código de búsqueda</app-label>
+            <app-label compact helpText="Escribe un código o parte de él: si ya existe un servicio parecido te lo sugerimos y puedes copiar sus datos para no escribirlos otra vez.">Código de búsqueda</app-label>
             <div class="flex items-center gap-2">
-              <app-input-field
+              <app-input-field compact
                 [maxLength]="80"
                 className="flex-1"
                 [value]="form().codigoBusqueda ?? ''"
                 placeholder="Ingresa el código a buscar"
                 (valueChange)="onCodigoBusquedaInput($event + '')"
               />
-              <app-button size="lg" variant="outline" [iconOnly]="true" startIconName="mdi:magnify" tooltip="Buscar" [disabled]="codigoLookupLoading()" (btnClick)="buscarCodigoManual()"></app-button>
+              <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:magnify" tooltip="Buscar" [disabled]="codigoLookupLoading()" (btnClick)="buscarCodigoManual()"></app-button>
             </div>
             @if (codigoSuggestions().length > 0) {
               <app-option-list [floating]="true" class="mt-1">
@@ -363,7 +342,7 @@
               <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Buscando datos del servicio…</p>
             }
           </div>
-          <app-input-field
+          <app-input-field icon="mdi:tag-outline" compact
             class="md:col-span-2"
             label="Nombre"
             [isRequired]="true"
@@ -374,7 +353,7 @@
             [hint]="formErrors()['nombre']"
             (valueChange)="updateForm('nombre', $event + '')"
           />
-          <app-form-select
+          <app-form-select compact
             label="Unidad"
             helpText="Los servicios usan siempre la unidad «servicio» (ZZ) de SUNAT, por eso no se cambia."
             [value]="form().unitId ?? ''"
@@ -383,21 +362,21 @@
             [disabled]="true"
             (valueChange)="updateForm('unitId', $event)"
           />
-          <app-input-field
+          <app-input-field icon="mdi:pound" compact
             label="Código interno"
             helpText="Tu propio código para este servicio, si manejas uno."
             [maxLength]="60"
             [value]="form().codigoInterno ?? ''"
             (valueChange)="updateForm('codigoInterno', $event + '')"
           />
-          <app-input-field
+          <app-input-field icon="mdi:barcode-scan" compact
             label="Código de barra"
             helpText="Opcional. Lo puedes imprimir en etiquetas desde el menú de acciones."
             [maxLength]="60"
             [value]="form().codigoBarra ?? ''"
             (valueChange)="updateForm('codigoBarra', $event + '')"
           />
-          <app-input-field
+          <app-input-field icon="mdi:text-short" compact
             label="Descripción"
             helpText="Detalle adicional del servicio. Opcional."
             [maxLength]="2000"
@@ -406,8 +385,8 @@
           />
         </app-form-section>
 
-        <app-form-section title="Precios" description="Lo que cobras por el servicio." [cols]="3">
-          <app-form-select
+        <app-form-section icon="mdi:cash-multiple" compact title="Precios" description="Lo que cobras por el servicio." [cols]="3">
+          <app-form-select compact
             label="Moneda"
             [required]="true"
             helpText="Moneda en la que están expresados los precios de este servicio."
@@ -420,7 +399,7 @@
             (valueChange)="updateForm('currencyId', $event)"
           />
           <div class="space-y-3">
-            <app-input-field
+            <app-input-field icon="mdi:cash" compact
               label="Precio de venta"
               [isRequired]="true"
               helpText="Lo que le cobras a tu cliente por el servicio."
@@ -439,7 +418,7 @@
               helpText="Márcalo si el precio de venta ya tiene el IGV dentro, que es lo habitual."
             />
           </div>
-          <app-input-field
+          <app-input-field icon="mdi:cash-minus" compact
             label="Precio de compra"
             helpText="Lo que te cuesta a ti el servicio, si aplica. Dato de referencia. Opcional."
             type="number"
@@ -448,7 +427,7 @@
             [value]="form().precioUnitarioCompra ?? ''"
             (valueChange)="updateForm('precioUnitarioCompra', +$event)"
           />
-          <app-form-select
+          <app-form-select compact
             class="md:col-span-2"
             label="Tipo de afectación (venta)"
             [required]="true"
@@ -470,9 +449,9 @@
       @if (atributosCatalogsLoading()) {
         <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Cargando catálogos…</p>
       }
-      <div class="space-y-8">
-        <app-form-section title="Organización" [cols]="2">
-          <app-select-quick-add
+      <div class="space-y-5">
+        <app-form-section icon="mdi:folder-outline" compact title="Organización" [cols]="2">
+          <app-select-quick-add compact
             label="Categoría"
             helpText="Agrupa servicios parecidos para filtrarlos y ordenarlos. Opcional."
             addLabel="Nueva categoría"
@@ -487,7 +466,7 @@
             (newValueChange)="newCategoryName.set($event)"
             (add)="createCategoryQuick()"
           />
-          <app-select-quick-add
+          <app-select-quick-add compact
             label="Marca / Laboratorio"
             helpText="Marca asociada al servicio, si tiene. Opcional."
             addLabel="Nueva marca"
@@ -502,7 +481,7 @@
             (newValueChange)="newBrandName.set($event)"
             (add)="createBrandQuick()"
           />
-          <app-select-quick-add
+          <app-select-quick-add compact
             label="Ubicación"
             helpText="Dónde se realiza o se ubica el servicio, si te sirve para organizarte. Opcional."
             addLabel="Nueva ubicación"
@@ -519,38 +498,38 @@
           />
         </app-form-section>
 
-        <app-form-section title="Información adicional" [cols]="2">
+        <app-form-section icon="mdi:information-outline" compact title="Información adicional" [cols]="2">
           <div class="md:row-span-3">
-            <app-label helpText="Foto o imagen del servicio. Opcional.">Imagen</app-label>
+            <app-label compact helpText="Foto o imagen del servicio. Opcional.">Imagen</app-label>
             @if (serviceImageUploadError()) {
               <p class="mb-2 text-xs text-error-500">{{ serviceImageUploadError() }}</p>
             }
             <div class="flex flex-wrap items-end gap-3">
               <app-image-square-picker [previewUrl]="serviceImagePreview()" (fileSelected)="onServiceImageFile($event)" />
               @if (form().imagenArchivoId) {
-                <app-button variant="danger" startIconName="mdi:image-remove-outline" (btnClick)="clearServiceImage()">Quitar imagen</app-button>
+                <app-button size="sm" variant="danger" startIconName="mdi:image-remove-outline" (btnClick)="clearServiceImage()">Quitar imagen</app-button>
               }
             </div>
           </div>
-          <app-input-field label="Cód. SUNAT" helpText="Código del catálogo de SUNAT, para los comprobantes electrónicos." [maxLength]="20" [value]="form().codigoSunat ?? ''" (valueChange)="updateForm('codigoSunat', $event + '')" />
-          <app-input-field label="Línea" helpText="Línea o familia comercial. Opcional." [maxLength]="120" [value]="form().lineaProducto ?? ''" (valueChange)="updateForm('lineaProducto', $event + '')" />
-          <app-input-field label="Modelo" helpText="Modelo, si aplica. Opcional." [maxLength]="120" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
+          <app-input-field icon="mdi:file-document-outline" compact label="Cód. SUNAT" helpText="Código del catálogo de SUNAT, para los comprobantes electrónicos." [maxLength]="20" [value]="form().codigoSunat ?? ''" (valueChange)="updateForm('codigoSunat', $event + '')" />
+          <app-input-field icon="mdi:shape-outline" compact label="Línea" helpText="Línea o familia comercial. Opcional." [maxLength]="120" [value]="form().lineaProducto ?? ''" (valueChange)="updateForm('lineaProducto', $event + '')" />
+          <app-input-field icon="mdi:cube-outline" compact label="Modelo" helpText="Modelo, si aplica. Opcional." [maxLength]="120" [value]="form().modelo ?? ''" (valueChange)="updateForm('modelo', $event + '')" />
         </app-form-section>
 
-        <app-form-section title="Datos de farmacia" description="Solo si el servicio está ligado a un medicamento, por ejemplo una aplicación de inyectable." [cols]="2">
-          <app-input-field label="Principio activo" helpText="Sustancia que produce el efecto. Ej.: Paracetamol." [maxLength]="300" [value]="form().principioActivo ?? ''" (valueChange)="updateForm('principioActivo', $event + '')" />
-          <app-input-field label="Concentración" helpText="Cantidad de principio activo. Ej.: 500 mg." [maxLength]="120" [value]="form().concentracion ?? ''" (valueChange)="updateForm('concentracion', $event + '')" />
-          <app-input-field label="Forma farmacéutica" helpText="Cómo se presenta: tableta, jarabe, ampolla…" [maxLength]="120" [value]="form().formaFarmaceutica ?? ''" (valueChange)="updateForm('formaFarmaceutica', $event + '')" />
-          <app-input-field label="Registro sanitario" helpText="Número de registro sanitario, si corresponde." [maxLength]="120" [value]="form().registroSanitario ?? ''" (valueChange)="updateForm('registroSanitario', $event + '')" />
-          <app-input-field label="Código de medicamento DIGEMID" helpText="Código del catálogo de DIGEMID, si corresponde." [maxLength]="80" [value]="form().codigoMedicamentoDigemid ?? ''" (valueChange)="updateForm('codigoMedicamentoDigemid', $event + '')" />
+        <app-form-section icon="mdi:pill" compact title="Datos de farmacia" description="Solo si el servicio está ligado a un medicamento, por ejemplo una aplicación de inyectable." [cols]="2">
+          <app-input-field icon="mdi:molecule" compact label="Principio activo" helpText="Sustancia que produce el efecto. Ej.: Paracetamol." [maxLength]="300" [value]="form().principioActivo ?? ''" (valueChange)="updateForm('principioActivo', $event + '')" />
+          <app-input-field icon="mdi:flask-outline" compact label="Concentración" helpText="Cantidad de principio activo. Ej.: 500 mg." [maxLength]="120" [value]="form().concentracion ?? ''" (valueChange)="updateForm('concentracion', $event + '')" />
+          <app-input-field icon="mdi:pill" compact label="Forma farmacéutica" helpText="Cómo se presenta: tableta, jarabe, ampolla…" [maxLength]="120" [value]="form().formaFarmaceutica ?? ''" (valueChange)="updateForm('formaFarmaceutica', $event + '')" />
+          <app-input-field icon="mdi:shield-check-outline" compact label="Registro sanitario" helpText="Número de registro sanitario, si corresponde." [maxLength]="120" [value]="form().registroSanitario ?? ''" (valueChange)="updateForm('registroSanitario', $event + '')" />
+          <app-input-field icon="mdi:clipboard-pulse-outline" compact label="Código de medicamento DIGEMID" helpText="Código del catálogo de DIGEMID, si corresponde." [maxLength]="80" [value]="form().codigoMedicamentoDigemid ?? ''" (valueChange)="updateForm('codigoMedicamentoDigemid', $event + '')" />
           <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
             <app-checkbox [checked]="!!form().necesitaRecetaMedica" (checkedChange)="updateForm('necesitaRecetaMedica', $event)" label="Necesita receta médica" helpText="Indica que este servicio requiere receta médica." />
             <app-checkbox [checked]="!!form().generico" (checkedChange)="updateForm('generico', $event)" label="Genérico" helpText="Ligado a un medicamento genérico." />
           </div>
         </app-form-section>
 
-        <app-form-section title="Impuestos y otras opciones" description="La mayoría de servicios no necesita cambiar nada aquí." [cols]="2">
-          <app-form-select
+        <app-form-section icon="mdi:percent-outline" compact title="Impuestos y otras opciones" description="La mayoría de servicios no necesita cambiar nada aquí." [cols]="2">
+          <app-form-select compact
             label="Tipo de afectación (compra)"
             helpText="Cómo se trata el IGV al comprar este servicio. Si no eliges otro, se usa el mismo de la venta."
             [value]="form().purchaseTaxAffectationId ?? form().saleTaxAffectationId"
@@ -564,12 +543,12 @@
           <app-checkbox [checked]="!!form().incluyeIscVenta" (checkedChange)="updateForm('incluyeIscVenta', $event)" label="Incluye ISC" helpText="Impuesto Selectivo al Consumo. Márcalo solo si este servicio está afecto." />
           <app-checkbox [checked]="!!form().sujetoDetraccion" (checkedChange)="updateForm('sujetoDetraccion', $event)" label="Sujeto a detracción" helpText="Marca el servicio como sujeto al sistema de detracciones." />
           @if (form().incluyeIscVenta) {
-            <app-form-select label="Tipo de sistema ISC" [required]="true" [value]="form().tipoSistemaIscId ?? ''" [options]="tipoSistemaIscOptions()" placeholder="Seleccionar" (valueChange)="updateForm('tipoSistemaIscId', $event || undefined)" />
-            <app-input-field label="Porcentaje ISC" type="number" min="0" [value]="form().porcentajeIsc ?? 0" (valueChange)="updateForm('porcentajeIsc', +$event)" />
+            <app-form-select compact label="Tipo de sistema ISC" [required]="true" [value]="form().tipoSistemaIscId ?? ''" [options]="tipoSistemaIscOptions()" placeholder="Seleccionar" (valueChange)="updateForm('tipoSistemaIscId', $event || undefined)" />
+            <app-input-field icon="mdi:percent-outline" compact label="Porcentaje ISC" type="number" min="0" [value]="form().porcentajeIsc ?? 0" (valueChange)="updateForm('porcentajeIsc', +$event)" />
           }
           <app-checkbox [checked]="!!form().sePuedeCanjearPorPuntos" (checkedChange)="updateForm('sePuedeCanjearPorPuntos', $event)" label="Se puede canjear por puntos" helpText="Marca el servicio como canjeable y define cuántos puntos cuesta." />
           @if (form().sePuedeCanjearPorPuntos) {
-            <app-input-field label="Número de puntos" type="number" min="0" [value]="form().numeroPuntos ?? 0" (valueChange)="updateForm('numeroPuntos', +$event)" />
+            <app-input-field icon="mdi:star-outline" compact label="Número de puntos" type="number" min="0" [value]="form().numeroPuntos ?? 0" (valueChange)="updateForm('numeroPuntos', +$event)" />
           }
         </app-form-section>
 
@@ -584,9 +563,9 @@
           <div class="space-y-3">
             @for (ar of attributeRows(); track ar.uid) {
               <div class="flex flex-wrap items-end gap-3">
-                <app-form-select class="min-w-[160px] flex-1" label="Tipo" [required]="true" [value]="ar.attributeTypeId" [options]="attributeTypeOptions()" [disabled]="attributeTypesQuery.isPending()" (valueChange)="patchAttributeRow(ar.uid, { attributeTypeId: $event })" />
-                <app-input-field class="min-w-[200px] flex-[2]" label="Descripción" [isRequired]="true" [maxLength]="500" [value]="ar.descripcion" (valueChange)="patchAttributeRow(ar.uid, { descripcion: $event + '' })" />
-                <app-button size="lg" variant="danger" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar atributo" (btnClick)="removeAttributeRow(ar.uid)"></app-button>
+                <app-form-select compact class="min-w-[160px] flex-1" label="Tipo" [required]="true" [value]="ar.attributeTypeId" [options]="attributeTypeOptions()" [disabled]="attributeTypesQuery.isPending()" (valueChange)="patchAttributeRow(ar.uid, { attributeTypeId: $event })" />
+                <app-input-field icon="mdi:text-short" compact class="min-w-[200px] flex-[2]" label="Descripción" [isRequired]="true" [maxLength]="500" [value]="ar.descripcion" (valueChange)="patchAttributeRow(ar.uid, { descripcion: $event + '' })" />
+                <app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar atributo" (btnClick)="removeAttributeRow(ar.uid)"></app-button>
               </div>
             }
           </div>
@@ -594,11 +573,11 @@
       </div>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-      <app-button
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button size="sm"
         startIconName="mdi:content-save-outline"
         [disabled]="saveMutation.isPending() || updateMutation.isPending() || generalCatalogsLoading()"
         [loading]="saveMutation.isPending() || updateMutation.isPending()"

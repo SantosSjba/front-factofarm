@@ -10,7 +10,9 @@ import { serviceQueryKeys } from '../../../../core/query/service-query.keys';
 import { FilesApiService } from '../../../../core/services/files-api.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -30,7 +32,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 import { SelectQuickAddComponent } from '../../../../shared/components/form/select-quick-add/select-quick-add.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
@@ -101,7 +103,8 @@ const barcodeSchema = yup.object({
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
+    StatusBadgeComponent,
     ListFiltersComponent,
     PaginationComponent,
     TableDropdownComponent,
@@ -113,7 +116,6 @@ const barcodeSchema = yup.object({
     InputFieldComponent,
     LabelComponent,
     CheckboxComponent,
-    ColorLegendComponent,
     FormSectionComponent,
     SelectQuickAddComponent,
     HelpPanelComponent,
@@ -129,7 +131,6 @@ export class ServiciosComponent {
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [{ label: 'Productos' }, { label: 'Servicios' }];
 
-  protected readonly rowLegend: LegendItem[] = [{ label: 'Inhabilitado', tone: 'muted' }];
   protected readonly searchTerm = signal('');
   protected readonly filterField = signal<NonNullable<ServiceListFiltersRequest['field']>>('nombre');
   protected readonly currentPage = signal(1);
@@ -138,13 +139,39 @@ export class ServiciosComponent {
     { value: 'nombre', label: 'Nombre' },
     { value: 'codigoInterno', label: 'Cód. interno' },
     { value: 'descripcion', label: 'Descripción' },
-    { value: 'all', label: 'Todos' },
+    { value: 'all', label: 'Todos los campos' },
   ];
+  /** Filtro por estado desde los chips del resumen. */
+  protected readonly estado = signal<'habilitado' | 'inhabilitado' | null>(null);
+
+  /** Totales de todas las páginas (no solo la visible). */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: [...serviceQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.servicesSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const current = this.estado();
+    return [
+      { id: 'all', label: 'Total', count: s.total, icon: 'mdi:room-service-outline', tone: 'neutral', clickable: true, active: current === null, tooltip: 'Ver todos los servicios.' },
+      { id: 'habilitado', label: 'Habilitados', count: s.habilitados, icon: 'mdi:check-circle-outline', tone: 'success', clickable: true, active: current === 'habilitado', tooltip: 'Disponibles para vender.' },
+      { id: 'inhabilitado', label: 'Inhabilitados', count: s.inhabilitados, icon: 'mdi:eye-off-outline', tone: 'neutral', clickable: true, active: current === 'inhabilitado', tooltip: 'Guardados pero fuera de uso.' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const next = chip.id === 'all' ? null : (chip.id as 'habilitado' | 'inhabilitado');
+    this.estado.set(this.estado() === next ? null : next);
+    this.currentPage.set(1);
+  }
 
   protected readonly listQuery = injectQuery(() => {
     const filters: ServiceListFiltersRequest = {
       search: this.searchTerm().trim() || undefined,
       field: this.filterField(),
+      estado: this.estado() ?? undefined,
       page: this.currentPage(),
       pageSize: this.itemsPerPage,
     };
@@ -455,6 +482,7 @@ export class ServiciosComponent {
   protected clearFilters() {
     this.searchTerm.set('');
     this.filterField.set('nombre');
+    this.estado.set(null);
     this.currentPage.set(1);
   }
 

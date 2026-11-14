@@ -6,16 +6,15 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { HelpHintComponent } from '../../../../shared/components/ui/help-hint/help-hint.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -36,6 +35,8 @@ export interface CatalogField {
   maxLength: number;
   helpText: string;
   placeholder?: string;
+  /** Ícono del campo; por defecto el de la pantalla (`icon`). */
+  icon?: string;
 }
 
 /**
@@ -54,6 +55,10 @@ export interface CatalogCrudConfig {
   article: 'el' | 'la';
   /** Ej.: «Nueva marca», «Nuevo laboratorio». */
   newLabel: string;
+  /** Ícono del catálogo (campos del formulario). Por defecto una etiqueta. */
+  icon?: string;
+  /** Ícono del botón «Nuevo…». Por defecto «+». */
+  newIcon?: string;
   /** Pasos de «¿Para qué sirve esta pantalla?». */
   help: string[];
   /** Clave para recordar si el panel de ayuda está abierto. */
@@ -85,12 +90,10 @@ export interface CatalogCrudConfig {
   imports: [
     AppDatePipe,
     QueryPageStatePipe,
-    BadgeComponent,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     HasPermissionDirective,
-    HelpHintComponent,
     HelpPanelComponent,
     InputFieldComponent,
     ListFiltersComponent,
@@ -141,7 +144,38 @@ export class CatalogCrudPageComponent {
 
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.listQuery.data()?.total ?? 0);
-  protected readonly pageStart = computed(() => (this.currentPage() - 1) * this.itemsPerPage);
+
+  /** Total registrado sin búsqueda (todas las páginas): base del resumen. */
+  private readonly totalQuery = injectQuery(() => {
+    const cfg = this.config();
+    return {
+      queryKey: [...cfg.queryKey, 'list', '', 'all', 'total'],
+      queryFn: () => firstValueFrom(cfg.list({ page: 1, pageSize: 1 })),
+    };
+  });
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const cfg = this.config();
+    const total = this.totalQuery.data()?.total;
+    if (total == null) return [];
+    const chips: SummaryChip[] = [
+      { id: 'total', label: 'Registrados', count: total, icon: cfg.icon ?? 'mdi:tag-outline', tone: 'neutral' },
+    ];
+    if (this.searchTerm().trim()) {
+      chips.push({ id: 'match', label: 'Coinciden con la búsqueda', count: this.totalRows(), icon: 'lucide:search', tone: 'info' });
+    }
+    if (cfg.global) {
+      chips.push({
+        id: 'global',
+        label: 'Catálogo compartido',
+        count: null,
+        icon: 'mdi:earth',
+        tone: 'info',
+        tooltip: 'Es el mismo para todas las farmacias. Puedes agregar nuevos; solo el equipo de FactoFarm corrige o elimina.',
+      });
+    }
+    return chips;
+  });
 
   // ---------- Formulario ----------
   protected readonly formOpen = signal(false);

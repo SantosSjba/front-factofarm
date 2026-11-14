@@ -5,6 +5,7 @@ import type { BreadcrumbSegment } from '../../../../shared/components/common/pag
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
 import { ProductImportModalComponent } from '../../components/product-import-modal/product-import-modal.component';
@@ -21,6 +22,7 @@ import type { ProductImportResultDto } from '../../models/directory.models';
     ComponentCardComponent,
     ExcelIconComponent,
     HelpPanelComponent,
+    IconComponent,
     PageToolbarComponent,
     ProductImportModalComponent,
   ],
@@ -33,5 +35,10 @@ export class ImportarPreciosComponent {
   ];
 
   protected readonly importOpen = signal(false);
+  protected readonly steps = [
+    { icon: 'mdi:file-download-outline', title: 'Descarga la plantilla', text: 'Pulsa «Importar precios»: la plantilla está en esa ventana. Llénala sin cambiar sus columnas.' },
+    { icon: 'mdi:file-eye-outline', title: 'Revisa la vista previa', text: 'Al elegir el archivo verás cuántos productos cambiarían y qué filas tienen errores.' },
+    { icon: 'mdi:check-circle-outline', title: 'Confirma', text: 'Solo se actualizan las filas válidas. Las demás se listan para que las corrijas.' },
+  ];
   protected readonly lastResult = signal<ProductImportResultDto | null>(null);
 }

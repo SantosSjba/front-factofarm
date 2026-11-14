@@ -1,11 +1,11 @@
 @let m = info();
 
 <app-modal compact [isOpen]="open()" (closed)="close()" className="w-full max-w-2xl">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Importar: {{ m.label }}</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ m.steps }}</p>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
     <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
       <li>Descarga la plantilla y llénala sin cambiar sus columnas.</li>
       <li>Selecciona el archivo: se revisa solo y te muestra qué se creará, qué se actualizará y qué filas tienen errores.</li>
@@ -52,9 +52,9 @@
       </app-alert>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" [disabled]="busy()" (btnClick)="close()">Cancelar</app-button>
-    <app-button startIconName="mdi:play-circle-outline" [disabled]="!canConfirm()" [loading]="importMutation.isPending()" (btnClick)="confirm()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="busy()" (btnClick)="close()">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:play-circle-outline" [disabled]="!canConfirm()" [loading]="importMutation.isPending()" (btnClick)="confirm()">
       {{ importMutation.isPending() ? 'Importando…' : 'Confirmar importación' }}
     </app-button>
   </div>
