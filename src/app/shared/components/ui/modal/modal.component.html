@@ -1,6 +1,9 @@
 @if (isOpen) {
+<!-- Teléfono: hoja inferior pegada abajo (botones al alcance del pulgar).
+     Tablet y escritorio: diálogo centrado. -->
 <div
-  class="modal fixed inset-0 z-99999 flex items-start justify-center overflow-y-auto p-4 sm:items-center sm:py-6"
+  class="modal fixed inset-0 z-99999 flex justify-center overflow-y-auto"
+  [ngClass]="isFullscreen ? 'items-start p-4 sm:items-center sm:py-6' : 'items-end sm:items-center sm:p-4 sm:py-6'"
 >
   @if (!isFullscreen) {
   <button type="button" tabindex="-1" aria-label="Cerrar ventana"
@@ -17,6 +20,10 @@
     [attr.data-modal-compact]="compact ? '' : null"
     [ngClass]="panelClasses()"
   >
+    @if (!isFullscreen) {
+    <!-- Agarradera visual de la hoja inferior (solo teléfono). -->
+    <span aria-hidden="true" class="pointer-events-none absolute start-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-gray-300 sm:hidden dark:bg-gray-700"></span>
+    }
     @if (showCloseButton && !isFullscreen) {
     <button
       type="button"

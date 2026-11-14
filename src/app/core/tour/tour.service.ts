@@ -39,6 +39,10 @@ export class TourService {
   private readonly sidebar = inject(SidebarService);
 
   private instance: Driver | null = null;
+  /** Ruta del recorrido en curso (null = recorrido general, sin pantalla propia). */
+  private activeRoute: string | null = null;
+  /** Al salir de la pantalla a medio recorrido no se marca como visto: saldrá en la próxima visita. */
+  private skipMarkSeen = false;
   /** Estado del sidebar de escritorio antes del recorrido, para restaurarlo. */
   private restoreExpanded: boolean | null = null;
   private refreshTimers: ReturnType<typeof setTimeout>[] = [];
@@ -50,7 +54,17 @@ export class TourService {
     // Recorridos de pantalla (p. ej. Punto de venta): se lanzan la primera vez que se abre la ruta.
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe((e) => this.maybeAutoStartForRoute(e.urlAfterRedirects));
+      .subscribe((e) => {
+        const path = e.urlAfterRedirects.split(/[?#]/)[0];
+        // Se salió de la pantalla antes de que arrancara su recorrido: no se lanza (ni regresa a ella).
+        clearTimeout(this.autoStartTimer);
+        // Recorrido de otra pantalla abierto: se cierra para que no quede encima de esta.
+        if (this.active() && this.activeRoute && this.activeRoute !== path) {
+          this.skipMarkSeen = true;
+          this.stop();
+        }
+        this.maybeAutoStartForRoute(e.urlAfterRedirects);
+      });
   }
 
   /** Recorridos que aplican al usuario actual (para el menú "Tutoriales"). */
@@ -134,6 +148,7 @@ export class TourService {
       overlayClickBehavior: () => undefined,
       onDestroyed: () => this.onFinished(tour.id),
     });
+    this.activeRoute = tour.route ?? null;
     this.active.set(true);
     this.instance.drive();
   }
@@ -184,7 +199,9 @@ export class TourService {
   private onFinished(id: TourId): void {
     this.clearRefreshTimers();
     // Cerrar con "Finalizar", Esc o la X cuenta como visto: no se vuelve a lanzar solo.
-    this.markSeen(id);
+    if (!this.skipMarkSeen) this.markSeen(id);
+    this.skipMarkSeen = false;
+    this.activeRoute = null;
     this.instance = null;
     this.active.set(false);
     if (!this.isDesktop()) this.sidebar.setMobileOpen(false);

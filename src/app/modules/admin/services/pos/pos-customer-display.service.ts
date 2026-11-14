@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 
 export const POS_DISPLAY_CHANNEL = 'factofarm-pos-display';
 const POS_DISPLAY_LAST_KEY = 'factofarm-pos-display-last';
+/** La marca va aparte del carrito: «clear» no la borra y la ventana la tiene al abrir. */
+const POS_DISPLAY_BRAND_KEY = 'factofarm-pos-display-brand';
 
 export type PosDisplayLine = {
   nombre: string;
@@ -38,11 +40,24 @@ export type PosDisplaySaleMessage = {
   lines: PosDisplayLine[];
 };
 
+/**
+ * Marca del establecimiento activo. La pantalla cliente es pública (sin sesión) y el logo del API
+ * exige token: el POS lo manda ya convertido en `data:` URL. Sin logo propio → logo de FactoFarm.
+ */
+export type PosDisplayBrandMessage = {
+  type: 'brand';
+  name: string;
+  logo: string | null;
+};
+
 export type PosDisplayMessage =
   | PosDisplayCartMessage
   | PosDisplaySaleMessage
+  | PosDisplayBrandMessage
   | { type: 'clear' }
-  | { type: 'request-state' };
+  | { type: 'request-state' }
+  /** El POS se (re)cargó: si hay una pantalla cliente abierta, responde con `request-state`. */
+  | { type: 'pos-ready' };
 
 @Injectable({ providedIn: 'root' })
 export class PosCustomerDisplayService {
@@ -57,9 +72,10 @@ export class PosCustomerDisplayService {
   }
 
   publish(message: PosDisplayMessage) {
-    if (message.type !== 'request-state') {
+    if (message.type !== 'request-state' && message.type !== 'pos-ready') {
       try {
-        localStorage.setItem(POS_DISPLAY_LAST_KEY, JSON.stringify(message));
+        const key = message.type === 'brand' ? POS_DISPLAY_BRAND_KEY : POS_DISPLAY_LAST_KEY;
+        localStorage.setItem(key, JSON.stringify(message));
       } catch {
         /* ignore quota / private mode */
       }
@@ -74,6 +90,16 @@ export class PosCustomerDisplayService {
       const raw = localStorage.getItem(POS_DISPLAY_LAST_KEY);
       if (!raw) return null;
       return JSON.parse(raw) as PosDisplayMessage;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Última marca publicada por el POS. */
+  readBrand(): PosDisplayBrandMessage | null {
+    try {
+      const raw = localStorage.getItem(POS_DISPLAY_BRAND_KEY);
+      return raw ? (JSON.parse(raw) as PosDisplayBrandMessage) : null;
     } catch {
       return null;
     }

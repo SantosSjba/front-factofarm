@@ -16,7 +16,11 @@ import {
 } from '@angular/core';
 import { BodyScrollLockService } from '../../../services/body-scroll-lock.service';
 
-/** Diálogo modal con altura limitada y scroll en el cuerpo; admite `data-modal-header|body|footer`. */
+/**
+ * Diálogo modal con altura limitada y scroll en el cuerpo; admite `data-modal-header|body|footer`.
+ * En teléfono se muestra como hoja inferior y los botones del footer van apilados a todo el ancho
+ * (acción principal arriba); en tablet y escritorio, centrado. Ver `.ff-modal-panel` en `styles.css`.
+ */
 @Component({
   selector: 'app-modal',
   imports: [CommonModule],
@@ -132,7 +136,8 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
       return `flex h-full w-full flex-col overflow-hidden bg-white dark:bg-gray-900 ${this.className}`.trim();
     }
     return [
-      'relative w-full flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-dark',
+      // Teléfono: hoja inferior (esquinas de arriba redondeadas, sin borde abajo). sm+: tarjeta centrada.
+      'ff-modal-panel relative w-full flex flex-col overflow-hidden rounded-t-3xl border border-b-0 border-gray-200 bg-white shadow-xl sm:rounded-3xl sm:border-b dark:border-gray-800 dark:bg-gray-dark',
       this.maxHeightClass,
       this.className,
     ]

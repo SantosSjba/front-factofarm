@@ -16,6 +16,7 @@ import { injectMutation, injectQuery, injectQueryClient } from '@tanstack/angula
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
+import { TenantBrandingService } from '../../../../core/services/tenant-branding.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ValidationBypassActionComponent } from '../../../../shared/components/ui/validation-bypass-action/validation-bypass-action.component';
@@ -164,6 +165,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
 export class PuntoVentaComponent implements OnDestroy {
   private readonly api = inject(DirectoryApiService);
   private readonly auth = inject(AuthService);
+  private readonly branding = inject(TenantBrandingService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
   private readonly posPrint = inject(PosPrintService);
@@ -480,6 +482,36 @@ export class PuntoVentaComponent implements OnDestroy {
     });
   }
 
+  /** Último logo convertido: evita releer el blob en cada pedido de la pantalla cliente. */
+  private customerDisplayLogo: { src: string; dataUrl: string } | null = null;
+
+  /**
+   * La pantalla cliente no tiene sesión y el logo del API exige token: se manda como `data:` URL
+   * (el `blob:` del POS deja de existir si esta pestaña se recarga).
+   */
+  private async publishCustomerDisplayBrand(name: string, src: string | null) {
+    let logo: string | null = null;
+    if (src) {
+      if (this.customerDisplayLogo?.src === src) {
+        logo = this.customerDisplayLogo.dataUrl;
+      } else {
+        try {
+          const blob = await (await fetch(src)).blob();
+          logo = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+          });
+          this.customerDisplayLogo = { src, dataUrl: logo };
+        } catch {
+          logo = null; // sin logo legible: la pantalla usa el de FactoFarm
+        }
+      }
+    }
+    this.customerDisplay.publish({ type: 'brand', name, logo });
+  }
+
   private publishCustomerDisplaySale(sale: SaleDetailDto) {
     if (!this.shouldSyncCustomerDisplay()) return;
     this.customerDisplaySaleHold = true;
@@ -694,9 +726,17 @@ export class PuntoVentaComponent implements OnDestroy {
       this.persistTimer = setTimeout(() => this.persistPosState(), 200);
     });
 
+    // Marca del establecimiento (logo propio si lo tiene) para la pantalla cliente.
+    effect(() => {
+      const name = this.branding.brandAlt();
+      const src = this.branding.usesTenantLogo() ? this.branding.navLogoSrc() : null;
+      void this.publishCustomerDisplayBrand(name, src);
+    });
+
     // Responde cuando la pantalla cliente pide el estado al abrirse.
     this.unsubscribeCustomerDisplay = this.customerDisplay.subscribe((msg) => {
       if (msg.type === 'request-state') {
+        void this.publishCustomerDisplayBrand(this.branding.brandAlt(), this.branding.usesTenantLogo() ? this.branding.navLogoSrc() : null);
         // Si pide estado, asume que hay una ventana cliente escuchando.
         this.customerDisplayOpened.set(true);
         if (this.customerDisplaySaleHold && this.lastSale()) {
@@ -706,6 +746,8 @@ export class PuntoVentaComponent implements OnDestroy {
         }
       }
     });
+    // Si esta pestaña se recargó con la pantalla cliente abierta, avisa para retomar la sincronización.
+    this.customerDisplay.publish({ type: 'pos-ready' });
 
     // F-LOG-06: no resetear líneas de pago en cada tick de total (solo al abrir modal)
 

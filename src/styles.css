@@ -497,6 +497,50 @@ layer(base);
   gap: calc(var(--spacing) * 2);
 }
 
+/* Modal adaptativo (`app-modal`): en teléfono es una hoja inferior. Los footers proyectados
+   (`data-modal-footer`) apilan sus botones a todo el ancho con la acción principal arriba
+   (en el HTML va al final, por eso column-reverse); un texto como «* Campos obligatorios» queda arriba. */
+@keyframes ff-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes ff-modal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ff-modal-panel { animation: ff-modal-pop 0.18s ease-out; }
+}
+@media (width < 40rem) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ff-modal-panel { animation: ff-sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  }
+  /* Respeta la barra de inicio del iPhone. */
+  .ff-modal-panel { padding-bottom: env(safe-area-inset-bottom); }
+  .ff-modal-panel > [data-modal-footer] {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+  .ff-modal-panel > [data-modal-footer]:has(> :is(p, span)) {
+    flex-direction: column;
+  }
+  .ff-modal-panel > [data-modal-footer] > div:has(app-button) {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    width: 100%;
+  }
+  .ff-modal-panel > [data-modal-footer] app-button {
+    display: flex;
+    width: 100%;
+  }
+  .ff-modal-panel > [data-modal-footer] app-button > button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @layer utilities {
   /* Contorno luminoso sobre el logo (respeta el alpha del PNG/SVG).
      No forzar display en .logo-dark-glow: pelea con utilities responsive. */

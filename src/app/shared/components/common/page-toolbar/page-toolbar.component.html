@@ -5,7 +5,10 @@
   <div class="min-w-0">
     <ng-content select="[data-toolbar-title]"></ng-content>
   </div>
-  <div class="flex max-w-full min-w-0 flex-wrap items-center gap-2">
+  <!-- Acciones siempre a la derecha, también cuando bajan a otra fila (teléfono). El contenedor
+       `data-toolbar-actions` de cada pantalla suele ser flex: también se alinea a la derecha. -->
+  <div class="ms-auto flex max-w-full min-w-0 flex-wrap items-center justify-end gap-2 [&>[data-toolbar-actions]]:justify-end">
+
     <ng-content select="[data-toolbar-actions]"></ng-content>
     @if (showExcel() && scope(); as s) {
       <app-excel-export-button [scope]="s" [fileName]="fileName()" />
