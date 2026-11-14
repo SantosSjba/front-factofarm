@@ -7,7 +7,9 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -71,7 +73,8 @@ const ACTION_COPY: Record<OrderAction, { title: string; button: string; icon: st
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
+    PageStateComponent,
+    IconComponent,
     FormSectionComponent,
     FormSelectComponent,
     HasPermissionDirective,
@@ -111,8 +114,45 @@ export class OrdenesCompraComponent {
   protected readonly search = signal('');
   protected readonly estado = signal('');
   protected readonly filterSupplierId = signal('');
-  protected readonly estadoOptions = [{ value: '', label: 'Todos los estados' }, ...PURCHASE_ORDER_STATUS_OPTIONS];
   protected readonly activeFilterCount = computed(() => [this.estado(), this.filterSupplierId()].filter(Boolean).length);
+
+  /** Resumen por estado de todas las órdenes (no solo la página visible); cada chip filtra. */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: ['purchase-orders', 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.purchaseOrdersSummary()),
+  }));
+
+  private static readonly STATUS_CHIP: Record<PurchaseOrderStatus, { icon: string; tone: SummaryChip['tone']; tooltip: string; always?: boolean }> = {
+    BORRADOR: { icon: 'mdi:file-document-edit-outline', tone: 'neutral', tooltip: 'Aún no se aprueban.', always: true },
+    APROBADA: { icon: 'mdi:check-decagram-outline', tone: 'info', tooltip: 'Listas para enviar al proveedor.', always: true },
+    ENVIADA: { icon: 'mdi:send-outline', tone: 'warning', tooltip: 'Esperando la mercadería.', always: true },
+    PARCIALMENTE_RECIBIDA: { icon: 'mdi:truck-fast-outline', tone: 'warning', tooltip: 'Llegó una parte; falta recibir el resto.' },
+    RECIBIDA: { icon: 'mdi:truck-check-outline', tone: 'success', tooltip: 'Mercadería recibida completa.' },
+    CERRADA: { icon: 'mdi:lock-outline', tone: 'neutral', tooltip: 'Cerradas.' },
+    ANULADA: { icon: 'mdi:cancel', tone: 'error', tooltip: 'Anuladas antes de enviarse.' },
+  };
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const current = this.estado();
+    const chips: SummaryChip[] = [
+      { id: 'all', label: 'Total', count: s.total, icon: 'mdi:cart-outline', tone: 'neutral', clickable: true, active: !current, tooltip: 'Ver todas las órdenes.' },
+    ];
+    for (const opt of PURCHASE_ORDER_STATUS_OPTIONS) {
+      const meta = OrdenesCompraComponent.STATUS_CHIP[opt.value];
+      const count = s.byEstado[opt.value] ?? 0;
+      if (!count && !meta.always) continue;
+      chips.push({ id: opt.value, label: opt.label, count, icon: meta.icon, tone: meta.tone, tooltip: meta.tooltip, clickable: true, active: current === opt.value });
+    }
+    return chips;
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const next = chip.id === 'all' ? '' : chip.id;
+    this.estado.set(this.estado() === next ? '' : next);
+    this.page.set(1);
+  }
 
   protected readonly listQuery = injectQuery(() => ({
     queryKey: ['purchase-orders', this.page(), this.estado(), this.filterSupplierId(), this.search().trim()] as const,

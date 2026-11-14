@@ -5,8 +5,19 @@
     Proveedores
   </h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <!-- Columnas visibles de la tabla (en teléfono también definen los datos de cada tarjeta). -->
+    <app-table-dropdown>
+      <div dropdown-button>
+        <app-button size="sm" variant="outline" startIconName="lucide:columns-3" endIconName="mdi:chevron-down" tooltip="Elige qué datos se muestran en la tabla.">Columnas</app-button>
+      </div>
+      <div dropdown-content>
+        @for (col of columns; track col.key) {
+          <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
+        }
+      </div>
+    </app-table-dropdown>
     <ng-container *appHasPermission="'suppliers.write'">
-      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">Nuevo</app-button>
+      <app-button size="sm" startIconName="mdi:truck-plus-outline" (btnClick)="openCreateModal()">Nuevo proveedor</app-button>
     </ng-container>
   </div>
 </app-page-toolbar>
@@ -20,16 +31,21 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador compacto y resumen (todas las páginas); los chips filtran por estado. -->
 <app-list-filters
-  collapsible
-  [activeCount]="filterField() !== 'razonSocial' ? 1 : 0"
+  compact
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
   [selectShowPlaceholder]="false"
-  searchPlaceholder="Buscar"
-  selectLabel="Buscar por"
+  searchPlaceholder="Buscar proveedor"
+  selectAriaLabel="Buscar por"
+  selectHelpText="En qué dato buscar el texto escrito."
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de proveedores"
+  summaryStorageKey="proveedores"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
@@ -37,46 +53,23 @@
 
 @let listState = suppliersQuery | queryPageState: totalRows();
 
-<app-component-card
-  title="Listado de proveedores"
-  [desc]="totalRows() ? totalRows() + ' en total' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  [emptyTitle]="searchTerm().trim() ? 'Sin coincidencias para tu búsqueda' : 'Aún no hay proveedores'"
-  [emptyHint]="searchTerm().trim() ? 'Prueba con otro texto o cambia «Buscar por».' : 'Usa «Nuevo» para registrar el primero.'"
+  [emptyTitle]="searchTerm().trim() || estado() ? 'Sin proveedores con esos filtros' : 'Aún no hay proveedores'"
+  [emptyHint]="searchTerm().trim() || estado() ? 'Prueba con otro texto, cambia «Buscar por» o el estado.' : 'Usa «Nuevo proveedor» para registrar el primero.'"
+  skeleton="table"
   (retry)="refetchRows()"
 >
-  <app-color-legend
-    data-card-header-end
-    ariaLabel="Leyenda del listado"
-    [items]="rowLegend"
-    helpText="Un proveedor inhabilitado queda guardado pero no se ofrece al hacer compras. Se vuelve a habilitar desde el menú de acciones."
-  />
-  <div class="px-3 pt-3 sm:px-4" data-table-only>
-    <div class="flex justify-end">
-      <app-table-dropdown>
-        <div dropdown-button>
-          <app-button size="sm" variant="outline" endIconName="mdi:chevron-down">Columnas</app-button>
-        </div>
-        <div dropdown-content>
-          @for (col of columns; track col.key) {
-            <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
-          }
-        </div>
-      </app-table-dropdown>
-    </div>
-  </div>
-
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Proveedores</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">#</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</th>
             @if (isVisible('documento')) {
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Documento</th>
             }
@@ -92,32 +85,24 @@
             @if (isVisible('diasCredito')) {
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Días de crédito</th>
             }
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Historial</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of rows(); track row.id; let i = $index) {
+          @for (row of rows(); track row.id) {
             <tr [attr.data-row-tone]="rowTone(row)">
-              <td class="px-5 py-4 text-theme-sm tabular-nums">{{ pageStart() + i + 1 }}</td>
-              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
-                <div class="flex min-w-0 items-center gap-2">
-                  <span class="min-w-0 truncate font-medium">{{ row.razonSocial }}</span>
-                  @if (!row.habilitado) {
-                    <span class="inline-flex shrink-0 items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-500/20 dark:text-red-300">
-                      Inhabilitado
-                    </span>
-                  }
-                </div>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.razonSocial }}</span>
                 @if (row.nombreComercial && row.nombreComercial !== row.razonSocial) {
-                  <span class="block truncate text-theme-xs text-gray-500 dark:text-gray-400">{{ row.nombreComercial }}</span>
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.nombreComercial }}</span>
                 }
+                @if (!row.habilitado) { <app-status-badge status="INHABILITADO" tone="neutral" label="Inhabilitado" /> }
               </td>
               @if (isVisible('documento')) {
-                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ docTypeLabel(row.tipoDocumento) }} {{ row.numeroDocumento }}</td>
+                <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ docTypeLabel(row.tipoDocumento) }} {{ row.numeroDocumento }}</td>
               }
               @if (isVisible('contacto')) {
-                <td class="px-5 py-4 text-theme-sm">
+                <td class="px-5 py-3 text-theme-sm">
                   {{ row.contactoNombre || '—' }}
                   @if (row.contactoTelefono) {
                     <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.contactoTelefono }}</span>
@@ -125,24 +110,19 @@
                 </td>
               }
               @if (isVisible('telefono')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.telefono || '—' }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.telefono || '—' }}</td>
               }
               @if (isVisible('correo')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.correoElectronico || '—' }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.correoElectronico || '—' }}</td>
               }
               @if (isVisible('diasCredito')) {
-                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ row.diasCredito ? row.diasCredito + ' días' : 'Contado' }}</td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums">{{ row.diasCredito ? row.diasCredito + ' días' : 'Contado' }}</td>
               }
-              <td class="px-5 py-4">
-                <ng-container *appHasPermission="'suppliers.read'">
-                  <app-button size="sm" variant="primary" [iconOnly]="true" startIconName="mdi:history" [tooltip]="'Órdenes de compra y productos de ' + row.razonSocial" (btnClick)="openDetail(row, 'compras')"></app-button>
-                </ng-container>
-              </td>
-              <td class="px-5 py-4 text-end">
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
-                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones para ' + row.razonSocial"></app-button>
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones de ' + row.razonSocial"></app-button>
                     </div>
                     <div dropdown-content>
                       <ng-container *appHasPermission="'suppliers.write'">
@@ -159,7 +139,7 @@
                           [disabled]="statusMutation.isPending() || deleteMutation.isPending()"
                           (itemClick)="askToggleStatus(row)"
                         >{{ row.habilitado ? 'Inhabilitar' : 'Habilitar' }}</app-menu-item>
-                        <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="Quita el proveedor del listado. No se puede si tiene órdenes abiertas o deudas pendientes. Te pedirá confirmación." [disabled]="statusMutation.isPending() || deleteMutation.isPending()" (itemClick)="askDelete(row)">Eliminar</app-menu-item>
+                        <app-menu-item variant="danger" icon="mdi:trash-can-outline" tooltip="No se puede si tiene órdenes abiertas o deudas pendientes. Te pedirá confirmación." [disabled]="statusMutation.isPending() || deleteMutation.isPending()" (itemClick)="askDelete(row)">Eliminar</app-menu-item>
                       </ng-container>
                     </div>
                   </app-table-dropdown>
@@ -168,7 +148,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">
+              <td colspan="99" class="px-5 py-3 text-center text-theme-sm text-gray-500">
                 Sin coincidencias para los filtros aplicados.
               </td>
             </tr>
@@ -177,7 +157,7 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination
   [totalItems]="totalRows()"
@@ -197,10 +177,10 @@
       (tabChange)="setDetailTab($event)"
     />
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
     @if (detailTab() === 'compras') {
       @let history = purchaseHistoryQuery.data()?.items ?? [];
-      <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+      <div class="ff-table-frame max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
         <table class="w-full min-w-[640px] text-sm text-gray-700 dark:text-gray-300">
           <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
             <tr>
@@ -236,8 +216,8 @@
     } @else {
       <div class="space-y-6">
         <ng-container *appHasPermission="'suppliers.write'">
-          <app-form-section title="Vincular producto" description="Qué te vende este proveedor, con su código y su precio." [cols]="4">
-            <app-search-select
+          <app-form-section icon="mdi:link-variant" compact title="Vincular producto" description="Qué te vende este proveedor, con su código y su precio." [cols]="4">
+            <app-search-select compact
               class="md:col-span-2 lg:col-span-4"
               label="Producto"
               [required]="true"
@@ -250,16 +230,16 @@
               (searchChange)="pickerTerm.set($event)"
               (selected)="newProductId.set($event.value)"
             />
-            <app-input-field label="Código del proveedor" helpText="El código con el que este proveedor identifica el producto en sus facturas." [maxLength]="60" [value]="newCodigoProveedor()" (valueChange)="newCodigoProveedor.set($event + '')" />
-            <app-input-field label="Precio de compra" helpText="Precio de este proveedor. Tiene prioridad sobre el precio de compra general al armar órdenes de compra." type="number" min="0" step="0.01" [value]="newPrecioCompra()" (valueChange)="newPrecioCompra.set($event + '')" />
-            <app-input-field label="Plazo (días)" helpText="Días que suele tardar en entregar o de crédito acordado para este producto." type="number" min="0" step="1" [value]="newPlazoDias()" (valueChange)="newPlazoDias.set($event + '')" />
+            <app-input-field icon="mdi:barcode" compact label="Código del proveedor" helpText="El código con el que este proveedor identifica el producto en sus facturas." [maxLength]="60" [value]="newCodigoProveedor()" (valueChange)="newCodigoProveedor.set($event + '')" />
+            <app-input-field icon="mdi:cash-minus" compact label="Precio de compra" helpText="Precio de este proveedor. Tiene prioridad sobre el precio de compra general al armar órdenes de compra." type="number" min="0" step="0.01" [value]="newPrecioCompra()" (valueChange)="newPrecioCompra.set($event + '')" />
+            <app-input-field icon="mdi:calendar-clock" compact label="Plazo (días)" helpText="Días que suele tardar en entregar o de crédito acordado para este producto." type="number" min="0" step="1" [value]="newPlazoDias()" (valueChange)="newPlazoDias.set($event + '')" />
             <div class="flex items-end">
-              <app-button startIconName="mdi:link-variant" [disabled]="upsertProductMutation.isPending()" [loading]="upsertProductMutation.isPending()" (btnClick)="submitProductLink()">Vincular</app-button>
+              <app-button size="sm" startIconName="mdi:link-variant" [disabled]="upsertProductMutation.isPending()" [loading]="upsertProductMutation.isPending()" (btnClick)="submitProductLink()">Vincular</app-button>
             </div>
           </app-form-section>
         </ng-container>
 
-        <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <div class="ff-table-frame max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
           <table class="w-full min-w-[640px] text-sm text-gray-700 dark:text-gray-300">
             <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
               <tr>
@@ -301,8 +281,8 @@
       </div>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" (btnClick)="closeDetail()">Cerrar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="closeDetail()">Cerrar</app-button>
   </div>
 </app-modal>
 
@@ -328,14 +308,14 @@
       }
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="deleteMutation.isPending() || statusMutation.isPending()" (btnClick)="closeConfirm()">Cancelar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="deleteMutation.isPending() || statusMutation.isPending()" (btnClick)="closeConfirm()">Cancelar</app-button>
     @if (confirmAction() === 'delete') {
-      <app-button variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="runConfirm()">
+      <app-button size="sm" variant="danger" startIconName="mdi:trash-can-outline" [disabled]="deleteMutation.isPending()" [loading]="deleteMutation.isPending()" (btnClick)="runConfirm()">
         {{ deleteMutation.isPending() ? 'Eliminando…' : 'Eliminar' }}
       </app-button>
     } @else {
-      <app-button [startIconName]="confirmTarget()?.habilitado ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" [disabled]="statusMutation.isPending()" [loading]="statusMutation.isPending()" (btnClick)="runConfirm()">
+      <app-button size="sm" [startIconName]="confirmTarget()?.habilitado ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" [disabled]="statusMutation.isPending()" [loading]="statusMutation.isPending()" (btnClick)="runConfirm()">
         {{ confirmTarget()?.habilitado ? 'Inhabilitar' : 'Habilitar' }}
       </app-button>
     }
@@ -359,11 +339,11 @@
       (tabChange)="setFormTab($event)"
     />
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
     @if (formTab() === 'general') {
-      <div class="space-y-8">
-        <app-form-section title="Proveedor" description="Cómo se identifica en sus comprobantes." [cols]="2">
-          <app-form-select
+      <div class="space-y-5">
+        <app-form-section icon="mdi:truck-outline" compact title="Proveedor" description="Cómo se identifica en sus comprobantes." [cols]="2">
+          <app-form-select compact
             label="Tipo de documento"
             [required]="true"
             helpText="Normalmente RUC, que es lo que figura en sus facturas."
@@ -372,7 +352,7 @@
             [showPlaceholder]="false"
             (valueChange)="tipoDocumento.set($any($event)); clearError('numeroDocumento')"
           />
-          <app-input-field
+          <app-input-field icon="mdi:card-account-details-outline" compact
             label="Número de documento"
             [isRequired]="true"
             helpText="El RUC tiene 11 dígitos; el DNI, 8. No puede repetirse con otro proveedor."
@@ -382,7 +362,7 @@
             [hint]="formErrors().numeroDocumento || ''"
             (valueChange)="numeroDocumento.set($event + ''); clearError('numeroDocumento')"
           />
-          <app-input-field
+          <app-input-field icon="mdi:domain" compact
             class="md:col-span-2"
             label="Razón social"
             [isRequired]="true"
@@ -393,7 +373,7 @@
             [hint]="formErrors().razonSocial || ''"
             (valueChange)="razonSocial.set($event + ''); clearError('razonSocial')"
           />
-          <app-input-field
+          <app-input-field icon="mdi:storefront-outline" compact
             class="md:col-span-2"
             label="Nombre comercial"
             helpText="El nombre con el que lo conoces, si es distinto de la razón social. Opcional."
@@ -403,11 +383,11 @@
           />
         </app-form-section>
 
-        <app-form-section title="Contacto" description="Con quién hablas para hacer pedidos." [cols]="2">
-          <app-input-field label="Nombre del contacto" helpText="Vendedor o representante que te atiende. Opcional." [maxLength]="200" [value]="contactoNombre()" (valueChange)="contactoNombre.set($event + '')" />
-          <app-input-field label="Teléfono del contacto" helpText="Celular o anexo de esa persona. Opcional." [maxLength]="30" [value]="contactoTelefono()" (valueChange)="contactoTelefono.set($event + '')" />
-          <app-input-field label="Teléfono de la empresa" helpText="Central o teléfono general. Opcional." [maxLength]="30" [value]="telefono()" (valueChange)="telefono.set($event + '')" />
-          <app-input-field
+        <app-form-section icon="mdi:account-outline" compact title="Contacto" description="Con quién hablas para hacer pedidos." [cols]="2">
+          <app-input-field icon="mdi:account-outline" compact label="Nombre del contacto" helpText="Vendedor o representante que te atiende. Opcional." [maxLength]="200" [value]="contactoNombre()" (valueChange)="contactoNombre.set($event + '')" />
+          <app-input-field icon="mdi:phone-outline" compact label="Teléfono del contacto" helpText="Celular o anexo de esa persona. Opcional." [maxLength]="30" [value]="contactoTelefono()" (valueChange)="contactoTelefono.set($event + '')" />
+          <app-input-field icon="mdi:phone-outline" compact label="Teléfono de la empresa" helpText="Central o teléfono general. Opcional." [maxLength]="30" [value]="telefono()" (valueChange)="telefono.set($event + '')" />
+          <app-input-field icon="mdi:email-outline" compact
             label="Correo electrónico"
             helpText="Para contactarlo. Opcional."
             type="email"
@@ -419,8 +399,8 @@
           />
         </app-form-section>
 
-        <app-form-section title="Condiciones" description="Cómo le pagas." [cols]="2">
-          <app-input-field
+        <app-form-section icon="mdi:handshake-outline" compact title="Condiciones" description="Cómo le pagas." [cols]="2">
+          <app-input-field icon="mdi:calendar-clock" compact
             label="Días de crédito"
             helpText="Días que tienes para pagarle después de recibir la mercadería. 0 si pagas al contado. Se usa para el vencimiento de las cuentas por pagar."
             type="number"
@@ -431,22 +411,22 @@
             [hint]="formErrors().diasCredito || ''"
             (valueChange)="diasCredito.set($event + ''); clearError('diasCredito')"
           />
-          <app-input-field label="Condiciones de pago" helpText="Lo que hayan acordado: transferencia, letras, descuento por pronto pago… Opcional." [maxLength]="500" [value]="condicionesPago()" (valueChange)="condicionesPago.set($event + '')" />
+          <app-input-field icon="mdi:handshake-outline" compact label="Condiciones de pago" helpText="Lo que hayan acordado: transferencia, letras, descuento por pronto pago… Opcional." [maxLength]="500" [value]="condicionesPago()" (valueChange)="condicionesPago.set($event + '')" />
         </app-form-section>
       </div>
     }
 
     @if (formTab() === 'mas') {
-      <div class="space-y-8">
-        <app-form-section title="Dirección" description="Dónde está el proveedor. Opcional." [cols]="3">
-          <app-form-select label="Departamento" placeholder="Seleccionar" [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
-          <app-form-select label="Provincia" placeholder="Seleccionar" [value]="provinceId()" [options]="provinceOptions()" [disabled]="!departmentId()" (valueChange)="onProvinceChange($event)" />
-          <app-form-select label="Distrito" placeholder="Seleccionar" [value]="districtId()" [options]="districtOptions()" [disabled]="!provinceId()" (valueChange)="districtId.set($event)" />
-          <app-input-field class="md:col-span-3" label="Dirección" helpText="Calle, número y referencia." [maxLength]="500" [value]="direccion()" (valueChange)="direccion.set($event + '')" />
+      <div class="space-y-5">
+        <app-form-section icon="mdi:map-marker-outline" compact title="Dirección" description="Dónde está el proveedor. Opcional." [cols]="3">
+          <app-form-select compact label="Departamento" placeholder="Seleccionar" [value]="departmentId()" [options]="departmentOptions()" (valueChange)="onDepartmentChange($event)" />
+          <app-form-select compact label="Provincia" placeholder="Seleccionar" [value]="provinceId()" [options]="provinceOptions()" [disabled]="!departmentId()" (valueChange)="onProvinceChange($event)" />
+          <app-form-select compact label="Distrito" placeholder="Seleccionar" [value]="districtId()" [options]="districtOptions()" [disabled]="!provinceId()" (valueChange)="districtId.set($event)" />
+          <app-input-field icon="mdi:map-marker-outline" compact class="md:col-span-3" label="Dirección" helpText="Calle, número y referencia." [maxLength]="500" [value]="direccion()" (valueChange)="direccion.set($event + '')" />
         </app-form-section>
 
-        <app-form-section title="Otros" [cols]="1">
-          <app-text-area label="Observaciones" helpText="Cualquier nota interna sobre este proveedor. Opcional." [maxLength]="2000" [rows]="3" [value]="observaciones()" (valueChange)="observaciones.set($event)" />
+        <app-form-section icon="mdi:information-outline" compact title="Otros" [cols]="1">
+          <app-text-area compact label="Observaciones" helpText="Cualquier nota interna sobre este proveedor. Opcional." [maxLength]="2000" [rows]="3" [value]="observaciones()" (valueChange)="observaciones.set($event)" />
           <app-checkbox
             [checked]="habilitado()"
             (checkedChange)="habilitado.set($event)"
@@ -457,11 +437,11 @@
       </div>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" (btnClick)="closeFormModal()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="isSaving()" [loading]="isSaving()" (btnClick)="submitForm()">
         {{ isSaving() ? (editing() ? 'Actualizando…' : 'Guardando…') : (editing() ? 'Guardar cambios' : 'Guardar proveedor') }}
       </app-button>
     </div>

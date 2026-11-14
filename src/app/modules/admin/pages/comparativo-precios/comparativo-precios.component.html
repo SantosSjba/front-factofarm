@@ -12,37 +12,39 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador compacto y resumen (reporte completo); los chips cambian qué productos se muestran. -->
 <app-list-filters
-  collapsible
+  compact
   [showSelect]="false"
-  [activeCount]="scope() === 'all' ? 1 : 0"
   [searchValue]="search()"
   searchPlaceholder="Buscar producto, código o proveedor"
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen del comparativo"
+  summaryStorageKey="comparativo-precios"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="setSearch($event)"
   (clear)="clearFilters()"
->
-  <app-form-select label="Mostrar" [showPlaceholder]="false" [value]="scope()" [options]="scopeOptions" (valueChange)="setScope($event)" />
-</app-list-filters>
+/>
 
 @let reportState = reportQuery | queryPageState: filtered().length;
 
-<app-component-card
-  title="Precios por proveedor"
-  [desc]="filtered().length ? filtered().length + ' productos' + (scope() === 'multi' ? ' con más de un proveedor' : '') : ''"
+<!-- Sin tarjeta alrededor: cada producto ya es su propio bloque. -->
+<app-page-state
   [loading]="reportState.loading"
   [error]="reportState.error"
   [empty]="reportState.empty"
   [emptyTitle]="search().trim() ? 'Sin coincidencias para tu búsqueda' : (scope() === 'multi' ? 'Ningún producto tiene precio de dos o más proveedores' : 'Aún no hay precios de proveedores')"
-  [emptyHint]="search().trim() ? 'Prueba con otro texto.' : (scope() === 'multi' && reportQuery.data()?.items?.length ? 'Cambia «Mostrar» a «Todos» para ver los que tienen un solo proveedor.' : 'Registra precios en Proveedores → Productos que vende.')"
+  [emptyHint]="search().trim() ? 'Prueba con otro texto.' : (scope() === 'multi' && reportQuery.data()?.items?.length ? 'Elige «Todos con precio» en el resumen para ver los que tienen un solo proveedor.' : 'Registra precios en Proveedores → Productos que vende.')"
+  skeleton="table"
   (retry)="reportQuery.refetch()"
 >
-  <div class="space-y-4">
+  <div class="space-y-3">
     @for (row of pageRows(); track row.productId) {
-      <section class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-        <header class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.04]">
+      <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <header class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-white/[0.04]">
           <div class="min-w-0">
-            <p class="truncate font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</p>
+            <p class="text-sm font-medium text-gray-800 [overflow-wrap:anywhere] dark:text-white/90">{{ row.producto }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ row.codigoInterno ? 'Cód. ' + row.codigoInterno + ' · ' : '' }}{{ row.proveedores.length }} proveedor(es)</p>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-sm">
@@ -57,7 +59,7 @@
           <table class="w-full min-w-[560px] text-sm text-gray-700 dark:text-gray-300">
             <thead class="border-b border-gray-100 dark:border-gray-800">
               <tr>
-                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</th>
+                <th data-card-role="title" class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</th>
                 <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Cód. proveedor</th>
                 <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Plazo</th>
                 <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Precio de compra</th>
@@ -91,6 +93,6 @@
       <p class="text-center text-sm text-gray-500 dark:text-gray-400">Sin coincidencias.</p>
     }
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [totalItems]="filtered().length" [currentPage]="page()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />

@@ -10,7 +10,8 @@ import { NotifyService } from '../../../../core/services/notify.service';
 import { isOptionalEmail, isOptionalIntAtLeast, isOptionalNumberAtLeast } from '../../../../core/utils/form-validators';
 import { identityDocumentNumberMessage, isValidIdentityDocumentNumber } from '../../../../core/utils/peru-documents';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -24,7 +25,7 @@ import { TextAreaComponent } from '../../../../shared/components/form/input/text
 import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -69,8 +70,7 @@ const DETAIL_TABS: TabStripItem[] = [
     BreadcrumbInlineComponent,
     ButtonComponent,
     CheckboxComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     FormSectionComponent,
     FormSelectComponent,
     HasPermissionDirective,
@@ -95,7 +95,6 @@ export class ProveedoresComponent {
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [{ label: 'Compras' }, { label: 'Proveedores' }];
-  protected readonly rowLegend: LegendItem[] = [{ label: 'Inhabilitado', tone: 'muted' }];
 
   // ---------- Listado ----------
   protected readonly itemsPerPage = 10;
@@ -105,8 +104,10 @@ export class ProveedoresComponent {
   protected readonly fieldFilterOptions = [
     { value: 'razonSocial', label: 'Razón social' },
     { value: 'numeroDocumento', label: 'N.º de documento' },
-    { value: 'all', label: 'Todos' },
+    { value: 'all', label: 'Razón social o documento' },
   ];
+  /** Filtro por estado desde los chips del resumen. */
+  protected readonly estado = signal<'habilitado' | 'inhabilitado' | null>(null);
   protected readonly columns: { key: ColumnKey; label: string }[] = [
     { key: 'documento', label: 'Documento' },
     { key: 'contacto', label: 'Contacto' },
@@ -126,6 +127,7 @@ export class ProveedoresComponent {
     queryKey: supplierQueryKeys.list({
       search: this.searchTerm().trim(),
       field: this.filterField(),
+      estado: this.estado() ?? undefined,
       page: this.currentPage(),
     }),
     queryFn: () =>
@@ -133,6 +135,7 @@ export class ProveedoresComponent {
         this.api.listSuppliersPaged({
           search: this.searchTerm(),
           field: this.filterField(),
+          estado: this.estado() ?? undefined,
           page: this.currentPage(),
           pageSize: this.itemsPerPage,
         }),
@@ -140,7 +143,31 @@ export class ProveedoresComponent {
   }));
   protected readonly rows = computed(() => this.suppliersQuery.data()?.items ?? []);
   protected readonly totalRows = computed(() => this.suppliersQuery.data()?.total ?? 0);
-  protected readonly pageStart = computed(() => (this.currentPage() - 1) * this.itemsPerPage);
+
+  /** Totales de todas las páginas (no solo la visible). */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: [...supplierQueryKeys.all, 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.suppliersSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const current = this.estado();
+    return [
+      { id: 'all', label: 'Total', count: s.total, icon: 'mdi:truck-outline', tone: 'neutral', clickable: true, active: current === null, tooltip: 'Ver todos los proveedores.' },
+      { id: 'habilitado', label: 'Habilitados', count: s.habilitados, icon: 'mdi:check-circle-outline', tone: 'success', clickable: true, active: current === 'habilitado', tooltip: 'Se ofrecen al hacer compras.' },
+      { id: 'inhabilitado', label: 'Inhabilitados', count: s.inhabilitados, icon: 'mdi:eye-off-outline', tone: 'neutral', clickable: true, active: current === 'inhabilitado', tooltip: 'Guardados pero no se ofrecen al comprar.' },
+      { id: 'credito', label: 'Con crédito', count: s.conCredito, icon: 'mdi:calendar-clock', tone: 'info', tooltip: 'Proveedores con días de crédito configurados.' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'credito') return;
+    const next = chip.id === 'all' ? null : (chip.id as 'habilitado' | 'inhabilitado');
+    this.estado.set(this.estado() === next ? null : next);
+    this.currentPage.set(1);
+  }
 
   protected readonly documentTypesQuery = injectQuery(() => ({
     queryKey: ['customer-document-types'],
@@ -330,6 +357,7 @@ export class ProveedoresComponent {
   protected clearFilters() {
     this.searchTerm.set('');
     this.filterField.set('razonSocial');
+    this.estado.set(null);
     this.currentPage.set(1);
   }
 

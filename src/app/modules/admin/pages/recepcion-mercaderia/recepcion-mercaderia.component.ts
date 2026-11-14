@@ -8,6 +8,9 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -56,6 +59,8 @@ type ReceiptLine = {
     BreadcrumbInlineComponent,
     ButtonComponent,
     ComponentCardComponent,
+    PageStateComponent,
+    IconComponent,
     FormSectionComponent,
     HasPermissionDirective,
     HelpHintComponent,
@@ -95,7 +100,37 @@ export class RecepcionMercaderiaComponent {
       return [...sent.items, ...partial.items].sort((a, b) => a.fechaEmision.localeCompare(b.fechaEmision));
     },
   }));
-  protected readonly pendingOrders = computed(() => this.pendingOrdersQuery.data() ?? []);
+  /** Filtro desde los chips: enviadas o recibidas en parte. */
+  protected readonly estadoFilter = signal<'ENVIADA' | 'PARCIALMENTE_RECIBIDA' | null>(null);
+  protected readonly pendingOrders = computed(() => {
+    const all = this.pendingOrdersQuery.data() ?? [];
+    const f = this.estadoFilter();
+    return f ? all.filter((o) => o.estado === f) : all;
+  });
+
+  /** Totales reales por estado (todas las órdenes, no solo las cargadas). */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: ['purchase-orders', 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.purchaseOrdersSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const sent = s.byEstado.ENVIADA ?? 0;
+    const partial = s.byEstado.PARCIALMENTE_RECIBIDA ?? 0;
+    const f = this.estadoFilter();
+    return [
+      { id: 'all', label: 'Por recibir', count: sent + partial, icon: 'mdi:truck-outline', tone: 'neutral', clickable: true, active: f === null, tooltip: 'Todas las órdenes esperando mercadería.' },
+      { id: 'ENVIADA', label: 'Enviadas', count: sent, icon: 'mdi:send-outline', tone: 'warning', clickable: true, active: f === 'ENVIADA', tooltip: 'Aún no llega nada.' },
+      { id: 'PARCIALMENTE_RECIBIDA', label: 'Recibidas en parte', count: partial, icon: 'mdi:truck-fast-outline', tone: 'info', clickable: true, active: f === 'PARCIALMENTE_RECIBIDA', tooltip: 'Llegó una parte; falta el resto.' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const next = chip.id === 'all' ? null : (chip.id as 'ENVIADA' | 'PARCIALMENTE_RECIBIDA');
+    this.estadoFilter.set(this.estadoFilter() === next ? null : next);
+  }
 
   // ---------- Orden elegida ----------
   protected readonly selectedOrderId = signal('');

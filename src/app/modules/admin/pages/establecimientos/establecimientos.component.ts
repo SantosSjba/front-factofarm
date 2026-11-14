@@ -23,7 +23,6 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type {
   CreateEstablishmentRequest,
@@ -53,7 +52,6 @@ import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/
     PaginationComponent,
     ModalComponent,
     ButtonComponent,
-    IconComponent,
     InputFieldComponent,
     FormSelectComponent,
     CheckboxComponent,

@@ -957,8 +957,18 @@ export interface SupplierOptionDto {
 export interface SupplierListFiltersRequest {
   search?: string;
   field?: 'all' | 'razonSocial' | 'numeroDocumento';
+  /** Filtro por estado (chips del resumen). */
+  estado?: 'habilitado' | 'inhabilitado';
   page?: number;
   pageSize?: number;
+}
+
+/** `GET /suppliers/summary`: totales de todas las páginas. */
+export interface SupplierSummaryDto {
+  total: number;
+  habilitados: number;
+  inhabilitados: number;
+  conCredito: number;
 }
 
 export type SupplierListResponseDto = PaginatedResponseDto<SupplierItemDto>;

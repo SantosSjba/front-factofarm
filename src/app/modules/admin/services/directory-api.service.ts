@@ -60,6 +60,7 @@ import type {
   SupplierOptionDto,
   SupplierListFiltersRequest,
   SupplierListResponseDto,
+  SupplierSummaryDto,
   CreateSupplierRequest,
   UpdateSupplierRequest,
   SupplierProductItemDto,
@@ -883,9 +884,14 @@ export class DirectoryApiService {
     const search = filters?.search?.trim();
     if (search) params['search'] = search;
     if (filters?.field && filters.field !== 'all') params['field'] = filters.field;
+    if (filters?.estado) params['estado'] = filters.estado;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     return this.http.get<SupplierListResponseDto>(`${this.base}/suppliers`, { params });
+  }
+
+  suppliersSummary() {
+    return this.http.get<SupplierSummaryDto>(`${this.base}/suppliers/summary`);
   }
 
   listSupplierOptions() {
@@ -2051,6 +2057,11 @@ export class DirectoryApiService {
   }
 
   // —— Compras (Fase 4) ——
+  /** `GET /purchase-orders/summary`: cantidad de órdenes por estado (todas las páginas). */
+  purchaseOrdersSummary() {
+    return this.http.get<{ total: number; byEstado: Partial<Record<PurchaseOrderStatus, number>> }>(`${this.base}/purchases/purchase-orders/summary`);
+  }
+
   listPurchaseOrders(filters?: { page?: number; pageSize?: number; supplierId?: string; estado?: PurchaseOrderStatus; search?: string }) {
     const params: Record<string, string> = {};
     if (filters?.page) params['page'] = String(filters.page);

@@ -13,35 +13,39 @@
 </app-help-panel>
 
 @if (!selectedOrderId()) {
+  <!-- Buscador compacto y resumen (totales reales); los chips filtran el listado. -->
   <app-list-filters
+    compact
     [showSelect]="false"
     [searchValue]="search()"
     searchPlaceholder="Buscar por número, proveedor o RUC"
     clearLabel="Limpiar"
+    [summaryChips]="summaryChips()"
+    summaryLabel="Resumen de órdenes por recibir"
+    summaryStorageKey="recepcion-mercaderia"
+    (summaryChipClick)="onSummaryChip($event)"
     (searchValueChange)="onSearchChange($event)"
-    (clear)="search.set('')"
+    (clear)="search.set(''); estadoFilter.set(null)"
   />
 
   @let ordersState = pendingOrdersQuery | queryPageState: pendingOrders().length;
 
-  <app-component-card
-    title="Órdenes por recibir"
-    [desc]="pendingOrders().length ? pendingOrders().length + ' esperando mercadería' : ''"
-    className="overflow-hidden"
-    [bodyClass]="'p-0 sm:p-0'"
+  <!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+  <app-page-state
     [loading]="ordersState.loading"
     [error]="ordersState.error"
     [empty]="ordersState.empty"
-    [emptyTitle]="search().trim() ? 'Sin coincidencias para tu búsqueda' : 'No hay órdenes esperando mercadería'"
+    [emptyTitle]="search().trim() || estadoFilter() ? 'Sin órdenes con esos filtros' : 'No hay órdenes esperando mercadería'"
     emptyHint="Una orden aparece aquí cuando la marcas como enviada en Órdenes de compra."
+    skeleton="table"
     (retry)="pendingOrdersQuery.refetch()"
   >
-    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div class="max-w-full overflow-x-auto">
         <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
           <thead class="border-b border-gray-100 dark:border-white/[0.05]">
             <tr>
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Orden</th>
+              <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Orden</th>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</th>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
@@ -53,13 +57,13 @@
           <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
             @for (row of pendingOrders(); track row.id) {
               <tr>
-                <td class="px-5 py-4 text-theme-sm font-medium whitespace-nowrap text-gray-800 dark:text-white/90">{{ row.numero ?? '—' }}</td>
-                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ row.fechaEmision | appDate: 'dd/MM/yyyy' }}</td>
-                <td class="px-5 py-4 text-theme-sm">{{ row.supplier.razonSocial }}</td>
-                <td class="px-5 py-4 text-theme-sm">{{ row.warehouse.nombre }}</td>
-                <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [label]="statusLabel(row.estado)" /></td>
-                <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.total) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-                <td class="px-5 py-4 text-end">
+                <td class="px-5 py-3 text-theme-sm font-medium whitespace-nowrap text-gray-800 dark:text-white/90">{{ row.numero ?? '—' }}</td>
+                <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ row.fechaEmision | appDate: 'dd/MM/yyyy' }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.supplier.razonSocial }}</td>
+                <td class="px-5 py-3 text-theme-sm">{{ row.warehouse.nombre }}</td>
+                <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.estado" [label]="statusLabel(row.estado)" /></td>
+                <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ num(row.total) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                <td class="px-5 py-3 text-end">
                   <ng-container *appHasPermission="'purchases.receive'">
                     <app-button size="sm" startIconName="mdi:truck-check-outline" (btnClick)="selectOrder(row)">Recibir</app-button>
                   </ng-container>
@@ -72,10 +76,12 @@
         </table>
       </div>
     </div>
-  </app-component-card>
+  </app-page-state>
 } @else {
   @let po = detailQuery.data();
   <app-component-card
+    compact
+    icon="mdi:truck-check-outline"
     [title]="po ? 'Recibir orden ' + (po.numero ?? '') : 'Recibir orden'"
     [desc]="po ? po.supplier.razonSocial + ' · Almacén ' + po.warehouse.nombre : ''"
     [loading]="detailQuery.isPending()"
@@ -96,19 +102,22 @@
           Ya se recibió todo lo de esta orden.
         </p>
       } @else {
-        <div class="space-y-8">
+        <div class="space-y-5">
           <section>
             <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h4 class="text-base font-medium text-gray-800 dark:text-white/90">¿Qué llegó?</h4>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Viene lleno con todo lo pendiente; corrige lo que no llegó completo.</p>
+              <div class="flex min-w-0 items-start gap-2.5">
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"><app-icon name="mdi:package-variant-closed-check" iconClass="size-4" /></span>
+                <div class="min-w-0">
+                  <h4 class="text-sm font-medium text-gray-800 dark:text-white/90">¿Qué llegó?</h4>
+                  <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">Viene lleno con todo lo pendiente; corrige lo que no llegó completo.</p>
+                </div>
               </div>
-              <div class="flex gap-2">
-                <app-button size="sm" variant="outline" startIconName="mdi:check-all" (btnClick)="receiveAll()">Todo lo pendiente</app-button>
-                <app-button size="sm" variant="outline" startIconName="mdi:eraser" (btnClick)="receiveNone()">Poner todo en 0</app-button>
+              <div class="flex flex-wrap gap-2">
+                <app-button size="sm" variant="outline" startIconName="mdi:check-all" tooltip="Pone en cada producto toda la cantidad pendiente." (btnClick)="receiveAll()">Todo lo pendiente</app-button>
+                <app-button size="sm" variant="outline" startIconName="mdi:eraser" tooltip="Deja todas las cantidades en 0 para llenar solo lo que llegó." (btnClick)="receiveNone()">Poner todo en 0</app-button>
               </div>
             </div>
-            <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+            <div class="ff-table-frame max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
               <table class="w-full min-w-[900px] text-sm text-gray-700 dark:text-gray-300">
                 <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
                   <tr>
@@ -138,10 +147,10 @@
                       </td>
                       <td class="px-3 py-3 text-end tabular-nums">{{ line.pendiente }}</td>
                       <td class="w-28 px-3 py-2">
-                        <app-input-field type="number" min="0" [max]="'' + line.pendiente" step="1" [ariaLabel]="'Cantidad que llegó de ' + line.producto" [value]="line.quantity" (valueChange)="setQuantity(line, $event)" />
+                        <app-input-field compact type="number" min="0" [max]="'' + line.pendiente" step="1" [ariaLabel]="'Cantidad que llegó de ' + line.producto" [value]="line.quantity" (valueChange)="setQuantity(line, $event)" />
                       </td>
                       <td class="w-32 px-3 py-2">
-                        <app-input-field type="number" min="0" step="0.01" [ariaLabel]="'Costo unitario de ' + line.producto" [value]="line.unitCost" (valueChange)="setCost(line, $event)" />
+                        <app-input-field compact type="number" min="0" step="0.01" [ariaLabel]="'Costo unitario de ' + line.producto" [value]="line.unitCost" (valueChange)="setCost(line, $event)" />
                         @if (line.unitCost !== line.costoOrden) {
                           <span class="mt-1 block text-xs text-warning-600 dark:text-warning-400">Orden: {{ line.costoOrden | number: '1.2-4' }}</span>
                         }
@@ -149,6 +158,7 @@
                       @if (line.manejaLotes) {
                         <td class="w-48 px-3 py-2">
                           <app-suggest-input
+                            compact
                             placeholder="Código de lote"
                             emptyText="Lote nuevo: se creará al guardar."
                             [maxLength]="60"
@@ -162,6 +172,7 @@
                         </td>
                         <td class="w-44 px-3 py-2">
                           <app-input-field
+                            compact
                             type="date"
                             [min]="today"
                             [ariaLabel]="'Vencimiento del lote de ' + line.producto"
@@ -194,14 +205,14 @@
             </div>
           </section>
 
-          <app-form-section title="Documento del proveedor" description="Para encontrar luego esta recepción y su cuenta por pagar." [cols]="2">
-            <app-input-field label="N.º de factura o guía" helpText="El número del comprobante que trajo el proveedor. Opcional, pero recomendado." placeholder="Ej.: F001-00012345" [maxLength]="60" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set($event + '')" />
-            <app-text-area label="Comentario" helpText="Algo que quieras dejar anotado: faltantes, cajas dañadas… Opcional." [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
+          <app-form-section compact icon="mdi:file-document-outline" title="Documento del proveedor" description="Para encontrar luego esta recepción y su cuenta por pagar." [cols]="2">
+            <app-input-field compact icon="mdi:file-document-outline" label="N.º de factura o guía" helpText="El número del comprobante que trajo el proveedor. Opcional, pero recomendado." placeholder="Ej.: F001-00012345" [maxLength]="60" [value]="referenciaDoc()" (valueChange)="referenciaDoc.set($event + '')" />
+            <app-text-area compact label="Comentario" helpText="Algo que quieras dejar anotado: faltantes, cajas dañadas… Opcional." [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
           </app-form-section>
 
-          <div class="flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-            <app-button variant="outline" [disabled]="receiveMutation.isPending()" (btnClick)="closeOrder()">Cancelar</app-button>
-            <app-button startIconName="mdi:truck-check-outline" [disabled]="receiveMutation.isPending()" (btnClick)="review()">Confirmar recepción</app-button>
+          <div class="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+            <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="receiveMutation.isPending()" (btnClick)="closeOrder()">Cancelar</app-button>
+            <app-button size="sm" startIconName="mdi:truck-check-outline" [disabled]="receiveMutation.isPending()" (btnClick)="review()">Confirmar recepción</app-button>
           </div>
         </div>
       }
@@ -223,9 +234,9 @@
       </ul>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="receiveMutation.isPending()" (btnClick)="confirmOpen.set(false)">Revisar de nuevo</app-button>
-    <app-button startIconName="mdi:check" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="receiveMutation.isPending()" (btnClick)="confirmOpen.set(false)">Revisar de nuevo</app-button>
+    <app-button size="sm" startIconName="mdi:check" [disabled]="receiveMutation.isPending()" [loading]="receiveMutation.isPending()" (btnClick)="receiveMutation.mutate()">
       {{ receiveMutation.isPending() ? 'Registrando…' : 'Confirmar' }}
     </app-button>
   </div>

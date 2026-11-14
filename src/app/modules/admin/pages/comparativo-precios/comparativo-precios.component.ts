@@ -3,12 +3,12 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
-import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
@@ -31,8 +31,7 @@ type ComparisonRow = PriceComparisonItemDto & {
     CurrencyPipe,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
-    ComponentCardComponent,
-    FormSelectComponent,
+    PageStateComponent,
     HelpPanelComponent,
     ListFiltersComponent,
     PageToolbarComponent,
@@ -49,10 +48,6 @@ export class ComparativoPreciosComponent {
   protected readonly page = signal(1);
   protected readonly search = signal('');
   protected readonly scope = signal<'all' | 'multi'>('multi');
-  protected readonly scopeOptions = [
-    { value: 'multi', label: 'Con 2 o más proveedores' },
-    { value: 'all', label: 'Todos' },
-  ];
 
   protected readonly reportQuery = injectQuery(() => ({
     queryKey: ['purchases', 'price-comparison'] as const,
@@ -88,6 +83,22 @@ export class ComparativoPreciosComponent {
     this.filtered().slice((this.page() - 1) * this.pageSize, this.page() * this.pageSize),
   );
   protected readonly multiCount = computed(() => this.rows().filter((r) => r.proveedores.length > 1).length);
+
+  /** Resumen del reporte completo; «Varios proveedores» y «Todos» cambian lo que se muestra. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    if (!this.reportQuery.data()) return [];
+    const rows = this.rows();
+    const scope = this.scope();
+    return [
+      { id: 'multi', label: 'Con varios proveedores', count: this.multiCount(), icon: 'mdi:scale-balance', tone: 'info', clickable: true, active: scope === 'multi', tooltip: 'Productos con precio de 2 o más proveedores: aquí sí se puede comparar.' },
+      { id: 'all', label: 'Todos con precio', count: rows.length, icon: 'mdi:tag-multiple-outline', tone: 'neutral', clickable: true, active: scope === 'all', tooltip: 'Incluye los que tienen un solo proveedor.' },
+      { id: 'ahorro', label: 'Con ahorro', count: rows.filter((r) => r.ahorro > 0).length, icon: 'mdi:piggy-bank-outline', tone: 'success', tooltip: 'Productos donde elegir al proveedor más barato te ahorra dinero.' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'multi' || chip.id === 'all') this.setScope(chip.id);
+  }
 
   constructor() {
     effect(() => {

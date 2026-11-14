@@ -4,7 +4,8 @@ import { Router } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -38,7 +39,7 @@ const ABC_TONE: Record<AbcClass, StatusTone> = { A: 'success', B: 'warning', C: 
     BreadcrumbInlineComponent,
     ButtonComponent,
     CheckboxComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     HasPermissionDirective,
     FormSelectComponent,
     HelpHintComponent,
@@ -60,12 +61,6 @@ export class ReporteComprasSugeridoComponent {
   protected readonly search = signal('');
   protected readonly warehouseId = signal('');
   protected readonly abc = signal('');
-  protected readonly abcOptions = [
-    { value: '', label: 'Todas las clases' },
-    { value: 'A', label: 'A · Los que más venden' },
-    { value: 'B', label: 'B · Venta media' },
-    { value: 'C', label: 'C · Venta baja o sin venta' },
-  ];
   protected readonly activeFilterCount = computed(() => [this.warehouseId(), this.abc()].filter(Boolean).length);
 
   protected readonly warehousesQuery = injectQuery(() => ({
@@ -102,6 +97,34 @@ export class ReporteComprasSugeridoComponent {
     this.filtered().reduce((acc, r) => acc + this.lineTotal(r), 0),
   );
   protected readonly withoutPrice = computed(() => this.filtered().filter((r) => !r.precioSugerido).length);
+
+  private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
+
+  /** Resumen del reporte completo (todas las páginas). Las clases filtran; costo y «sin precio» son de lo filtrado. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const data = this.reportQuery.data();
+    if (!data) return [];
+    const items = data.items;
+    const count = (c: string) => items.filter((r) => r.claseAbc === c).length;
+    const abc = this.abc();
+    const chips: SummaryChip[] = [
+      { id: 'all', label: 'Por reponer', count: items.length, icon: 'mdi:package-variant-remove', tone: 'neutral', clickable: true, active: !abc, tooltip: 'Productos por debajo de su stock mínimo.', group: 'Clase' },
+      { id: 'A', label: 'A', count: count('A'), icon: 'mdi:star', tone: 'success', clickable: true, active: abc === 'A', tooltip: 'Los que más venden (80 % de tus ventas en 90 días).', group: 'Clase' },
+      { id: 'B', label: 'B', count: count('B'), icon: 'mdi:star-half-full', tone: 'warning', clickable: true, active: abc === 'B', tooltip: 'Venta media (el siguiente 15 %).', group: 'Clase' },
+      { id: 'C', label: 'C', count: count('C'), icon: 'mdi:star-outline', tone: 'neutral', clickable: true, active: abc === 'C', tooltip: 'Venta baja o sin ventas.', group: 'Clase' },
+      { id: 'costo', label: 'Costo estimado', count: this.pen.format(this.estimatedTotal()), icon: 'mdi:cash', tone: 'info', tooltip: 'Cantidad sugerida por el precio del proveedor más barato, de lo que se muestra con los filtros.', group: 'Totales' },
+    ];
+    if (this.withoutPrice()) {
+      chips.push({ id: 'sinPrecio', label: 'Sin precio de proveedor', count: this.withoutPrice(), icon: 'mdi:alert-outline', tone: 'warning', tooltip: 'No suman al costo estimado. Regístralos en Proveedores → Productos que vende.', group: 'Totales' });
+    }
+    return chips;
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (!['all', 'A', 'B', 'C'].includes(chip.id)) return;
+    const next = chip.id === 'all' ? '' : chip.id;
+    this.setAbc(this.abc() === next ? '' : next);
+  }
 
   // ---------- Selección para crear una orden ----------
   /** Filas elegidas, por `productId|warehouseId`. */

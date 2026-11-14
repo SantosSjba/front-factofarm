@@ -14,39 +14,40 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador y almacén en una fila compacta; el resumen (reporte completo) filtra por clase al hacer clic. -->
 <app-list-filters
-  collapsible
+  compact
   [showSelect]="false"
-  [activeCount]="activeFilterCount()"
+  [showClear]="false"
   [searchValue]="search()"
   searchPlaceholder="Buscar producto, código o proveedor"
-  clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen del sugerido"
+  summaryStorageKey="sugerido-compras"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="setSearch($event)"
-  (clear)="clearFilters()"
 >
-  <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
-  <app-form-select label="Clase" [showPlaceholder]="false" [value]="abc()" [options]="abcOptions" (valueChange)="setAbc($event)" />
+  <!-- Almacén y «Limpiar» siempre juntos: si no caben, bajan los dos. -->
+  <div data-filters class="flex min-w-[min(100%,18rem)] flex-[5] basis-72 items-end gap-2">
+    <app-form-select class="min-w-0 flex-1" compact ariaLabel="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+    <app-button size="sm" variant="outline" startIconName="mdi:filter-remove-outline" tooltip="Quita la búsqueda y los filtros." (btnClick)="clearFilters()">Limpiar</app-button>
+  </div>
 </app-list-filters>
 
 @let reportState = reportQuery | queryPageState: filtered().length;
 
-<app-component-card
-  title="Productos por reponer"
-  [desc]="filtered().length ? filtered().length + ' productos' + (estimatedTotal() > 0 ? ' · costo estimado ' + (estimatedTotal() | currency: 'PEN' : 'symbol' : '1.2-2') : '') : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="reportState.loading"
   [error]="reportState.error"
   [empty]="reportState.empty"
-  [emptyTitle]="search().trim() || activeFilterCount() ? 'Sin coincidencias para los filtros aplicados' : 'Ningún producto está por debajo de su stock mínimo'"
+  [emptyTitle]="search().trim() || activeFilterCount() ? 'Sin productos con esos filtros' : 'Ningún producto está por debajo de su stock mínimo'"
   [emptyHint]="search().trim() || activeFilterCount() ? 'Prueba con otro texto o limpia los filtros.' : 'Cuando el stock de un producto baje de su mínimo, aparecerá aquí.'"
+  skeleton="table"
   (retry)="reportQuery.refetch()"
 >
-  @if (reportQuery.data(); as data) {
-    <span data-card-header-end class="text-xs text-gray-500 dark:text-gray-400">Calculado {{ data.generatedAt | appDate: 'dd/MM/yyyy HH:mm' }}</span>
-  }
   @if (selected().size) {
-    <div class="px-3 pt-3 sm:px-4">
+    <div class="mb-3">
       <app-alert
         [variant]="selectionProblem() ? 'warning' : 'info'"
         [title]="selected().size + (selected().size === 1 ? ' producto elegido' : ' productos elegidos')"
@@ -61,18 +62,19 @@
       </app-alert>
     </div>
   }
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Productos por reponer</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="w-10 px-5 py-3">
+            <th data-card-role="select" class="w-10 px-5 py-3">
               <app-checkbox ariaLabel="Elegir todos los de esta página" [checked]="pageAllSelected()" (checkedChange)="togglePage($event)" />
             </th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
               <span class="inline-flex items-center gap-1">Clase <app-help-hint text="A: los que más venden (80 % de tus ventas en 90 días). B: venta media (el siguiente 15 %). C: el resto o sin ventas." [iconSize]="14" /></span>
             </th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Mínimo</th>
@@ -86,22 +88,22 @@
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of pageRows(); track row.productId + row.warehouseId) {
             <tr [class.bg-brand-50]="selected().has(key(row))" [class.dark:bg-brand-500/10]="selected().has(key(row))">
-              <td class="px-5 py-4">
+              <td class="px-5 py-3">
                 <app-checkbox [ariaLabel]="'Elegir ' + row.producto" [checked]="selected().has(key(row))" (checkedChange)="toggleRow(row, $event)" />
               </td>
-              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.claseAbc" [tone]="abcTone(row.claseAbc)" [label]="row.claseAbc" /></td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.claseAbc" [tone]="abcTone(row.claseAbc)" [label]="row.claseAbc" /></td>
+              <td class="px-5 py-3 text-theme-sm">
                 <span class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
                 @if (row.codigoInterno) {
                   <span class="block text-theme-xs text-gray-500 dark:text-gray-400">Cód. {{ row.codigoInterno }}</span>
                 }
               </td>
-              <td class="px-5 py-4 text-theme-sm">{{ row.warehouse }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums text-error-600 dark:text-error-400">{{ num(row.stockActual) }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.stockMinimo }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.rotacion90d) }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm font-semibold tabular-nums text-brand-600 dark:text-brand-400">{{ row.cantidadSugerida }}</td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm">{{ row.warehouse }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm font-medium tabular-nums text-error-600 dark:text-error-400">{{ num(row.stockActual) }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ row.stockMinimo }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ num(row.rotacion90d) }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums text-brand-600 dark:text-brand-400">{{ row.cantidadSugerida }}</td>
+              <td class="px-5 py-3 text-theme-sm">
                 @if (row.proveedorSugerido) {
                   {{ row.proveedorSugerido }}
                   <app-button variant="unstyled" className="block cursor-pointer text-start text-theme-xs text-brand-600 hover:underline dark:text-brand-400" (btnClick)="selectSameSupplier(row)">Elegir todo lo de este proveedor</app-button>
@@ -109,21 +111,19 @@
                   —
                 }
               </td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.precioSugerido ? (num(row.precioSugerido) | number: '1.2-2') : '—' }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.precioSugerido ? (lineTotal(row) | number: '1.2-2') : '—' }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ row.precioSugerido ? (num(row.precioSugerido) | number: '1.2-2') : '—' }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ row.precioSugerido ? (lineTotal(row) | number: '1.2-2') : '—' }}</td>
             </tr>
           } @empty {
-            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+            <tr><td colspan="99" class="px-5 py-3 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-  @if (withoutPrice()) {
-    <p class="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">
-      {{ withoutPrice() }} producto(s) sin proveedor con precio: no suman al costo estimado. Regístralos en Proveedores → Productos que vende.
-    </p>
+  @if (reportQuery.data(); as data) {
+    <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">Calculado el {{ data.generatedAt | appDate: 'dd/MM/yyyy HH:mm' }}.</p>
   }
-</app-component-card>
+</app-page-state>
 
 <app-pagination [totalItems]="filtered().length" [currentPage]="page()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
