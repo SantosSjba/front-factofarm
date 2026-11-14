@@ -10,7 +10,8 @@ import { NotifyService } from '../../../../core/services/notify.service';
 import { isOptionalUrl } from '../../../../core/utils/form-validators';
 import { isValidRuc } from '../../../../core/utils/peru-documents';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -22,7 +23,7 @@ import { CheckboxComponent } from '../../../../shared/components/form/input/chec
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { ColorLegendComponent, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -64,8 +65,7 @@ const IN_FLIGHT = new Set<SunatDocumentStatus>(['PENDIENTE', 'ENVIANDO']);
     BreadcrumbInlineComponent,
     ButtonComponent,
     CheckboxComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     FormSectionComponent,
     FormSelectComponent,
     HasPermissionDirective,
@@ -97,10 +97,32 @@ export class ComprobanteElectronicoComponent {
   protected readonly sunatLabel = sunatStatusLabel;
   protected readonly sunatTone = sunatStatusTone;
   protected readonly sunatHint = sunatStatusHint;
-  protected readonly legend = [
-    { label: 'Rechazado: reenvíalo', tone: 'warning' as LegendTone },
-    { label: 'Anulado', tone: 'error-light' as LegendTone },
-  ];
+
+  /** Resumen por estado SUNAT de todos los comprobantes; cada chip filtra. Aceptado y Rechazado siempre se ven. */
+  protected readonly summaryQuery = injectQuery(() => ({
+    queryKey: ['billing', 'documents', 'summary'] as const,
+    queryFn: () => firstValueFrom(this.api.electronicDocumentsSummary()),
+  }));
+
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summaryQuery.data();
+    if (!s) return [];
+    const current = this.estado();
+    const chips: SummaryChip[] = [
+      { id: 'all', label: 'Total', count: s.total, icon: 'mdi:file-document-multiple-outline', tone: 'neutral', clickable: true, active: !current, tooltip: 'Ver todos los comprobantes.' },
+    ];
+    for (const opt of SUNAT_STATUS_OPTIONS) {
+      const count = s.byStatus[opt.value] ?? 0;
+      if (!count && opt.value !== 'ACEPTADO' && opt.value !== 'RECHAZADO') continue;
+      chips.push({ id: opt.value, label: opt.label, count, tone: sunatStatusTone(opt.value), clickable: true, active: current === opt.value, tooltip: sunatStatusHint(opt.value) });
+    }
+    return chips;
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const next = chip.id === 'all' ? '' : chip.id;
+    this.setFilter('estado', this.estado() === next ? '' : next);
+  }
 
   // ---------- Filtros ----------
   protected readonly page = signal(1);
@@ -110,7 +132,6 @@ export class ComprobanteElectronicoComponent {
   protected readonly dateFrom = signal('');
   protected readonly dateTo = signal('');
 
-  protected readonly estadoOptions = [{ value: '', label: 'Todos los estados' }, ...SUNAT_STATUS_OPTIONS];
   protected readonly tipoOptions = [
     { value: '', label: 'Todos los tipos' },
     ...['BOLETA', 'FACTURA', 'NOTA_CREDITO', 'NOTA_DEBITO', 'RESUMEN_BOLETAS', 'GUIA_REMISION_REMITENTE', 'GUIA_REMISION_TRANSPORTISTA', 'RETENCION', 'PERCEPCION', 'LIQUIDACION_COMPRA'].map(

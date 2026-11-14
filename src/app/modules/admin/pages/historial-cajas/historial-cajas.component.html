@@ -3,8 +3,8 @@
 <app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Historial de cajas</h1>
   <div data-toolbar-actions class="flex flex-wrap gap-2">
-    <app-button size="sm" variant="outline" [loading]="exporting() === 'xlsx'" [disabled]="!!exporting()" (btnClick)="exportList('xlsx')"><app-excel-icon /> Excel</app-button>
-    <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" [loading]="exporting() === 'pdf'" [disabled]="!!exporting()" (btnClick)="exportList('pdf')">PDF</app-button>
+    <app-button size="sm" variant="outline" tooltip="Descarga en Excel las cajas que coinciden con los filtros." [loading]="exporting() === 'xlsx'" [disabled]="!!exporting()" (btnClick)="exportList('xlsx')"><app-excel-icon /><span class="leading-none">Excel</span></app-button>
+    <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" tooltip="Reporte en PDF de las cajas filtradas." [loading]="exporting() === 'pdf'" [disabled]="!!exporting()" (btnClick)="exportList('pdf')">PDF</app-button>
   </div>
 </app-page-toolbar>
 
@@ -16,13 +16,13 @@
   </ol>
 </app-help-panel>
 
-<div class="mb-4"><app-cash-open-sessions-banner /></div>
+<app-cash-open-sessions-banner />
 
 @if (kpisError(); as err) {
   <p class="mb-3 text-sm text-error-600 dark:text-error-400">{{ err }}</p>
 }
 @if (kpisQuery.data(); as k) {
-  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <div class="mb-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
     <app-button variant="unstyled" className="block h-full w-full cursor-pointer text-start" ariaLabel="Ver cajas abiertas" (btnClick)="showOpen(false)">
       <app-kpi-tile class="h-full" label="Cajas abiertas ahora" [value]="'' + k.abiertasAhora" icon="mdi:cash-register" tone="success" />
     </app-button>
@@ -36,7 +36,9 @@
   </div>
 }
 
+<!-- Filtros compactos (son varios, por eso van plegables). Los indicadores de arriba también filtran. -->
 <app-list-filters
+  compact
   collapsible
   [showSearch]="false"
   [showSelect]="false"
@@ -44,44 +46,43 @@
   clearLabel="Limpiar"
   (clear)="clearFilters()"
 >
-  <app-input-field label="Desde (apertura)" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event); onFilterChange()" />
-  <app-input-field label="Hasta (apertura)" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event); onFilterChange()" />
+  <app-input-field compact icon="mdi:calendar-start" label="Desde (apertura)" type="date" [value]="dateFrom()" (valueChange)="dateFrom.set('' + $event); onFilterChange()" />
+  <app-input-field compact icon="mdi:calendar-end" label="Hasta (apertura)" type="date" [value]="dateTo()" (valueChange)="dateTo.set('' + $event); onFilterChange()" />
   @if (isChain) {
-    <app-form-select label="Establecimiento" [showPlaceholder]="false" [options]="establishmentOptions()" [value]="establishmentId()" (valueChange)="setEstablishment($event)" />
+    <app-form-select compact label="Establecimiento" [showPlaceholder]="false" [options]="establishmentOptions()" [value]="establishmentId()" (valueChange)="setEstablishment($event)" />
   }
   @if (supervisor()) {
-    <app-form-select label="Cajero" [showPlaceholder]="false" [options]="cashierOptions()" [value]="userId()" (valueChange)="userId.set($event); onFilterChange()" />
+    <app-form-select compact label="Cajero" [showPlaceholder]="false" [options]="cashierOptions()" [value]="userId()" (valueChange)="userId.set($event); onFilterChange()" />
   }
   @if (!establishmentId()) {
-    <app-form-select label="Caja" [showPlaceholder]="false" [options]="registerOptions()" [value]="cashRegisterId()" (valueChange)="cashRegisterId.set($event); onFilterChange()" />
+    <app-form-select compact label="Caja" [showPlaceholder]="false" [options]="registerOptions()" [value]="cashRegisterId()" (valueChange)="cashRegisterId.set($event); onFilterChange()" />
   }
-  <app-form-select label="Estado" [showPlaceholder]="false" [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set($any($event)); onFilterChange()" />
-  <app-form-select label="Arqueo" [showPlaceholder]="false" [options]="diferenciaOptions" [value]="diferencia()" (valueChange)="diferencia.set($any($event)); onFilterChange()" />
-  <app-form-select label="Tipo de cierre" [showPlaceholder]="false" [options]="forzadoOptions" [value]="forzado()" (valueChange)="forzado.set($any($event)); onFilterChange()" />
+  <app-form-select compact label="Estado" [showPlaceholder]="false" [options]="estadoOptions" [value]="estado()" (valueChange)="estado.set($any($event)); onFilterChange()" />
+  <app-form-select compact label="Arqueo" [showPlaceholder]="false" [options]="diferenciaOptions" [value]="diferencia()" (valueChange)="diferencia.set($any($event)); onFilterChange()" />
+  <app-form-select compact label="Tipo de cierre" [showPlaceholder]="false" [options]="forzadoOptions" [value]="forzado()" (valueChange)="forzado.set($any($event)); onFilterChange()" />
 </app-list-filters>
 
 @let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
 @let data = listQuery.data();
 
-<app-component-card
-  [title]="supervisor() ? 'Sesiones de caja' : 'Mis sesiones de caja'"
-  [desc]="data ? data.total + ' sesiones · diferencia ' + money(data.totales.diferencia) : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra y los totales en los indicadores. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   emptyTitle="No hay cajas con esos filtros"
   emptyHint="Prueba con otras fechas."
+  skeleton="table"
   (retry)="listQuery.refetch()"
 >
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Sesiones de caja</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Apertura</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Caja</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Caja</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Ventas</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Esperado</th>
@@ -93,27 +94,27 @@
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of data?.items ?? []; track row.id) {
             <tr [attr.data-row-tone]="row.estado === 'ABIERTA' && row.pendiente ? 'warning' : +(row.diferenciaArqueo ?? 0) < 0 ? 'error-light' : null">
-              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
                 {{ row.openedAt | appDate: 'dd/MM/yyyy HH:mm' }}
                 <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
                   {{ row.closedAt ? 'Cierre ' + (row.closedAt | appDate: 'dd/MM HH:mm') : 'Sin cerrar' }}{{ row.closedBy && row.cierreForzado ? ' por ' + row.closedBy.nombre : '' }}
                 </span>
               </td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm">
                 <span class="block text-gray-800 dark:text-white/90">{{ row.cashRegister.nombre }}</span>
                 <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.user.nombre }}{{ establishmentId() ? ' · ' + row.establishment.nombre : '' }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row)" [label]="statusLabel(row)" /></td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">
+              <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row)" [label]="statusLabel(row)" /></td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">
                 {{ row.totalVentas | currency: 'PEN' : 'symbol' : '1.2-2' }}
                 <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.numVentas }} ventas</span>
               </td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.efectivoEsperado === null ? '—' : (row.efectivoEsperado | currency: 'PEN' : 'symbol' : '1.2-2') }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.montoCierreFisico === null ? '—' : (row.montoCierreFisico | currency: 'PEN' : 'symbol' : '1.2-2') }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums" [ngClass]="diffClass(row.diferenciaArqueo)">
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ row.efectivoEsperado === null ? '—' : (row.efectivoEsperado | currency: 'PEN' : 'symbol' : '1.2-2') }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ row.montoCierreFisico === null ? '—' : (row.montoCierreFisico | currency: 'PEN' : 'symbol' : '1.2-2') }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm font-medium tabular-nums" [ngClass]="diffClass(row.diferenciaArqueo)">
                 {{ row.diferenciaArqueo === null ? '—' : (row.diferenciaArqueo | currency: 'PEN' : 'symbol' : '1.2-2') }}
               </td>
-              <td class="px-5 py-4 text-end">
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
@@ -124,21 +125,21 @@
                       @if (row.canClose) {
                         <app-menu-item icon="mdi:cash-lock" [variant]="row.isMine ? 'default' : 'danger'" [tooltip]="row.isMine ? 'Cuenta el efectivo y cierra tu caja.' : 'Cierra la caja de otro usuario indicando el motivo.'" (itemClick)="openClose(row.id)">{{ row.isMine ? 'Cerrar con arqueo' : 'Cierre forzado' }}</app-menu-item>
                       }
-                      <app-menu-item icon="mdi:printer-outline" (itemClick)="printReport(row.id, 'ticket')">Imprimir arqueo (ticket)</app-menu-item>
-                      <app-menu-item icon="mdi:file-pdf-box" (itemClick)="printReport(row.id, 'a4')">Reporte PDF</app-menu-item>
+                      <app-menu-item icon="mdi:printer-outline" tooltip="Arqueo de esta caja en ticket." (itemClick)="printReport(row.id, 'ticket')">Imprimir arqueo (ticket)</app-menu-item>
+                      <app-menu-item icon="mdi:file-pdf-box" tooltip="Reporte de esta caja en PDF (A4)." (itemClick)="printReport(row.id, 'a4')">Reporte PDF</app-menu-item>
                     </div>
                   </app-table-dropdown>
                 </div>
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+            <tr><td colspan="99" class="px-5 py-3 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 @if (data) {
   <app-pagination [totalItems]="data.total" [currentPage]="page()" [pageSize]="pageSize()" (currentPageChange)="page.set($event)" />
@@ -147,7 +148,7 @@
 <!-- ========== DETALLE ========== -->
 @let s = detailQuery.data();
 <app-modal compact [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-4xl shadow-theme-lg" bodyClass="custom-scrollbar" ariaLabel="Detalle de sesión de caja">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     @if (s) {
       <div class="flex flex-wrap items-center gap-3 pe-12">
         <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ s.cashRegister.nombre }}</h3>
@@ -160,7 +161,7 @@
       <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Detalle de caja</h3>
     }
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-6">
     @if (detailQuery.isPending()) {
       <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
     } @else if (detailQuery.isError()) {
@@ -180,13 +181,13 @@
       <app-cash-session-summary [summary]="s" />
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" (btnClick)="detailId.set(null)">Cerrar</app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="detailId.set(null)">Cerrar</app-button>
     @if (s) {
-      <app-button startIconName="mdi:printer-outline" variant="outline" (btnClick)="printReport(s.id, 'ticket')">Ticket</app-button>
-      <app-button startIconName="mdi:file-pdf-box" variant="outline" (btnClick)="printReport(s.id, 'a4')">Reporte PDF</app-button>
+      <app-button size="sm" startIconName="mdi:printer-outline" variant="outline" (btnClick)="printReport(s.id, 'ticket')">Ticket</app-button>
+      <app-button size="sm" startIconName="mdi:file-pdf-box" variant="outline" (btnClick)="printReport(s.id, 'a4')">Reporte PDF</app-button>
       @if (s.canClose) {
-        <app-button startIconName="mdi:cash-lock" [variant]="s.isMine ? 'primary' : 'danger'" (btnClick)="openClose(s.id)">{{ s.isMine ? 'Cerrar con arqueo' : 'Cierre forzado' }}</app-button>
+        <app-button size="sm" startIconName="mdi:cash-lock" [variant]="s.isMine ? 'primary' : 'danger'" (btnClick)="openClose(s.id)">{{ s.isMine ? 'Cerrar con arqueo' : 'Cierre forzado' }}</app-button>
       }
     }
   </div>

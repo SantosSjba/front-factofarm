@@ -8,6 +8,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { SectionHeadingComponent } from '../../../../shared/components/common/section-heading/section-heading.component';
 import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
@@ -55,6 +56,7 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     IconComponent,
     InputFieldComponent,
     KpiTileComponent,
+    SectionHeadingComponent,
     MenuItemComponent,
     ModalComponent,
     PageStateComponent,

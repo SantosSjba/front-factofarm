@@ -9,7 +9,8 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -20,7 +21,7 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -60,8 +61,7 @@ type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; q
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     FormSelectComponent,
     HasPermissionDirective,
     HelpPanelComponent,
@@ -96,10 +96,6 @@ export class NotasVentaComponent {
   protected readonly sunatLabel = sunatStatusLabel;
   protected readonly sunatTone = sunatStatusTone;
   protected readonly payLabel = paymentMethodLabel;
-  protected readonly legend: LegendItem[] = [
-    { label: 'Anulada', tone: 'error-light' },
-    { label: 'Anulación pendiente', tone: 'warning' },
-  ];
 
   // ---------- Filtros ----------
   protected readonly page = signal(1);
@@ -154,6 +150,25 @@ export class NotasVentaComponent {
   protected readonly total = computed(() => this.listQuery.data()?.total ?? 0);
   /** Totales de todo el filtro (los calcula la API; las anuladas no suman). */
   protected readonly totals = computed(() => this.listQuery.data()?.totales ?? null);
+
+  private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
+
+  /** Totales de todas las páginas con los filtros aplicados (los calcula el API). «Anuladas» filtra. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const t = this.totals();
+    if (!t) return [];
+    const onlyVoided = this.estado() === 'ANULADA';
+    return [
+      { id: 'ventas', label: 'Ventas', count: t.ventas, icon: 'mdi:receipt-text-outline', tone: 'neutral', clickable: true, active: !onlyVoided && !this.estado(), tooltip: 'Ventas con los filtros aplicados (sin contar anuladas).' },
+      { id: 'monto', label: 'Vendido', count: this.pen.format(Number(t.monto) || 0), icon: 'mdi:cash', tone: 'success', tooltip: 'Suma de las ventas con los filtros aplicados. Las anuladas no suman.' },
+      { id: 'anuladas', label: 'Anuladas', count: t.anuladas, icon: 'mdi:cancel', tone: 'error', clickable: true, active: onlyVoided, tooltip: 'Ver solo las ventas anuladas.' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id === 'ventas') this.setFilter('estado', '');
+    if (chip.id === 'anuladas') this.setFilter('estado', this.estado() === 'ANULADA' ? '' : 'ANULADA');
+  }
 
   protected setSearch(v: string) {
     this.search.set(v);

@@ -50,13 +50,14 @@
     @if (summaryQuery.isError()) {
       <p class="text-sm text-error-600 dark:text-error-400">No se pudo cargar el detalle de la caja. <app-button size="sm" variant="outline" (btnClick)="summaryQuery.refetch()">Reintentar</app-button></p>
     } @else if (summary(); as sum) {
-      <app-component-card compact icon="mdi:clipboard-text-outline" title="Detalle de la sesión">
-        <div data-card-header-end class="flex gap-2">
+      <!-- Sin tarjeta alrededor: cada bloque del detalle ya es su propia tarjeta. -->
+      <app-section-heading compact icon="mdi:clipboard-text-outline" title="Detalle de la sesión" description="Arqueo, ventas por medio de pago, movimientos y ventas de esta caja.">
+        <div data-heading-end class="flex gap-2">
           <app-button size="sm" variant="outline" startIconName="mdi:printer-outline" tooltip="Imprime el arqueo actual en ticket." (btnClick)="printReport(s.id, 'ticket')">Ticket</app-button>
           <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" tooltip="Reporte de la caja en PDF (A4)." (btnClick)="printReport(s.id, 'a4')">PDF</app-button>
         </div>
-        <app-cash-session-summary [summary]="sum" />
-      </app-component-card>
+      </app-section-heading>
+      <app-cash-session-summary [summary]="sum" />
     }
   }
 

@@ -7,7 +7,7 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
+import { SectionHeadingComponent } from '../../../../shared/components/common/section-heading/section-heading.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
@@ -74,7 +74,7 @@ const ACTION_COPY: Record<OrderAction, { title: string; button: string; icon: st
     BreadcrumbInlineComponent,
     ButtonComponent,
     PageStateComponent,
-    IconComponent,
+    SectionHeadingComponent,
     FormSectionComponent,
     FormSelectComponent,
     HasPermissionDirective,

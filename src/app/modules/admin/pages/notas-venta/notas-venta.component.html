@@ -4,7 +4,7 @@
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Historial de ventas</h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <ng-container *appHasPermission="'nav.punto_venta'">
-      <a routerLink="/punto-venta"><app-button size="sm" startIconName="mdi:cart-plus">Nueva venta</app-button></a>
+      <a routerLink="/punto-venta"><app-button size="sm" startIconName="mdi:cart-plus" tooltip="Abre el punto de venta.">Nueva venta</app-button></a>
     </ng-container>
   </div>
 </app-page-toolbar>
@@ -17,7 +17,9 @@
   </ol>
 </app-help-panel>
 
+<!-- Filtros compactos (son varios, por eso van plegables) y resumen con los totales de todas las páginas. -->
 <app-list-filters
+  compact
   collapsible
   [showSelect]="false"
   [showSearch]="storage() !== 'archived'"
@@ -25,40 +27,42 @@
   [searchValue]="search()"
   [activeCount]="activeFilterCount()"
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de ventas"
+  summaryStorageKey="notas-venta"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="setSearch($event)"
   (clear)="clearFilters()"
 >
-  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
-  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
-  <app-form-select label="Estado" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions" (valueChange)="setFilter('estado', $event)" />
-  <app-form-select label="Comprobante" [showPlaceholder]="false" [value]="documentType()" [options]="docOptions" (valueChange)="setFilter('documentType', $event)" />
-  <app-form-select label="Medio de pago" [showPlaceholder]="false" [value]="paymentMetodo()" [options]="paymentMethodOptions" (valueChange)="setFilter('paymentMetodo', $event)" />
-  <app-input-field label="Código de operación" helpText="El código de Yape, Plin, tarjeta o transferencia." [maxLength]="120" [value]="paymentReferencia()" (valueChange)="setFilter('paymentReferencia', $event)" />
-  <app-form-select label="Ventas" helpText="Las ventas antiguas se archivan: se pueden consultar pero no modificar." [showPlaceholder]="false" [value]="storage()" [options]="storageOptions" (valueChange)="setStorage($event)" />
+  <app-input-field compact icon="mdi:calendar-start" label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+  <app-input-field compact icon="mdi:calendar-end" label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+  <app-form-select compact label="Estado" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions" (valueChange)="setFilter('estado', $event)" />
+  <app-form-select compact label="Comprobante" [showPlaceholder]="false" [value]="documentType()" [options]="docOptions" (valueChange)="setFilter('documentType', $event)" />
+  <app-form-select compact label="Medio de pago" [showPlaceholder]="false" [value]="paymentMetodo()" [options]="paymentMethodOptions" (valueChange)="setFilter('paymentMetodo', $event)" />
+  <app-input-field compact icon="mdi:pound" label="Código de operación" helpText="El código de Yape, Plin, tarjeta o transferencia." [maxLength]="120" [value]="paymentReferencia()" (valueChange)="setFilter('paymentReferencia', $event)" />
+  <app-form-select compact label="Ventas" helpText="Las ventas antiguas se archivan: se pueden consultar pero no modificar." [showPlaceholder]="false" [value]="storage()" [options]="storageOptions" (valueChange)="setStorage($event)" />
 </app-list-filters>
 
 @let listState = listQuery | queryPageState: total();
 
-<app-component-card
-  title="Ventas"
-  [desc]="totals() ? totals()!.ventas + (totals()!.ventas === 1 ? ' venta · ' : ' ventas · ') + (totals()!.monto | currency: 'PEN' : 'symbol' : '1.2-2') + ' vendido' + (totals()!.anuladas ? ' · ' + totals()!.anuladas + ' anuladas (no suman)' : '') : (total() ? total() + ' en total' : '')"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra y los totales en el resumen. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   [emptyTitle]="activeFilterCount() || search() ? 'Sin ventas con esos filtros' : 'Aún no hay ventas en estas fechas'"
   [emptyHint]="activeFilterCount() || search() ? 'Prueba con otros filtros o fechas.' : 'Las ventas se registran en el Punto de venta.'"
+  skeleton="table"
   (retry)="listQuery.refetch()"
 >
-  <div data-card-header-end><app-color-legend [items]="legend" /></div>
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Ventas</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">SUNAT</th>
@@ -69,16 +73,16 @@
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of rows(); track row.id) {
             <tr [attr.data-row-tone]="rowTone(row)">
-              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
                 {{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}
                 <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.seller?.nombre ?? '' }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm">
                 <span class="block font-medium text-gray-800 dark:text-white/90">{{ number(row) }}</span>
                 <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ typeLabel(row.documentType) }}{{ isArchived(row) ? ' · archivada' : '' }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm">{{ row.customer?.nombre ?? 'Cliente varios' }}</td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm">{{ row.customer?.nombre ?? 'Cliente varios' }}</td>
+              <td class="px-5 py-3 text-theme-sm">
                 <div class="flex flex-wrap gap-1">
                   <app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" />
                   @if (row.pendingVoidRequestId) {
@@ -86,15 +90,15 @@
                   }
                 </div>
               </td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm">
                 @if (isElectronic(row.documentType)) {
                   <app-status-badge [status]="row.sunatStatus ?? 'SIN_EMITIR'" [tone]="sunatTone(row.sunatStatus)" [label]="sunatLabel(row.sunatStatus)" />
                 } @else {
                   <span class="text-theme-xs text-gray-400">No aplica</span>
                 }
               </td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums" [class.line-through]="row.estado === 'ANULADA'">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-              <td class="px-5 py-4 text-end">
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums" [class.line-through]="row.estado === 'ANULADA'">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
@@ -126,13 +130,13 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+            <tr><td colspan="99" class="px-5 py-3 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
 
@@ -140,7 +144,7 @@
 @let row = detailRow();
 @let sale = detailQuery.data();
 <app-modal compact [isOpen]="!!row" (closed)="detailRow.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar" ariaLabel="Detalle de venta">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     @if (row) {
       <div class="flex flex-wrap items-center gap-3 pe-12">
         <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ typeLabel(row.documentType) }} {{ number(row) }}</h3>
@@ -149,7 +153,7 @@
       <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}{{ row.seller ? ' · vendió ' + row.seller.nombre : '' }}</p>
     }
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-4 sm:px-6">
     @if (detailQuery.isPending()) {
       <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
     } @else if (detailQuery.isError()) {
@@ -254,21 +258,21 @@
       }
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" (btnClick)="detailRow.set(null)">Cerrar</app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="detailRow.set(null)">Cerrar</app-button>
     @if (row && !isArchived(row)) {
-      <app-button variant="outline" startIconName="mdi:file-pdf-box" (btnClick)="downloadPdf(row.id)">PDF</app-button>
+      <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" (btnClick)="downloadPdf(row.id)">PDF</app-button>
       @if (canVoid(row)) {
-        <app-button variant="danger" startIconName="mdi:cancel" (btnClick)="openVoid(row)">Anular venta</app-button>
+        <app-button size="sm" variant="danger" startIconName="mdi:cancel" (btnClick)="openVoid(row)">Anular venta</app-button>
       }
       @if (canReturn(row)) {
-        <app-button variant="outline" startIconName="mdi:keyboard-return" (btnClick)="detailRow.set(null); openReturn(row.id)">Devolver productos</app-button>
+        <app-button size="sm" variant="outline" startIconName="mdi:keyboard-return" (btnClick)="detailRow.set(null); openReturn(row.id)">Devolver productos</app-button>
       }
       @if (row.canConvertToCpe) {
-        <app-button startIconName="mdi:swap-horizontal" (btnClick)="detailRow.set(null); openConvert(row)">Cambiar a boleta o factura</app-button>
+        <app-button size="sm" startIconName="mdi:swap-horizontal" (btnClick)="detailRow.set(null); openConvert(row)">Cambiar a boleta o factura</app-button>
       }
       @if (row.canEmitCpe) {
-        <app-button startIconName="mdi:cloud-upload-outline" [loading]="emitMutation.isPending()" [disabled]="emitMutation.isPending()" (btnClick)="emitMutation.mutate(row.id)">Enviar a SUNAT</app-button>
+        <app-button size="sm" startIconName="mdi:cloud-upload-outline" [loading]="emitMutation.isPending()" [disabled]="emitMutation.isPending()" (btnClick)="emitMutation.mutate(row.id)">Enviar a SUNAT</app-button>
       }
     }
   </div>
@@ -287,28 +291,28 @@
   </div>
   <div data-modal-body class="space-y-4 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
     <p>La venta recibe un número de boleta o factura y se envía a SUNAT. Necesitas un proveedor de facturación configurado.</p>
-    <app-form-select label="Comprobante" [required]="true" [showPlaceholder]="false" [options]="convertDocOptions" [value]="convertTarget()" (valueChange)="convertTarget.set($any($event))" />
+    <app-form-select compact label="Comprobante" [required]="true" [showPlaceholder]="false" [options]="convertDocOptions" [value]="convertTarget()" (valueChange)="convertTarget.set($any($event))" />
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="convertMutation.isPending()" (btnClick)="convertRow.set(null)">Cancelar</app-button>
-    <app-button startIconName="mdi:swap-horizontal" [loading]="convertMutation.isPending()" [disabled]="convertMutation.isPending()" (btnClick)="convertMutation.mutate({ id: convertRow()!.id, target: convertTarget() })">Cambiar y enviar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="convertMutation.isPending()" (btnClick)="convertRow.set(null)">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:swap-horizontal" [loading]="convertMutation.isPending()" [disabled]="convertMutation.isPending()" (btnClick)="convertMutation.mutate({ id: convertRow()!.id, target: convertTarget() })">Cambiar y enviar</app-button>
   </div>
 </app-modal>
 
 <!-- ========== DEVOLUCIÓN ========== -->
 @let ret = returnSaleQuery.data();
 <app-modal compact [isOpen]="!!returnSaleId()" (closed)="closeReturn()" className="w-full max-w-3xl" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Devolver productos</h3>
     @if (ret) {
       <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ typeLabel(ret.documentType) }} {{ number(ret) }} · los productos vuelven al stock, el efectivo sale de la caja de la venta (o de tu caja abierta si ya se cerró) y, si el comprobante fue aceptado por SUNAT, se emite una nota de crédito.</p>
     }
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-4 sm:px-6">
     @if (returnSaleQuery.isPending()) {
       <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
     } @else if (ret) {
-      <app-text-area label="Motivo" [required]="true" placeholder="Ej. Producto equivocado" [maxLength]="500" [rows]="2" [value]="returnMotivo()" [error]="!!returnErrors().motivo" [hint]="returnErrors().motivo || ''" (valueChange)="returnMotivo.set($event); returnErrors.update(e => ({ ...e, motivo: undefined }))" />
+      <app-text-area compact label="Motivo" [required]="true" placeholder="Ej. Producto equivocado" [maxLength]="500" [rows]="2" [value]="returnMotivo()" [error]="!!returnErrors().motivo" [hint]="returnErrors().motivo || ''" (valueChange)="returnMotivo.set($event); returnErrors.update(e => ({ ...e, motivo: undefined }))" />
       <section>
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h4 class="text-sm font-medium text-gray-800 dark:text-white/90">¿Qué se devuelve? <span class="text-error-500" aria-hidden="true">*</span></h4>
@@ -341,7 +345,7 @@
                     }
                   </td>
                   <td class="px-4 py-2">
-                    <app-input-field className="text-end" type="number" min="0" [max]="'' + line.maxQty" [ariaLabel]="'Cantidad a devolver de ' + line.producto" [value]="line.quantity" (valueChange)="setReturnQty(line.saleItemId, $event)" />
+                    <app-input-field compact className="text-end" type="number" min="0" [max]="'' + line.maxQty" [ariaLabel]="'Cantidad a devolver de ' + line.producto" [value]="line.quantity" (valueChange)="setReturnQty(line.saleItemId, $event)" />
                   </td>
                 </tr>
               } @empty {
@@ -356,11 +360,11 @@
       </section>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     <p class="text-sm font-semibold text-gray-800 dark:text-white/90">A devolver: {{ returnTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="returnMutation.isPending()" (btnClick)="closeReturn()">Cancelar</app-button>
-      <app-button startIconName="mdi:keyboard-return" [loading]="returnMutation.isPending()" [disabled]="returnMutation.isPending()" (btnClick)="submitReturn()">Registrar devolución</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="returnMutation.isPending()" (btnClick)="closeReturn()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:keyboard-return" [loading]="returnMutation.isPending()" [disabled]="returnMutation.isPending()" (btnClick)="submitReturn()">Registrar devolución</app-button>
     </div>
   </div>
 </app-modal>
@@ -374,15 +378,15 @@
     }
   </div>
   <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
-    <app-input-field label="Motivo" [isRequired]="true" placeholder="Ej. Interés por pago tardío" [maxLength]="500" [value]="debitMotivo()" [error]="!!debitErrors().motivo" [hint]="debitErrors().motivo || ''" (valueChange)="debitMotivo.set('' + $event)" />
-    <app-input-field label="Descripción en el comprobante" [isRequired]="true" placeholder="Ej. Interés por mora" [maxLength]="500" [value]="debitDescripcion()" [error]="!!debitErrors().descripcion" [hint]="debitErrors().descripcion || ''" (valueChange)="debitDescripcion.set('' + $event)" />
-    <app-input-field label="Monto (con IGV)" [isRequired]="true" type="number" min="0" step="0.01" [value]="debitTotal() ?? ''" [error]="!!debitErrors().total" [hint]="debitErrors().total || ''" (valueChange)="debitTotal.set($event === '' ? null : +$event)" />
+    <app-input-field icon="mdi:comment-text-outline" compact label="Motivo" [isRequired]="true" placeholder="Ej. Interés por pago tardío" [maxLength]="500" [value]="debitMotivo()" [error]="!!debitErrors().motivo" [hint]="debitErrors().motivo || ''" (valueChange)="debitMotivo.set('' + $event)" />
+    <app-input-field compact label="Descripción en el comprobante" [isRequired]="true" placeholder="Ej. Interés por mora" [maxLength]="500" [value]="debitDescripcion()" [error]="!!debitErrors().descripcion" [hint]="debitErrors().descripcion || ''" (valueChange)="debitDescripcion.set('' + $event)" />
+    <app-input-field compact label="Monto (con IGV)" [isRequired]="true" type="number" min="0" step="0.01" [value]="debitTotal() ?? ''" [error]="!!debitErrors().total" [hint]="debitErrors().total || ''" (valueChange)="debitTotal.set($event === '' ? null : +$event)" />
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="debitMutation.isPending()" (btnClick)="debitRow.set(null)">Cancelar</app-button>
-      <app-button startIconName="mdi:file-document-plus-outline" [loading]="debitMutation.isPending()" [disabled]="debitMutation.isPending()" (btnClick)="submitDebit()">Emitir nota de débito</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="debitMutation.isPending()" (btnClick)="debitRow.set(null)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:file-document-plus-outline" [loading]="debitMutation.isPending()" [disabled]="debitMutation.isPending()" (btnClick)="submitDebit()">Emitir nota de débito</app-button>
     </div>
   </div>
 </app-modal>

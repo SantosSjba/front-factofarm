@@ -1,13 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, booleanAttribute } from '@angular/core';
-import { HelpHintComponent } from '../../ui/help-hint/help-hint.component';
 import { LabelComponent } from '../label/label.component';
 
 /** Agrupa label + control con espaciado estándar FactoFarm. */
 @Component({
   selector: 'app-form-field',
   standalone: true,
-  imports: [CommonModule, LabelComponent, HelpHintComponent],
+  imports: [CommonModule, LabelComponent, ],
   template: `
     <div class="flex flex-col" [class.gap-1.5]="!compact" [class.gap-1]="compact" [ngClass]="className">
       @if (label) {

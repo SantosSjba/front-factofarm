@@ -104,19 +104,12 @@
       } @else {
         <div class="space-y-5">
           <section>
-            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div class="flex min-w-0 items-start gap-2.5">
-                <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"><app-icon name="mdi:package-variant-closed-check" iconClass="size-4" /></span>
-                <div class="min-w-0">
-                  <h4 class="text-sm font-medium text-gray-800 dark:text-white/90">¿Qué llegó?</h4>
-                  <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">Viene lleno con todo lo pendiente; corrige lo que no llegó completo.</p>
-                </div>
-              </div>
-              <div class="flex flex-wrap gap-2">
+            <app-section-heading compact icon="mdi:package-variant-closed-check" title="¿Qué llegó?" description="Viene lleno con todo lo pendiente; corrige lo que no llegó completo.">
+              <div data-heading-end class="flex flex-wrap gap-2">
                 <app-button size="sm" variant="outline" startIconName="mdi:check-all" tooltip="Pone en cada producto toda la cantidad pendiente." (btnClick)="receiveAll()">Todo lo pendiente</app-button>
                 <app-button size="sm" variant="outline" startIconName="mdi:eraser" tooltip="Deja todas las cantidades en 0 para llenar solo lo que llegó." (btnClick)="receiveNone()">Poner todo en 0</app-button>
               </div>
-            </div>
+            </app-section-heading>
             <div class="ff-table-frame max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
               <table class="w-full min-w-[900px] text-sm text-gray-700 dark:text-gray-300">
                 <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">

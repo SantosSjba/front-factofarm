@@ -7,12 +7,11 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
-import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
 import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
@@ -49,8 +48,7 @@ const REQUEST_STATUS: Record<SaleVoidRequestDto['status'], { label: string; tone
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
-    FormSelectComponent,
+    PageStateComponent,
     HelpPanelComponent,
     InputFieldComponent,
     ListFiltersComponent,

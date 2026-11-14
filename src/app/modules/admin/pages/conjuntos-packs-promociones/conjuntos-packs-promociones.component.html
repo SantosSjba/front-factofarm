@@ -282,15 +282,7 @@
         </app-form-section>
 
         <section>
-          <div class="mb-3 flex items-start gap-2.5">
-            <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"><app-icon name="mdi:format-list-bulleted" iconClass="size-4" /></span>
-            <div class="min-w-0">
-              <h4 class="text-sm font-medium text-gray-800 dark:text-white/90">
-                Productos que lleva <span class="text-error-500" aria-hidden="true">*</span>
-              </h4>
-              <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">Al vender un pack se descuenta del stock esta cantidad de cada producto.</p>
-            </div>
-          </div>
+          <app-section-heading compact required icon="mdi:format-list-bulleted" title="Productos que lleva" description="Al vender un pack se descuenta del stock esta cantidad de cada producto." />
           <div class="flex flex-wrap items-end gap-2">
             <app-search-select compact
               class="min-w-60 flex-1"

@@ -7,7 +7,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
@@ -51,7 +51,7 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     PaginationComponent,
     TableDropdownComponent,
     FormSelectComponent,

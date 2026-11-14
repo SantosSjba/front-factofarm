@@ -8,7 +8,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
+import { SectionHeadingComponent } from '../../../../shared/components/common/section-heading/section-heading.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
@@ -60,7 +60,7 @@ type ReceiptLine = {
     ButtonComponent,
     ComponentCardComponent,
     PageStateComponent,
-    IconComponent,
+    SectionHeadingComponent,
     FormSectionComponent,
     HasPermissionDirective,
     HelpHintComponent,

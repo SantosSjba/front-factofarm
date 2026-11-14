@@ -19,7 +19,6 @@ import { PaginationComponent } from '../../../../shared/components/common/pagina
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { CreateCustomerTypeRequest, CustomerTypeItemDto } from '../../models/directory.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
@@ -42,7 +41,6 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
-    IconComponent,
     HasPermissionDirective,
   ],
   templateUrl: './tipo-clientes.component.html',

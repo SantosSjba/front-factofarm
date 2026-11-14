@@ -2158,7 +2158,8 @@ export type PaymentMethod =
   | 'MIXTO';
 export type SaleStatus = 'COMPLETADA' | 'ANULADA' | 'PARCIALMENTE_DEVUELTA';
 export type CashMovementType = 'APERTURA' | 'CIERRE' | 'INGRESO' | 'EGRESO' | 'VENTA' | 'ANULACION' | 'DEVOLUCION';
-export type QuotationStatus = 'BORRADOR' | 'ENVIADA' | 'CONVERTIDA' | 'VENCIDA' | 'ANULADA';
+/** Igual al enum `QuotationStatus` de la base de datos. */
+export type QuotationStatus = 'BORRADOR' | 'ENVIADA' | 'ACEPTADA' | 'RECHAZADA' | 'CONVERTIDA' | 'VENCIDA';
 
 export interface PosCatalogItemDto {
   id: string;

@@ -9,6 +9,7 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { FilesApiService } from '../../../../core/services/files-api.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
+import { SectionHeadingComponent } from '../../../../shared/components/common/section-heading/section-heading.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
@@ -67,7 +68,6 @@ const formSchema = yup.object({
 });
 
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 import { QuantityStepperComponent } from '../../../../shared/components/form/quantity-stepper/quantity-stepper.component';
 import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
@@ -83,7 +83,6 @@ import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/ta
   standalone: true,
   imports: [
     ExcelIconComponent,
-    IconComponent,
     AlertComponent,
     FormSectionComponent,
     HelpHintComponent,
@@ -100,6 +99,7 @@ import type { TabStripItem } from '../../../../shared/components/ui/tab-strip/ta
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     PageStateComponent,
+    SectionHeadingComponent,
     ListFiltersComponent,
     TableDropdownComponent,
     PaginationComponent,

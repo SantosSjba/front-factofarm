@@ -9,6 +9,8 @@ import { LocaleService } from '../../../../core/services/locale.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { SectionHeadingComponent } from '../../../../shared/components/common/section-heading/section-heading.component';
 import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -36,6 +38,8 @@ import { documentNumber, sunatStatusLabel, sunatStatusTone } from '../../utils/s
     BreadcrumbInlineComponent,
     ButtonComponent,
     ComponentCardComponent,
+    PageStateComponent,
+    SectionHeadingComponent,
     HasPermissionDirective,
     HelpPanelComponent,
     InputFieldComponent,

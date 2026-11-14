@@ -27,7 +27,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
   template: `
     @let s = summary();
     <div class="grid gap-3 lg:grid-cols-2">
-      <section class="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-800">
+      <section class="rounded-2xl border border-gray-200 bg-white p-4 text-sm dark:border-gray-800 dark:bg-white/[0.03]">
         <h4 class="mb-2 font-medium text-gray-800 dark:text-white/90">Arqueo de efectivo</h4>
         <dl class="space-y-1.5">
           <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Monto inicial</dt><dd class="tabular-nums">{{ s.resumenEfectivo.apertura | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
@@ -46,7 +46,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
           }
         </dl>
       </section>
-      <section class="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-800">
+      <section class="rounded-2xl border border-gray-200 bg-white p-4 text-sm dark:border-gray-800 dark:bg-white/[0.03]">
         <h4 class="mb-2 font-medium text-gray-800 dark:text-white/90">Ventas por medio de pago ({{ s.numVentas }})</h4>
         <dl class="space-y-1.5">
           @for (entry of s.totalesPorMetodo | keyvalue; track entry.key) {
@@ -66,7 +66,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
     @if (s.pagosDigitales.length) {
       <section>
         <h4 class="mb-2 text-sm font-medium text-gray-800 dark:text-white/90">Códigos de operación (para conciliar)</h4>
-        <div class="ff-table-frame max-h-64 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <div class="ff-table-frame max-h-64 max-w-full overflow-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <table class="w-full min-w-[420px] text-sm text-gray-700 dark:text-gray-300">
             <thead class="sticky top-0 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
               <tr>
@@ -93,7 +93,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
 
     <section>
       <h4 class="mb-2 text-sm font-medium text-gray-800 dark:text-white/90">Movimientos de caja</h4>
-      <div class="ff-table-frame max-h-72 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+      <div class="ff-table-frame max-h-72 max-w-full overflow-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <table class="w-full min-w-[520px] text-sm text-gray-700 dark:text-gray-300">
           <thead class="sticky top-0 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
             <tr>
@@ -124,7 +124,7 @@ const MOVEMENT_LABELS: Record<string, string> = {
     @if (s.ventas.length) {
       <section>
         <h4 class="mb-2 text-sm font-medium text-gray-800 dark:text-white/90">Ventas de la sesión</h4>
-        <div class="ff-table-frame max-h-72 max-w-full overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <div class="ff-table-frame max-h-72 max-w-full overflow-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <table class="w-full min-w-[420px] text-sm text-gray-700 dark:text-gray-300">
             <thead class="sticky top-0 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
               <tr>

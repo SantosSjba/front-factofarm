@@ -1,110 +1,152 @@
-﻿<app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+<app-breadcrumb-inline [segments]="breadcrumb" />
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Cotizaciones</h1>
-  <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nueva cotización</app-button>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-button size="sm" startIconName="mdi:file-document-plus-outline" (btnClick)="createOpen.set(true)">Nueva cotización</app-button>
+  </div>
 </app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="cotizaciones">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Una cotización es un presupuesto para el cliente: los productos, sus precios y el total, sin mover el stock ni la caja.</li>
+    <li>Se guarda como <strong>borrador</strong>. Cuando se la hagas llegar al cliente, márcala como <strong>enviada</strong>.</li>
+  </ol>
+</app-help-panel>
+
+<!-- Resumen por estado (todas las cotizaciones); cada chip filtra el listado. -->
+<app-list-filters
+  compact
+  [showSearch]="false"
+  [showSelect]="false"
+  [showClear]="false"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de cotizaciones"
+  summaryStorageKey="cotizaciones"
+  (summaryChipClick)="onSummaryChip($event)"
+/>
 
 @let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
 
-<app-component-card title="Listado" className="mt-4"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay cotizaciones registradas"
-  (retry)="listQuery.refetch()">
-  <div class="overflow-x-auto">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b text-xs uppercase text-gray-500">
-      <tr>
-        <th class="px-3 py-2">Fecha</th>
-        <th class="px-3 py-2">Cliente</th>
-        <th class="px-3 py-2">Vendedor</th>
-        <th class="px-3 py-2">Estado</th>
-        <th class="px-3 py-2 text-right">Total</th>
-        <th class="px-3 py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of listQuery.data()?.items ?? []; track row.id) {
-        <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2">{{ row.createdAt | appDate: 'short' }}</td>
-          <td class="px-3 py-2">{{ row.customer?.nombre ?? '—' }}</td>
-          <td class="px-3 py-2">{{ row.seller.nombre }}</td>
-          <td class="px-3 py-2">{{ row.estado }}</td>
-          <td class="px-3 py-2 text-right">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-          <td class="px-3 py-2 text-right">
-            @if (row.estado === 'BORRADOR') {
-              <app-button
-                size="sm"
-                variant="outline"
-                [iconOnly]="true"
-                startIconName="mdi:send-outline"
-                tooltip="Enviar"
-                (btnClick)="sendMutation.mutate(row.id)"
-              />
-            }
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="99" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
-        </tr>
-      }
-    </tbody>
-  </table>
+  [emptyTitle]="estado() ? 'No hay cotizaciones en ese estado' : 'No hay cotizaciones registradas'"
+  emptyHint="Usa «Nueva cotización» para crear la primera."
+  skeleton="table"
+  (retry)="listQuery.refetch()"
+>
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Cotizaciones</caption>
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vendedor</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of listQuery.data()?.items ?? []; track row.id) {
+            <tr>
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ row.customer?.nombre ?? 'Cliente varios' }}</td>
+              <td class="px-5 py-3 text-theme-sm">{{ row.seller.nombre }}</td>
+              <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-3 text-end">
+                @if (row.estado === 'BORRADOR') {
+                  <app-button size="sm" variant="outline" startIconName="mdi:send-outline" tooltip="Indica que ya se la hiciste llegar al cliente." [disabled]="sendMutation.isPending()" (btnClick)="sendMutation.mutate(row.id)">Marcar enviada</app-button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
-  @if (listQuery.data(); as data) {
-    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
-  }
-</app-component-card>
+</app-page-state>
 
-<app-modal compact [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
-  <app-form-stack className="p-6">
-    <h3 class="text-lg font-semibold">Nueva cotización</h3>
-    <app-form-field label="Almacén" required>
-      <div class="flex items-center gap-2">
-        <app-form-select className="flex-1"
-          [options]="warehouseOptions()"
-          [value]="warehouseId()"
-          (valueChange)="warehouseId.set($event)"
-        />
-        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
+@if (listQuery.data(); as data) {
+  <app-pagination [totalItems]="data.total" [currentPage]="page()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
+}
+
+<!-- ========== NUEVA COTIZACIÓN ========== -->
+<app-modal compact [isOpen]="createOpen()" (closed)="closeCreate()" className="w-full max-w-2xl shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nueva cotización</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se guarda como borrador; no mueve stock ni caja.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+    <section>
+      <app-section-heading compact icon="mdi:warehouse" title="Almacén" description="De dónde salen los precios y el stock disponible." />
+      <div class="flex items-start gap-2">
+        <app-form-select class="min-w-0 flex-1" compact ariaLabel="Almacén" [required]="true" [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
+        <app-quick-create compact entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
       </div>
-    </app-form-field>
-    <div class="flex gap-3">
-      <app-input-field class="flex-1" [value]="search()" (valueChange)="search.set('' + $event)" placeholder="Filtrar producto" />
-      <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="searchProducts()">Buscar</app-button>
-    </div>
-    <app-option-list>
-      @if (!warehouseId()) {
-        <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">Seleccione un almacén</p>
-      } @else if (catalog().length === 0) {
-        <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">No hay productos con stock</p>
+    </section>
+
+    <section>
+      <app-section-heading compact required icon="mdi:package-variant" title="Productos" description="Busca y elige cada producto; luego ajusta la cantidad." />
+      <app-input-field compact icon="lucide:search" ariaLabel="Buscar producto" placeholder="Buscar producto por nombre o código" [disabled]="!warehouseId()" [value]="search()" (valueChange)="search.set('' + $event)" />
+      @if (warehouseId()) {
+        <app-option-list class="mt-2 block">
+          @if (catalog().length === 0) {
+            <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">No hay productos con stock que coincidan.</p>
+          } @else {
+            @for (item of catalog(); track item.id) {
+              <app-option-item (optionSelect)="addLine(item)">{{ item.nombre }} · {{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</app-option-item>
+            }
+          }
+        </app-option-list>
       } @else {
-        @for (item of catalog(); track item.id) {
-          <app-option-item (optionSelect)="addLine(item)">{{ item.nombre }} · {{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</app-option-item>
-        }
+        <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">Elige primero el almacén.</p>
       }
-    </app-option-list>
-    @for (line of lines(); track line.productId) {
-      <div class="flex justify-between text-sm">
-        <span>{{ line.nombre }} × {{ line.quantity }}</span>
-        <span>{{ line.precio * line.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-      </div>
-    }
-    <app-form-field label="Comentario">
-      <app-input-field [maxLength]="500" [value]="comentario()" (valueChange)="comentario.set('' + $event)" placeholder="Opcional" />
-    </app-form-field>
-    <div class="flex items-center justify-between pt-2">
-      <span class="font-bold">{{ quoteTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-      <app-button startIconName="mdi:content-save-outline"
-        variant="primary"
-        [disabled]="lines().length === 0 || !warehouseId() || createMutation.isPending()"
-        [loading]="createMutation.isPending()"
-        (btnClick)="createMutation.mutate()"
-      >
-        Guardar
-      </app-button>
+
+      @if (lines().length) {
+        <div class="ff-table-frame mt-3 max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+          <table class="w-full text-sm text-gray-700 dark:text-gray-300">
+            <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+              <tr>
+                <th data-card-role="title" class="px-3 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+                <th class="px-3 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+                <th class="px-3 py-2"><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of lines(); track line.productId) {
+                <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+                  <td class="px-3 py-2">
+                    <span class="text-gray-800 dark:text-white/90">{{ line.nombre }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">{{ line.precio | currency: 'PEN' : 'symbol' : '1.2-2' }} c/u</span>
+                  </td>
+                  <td class="px-3 py-2"><div class="flex justify-center"><app-quantity-stepper compact [value]="line.quantity" [ariaLabel]="'Cantidad de ' + line.nombre" (valueChange)="setQuantity(line.productId, $event)" /></div></td>
+                  <td class="px-3 py-2 text-end tabular-nums">{{ line.precio * line.quantity | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                  <td class="px-3 py-2 text-end"><app-button size="sm" variant="danger" [iconOnly]="true" startIconName="mdi:close" [tooltip]="'Quitar ' + line.nombre" (btnClick)="removeLine(line.productId)" /></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <app-text-area compact label="Comentario" helpText="Algo que quieras dejar anotado para el cliente. Opcional." placeholder="Opcional" [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-sm text-gray-600 dark:text-gray-300">Total: <span class="font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ quoteTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</span></p>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="createMutation.isPending()" (btnClick)="closeCreate()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="lines().length === 0 || !warehouseId() || createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="createMutation.mutate()">Guardar</app-button>
     </div>
-  </app-form-stack>
+  </div>
 </app-modal>

@@ -1,4 +1,4 @@
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
@@ -32,7 +32,6 @@ const ABC_TONE: Record<AbcClass, StatusTone> = { A: 'success', B: 'warning', C: 
   standalone: true,
   imports: [
     CommonModule,
-    CurrencyPipe,
     AppDatePipe,
     QueryPageStatePipe,
     AlertComponent,

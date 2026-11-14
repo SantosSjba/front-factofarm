@@ -4,8 +4,8 @@
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Comprobantes electrónicos</h1>
   <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <ng-container *appHasPermission="'billing.write'">
-      <app-button size="sm" variant="outline" startIconName="mdi:cog-outline" (btnClick)="openConfig()">Configuración</app-button>
-      <app-button size="sm" startIconName="mdi:file-document-plus-outline" [disabled]="noProvider()" (btnClick)="openSpecial()">Comprobante especial</app-button>
+      <app-button size="sm" variant="outline" startIconName="mdi:cog-outline" tooltip="Proveedor de facturación electrónica y sus opciones." (btnClick)="openConfig()">Configuración</app-button>
+      <app-button size="sm" startIconName="mdi:file-document-plus-outline" [disabled]="noProvider()" tooltip="Retención, percepción, liquidación de compra u otro comprobante sin venta." (btnClick)="openSpecial()">Comprobante especial</app-button>
     </ng-container>
   </div>
 </app-page-toolbar>
@@ -19,50 +19,54 @@
 </app-help-panel>
 
 @if (noProvider() && configQuery.isSuccess()) {
-  <div class="mb-4 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
+  <div class="mb-3 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
     No hay proveedor de facturación electrónica configurado: solo se emiten notas de venta. Configúralo en
     <a routerLink="/mi-farmacia" class="font-medium underline">Mi farmacia</a> o con el botón «Configuración».
   </div>
 }
 
+<!-- Buscador, tipo y fechas en una fila compacta; el resumen por estado SUNAT (todos) filtra al hacer clic. -->
 <app-list-filters
-  collapsible
+  compact
   [showSelect]="false"
+  [showClear]="false"
   searchPlaceholder="Buscar por número (B001-25) o cliente"
   [searchValue]="search()"
-  [activeCount]="activeFilterCount()"
-  clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen de comprobantes"
+  summaryStorageKey="comprobante-electronico"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="setSearch($event)"
-  (clear)="clearFilters()"
 >
-  <app-form-select label="Estado SUNAT" [showPlaceholder]="false" [value]="estado()" [options]="estadoOptions" (valueChange)="setFilter('estado', $event)" />
-  <app-form-select label="Tipo" [showPlaceholder]="false" [value]="tipo()" [options]="tipoOptions" (valueChange)="setFilter('tipo', $event)" />
-  <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
-  <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+  <!-- Tipo, fechas y «Limpiar» siempre juntos: si no caben, bajan juntos. -->
+  <div data-filters class="flex min-w-[min(100%,24rem)] flex-[9] basis-[34rem] flex-wrap items-end gap-2">
+    <app-form-select class="min-w-0 flex-1 basis-40" compact ariaLabel="Tipo de comprobante" [showPlaceholder]="false" [value]="tipo()" [options]="tipoOptions" (valueChange)="setFilter('tipo', $event)" />
+    <app-input-field class="min-w-0 flex-1 basis-36" compact icon="mdi:calendar-start" ariaLabel="Desde" type="date" [value]="dateFrom()" (valueChange)="setFilter('dateFrom', $event)" />
+    <app-input-field class="min-w-0 flex-1 basis-36" compact icon="mdi:calendar-end" ariaLabel="Hasta" type="date" [value]="dateTo()" (valueChange)="setFilter('dateTo', $event)" />
+    <app-button size="sm" variant="outline" startIconName="mdi:filter-remove-outline" tooltip="Quita la búsqueda y los filtros." (btnClick)="clearFilters()">Limpiar</app-button>
+  </div>
 </app-list-filters>
 
 @let listState = listQuery | queryPageState: total();
 
-<app-component-card
-  title="Comprobantes"
-  [desc]="total() ? total() + ' en total' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   [emptyTitle]="activeFilterCount() || search() ? 'Sin comprobantes con esos filtros' : 'Aún no hay comprobantes'"
   [emptyHint]="activeFilterCount() || search() ? 'Prueba con otros filtros.' : 'Se crean al cobrar boletas o facturas en el Punto de venta.'"
+  skeleton="table"
   (retry)="listQuery.refetch()"
 >
-  <div data-card-header-end><app-color-legend [items]="legend" /></div>
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Comprobantes electrónicos</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Comprobante</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado SUNAT</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
@@ -72,25 +76,25 @@
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of rows(); track row.id) {
             <tr [attr.data-row-tone]="rowTone(row)">
-              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ (row.emittedAt ?? row.createdAt) | appDate: 'dd/MM/yyyy HH:mm' }}</td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ (row.emittedAt ?? row.createdAt) | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-5 py-3 text-theme-sm">
                 <span class="block font-medium text-gray-800 dark:text-white/90">{{ number(row) }}</span>
                 <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ typeLabel(row.documentType) }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm">
                 {{ row.customerNombre || '—' }}
                 @if (row.customerDocNumber) {
                   <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.customerDocNumber }}</span>
                 }
               </td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm">
                 <app-status-badge [status]="row.sunatStatus" [tone]="sunatTone(row.sunatStatus)" [label]="sunatLabel(row.sunatStatus)" />
                 @if (row.sunatStatus === 'RECHAZADO' && row.sunatDescripcion) {
                   <span class="mt-1 block max-w-xs truncate text-theme-xs text-gray-500 dark:text-gray-400" [title]="row.sunatDescripcion">{{ row.sunatDescripcion }}</span>
                 }
               </td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-              <td class="px-5 py-4 text-end">
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
@@ -113,20 +117,20 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
+            <tr><td colspan="99" class="px-5 py-3 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [currentPage]="page()" [totalItems]="total()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
 
 <!-- ========== DETALLE ========== -->
 @let doc = detailQuery.data();
 <app-modal compact [isOpen]="!!detailId()" (closed)="detailId.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     @if (doc) {
       <div class="flex flex-wrap items-center gap-3 pe-12">
         <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ typeLabel(doc.documentType) }} {{ number(doc) }}</h3>
@@ -137,7 +141,7 @@
       <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Comprobante</h3>
     }
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-6 px-4 py-4 sm:px-6">
     @if (detailQuery.isPending()) {
       <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
     } @else if (detailQuery.isError()) {
@@ -226,17 +230,17 @@
       }
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" (btnClick)="detailId.set(null)">Cerrar</app-button>
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="detailId.set(null)">Cerrar</app-button>
     @if (doc) {
-      <app-button variant="outline" startIconName="mdi:cloud-search-outline" [loading]="refreshMutation.isPending()" [disabled]="refreshMutation.isPending()" (btnClick)="refreshMutation.mutate(doc.id)">Consultar SUNAT</app-button>
+      <app-button size="sm" variant="outline" startIconName="mdi:cloud-search-outline" [loading]="refreshMutation.isPending()" [disabled]="refreshMutation.isPending()" (btnClick)="refreshMutation.mutate(doc.id)">Consultar SUNAT</app-button>
       <ng-container *appHasPermission="'billing.write'">
         @if (doc.sunatStatus === 'RECHAZADO') {
-          <app-button startIconName="mdi:send-outline" [loading]="retryMutation.isPending()" [disabled]="retryMutation.isPending()" (btnClick)="retryMutation.mutate(doc.id)">Reenviar a SUNAT</app-button>
+          <app-button size="sm" startIconName="mdi:send-outline" [loading]="retryMutation.isPending()" [disabled]="retryMutation.isPending()" (btnClick)="retryMutation.mutate(doc.id)">Reenviar a SUNAT</app-button>
         }
       </ng-container>
       @if (canVoid(doc)) {
-        <app-button variant="danger" startIconName="mdi:cancel" (btnClick)="detailId.set(null); startVoid(doc)">{{ doc.saleId ? 'Anular venta' : 'Comunicar baja' }}</app-button>
+        <app-button size="sm" variant="danger" startIconName="mdi:cancel" (btnClick)="detailId.set(null); startVoid(doc)">{{ doc.saleId ? 'Anular venta' : 'Comunicar baja' }}</app-button>
       }
     }
   </div>
@@ -255,23 +259,23 @@
   </div>
   <div data-modal-body class="space-y-4 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
     <p>SUNAT dará de baja el comprobante y dejará de ser válido. No se puede deshacer.</p>
-    <app-text-area label="Motivo" [required]="true" [maxLength]="500" [rows]="3" placeholder="Ej. Error en los datos del cliente" [value]="bajaReason()" [error]="!!bajaError()" [hint]="bajaError()" (valueChange)="bajaReason.set($event); bajaError.set('')" />
+    <app-text-area compact label="Motivo" [required]="true" [maxLength]="500" [rows]="3" placeholder="Ej. Error en los datos del cliente" [value]="bajaReason()" [error]="!!bajaError()" [hint]="bajaError()" (valueChange)="bajaReason.set($event); bajaError.set('')" />
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="bajaMutation.isPending()" (btnClick)="bajaDoc.set(null)">Cancelar</app-button>
-    <app-button variant="danger" startIconName="mdi:cancel" [loading]="bajaMutation.isPending()" [disabled]="bajaMutation.isPending()" (btnClick)="submitBaja()">Comunicar baja</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="bajaMutation.isPending()" (btnClick)="bajaDoc.set(null)">Cancelar</app-button>
+    <app-button size="sm" variant="danger" startIconName="mdi:cancel" [loading]="bajaMutation.isPending()" [disabled]="bajaMutation.isPending()" (btnClick)="submitBaja()">Comunicar baja</app-button>
   </div>
 </app-modal>
 
 <!-- ========== CONFIGURACIÓN ========== -->
 <app-modal compact [isOpen]="configOpen()" (closed)="configOpen.set(false)" className="w-full max-w-3xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Facturación electrónica</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">También puedes configurarla en <a routerLink="/mi-farmacia" class="text-brand-600 underline dark:text-brand-400">Mi farmacia</a>.</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-8 px-4 py-5 sm:px-8">
-    <app-form-section title="Proveedor (OSE)" [description]="providerSetupHint()" [cols]="1">
-      <app-form-select label="Proveedor de facturación" [required]="true" [showPlaceholder]="false" [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+    <app-form-section icon="mdi:cloud-upload-outline" compact title="Proveedor (OSE)" [description]="providerSetupHint()" [cols]="1">
+      <app-form-select compact label="Proveedor de facturación" [required]="true" [showPlaceholder]="false" [options]="providerOptions" [value]="provider()" (valueChange)="provider.set($any($event))" />
       @if (capabilities(); as caps) {
         @if (caps.notes.length || !caps.supportsDailySummary || !caps.supportsVoidDocument) {
           <div class="rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
@@ -284,67 +288,67 @@
     </app-form-section>
 
     @if (provider() !== 'MOCK') {
-      <app-form-section title="Datos del emisor" [cols]="2">
-        <app-input-field label="RUC" inputMode="numeric" [maxLength]="11" placeholder="20XXXXXXXXX" [value]="rucEmisor()" [error]="!!configErrors().ruc" [hint]="configErrors().ruc || ''" (valueChange)="rucEmisor.set('' + $event); configErrors.set({})" />
-        <app-input-field label="Razón social" [maxLength]="200" [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" />
+      <app-form-section icon="mdi:domain" compact title="Datos del emisor" [cols]="2">
+        <app-input-field icon="mdi:card-account-details-outline" compact label="RUC" inputMode="numeric" [maxLength]="11" placeholder="20XXXXXXXXX" [value]="rucEmisor()" [error]="!!configErrors().ruc" [hint]="configErrors().ruc || ''" (valueChange)="rucEmisor.set('' + $event); configErrors.set({})" />
+        <app-input-field icon="mdi:domain" compact label="Razón social" [maxLength]="200" [value]="razonSocial()" (valueChange)="razonSocial.set('' + $event)" />
       </app-form-section>
 
-      <app-form-section title="Conexión" description="Datos que te da el panel del proveedor." [cols]="1">
-        <app-input-field label="URL o ruta de envío" placeholder="https://…" [maxLength]="500" [value]="apiUrl()" [error]="!!configErrors().url" [hint]="configErrors().url || ''" (valueChange)="apiUrl.set('' + $event); configErrors.set({})" />
-        <app-input-field label="URL de consulta" helpText="Opcional. Solo si tu proveedor usa otra dirección para consultar estados." placeholder="https://…" [maxLength]="500" [value]="consultaApiUrl()" [error]="!!configErrors().consulta" [hint]="configErrors().consulta || ''" (valueChange)="consultaApiUrl.set('' + $event); configErrors.set({})" />
-        <app-input-field label="Token" type="password" helpText="Se guarda cifrado. Déjalo vacío para conservar el actual." [value]="apiToken()" (valueChange)="apiToken.set('' + $event)" />
+      <app-form-section icon="mdi:connection" compact title="Conexión" description="Datos que te da el panel del proveedor." [cols]="1">
+        <app-input-field icon="mdi:link-variant" compact label="URL o ruta de envío" placeholder="https://…" [maxLength]="500" [value]="apiUrl()" [error]="!!configErrors().url" [hint]="configErrors().url || ''" (valueChange)="apiUrl.set('' + $event); configErrors.set({})" />
+        <app-input-field icon="mdi:link-variant" compact label="URL de consulta" helpText="Opcional. Solo si tu proveedor usa otra dirección para consultar estados." placeholder="https://…" [maxLength]="500" [value]="consultaApiUrl()" [error]="!!configErrors().consulta" [hint]="configErrors().consulta || ''" (valueChange)="consultaApiUrl.set('' + $event); configErrors.set({})" />
+        <app-input-field icon="mdi:key-outline" compact label="Token" type="password" helpText="Se guarda cifrado. Déjalo vacío para conservar el actual." [value]="apiToken()" (valueChange)="apiToken.set('' + $event)" />
         <app-checkbox label="Modo de pruebas (sandbox)" helpText="Los comprobantes van al ambiente de pruebas del proveedor y no tienen validez." [checked]="modoSandbox()" (checkedChange)="modoSandbox.set($event)" />
       </app-form-section>
     }
 
-    <app-form-section title="Automatizaciones" [cols]="1">
+    <app-form-section icon="mdi:robot-outline" compact title="Automatizaciones" [cols]="1">
       <app-checkbox label="Enviar boletas y facturas a SUNAT al cobrar" helpText="Si lo apagas, se envían desde el Historial de ventas." [checked]="autoEmit()" (checkedChange)="autoEmit.set($event)" />
       <app-checkbox label="Emitir nota de venta electrónica donde aplique" [checked]="emitNotaVenta()" (checkedChange)="emitNotaVenta.set($event)" />
       <app-checkbox label="Aplicar detracción en facturas desde S/ 700" [checked]="applyDetraccion()" (checkedChange)="applyDetraccion.set($event)" />
       <app-checkbox label="Emitir guía de remisión al despachar un traslado" [checked]="autoEmitGuia()" (checkedChange)="autoEmitGuia.set($event)" />
     </app-form-section>
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="saveConfigMutation.isPending()" (btnClick)="configOpen.set(false)">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [loading]="saveConfigMutation.isPending()" [disabled]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="saveConfigMutation.isPending()" (btnClick)="configOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [loading]="saveConfigMutation.isPending()" [disabled]="saveConfigMutation.isPending()" (btnClick)="submitConfig()">Guardar</app-button>
     </div>
   </div>
 </app-modal>
 
 <!-- ========== COMPROBANTE ESPECIAL ========== -->
 <app-modal compact [isOpen]="specialOpen()" (closed)="specialOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Comprobante especial</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Retenciones, percepciones, liquidaciones de compra y guías de transportista.</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-8 px-4 py-5 sm:px-8">
-    <app-form-section title="Comprobante" [cols]="1">
-      <app-form-select label="Tipo" [required]="true" [showPlaceholder]="false" [options]="specialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+    <app-form-section icon="mdi:file-document-outline" compact title="Comprobante" [cols]="1">
+      <app-form-select compact label="Tipo" [required]="true" [showPlaceholder]="false" [options]="specialTypeOptions()" [value]="specialType()" (valueChange)="specialType.set($any($event))" />
       @if (specialBlockedReason(); as reason) {
         <p class="rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">{{ reason }}</p>
       }
     </app-form-section>
-    <app-form-section title="Cliente o proveedor" [cols]="2">
-      <app-input-field class="sm:col-span-2" label="Nombre o razón social" [isRequired]="true" [maxLength]="200" [value]="specialCustomer()" [error]="!!specialErrors().customer" [hint]="specialErrors().customer || ''" (valueChange)="specialCustomer.set('' + $event)" />
-      <app-form-select label="Tipo de documento" [required]="true" [showPlaceholder]="false" [options]="docTypeOptions" [value]="specialDocType()" (valueChange)="specialDocType.set($event)" />
-      <app-input-field label="Número de documento" [isRequired]="true" inputMode="numeric" [maxLength]="20" [value]="specialDocNumber()" [error]="!!specialErrors().doc" [hint]="specialErrors().doc || ''" (valueChange)="specialDocNumber.set('' + $event)" />
+    <app-form-section icon="mdi:account-outline" compact title="Cliente o proveedor" [cols]="2">
+      <app-input-field icon="mdi:account-outline" compact class="sm:col-span-2" label="Nombre o razón social" [isRequired]="true" [maxLength]="200" [value]="specialCustomer()" [error]="!!specialErrors().customer" [hint]="specialErrors().customer || ''" (valueChange)="specialCustomer.set('' + $event)" />
+      <app-form-select compact label="Tipo de documento" [required]="true" [showPlaceholder]="false" [options]="docTypeOptions" [value]="specialDocType()" (valueChange)="specialDocType.set($event)" />
+      <app-input-field icon="mdi:card-account-details-outline" compact label="Número de documento" [isRequired]="true" inputMode="numeric" [maxLength]="20" [value]="specialDocNumber()" [error]="!!specialErrors().doc" [hint]="specialErrors().doc || ''" (valueChange)="specialDocNumber.set('' + $event)" />
     </app-form-section>
-    <app-form-section title="Importe" [cols]="2">
-      <app-input-field class="sm:col-span-2" label="Concepto" placeholder="Servicio / concepto" [maxLength]="500" [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" />
-      <app-input-field label="Monto total (con IGV)" [isRequired]="true" type="number" min="0" step="0.01" [value]="specialAmount() ?? ''" [error]="!!specialErrors().amount" [hint]="specialErrors().amount || ''" (valueChange)="specialAmount.set($event === '' ? null : +$event)" />
+    <app-form-section icon="mdi:cash" compact title="Importe" [cols]="2">
+      <app-input-field icon="mdi:text-short" compact class="sm:col-span-2" label="Concepto" placeholder="Servicio / concepto" [maxLength]="500" [value]="specialDesc()" (valueChange)="specialDesc.set('' + $event)" />
+      <app-input-field icon="mdi:cash" compact label="Monto total (con IGV)" [isRequired]="true" type="number" min="0" step="0.01" [value]="specialAmount() ?? ''" [error]="!!specialErrors().amount" [hint]="specialErrors().amount || ''" (valueChange)="specialAmount.set($event === '' ? null : +$event)" />
       <dl class="self-end space-y-1 rounded-lg bg-gray-50 px-3 py-2 text-sm dark:bg-white/[0.03]">
         <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Op. gravada</dt><dd class="tabular-nums">{{ specialBreakdown().subtotal | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
         <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">IGV (18 %)</dt><dd class="tabular-nums">{{ specialBreakdown().igv | currency: 'PEN' : 'symbol' : '1.2-2' }}</dd></div>
       </dl>
     </app-form-section>
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="emitSpecialMutation.isPending()" (btnClick)="specialOpen.set(false)">Cancelar</app-button>
-      <app-button startIconName="mdi:send-outline" [loading]="emitSpecialMutation.isPending()" [disabled]="emitSpecialMutation.isPending() || !!specialBlockedReason()" (btnClick)="submitSpecial()">Emitir</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="emitSpecialMutation.isPending()" (btnClick)="specialOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:send-outline" [loading]="emitSpecialMutation.isPending()" [disabled]="emitSpecialMutation.isPending() || !!specialBlockedReason()" (btnClick)="submitSpecial()">Emitir</app-button>
     </div>
   </div>
 </app-modal>

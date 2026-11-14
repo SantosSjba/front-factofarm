@@ -261,6 +261,7 @@ import type {
   CashMovementRequest,
   CashSessionSummaryDto,
   QuotationListItemDto,
+  QuotationStatus,
   QuotationDetailDto,
   CreateQuotationRequest,
   PurchaseOrderListItemDto,
@@ -2038,10 +2039,15 @@ export class DirectoryApiService {
   }
 
   // —— Cotizaciones ——
-  listQuotations(page = 1, pageSize = 10) {
-    return this.http.get<PaginatedResponseDto<QuotationListItemDto>>(`${this.base}/quotations`, {
-      params: { page: String(page), pageSize: String(pageSize) },
-    });
+  listQuotations(page = 1, pageSize = 10, estado?: QuotationStatus) {
+    const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
+    if (estado) params['estado'] = estado;
+    return this.http.get<PaginatedResponseDto<QuotationListItemDto>>(`${this.base}/quotations`, { params });
+  }
+
+  /** `GET /quotations/summary`: cotizaciones por estado (todas, sin paginar). */
+  quotationsSummary() {
+    return this.http.get<{ total: number; byEstado: Partial<Record<QuotationStatus, number>> }>(`${this.base}/quotations/summary`);
   }
 
   getQuotation(id: string) {
@@ -2159,6 +2165,11 @@ export class DirectoryApiService {
 
   upsertBillingConfig(body: UpsertBillingConfigRequest) {
     return this.http.patch<BillingConfigDto>(`${this.base}/billing/config`, body);
+  }
+
+  /** `GET /billing/documents/summary`: comprobantes por estado SUNAT (todos, sin paginar). */
+  electronicDocumentsSummary() {
+    return this.http.get<{ total: number; byStatus: Partial<Record<SunatDocumentStatus, number>> }>(`${this.base}/billing/documents/summary`);
   }
 
   listElectronicDocuments(filters?: ElectronicDocumentListFilters) {

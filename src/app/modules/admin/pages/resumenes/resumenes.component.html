@@ -13,17 +13,17 @@
 </app-help-panel>
 
 @if (blockedMessage(); as blocked) {
-  <div class="mb-4 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">{{ blocked }}</div>
+  <div class="mb-3 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">{{ blocked }}</div>
 }
 
-<app-component-card title="Enviar resumen" desc="Boletas del día elegido.">
-  <div class="flex flex-wrap items-end gap-3">
-    <app-input-field class="w-full max-w-xs" label="Día" [isRequired]="true" type="date" [max]="today" [value]="fecha()" [error]="!!fechaError()" [hint]="fechaError()" (valueChange)="fecha.set('' + $event); fechaError.set('')" />
+<app-component-card compact icon="mdi:send-clock-outline" title="Enviar resumen" desc="Boletas del día elegido.">
+  <div class="flex flex-wrap items-end gap-2">
+    <app-input-field class="w-full max-w-xs" compact icon="mdi:calendar" label="Día" helpText="Día cuyas boletas se informan a SUNAT." [isRequired]="true" type="date" [max]="today" [value]="fecha()" [error]="!!fechaError()" [hint]="fechaError()" (valueChange)="fecha.set('' + $event); fechaError.set('')" />
     <ng-container *appHasPermission="'billing.write'">
-      <app-button startIconName="mdi:send-outline" [disabled]="!!blockedMessage() || summaryMutation.isPending()" (btnClick)="askSend()">Enviar resumen</app-button>
+      <app-button size="sm" startIconName="mdi:send-outline" tooltip="Te pedirá confirmación." [disabled]="!!blockedMessage() || summaryMutation.isPending()" (btnClick)="askSend()">Enviar resumen</app-button>
     </ng-container>
   </div>
-  <div class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <div class="mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
     <app-kpi-tile label="Boletas del día" [value]="'' + (boletasDia.data()?.total ?? '—')" icon="mdi:receipt-text-outline" tone="brand" />
     <app-kpi-tile label="Aceptadas" [value]="'' + (boletasAceptadas.data()?.total ?? '—')" icon="mdi:check-circle-outline" tone="success" />
     <app-kpi-tile label="Pendientes de envío" [value]="'' + (boletasPendientes.data()?.total ?? '—')" icon="mdi:clock-outline" [tone]="(boletasPendientes.data()?.total ?? 0) > 0 ? 'warning' : 'gray'" />
@@ -32,25 +32,25 @@
 </app-component-card>
 
 @let histState = historyQuery | queryPageState: historyTotal();
-<app-component-card
-  title="Resúmenes enviados"
-  [desc]="historyTotal() ? historyTotal() + ' en total' : ''"
-  className="mt-4 overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Listado directo con su subtítulo (sin tarjeta alrededor). -->
+<app-section-heading class="mt-5" compact icon="mdi:history" title="Resúmenes enviados" [description]="historyTotal() ? historyTotal() + ' en total, con la respuesta de SUNAT.' : 'Con la respuesta de SUNAT.'" />
+<app-page-state
   [loading]="histState.loading"
   [error]="histState.error"
   [empty]="histState.empty"
   emptyTitle="Aún no se envió ningún resumen"
   emptyHint="Aparecerán aquí al enviarlos."
+  skeleton="table"
   (retry)="historyQuery.refetch()"
 >
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Resúmenes enviados</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Enviado</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Número</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Número</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado SUNAT</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
           </tr>
@@ -58,22 +58,22 @@
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (r of history(); track r.id) {
             <tr>
-              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">{{ (r.emittedAt ?? r.createdAt) | appDate: 'dd/MM/yyyy HH:mm' }}</td>
-              <td class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ number(r) }}</td>
-              <td class="px-5 py-4 text-theme-sm">
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">{{ (r.emittedAt ?? r.createdAt) | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ number(r) }}</td>
+              <td class="px-5 py-3 text-theme-sm">
                 <app-status-badge [status]="r.sunatStatus" [tone]="sunatTone(r.sunatStatus)" [label]="sunatLabel(r.sunatStatus)" />
                 @if (r.sunatDescripcion) {
                   <span class="mt-1 block max-w-md truncate text-theme-xs text-gray-500 dark:text-gray-400" [title]="r.sunatDescripcion">{{ r.sunatDescripcion }}</span>
                 }
               </td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ r.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ r.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             </tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 <app-pagination [currentPage]="page()" [totalItems]="historyTotal()" [pageSize]="pageSize" (currentPageChange)="page.set($event)" />
 
 <app-modal compact [isOpen]="confirmOpen()" (closed)="confirmOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
@@ -88,8 +88,8 @@
       </p>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="summaryMutation.isPending()" (btnClick)="confirmOpen.set(false)">Cancelar</app-button>
-    <app-button startIconName="mdi:send-outline" [loading]="summaryMutation.isPending()" [disabled]="summaryMutation.isPending()" (btnClick)="summaryMutation.mutate(fecha())">Enviar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="summaryMutation.isPending()" (btnClick)="confirmOpen.set(false)">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:send-outline" [loading]="summaryMutation.isPending()" [disabled]="summaryMutation.isPending()" (btnClick)="summaryMutation.mutate(fecha())">Enviar</app-button>
   </div>
 </app-modal>
