@@ -7,7 +7,9 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -18,7 +20,7 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
 import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -37,8 +39,8 @@ type ExpiryState = { label: string; tone: StatusTone; row: LegendTone | null };
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
+    LabelComponent,
+    PageStateComponent,
     FormSelectComponent,
     HasPermissionDirective,
     HelpPanelComponent,
@@ -61,10 +63,6 @@ export class LotesComponent {
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumbSegments: BreadcrumbSegment[] = [{ label: 'Inventario' }, { label: 'Lotes' }];
-  protected readonly legend: LegendItem[] = [
-    { label: 'Vencido', tone: 'error' },
-    { label: 'Vence en 30 días', tone: 'warning' },
-  ];
   protected readonly today = new Date().toISOString().slice(0, 10);
 
   // ---------- Listado ----------
@@ -90,6 +88,29 @@ export class LotesComponent {
   protected readonly activeFilterCount = computed(
     () => [this.filterField() !== 'producto', !!this.warehouseId(), this.expiryFilter() !== 'all'].filter(Boolean).length,
   );
+
+  /** Chips por vencimiento con los demás filtros; al pulsar uno se filtra por ese vencimiento. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const c = this.lotsQuery.data()?.counts;
+    if (!c) return [];
+    const f = this.expiryFilter();
+    return [
+      { id: 'all', label: 'Lotes con stock', count: c.total, icon: 'mdi:package-variant-closed', active: f === 'all' },
+      { id: 'expired', label: 'Vencidos', count: c.vencidos, tone: 'error', active: f === 'expired', tooltip: 'Retíralos de la venta: devuélvelos o regístralos como salida.' },
+      { id: '30', label: 'Vencen en 30 días', count: c.d30, tone: 'warning', active: f === '30', tooltip: 'Véndelos primero o coordina su devolución.' },
+      { id: '90', label: 'Vencen en 90 días', count: c.d90, tone: 'info', active: f === '90' },
+    ];
+  });
+
+  /** Código y categoría debajo del producto, sin guiones sueltos cuando falta alguno. */
+  protected productMeta(codigo: string | null, categoria: string | null): string {
+    return [codigo ? 'Cód. ' + codigo : '', categoria && categoria !== '—' ? categoria : ''].filter(Boolean).join(' · ') || 'Sin código';
+  }
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const next = chip.id as ExpiryFilter;
+    this.setExpiry(this.expiryFilter() === next && next !== 'all' ? 'all' : next);
+  }
 
   protected readonly warehousesQuery = injectQuery(() => ({
     queryKey: ['inventory', 'warehouses'] as const,

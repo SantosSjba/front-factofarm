@@ -6,7 +6,9 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
@@ -14,7 +16,6 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { StatusBadgeComponent, type StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { ColorLegendComponent, type LegendItem } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -46,8 +47,8 @@ const ZONE_TYPES: Record<ZoneType, { label: string; tone: StatusTone }> = {
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
+    ListFiltersComponent,
+    PageStateComponent,
     FormSelectComponent,
     HasPermissionDirective,
     HelpPanelComponent,
@@ -74,7 +75,6 @@ export class CadenaFrioComponent {
     { id: 'zonas', label: 'Zonas del almacén' },
   ];
   protected readonly tab = signal<Tab>('temperaturas');
-  protected readonly legend: LegendItem[] = [{ label: `Fuera de ${RANGE.min} a ${RANGE.max} °C`, tone: 'error' }];
   protected readonly zoneTypeOptions = (Object.keys(ZONE_TYPES) as ZoneType[]).map((value) => ({
     value,
     label: value === 'REFRIGERADO' ? 'Refrigerada (cadena de frío)' : ZONE_TYPES[value].label,
@@ -109,6 +109,18 @@ export class CadenaFrioComponent {
   protected readonly logs = computed(() => this.logsQuery.data() ?? []);
   protected readonly lastLog = computed(() => this.logs()[0] ?? null);
   protected readonly outOfRangeCount = computed(() => this.logs().filter((l) => this.isOut(l.temperaturaCelsius)).length);
+  /** Última lectura, lecturas mostradas y cuántas salieron del rango, en chips sobre la tabla. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const last = this.lastLog();
+    if (!last) return [];
+    const out = this.outOfRangeCount();
+    const lastOut = this.isOut(last.temperaturaCelsius);
+    return [
+      { id: 'last', label: 'Última lectura', count: `${+last.temperaturaCelsius} °C`, icon: 'mdi:thermometer', tone: lastOut ? 'error' : 'success', clickable: false, tooltip: 'Anotada el ' + new Date(last.fecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) + '.' },
+      { id: 'count', label: 'Lecturas', count: this.logs().length, clickable: false, tooltip: 'Se muestran las 100 más recientes.' },
+      { id: 'out', label: `Fuera de ${RANGE.min} a ${RANGE.max} °C`, count: out, tone: out ? 'error' : 'neutral', clickable: false, tooltip: 'Esas filas se resaltan en rojo. Anota en la observación qué hiciste.' },
+    ];
+  });
 
   protected readonly logOpen = signal(false);
   protected readonly logZoneId = signal('');

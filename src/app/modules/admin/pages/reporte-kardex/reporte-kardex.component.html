@@ -12,22 +12,27 @@
   </ol>
 </app-help-panel>
 
-<app-component-card title="Qué quieres ver">
-  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-    <div class="md:col-span-2">
+<!-- Barra compacta: producto, almacén, periodo y origen; el resumen del periodo va en chips. -->
+<app-list-filters
+  compact
+  [showSearch]="false"
+  [showSelect]="false"
+  [showClear]="false"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen del periodo"
+  summaryStorageKey="reporte-kardex"
+>
+  <div data-filters class="contents">
+    <div class="min-w-0 flex-[7] basis-64">
       @if (product(); as p) {
-        <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-400">Producto</p>
-        <div class="flex min-h-11 items-center justify-between gap-3 rounded-[10px] border border-gray-200 px-4 py-2 dark:border-gray-800">
-          <div class="min-w-0">
-            <p class="truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ p.nombre }}</p>
-            @if (p.codigoInterno) {
-              <p class="text-xs text-gray-500 dark:text-gray-400">Cód. {{ p.codigoInterno }}</p>
-            }
-          </div>
-          <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="changeProduct()">Cambiar</app-button>
+        <app-label compact>Producto</app-label>
+        <div class="mt-1 flex h-9 items-center justify-between gap-2 rounded-lg border border-gray-200 ps-3 pe-1 dark:border-gray-800">
+          <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ p.nombre }}{{ p.codigoInterno ? ' · ' + p.codigoInterno : '' }}</span>
+          <app-button size="sm" variant="ghost" [iconOnly]="true" startIconName="mdi:swap-horizontal" tooltip="Cambiar de producto" (btnClick)="changeProduct()" />
         </div>
       } @else {
         <app-search-select
+          compact
           label="Producto"
           [required]="true"
           helpText="Busca por nombre, código interno o código de barras."
@@ -41,103 +46,87 @@
         />
       }
     </div>
-    <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+    @if (warehouseOptions().length > 2) {
+      <app-form-select compact class="min-w-0 flex-[3] basis-44" label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+    }
+    <app-input-field compact class="min-w-0 flex-[2] basis-36" icon="mdi:calendar-start" label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFrom($event + '')" />
+    <app-input-field compact class="min-w-0 flex-[2] basis-36" icon="mdi:calendar-end" label="Hasta" type="date" [value]="dateTo()" (valueChange)="setTo($event + '')" />
     <app-form-select
+      compact
+      class="min-w-0 flex-[3] basis-44"
       label="Movimientos"
-      helpText="Los antiguos se archivan para que el sistema siga rápido. Elige «archivados» para consultarlos."
+      helpText="Los antiguos se archivan para que el sistema siga rápido. Elige «archivados» para consultarlos; ahí el saldo no se recalcula."
       [showPlaceholder]="false"
       [value]="storage()"
       [options]="storageOptions"
       (valueChange)="setStorage($event)"
     />
-    <app-input-field label="Desde" type="date" [value]="dateFrom()" (valueChange)="setFrom($event + '')" />
-    <app-input-field label="Hasta" type="date" [value]="dateTo()" (valueChange)="setTo($event + '')" />
   </div>
-</app-component-card>
+</app-list-filters>
 
 @if (!product()) {
-  <p class="mt-6 rounded-[10px] border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-    Elige un producto para ver su kardex.
-  </p>
+  <app-page-state [empty]="true" emptyTitle="Elige un producto para ver su kardex" emptyHint="Verás cada entrada y salida con el saldo que quedó después." />
 } @else {
-  @if (summary(); as s) {
-    <div class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <app-kpi-tile label="Saldo al inicio" [value]="s.inicial" icon="mdi:flag-outline" tone="gray" sub="Antes de la fecha «Desde»" />
-      <app-kpi-tile label="Entradas" [value]="s.entradas" icon="mdi:arrow-down-bold-circle-outline" tone="success" sub="Todo el periodo" />
-      <app-kpi-tile label="Salidas" [value]="s.salidas" icon="mdi:arrow-up-bold-circle-outline" tone="error" sub="Todo el periodo" />
-      <app-kpi-tile label="Saldo final" [value]="s.final" icon="mdi:package-variant-closed" tone="brand" sub="Al cierre del periodo" />
-    </div>
-  }
-
   @let kardexState = kardexQuery | queryPageState: totalRows();
 
-  <app-component-card
-    title="Movimientos"
-    [desc]="totalRows() ? totalRows() + ' en el periodo' : ''"
-    className="mt-6 overflow-hidden"
-    [bodyClass]="'p-0 sm:p-0'"
+  <!-- Tabla directa (sin tarjeta): el título está en la barra y los totales en el resumen. -->
+  <app-page-state
     [loading]="kardexState.loading"
     [error]="kardexState.error"
     [empty]="kardexState.empty"
     emptyTitle="Sin movimientos en el periodo"
     emptyHint="Prueba con otras fechas o con otro almacén."
+    skeleton="table"
     (retry)="kardexQuery.refetch()"
   >
-    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div class="max-w-full overflow-x-auto">
         <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <caption class="sr-only">Movimientos del producto con su saldo</caption>
           <thead class="border-b border-gray-100 dark:border-white/[0.05]">
             <tr>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Movimiento</th>
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén / Lote</th>
+              <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Movimiento</th>
               <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
               <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Saldo</th>
-              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
               <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                <span class="inline-flex items-center gap-1">Valor <app-help-hint text="Cantidad por costo unitario del movimiento." [iconSize]="14" /></span>
+                <span class="inline-flex items-center gap-1">Valor <app-help-hint text="Cantidad por costo unitario del movimiento. Debajo, el costo de cada unidad." [iconSize]="14" /></span>
               </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
             @for (row of rows(); track row.id) {
               <tr>
-                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
                   {{ row.fecha | appDate: 'dd/MM/yyyy HH:mm' }}
                   <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.usuario ?? '' }}</span>
                 </td>
-                <td class="px-5 py-4 text-theme-sm">
+                <td class="px-5 py-3 text-theme-sm">
                   <div class="flex flex-wrap items-center gap-1.5">
                     <app-status-badge [status]="row.tipo" [tone]="movementTone(row.tipo)" [label]="movementLabel(row.tipo)" />
                     @if (isArchivedRow(row)) {
                       <app-status-badge status="ARCHIVADO" tone="neutral" label="Archivado" />
                     }
                   </div>
-                  <span class="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">
-                    {{ row.motivo ?? '' }}{{ row.referencia ? ' · Ref. ' + row.referencia : '' }}
-                  </span>
+                  <span class="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">{{ movementDetail(row) }}</span>
                 </td>
-                <td class="px-5 py-4 text-theme-sm">
-                  {{ row.almacen ?? '—' }}
-                  @if (row.lote) {
-                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">Lote {{ row.lote }}</span>
-                  }
-                </td>
-                <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums" [class.text-success-600]="num(row.cantidad) > 0" [class.text-error-600]="num(row.cantidad) < 0">
+                <td class="px-5 py-3 text-end text-theme-sm font-medium tabular-nums" [class.text-success-600]="num(row.cantidad) > 0" [class.text-error-600]="num(row.cantidad) < 0">
                   {{ num(row.cantidad) > 0 ? '+' : '' }}{{ num(row.cantidad) | number: '1.0-4' }}
                 </td>
-                <td class="px-5 py-4 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ row.saldo != null ? (num(row.saldo) | number: '1.0-4') : '—' }}</td>
-                <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.costoUnitario != null ? (num(row.costoUnitario) | number: '1.2-4') : '—' }}</td>
-                <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.valorLinea != null ? (num(row.valorLinea) | number: '1.2-2') : '—' }}</td>
+                <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ row.saldo != null ? (num(row.saldo) | number: '1.0-4') : '—' }}</td>
+                <td class="px-5 py-3 text-end text-theme-sm tabular-nums whitespace-nowrap">
+                  {{ row.valorLinea != null ? (num(row.valorLinea) | number: '1.2-2') : '—' }}
+                  @if (row.costoUnitario != null) {
+                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ num(row.costoUnitario) | number: '1.2-4' }} c/u</span>
+                  }
+                </td>
               </tr>
-            } @empty {
-              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias.</td></tr>
             }
           </tbody>
         </table>
       </div>
     </div>
-  </app-component-card>
+  </app-page-state>
 
   <app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />
 }

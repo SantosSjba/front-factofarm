@@ -20,6 +20,7 @@
 @if (activeCountId()) {
   @let c = count();
   <app-component-card
+    compact
     [title]="c ? 'Conteo de ' + c.almacen : 'Conteo'"
     [desc]="c ? (c.items.length + ' producto(s) contados' + (c.comentario ? ' · ' + c.comentario : '')) : ''"
     [loading]="countQuery.isPending()"
@@ -34,18 +35,18 @@
     </div>
 
     @if (c) {
-      <div class="space-y-6">
+      <div class="space-y-4">
         @if (isEditable()) {
           <ng-container *appHasPermission="'inventory.adjust'">
             @if (line(); as l) {
-              <div class="rounded-xl border border-brand-200 bg-brand-50/40 p-4 dark:border-brand-500/30 dark:bg-brand-500/5">
+              <div class="rounded-xl border border-brand-200 bg-brand-50/40 p-3 dark:border-brand-500/30 dark:bg-brand-500/5">
                 <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ l.nombre }}</p>
                   <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="cancelLine()">Cambiar</app-button>
                 </div>
-                <div class="grid gap-4 sm:grid-cols-3">
+                <div class="grid gap-3 sm:grid-cols-3">
                   @if (l.manejaLotes) {
-                    <app-suggest-input
+                    <app-suggest-input compact
                       class="sm:col-span-2"
                       label="Lote"
                       [required]="true"
@@ -62,7 +63,7 @@
                   } @else {
                     <p class="flex items-center text-sm text-gray-500 sm:col-span-2 dark:text-gray-400">Este producto no maneja lotes.</p>
                   }
-                  <app-input-field label="Cantidad contada" [isRequired]="true" type="number" min="0" step="1" placeholder="0" [value]="l.cantidad ?? ''" (valueChange)="patchLine({ cantidad: $event === '' ? null : +$event })" />
+                  <app-input-field compact label="Cantidad contada" [isRequired]="true" type="number" min="0" step="1" placeholder="0" [value]="l.cantidad ?? ''" (valueChange)="patchLine({ cantidad: $event === '' ? null : +$event })" />
                 </div>
                 @if (lineError()) {
                   <p class="mt-2 text-xs font-medium text-error-600 dark:text-error-400">{{ lineError() }}</p>
@@ -72,7 +73,7 @@
                 </div>
               </div>
             } @else {
-              <app-search-select
+              <app-search-select compact
                 label="Producto contado"
                 helpText="Busca por nombre, código interno o código de barras. Funciona con lector de código de barras."
                 placeholder="Escribe o escanea"
@@ -90,55 +91,49 @@
         }
 
         @if (c.items.length) {
-          @let s = summary();
-          <div class="flex flex-wrap gap-2 text-sm">
-            <app-status-badge status="IGUAL" tone="success" [label]="s.iguales + ' coinciden'" />
-            <app-status-badge status="SOBRA" tone="info" [label]="s.sobrantes + ' con sobrante'" />
-            <app-status-badge status="FALTA" tone="error" [label]="s.faltantes + ' con faltante'" />
-          </div>
+          <app-summary-chips [chips]="summaryChips()" ariaLabel="Resultado del conteo" />
         }
 
-        <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-          <table class="w-full min-w-[620px] text-sm text-gray-700 dark:text-gray-300">
-            <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
-              <tr>
-                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
-                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
-                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">
-                  <span class="inline-flex items-center gap-1">En sistema <app-help-hint text="Stock que tenía el sistema cuando registraste el producto." [iconSize]="14" /></span>
-                </th>
-                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Contado</th>
-                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Diferencia</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of c.items; track item.id) {
-                <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
-                  <td class="px-4 py-2">
-                    <span class="text-gray-800 dark:text-white/90">{{ item.producto }}</span>
-                    @if (item.codigoInterno) {
-                      <span class="block text-xs text-gray-500 dark:text-gray-400">Cód. {{ item.codigoInterno }}</span>
-                    }
-                  </td>
-                  <td class="px-4 py-2">{{ item.codigoLote || '—' }}</td>
-                  <td class="px-4 py-2 text-end tabular-nums">{{ num(item.stockSistema) | number: '1.0-4' }}</td>
-                  <td class="px-4 py-2 text-end tabular-nums">{{ num(item.stockContado) | number: '1.0-4' }}</td>
-                  <td class="px-4 py-2 text-end font-semibold tabular-nums" [class.text-success-600]="num(item.diferencia) === 0" [class.text-blue-light-500]="num(item.diferencia) > 0" [class.text-error-600]="num(item.diferencia) < 0">
-                    {{ num(item.diferencia) > 0 ? '+' : '' }}{{ num(item.diferencia) | number: '1.0-4' }}
-                  </td>
+        <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="max-w-full overflow-x-auto">
+            <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+              <caption class="sr-only">Productos contados</caption>
+              <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+                <tr>
+                  <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+                  <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                    <span class="inline-flex items-center gap-1">En sistema <app-help-hint text="Stock que tenía el sistema cuando registraste el producto." [iconSize]="14" /></span>
+                  </th>
+                  <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Contado</th>
+                  <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Diferencia</th>
                 </tr>
-              } @empty {
-                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Todavía no registras productos en este conteo.</td></tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                @for (item of c.items; track item.id) {
+                  <tr [attr.data-row-tone]="num(item.diferencia) < 0 ? 'error' : null">
+                    <td class="px-5 py-3 text-theme-sm">
+                      <span class="block font-medium text-gray-800 dark:text-white/90">{{ item.producto }}</span>
+                      <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ itemMeta(item.codigoInterno, item.codigoLote) }}</span>
+                    </td>
+                    <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ num(item.stockSistema) | number: '1.0-4' }}</td>
+                    <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ num(item.stockContado) | number: '1.0-4' }}</td>
+                    <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums" [class.text-success-600]="num(item.diferencia) === 0" [class.text-blue-light-500]="num(item.diferencia) > 0" [class.text-error-600]="num(item.diferencia) < 0">
+                      {{ num(item.diferencia) > 0 ? '+' : '' }}{{ num(item.diferencia) | number: '1.0-4' }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4" class="px-5 py-6 text-center text-theme-sm text-gray-500 dark:text-gray-400">Todavía no registras productos en este conteo.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
 
         @if (isEditable()) {
           <ng-container *appHasPermission="'inventory.adjust'">
-            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+            <div class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
               <p class="me-auto text-xs text-gray-500 dark:text-gray-400">Puedes dejar el conteo abierto y continuarlo después.</p>
-              <app-button startIconName="mdi:flag-checkered" [disabled]="!c.items.length" (btnClick)="finalizeOpen.set(true)">Finalizar y ajustar stock</app-button>
+              <app-button size="sm" startIconName="mdi:flag-checkered" [disabled]="!c.items.length" (btnClick)="finalizeOpen.set(true)">Finalizar y ajustar stock</app-button>
             </div>
           </ng-container>
         }
@@ -147,26 +142,24 @@
   </app-component-card>
 } @else {
   @let countsState = countsQuery | queryPageState: countsTotal();
-  <app-component-card
-    title="Conteos"
-    [desc]="countsTotal() ? countsTotal() + ' en total' : ''"
-    className="overflow-hidden"
-    [bodyClass]="'p-0 sm:p-0'"
+  <!-- Tabla directa (sin tarjeta): el título ya está en la barra. -->
+  <app-page-state
     [loading]="countsState.loading"
     [error]="countsState.error"
     [empty]="countsState.empty"
     emptyTitle="Aún no hay conteos"
     emptyHint="Usa «Nuevo conteo» para revisar el stock de un almacén."
+    skeleton="table"
     (retry)="countsQuery.refetch()"
   >
-    <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+    <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div class="max-w-full overflow-x-auto">
         <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+          <caption class="sr-only">Conteos físicos</caption>
           <thead class="border-b border-gray-100 dark:border-white/[0.05]">
             <tr>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Productos</th>
+              <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
               <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
             </tr>
@@ -174,44 +167,37 @@
           <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
             @for (row of countRows(); track row.id) {
               <tr>
-                <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+                <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
                   {{ row.fecha | appDate: 'dd/MM/yyyy HH:mm' }}
                   <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.usuario ?? '' }}</span>
                 </td>
-                <td class="px-5 py-4 text-theme-sm">
-                  {{ row.almacen }}
-                  @if (row.comentario) {
-                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.comentario }}</span>
-                  }
+                <td class="px-5 py-3 text-theme-sm">
+                  <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.almacen }}</span>
+                  <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.itemsCount }} producto{{ row.itemsCount === 1 ? '' : 's' }} contado{{ row.itemsCount === 1 ? '' : 's' }}{{ row.comentario ? ' · ' + row.comentario : '' }}</span>
                 </td>
-                <td class="px-5 py-4 text-theme-sm tabular-nums">{{ row.itemsCount }}</td>
-                <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
-                <td class="px-5 py-4 text-end">
-                  <app-button size="sm" [variant]="row.estado === 'EN_PROCESO' ? 'primary' : 'outline'" [startIconName]="row.estado === 'EN_PROCESO' ? 'mdi:clipboard-edit-outline' : 'mdi:eye-outline'" (btnClick)="openRow(row)">
-                    {{ row.estado === 'EN_PROCESO' ? 'Continuar' : 'Ver' }}
-                  </app-button>
+                <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
+                <td class="px-5 py-3 text-end">
+                  <app-button size="sm" [variant]="row.estado === 'EN_PROCESO' ? 'primary' : 'outline'" [iconOnly]="true" [startIconName]="row.estado === 'EN_PROCESO' ? 'mdi:clipboard-edit-outline' : 'mdi:eye-outline'" [tooltip]="row.estado === 'EN_PROCESO' ? 'Continuar el conteo' : 'Ver el conteo'" (btnClick)="openRow(row)" />
                 </td>
               </tr>
-            } @empty {
-              <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin conteos.</td></tr>
             }
           </tbody>
         </table>
       </div>
     </div>
-  </app-component-card>
+  </app-page-state>
   <app-pagination [currentPage]="countsPage()" [totalItems]="countsTotal()" [pageSize]="itemsPerPage" (currentPageChange)="countsPage.set($event)" />
 }
 
 <!-- ========== NUEVO CONTEO ========== -->
 <app-modal compact [isOpen]="createOpen()" (closed)="!createMutation.isPending() && createOpen.set(false)" className="w-full max-w-xl">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo conteo</h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo conteo</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Mientras cuentas, el stock no cambia: se ajusta al finalizar.</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-5 px-4 py-5 sm:px-8">
-    <div class="flex items-start gap-2">
-      <app-form-select
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+    <div class="flex items-end gap-2">
+      <app-form-select compact
         class="min-w-0 flex-1"
         label="Almacén a contar"
         [required]="true"
@@ -222,15 +208,15 @@
         [hint]="newError()"
         (valueChange)="newWarehouseId.set($event); newError.set('')"
       />
-      <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="newWarehouseId.set($event.id)" /></div>
+      <app-quick-create compact entity="warehouse" [iconOnly]="true" [class.mb-6]="!!newError()" (created)="newWarehouseId.set($event.id)" />
     </div>
-    <app-text-area label="Comentario" helpText="Por ejemplo, qué estantes vas a contar. Opcional." [maxLength]="500" [rows]="2" [value]="newComment()" (valueChange)="newComment.set($event)" />
+    <app-text-area compact label="Comentario" helpText="Por ejemplo, qué estantes vas a contar. Opcional." [maxLength]="500" [rows]="2" [value]="newComment()" (valueChange)="newComment.set($event)" />
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="createOpen.set(false)">Cancelar</app-button>
-      <app-button startIconName="mdi:clipboard-list-outline" [loading]="createMutation.isPending()" [disabled]="createMutation.isPending()" (btnClick)="submitCreate()">Empezar conteo</app-button>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="createMutation.isPending()" (btnClick)="createOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:clipboard-list-outline" [loading]="createMutation.isPending()" [disabled]="createMutation.isPending()" (btnClick)="submitCreate()">Empezar conteo</app-button>
     </div>
   </div>
 </app-modal>
@@ -238,7 +224,7 @@
 <!-- ========== FINALIZAR ========== -->
 <app-modal compact [isOpen]="finalizeOpen()" (closed)="!finalizeMutation.isPending() && finalizeOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Finalizar conteo</h3>
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Finalizar conteo</h3>
   </div>
   <div data-modal-body class="space-y-3 px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
     @let s = summary();
@@ -248,8 +234,8 @@
       <li>Los ajustes grandes quedan pendientes de aprobación y el conteo sigue abierto hasta aprobarlos.</li>
     </ul>
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="finalizeMutation.isPending()" (btnClick)="finalizeOpen.set(false)">Revisar de nuevo</app-button>
-    <app-button startIconName="mdi:flag-checkered" [loading]="finalizeMutation.isPending()" [disabled]="finalizeMutation.isPending()" (btnClick)="finalizeMutation.mutate()">Finalizar y ajustar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="finalizeMutation.isPending()" (btnClick)="finalizeOpen.set(false)">Revisar de nuevo</app-button>
+    <app-button size="sm" startIconName="mdi:flag-checkered" [loading]="finalizeMutation.isPending()" [disabled]="finalizeMutation.isPending()" (btnClick)="finalizeMutation.mutate()">Finalizar y ajustar</app-button>
   </div>
 </app-modal>

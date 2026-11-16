@@ -1490,6 +1490,7 @@ export class DirectoryApiService {
     if (filters?.field) params['field'] = filters.field;
     if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
     if (filters?.categoryId) params['categoryId'] = filters.categoryId;
+    if (filters?.stockLevel) params['stockLevel'] = filters.stockLevel;
     if (filters?.page) params['page'] = String(filters.page);
     if (filters?.pageSize) params['pageSize'] = String(filters.pageSize);
     return params;
@@ -1706,6 +1707,8 @@ export class DirectoryApiService {
 
   getInventoryValuationReport(filters?: InventoryValuationFiltersRequest) {
     const params: Record<string, string> = {};
+    if (filters?.search?.trim()) params['search'] = filters.search.trim();
+    if (filters?.sinCosto) params['sinCosto'] = 'true';
     if (filters?.warehouseId) params['warehouseId'] = filters.warehouseId;
     if (filters?.establishmentId) params['establishmentId'] = filters.establishmentId;
     if (filters?.page) params['page'] = String(filters.page);

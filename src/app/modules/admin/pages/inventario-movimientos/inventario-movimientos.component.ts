@@ -8,7 +8,8 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { inventoryMovementQueryKeys } from '../../../../core/query/inventory-movement-query.keys';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -19,9 +20,8 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 import { BadgeComponent } from '../../../../shared/components/ui/badge/badge.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
-import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
 import { SuggestInputComponent } from '../../../../shared/components/form/suggest-input/suggest-input.component';
@@ -36,6 +36,7 @@ import type {
   InventoryMovementListItemDto,
   InventoryLotCodeOptionDto,
   InventoryPendingAdjustmentDto,
+  InventoryStockLevel,
   ProductImportResultDto,
 } from '../../models/directory.models';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
@@ -49,7 +50,6 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
 import { WithdrawalModalComponent, type WithdrawalPreset } from '../../components/withdrawal-modal/withdrawal-modal.component';
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
 
-type InventoryColumnKey = 'codigoInterno' | 'marca' | 'almacen';
 
 /** Producto sobre el que se registra el movimiento: desde una fila o desde el buscador. */
 type StockTarget = Pick<InventoryMovementListItemDto, 'productId' | 'producto' | 'codigoInterno'> &
@@ -75,8 +75,6 @@ const STOCK_TEXT_CLASSES: Record<StockLevel, string> = {
   imports: [
     AlertComponent,
     BadgeComponent,
-    CheckboxComponent,
-    ColorLegendComponent,
     ExcelIconComponent,
     FormSectionComponent,
     HelpPanelComponent,
@@ -91,7 +89,7 @@ const STOCK_TEXT_CLASSES: Record<StockLevel, string> = {
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    PageStateComponent,
     ListFiltersComponent,
     PaginationComponent,
     TableDropdownComponent,
@@ -115,29 +113,13 @@ export class InventarioMovimientosComponent {
     { label: 'Inventario' },
     { label: 'Inventario' },
   ];
-  protected readonly stockLegend: LegendItem[] = [
-    { label: STOCK_LEVEL_LABELS.normal, tone: 'success' },
-    { label: STOCK_LEVEL_LABELS.bajo, tone: 'warning' },
-    { label: STOCK_LEVEL_LABELS.critico, tone: 'error-light' },
-    { label: STOCK_LEVEL_LABELS.agotado, tone: 'error' },
-  ];
-  protected readonly columns: { key: InventoryColumnKey; label: string }[] = [
-    { key: 'codigoInterno', label: 'Cód. Interno' },
-    { key: 'marca', label: 'Marca' },
-    { key: 'almacen', label: 'Almacén' },
-  ];
-  protected readonly visibleColumns = signal<Record<InventoryColumnKey, boolean>>({
-    codigoInterno: true,
-    marca: true,
-    almacen: true,
-  });
-
   protected readonly itemsPerPage = 10;
   protected readonly exporting = signal(false);
   protected readonly searchTerm = signal('');
   protected readonly filterField = signal<NonNullable<InventoryMovementListFiltersRequest['field']>>('all');
   protected readonly filterCategoryId = signal('');
   protected readonly filterWarehouseId = signal('');
+  protected readonly filterStockLevel = signal<InventoryStockLevel | ''>('');
   protected readonly currentPage = signal(1);
   protected readonly fieldFilterOptions = [
     { value: 'all', label: 'Todos' },
@@ -151,10 +133,11 @@ export class InventarioMovimientosComponent {
     field: this.filterField(),
     categoryId: this.filterCategoryId() || undefined,
     warehouseId: this.filterWarehouseId() || undefined,
+    stockLevel: this.filterStockLevel() || undefined,
   }));
   protected readonly activeFilterCount = computed(
     () =>
-      [this.filterField() !== 'all', !!this.filterCategoryId(), !!this.filterWarehouseId()].filter(Boolean)
+      [this.filterField() !== 'all', !!this.filterCategoryId(), !!this.filterWarehouseId(), !!this.filterStockLevel()].filter(Boolean)
         .length,
   );
 
@@ -446,12 +429,37 @@ export class InventarioMovimientosComponent {
     void this.listQuery.refetch();
   }
 
-  protected isVisible(key: InventoryColumnKey) {
-    return !!this.visibleColumns()[key];
-  }
+  /** Con un solo almacén la columna repetiría el mismo nombre en todas las filas. */
+  protected readonly showWarehouseColumn = computed(
+    () => this.warehouseOptions().length > 1 || new Set(this.rows().map((r) => r.warehouseId)).size > 1,
+  );
 
-  protected toggleColumn(key: InventoryColumnKey) {
-    this.visibleColumns.update((prev) => ({ ...prev, [key]: !prev[key] }));
+  /** Chips de resumen: cuántas filas hay en cada nivel; al pulsar uno se filtra por ese nivel. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const levels = this.listQuery.data()?.levels;
+    if (!levels) return [];
+    const current = this.filterStockLevel();
+    const chip = (level: InventoryStockLevel, tone: SummaryChip['tone'], tooltip: string): SummaryChip => ({
+      id: level,
+      label: STOCK_LEVEL_LABELS[level],
+      count: levels[level],
+      tone,
+      active: current === level,
+      tooltip,
+    });
+    return [
+      { id: 'all', label: 'Total', count: levels.total, icon: 'lucide:package', active: !current, tooltip: 'Todas las filas de producto y almacén.' },
+      chip('agotado', 'error', 'Sin stock en ese almacén.'),
+      chip('critico', 'error', 'En el stock mínimo del producto o menos.'),
+      chip('bajo', 'warning', 'Hasta el doble del stock mínimo.'),
+      chip('normal', 'success', 'Más del doble del stock mínimo.'),
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    const level = chip.id === 'all' ? '' : (chip.id as InventoryStockLevel);
+    this.filterStockLevel.set(this.filterStockLevel() === level ? '' : level);
+    this.currentPage.set(1);
   }
 
   protected onSearchChange(v: string) {
@@ -469,6 +477,7 @@ export class InventarioMovimientosComponent {
     this.filterField.set('all');
     this.filterCategoryId.set('');
     this.filterWarehouseId.set('');
+    this.filterStockLevel.set('');
     this.currentPage.set(1);
   }
 

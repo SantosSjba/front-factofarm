@@ -8,6 +8,10 @@ export const inventoryMovementQueryKeys = {
       'list',
       filters.search?.trim() ?? '',
       filters.field ?? 'producto',
+      // Todo filtro que cambia el resultado va en la clave; si falta, la lista no se vuelve a pedir.
+      filters.categoryId ?? '',
+      filters.warehouseId ?? '',
+      filters.stockLevel ?? '',
       filters.page ?? 1,
       filters.pageSize ?? 10,
     ] as const,

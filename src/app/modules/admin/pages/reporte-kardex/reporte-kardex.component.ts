@@ -4,8 +4,10 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { LabelComponent } from '../../../../shared/components/form/label/label.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -33,13 +35,14 @@ const MOVEMENT: Record<string, { label: string; tone: StatusTone }> = {
   selector: 'app-reporte-kardex',
   standalone: true,
   imports: [
-    KpiTileComponent,
     CommonModule,
     AppDatePipe,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
+    LabelComponent,
+    ListFiltersComponent,
+    PageStateComponent,
     FormSelectComponent,
     HelpHintComponent,
     HelpPanelComponent,
@@ -120,6 +123,24 @@ export class ReporteKardexComponent {
   /** Resumen de la página: entradas, salidas y saldos. */
   private readonly qtyFmt = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 4 });
   /** Totales de todo el periodo filtrado (los calcula la API, no la página visible). */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summary();
+    if (!s) return [];
+    return [
+      { id: 'inicial', label: 'Saldo al inicio', count: s.inicial, icon: 'mdi:flag-outline', clickable: false, tooltip: 'Lo que había antes de la fecha «Desde».' },
+      { id: 'entradas', label: 'Entradas', count: s.entradas, tone: 'success', clickable: false, tooltip: 'Todo lo que entró en el periodo.' },
+      { id: 'salidas', label: 'Salidas', count: s.salidas, tone: 'error', clickable: false, tooltip: 'Todo lo que salió en el periodo.' },
+      { id: 'final', label: 'Saldo final', count: s.final, icon: 'mdi:package-variant-closed', tone: 'brand', clickable: false, tooltip: 'Lo que quedó al cierre del periodo.' },
+    ];
+  });
+
+  /** Motivo, referencia, lote y almacén en una sola línea, debajo del tipo de movimiento. */
+  protected movementDetail(row: KardexLineDto): string {
+    const parts = [row.motivo, row.referencia ? 'Ref. ' + row.referencia : null, row.lote ? 'Lote ' + row.lote : null];
+    if (this.warehouseOptions().length > 2 && !this.warehouseId()) parts.push(row.almacen);
+    return parts.filter(Boolean).join(' · ');
+  }
+
   protected readonly summary = computed(() => {
     const r = this.kardexQuery.data()?.resumen;
     if (!r) return null;

@@ -8,97 +8,88 @@
   <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
     <li>Muestra cuánto vale hoy tu mercadería: el stock de cada producto en cada almacén por su costo.</li>
     <li>El costo se calcula con el método de tu establecimiento: <strong>PEPS</strong> (primero en entrar, primero en salir) o <strong>promedio ponderado</strong>.</li>
-    <li>Para ver las entradas y salidas de un producto con su saldo, usa <strong>Kardex</strong>.</li>
+    <li>Pulsa «Sin costo» para ver los productos que se valorizan en S/ 0 y registrarles el costo. Para ver las entradas y salidas de un producto, usa <strong>Kardex</strong>.</li>
   </ol>
 </app-help-panel>
 
+<!-- Buscador + almacén y resumen en chips (valor, unidades, sin costo). -->
 <app-list-filters
-  collapsible
-  [showSearch]="false"
+  compact
+  [collapsible]="warehouseOptions().length > 2"
   [showSelect]="false"
   [activeCount]="warehouseId() ? 1 : 0"
+  [searchValue]="search()"
+  searchPlaceholder="Buscar producto o código"
   clearLabel="Limpiar"
-  (clear)="setWarehouse('')"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Resumen del inventario"
+  summaryStorageKey="inventario-valorizado"
+  (summaryChipClick)="onSummaryChip($event)"
+  (searchValueChange)="setSearch($event)"
+  (clear)="clearFilters()"
 >
-  <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+  @if (warehouseOptions().length > 2) {
+    <app-form-select compact label="Almacén" helpText="Sin elegir, se suman todos los almacenes de la sede." [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseOptions()" (valueChange)="setWarehouse($event)" />
+  }
 </app-list-filters>
-
-@if (kpis(); as k) {
-  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-    <app-kpi-tile label="Valor del inventario" [value]="k.valor" icon="mdi:cash-multiple" tone="success" sub="Todo lo filtrado" />
-    <app-kpi-tile label="Unidades en stock" [value]="k.unidades" icon="mdi:package-variant-closed" tone="info" />
-    <app-kpi-tile label="Productos con stock" [value]="k.productos" icon="mdi:pill" tone="brand" sub="Por almacén" />
-    <app-kpi-tile label="Sin costo registrado" [value]="'' + k.sinCosto" icon="mdi:alert-circle-outline" [tone]="k.sinCosto ? 'warning' : 'gray'" sub="Se valorizan en S/ 0" hint="Registra el costo en Productos o en los ingresos para valorizarlos." />
-  </div>
-}
 
 @let listState = valuationQuery | queryPageState: totalRows();
 
-<app-component-card
-  title="Stock valorizado"
-  [desc]="totalRows() ? totalRows() + ' productos con stock' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título está en la barra y los totales en el resumen. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay stock para valorizar"
-  emptyHint="Cuando registres ingresos de mercadería, aparecerán aquí."
+  [emptyTitle]="search().trim() || warehouseId() || sinCosto() ? 'Sin productos con esos filtros' : 'No hay stock para valorizar'"
+  [emptyHint]="sinCosto() ? 'Todos los productos con stock tienen costo.' : 'Cuando registres ingresos de mercadería, aparecerán aquí.'"
+  skeleton="table"
   (retry)="valuationQuery.refetch()"
 >
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Stock valorizado por producto</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-              <span class="inline-flex items-center gap-1">Método <app-help-hint text="PEPS: el costo de lo que entró primero. Promedio: el costo promedio de todo lo que entró." [iconSize]="14" /></span>
-            </th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            @if (multiWarehouse()) {
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+            }
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
-            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+              <span class="inline-flex items-center gap-1">Costo unit. <app-help-hint [text]="methodHelp()" [iconSize]="14" /></span>
+            </th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Valor</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of rows(); track row.productId + row.almacen) {
-            <tr>
-              <td class="px-5 py-4 text-theme-sm">
-                <span class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
-                @if (row.codigoInterno) {
-                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">Cód. {{ row.codigoInterno }}</span>
+            <tr [attr.data-row-tone]="num(row.costoUnitario) === 0 ? 'warning' : null">
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.codigoInterno ? 'Cód. ' + row.codigoInterno : 'Sin código' }}</span>
+              </td>
+              @if (multiWarehouse()) {
+                <td class="px-5 py-3 text-theme-sm">
+                  {{ row.almacen }}
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.establecimiento }}</span>
+                </td>
+              }
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ num(row.stock) | number: '1.0-4' }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums">
+                @if (num(row.costoUnitario) === 0) {
+                  <span class="text-warning-700 dark:text-warning-400">Sin costo</span>
+                } @else {
+                  {{ num(row.costoUnitario) | number: '1.2-4' }}
                 }
               </td>
-              <td class="px-5 py-4 text-theme-sm">
-                {{ row.almacen }}
-                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.establecimiento }}</span>
-              </td>
-              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.metodoValoracion" tone="neutral" [label]="methodLabel(row)" /></td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.stock) | number: '1.0-4' }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.costoUnitario) | number: '1.2-4' }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm font-medium tabular-nums text-gray-800 dark:text-white/90">{{ num(row.valorTotal) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-3 text-end text-theme-sm font-medium tabular-nums text-gray-800 dark:text-white/90">{{ num(row.valorTotal) | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
             </tr>
-          } @empty {
-            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
-        @if (rows().length) {
-          <tfoot class="border-t border-gray-200 dark:border-gray-800">
-            <tr>
-              <td colspan="5" class="px-5 py-3 text-end text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                <span class="inline-flex items-center gap-1.5">
-                  Valor total del inventario
-                  <app-help-hint text="Suma de todos los productos con los filtros aplicados, no solo de esta página." [iconSize]="14" />
-                </span>
-              </td>
-              <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ grandTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-            </tr>
-          </tfoot>
-        }
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />

@@ -44,30 +44,40 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador + «Filtros» plegable y resumen en chips con los niveles de stock (al pulsar, filtran). -->
 <app-list-filters
+  compact
   collapsible
   [activeCount]="activeFilterCount()"
   [searchValue]="searchTerm()"
   [selectValue]="filterField()"
   [selectOptions]="fieldFilterOptions"
   [selectShowPlaceholder]="false"
-  searchPlaceholder="Buscar"
-  selectLabel="Buscar por"
+  searchPlaceholder="Buscar producto"
+  selectLabel="Buscar en"
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Niveles de stock"
+  summaryStorageKey="inventario-movimientos"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
 >
-  <app-form-select
+  <app-form-select compact
+    compact
     label="Categoría"
+    helpText="Solo productos de esta categoría."
     placeholder="Todas las categorías"
     [value]="filterCategoryId()"
     [options]="categoryFilterOptions()"
     (valueChange)="filterCategoryId.set($event); currentPage.set(1)"
   />
   @if (warehouseOptions().length > 1) {
-    <app-form-select
+    <app-form-select compact
+      compact
       label="Almacén"
+      helpText="Sin elegir, se ven los almacenes de la sede actual."
       placeholder="Almacenes de esta sede"
       [value]="filterWarehouseId()"
       [options]="warehouseOptions()"
@@ -78,77 +88,47 @@
 
 @let listState = listQuery | queryPageState: totalRows();
 
-<app-component-card
-  title="Listado de inventario"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra y los niveles en el resumen. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay productos para mostrar"
-  emptyHint="Prueba con otros filtros."
+  [emptyTitle]="activeFilterCount() || searchTerm().trim() ? 'Sin productos con esos filtros' : 'Aún no hay stock registrado'"
+  [emptyHint]="activeFilterCount() || searchTerm().trim() ? 'Prueba con otros filtros.' : 'Usa «Registrar ingreso» para cargar el primero.'"
+  skeleton="table"
   (retry)="refetchRows()"
 >
-  <app-color-legend
-    data-card-header-end
-    ariaLabel="Leyenda de stock"
-    [items]="stockLegend"
-    helpText="El color compara el stock de esa fila con el stock mínimo del producto. Agotado: sin stock. Crítico: en el mínimo o menos. Bajo: hasta el doble del mínimo."
-  />
-  <div class="px-3 pt-3 sm:px-4" data-table-only>
-    <div class="flex justify-end">
-      <app-table-dropdown>
-        <div dropdown-button>
-          <app-button size="sm" variant="outline" endIconName="mdi:chevron-down">Columnas</app-button>
-        </div>
-        <div dropdown-content>
-          @for (col of columns; track col.key) {
-            <div class="rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-white/10"><app-checkbox [checked]="isVisible(col.key)" [label]="col.label" (checkedChange)="toggleColumn(col.key)" /></div>
-          }
-        </div>
-      </app-table-dropdown>
-    </div>
-  </div>
-
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Stock por producto y almacén</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">#</th>
-            @if (isVisible('codigoInterno')) {
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cód. Interno</th>
-            }
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
-            @if (isVisible('marca')) {
-              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Marca</th>
-            }
-            @if (isVisible('almacen')) {
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            @if (showWarehouseColumn()) {
               <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
             }
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
-          @for (row of rows(); track row.id; let i = $index) {
+          @for (row of rows(); track row.id) {
             <tr [attr.data-row-tone]="rowTone(row)">
-              <td class="px-5 py-4 text-theme-sm">{{ (currentPage() - 1) * itemsPerPage + i + 1 }}</td>
-              @if (isVisible('codigoInterno')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.codigoInterno || '—' }}</td>
-              }
-              <td data-card-wide class="px-5 py-4 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</td>
-              @if (isVisible('marca')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.marca }}</td>
-              }
-              @if (isVisible('almacen')) {
-                <td class="px-5 py-4 text-theme-sm">{{ row.almacen }}</td>
-              }
-              <td class="px-5 py-4 text-theme-sm">
-                <span class="font-semibold" [class]="stockTextClass(row)">{{ formatStock(row.stock) }}</span>
-                <span class="ms-2 text-theme-xs text-gray-500 dark:text-gray-400">{{ stockLabel(row) }}</span>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {{ row.codigoInterno ? 'Cód. ' + row.codigoInterno : 'Sin código' }}{{ row.marca && row.marca !== '—' ? ' · ' + row.marca : '' }}{{ row.manejaLotes ? ' · con lotes' : '' }}
+                </span>
               </td>
-              <td class="px-5 py-4 text-end">
+              @if (showWarehouseColumn()) {
+                <td class="px-5 py-3 text-theme-sm">{{ row.almacen }}</td>
+              }
+              <td class="px-5 py-3 text-end text-theme-sm whitespace-nowrap">
+                <span class="font-semibold tabular-nums" [class]="stockTextClass(row)">{{ formatStock(row.stock) }}</span>
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ stockLabel(row) }} · mín. {{ row.stockMinimo }}</span>
+              </td>
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex items-center gap-1.5">
                   <app-button size="sm" [iconOnly]="true" startIconName="mdi:plus" tooltip="Registrar ingreso" (btnClick)="openInboundModal(row)" />
                   <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:minus" tooltip="Registrar salida: devolución, retiro, merma o destrucción" (btnClick)="openOutboundModal(row)" />
@@ -161,7 +141,7 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination
   [totalItems]="totalRows()"
@@ -205,16 +185,16 @@
 </ng-template>
 
 <app-modal compact [isOpen]="inboundOpen()" (closed)="closeInboundModal()" className="w-full max-w-3xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Registrar ingreso de stock</h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Registrar ingreso de stock</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Suma unidades al almacén y deja el movimiento en el kardex.</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
     @if (inboundProduct(); as product) {
       <ng-container [ngTemplateOutlet]="productSummary" [ngTemplateOutletContext]="{ $implicit: product, canChange: inboundFromSearch() }" />
     } @else {
       <!-- Altura para que la lista de resultados no se recorte en el modal aún vacío. -->
-      <app-search-select
+      <app-search-select compact
         class="block min-h-80"
         label="Producto"
         [required]="true"
@@ -231,8 +211,8 @@
     }
 
     @if (inboundProduct(); as product) {
-      <app-form-section title="Qué ingresa" [cols]="2">
-        <app-input-field
+      <app-form-section compact title="Qué ingresa" [cols]="2">
+        <app-input-field compact
           label="Cantidad"
           [isRequired]="true"
           helpText="Unidades que entran, en la unidad del producto."
@@ -245,7 +225,7 @@
           (valueChange)="inboundQuantity.set(+$event || 0)"
         />
         <div class="flex items-end gap-2 sm:col-span-2">
-          <app-form-select
+          <app-form-select compact
             class="min-w-0 flex-1"
             label="Almacén"
             [required]="true"
@@ -255,16 +235,16 @@
             [disabled]="inboundPending() || warehousesQuery.isPending()"
             (valueChange)="inboundWarehouseId.set($event)"
           />
-          <app-quick-create entity="warehouse" [iconOnly]="true" (created)="inboundWarehouseId.set($event.id)" />
+          <app-quick-create compact entity="warehouse" [iconOnly]="true" (created)="inboundWarehouseId.set($event.id)" />
         </div>
       </app-form-section>
 
-      <app-form-section
+      <app-form-section compact
         title="Precios"
         description="Si cambiaron con esta compra, corrígelos aquí: se actualizan en el producto y quedan en su historial de precios."
         [cols]="2"
       >
-        <app-input-field
+        <app-input-field compact
           label="Precio de compra (S/)"
           [helpText]="canEditInboundPrices()
             ? 'Lo que te cobró el proveedor por unidad. Valoriza este ingreso y, si lo cambias, también el precio de compra del producto.'
@@ -279,7 +259,7 @@
           [value]="inboundPurchasePrice()"
           (valueChange)="inboundPurchasePrice.set($event + '')"
         />
-        <app-input-field
+        <app-input-field compact
           label="Precio de venta (S/)"
           [isRequired]="canEditInboundPrices()"
           [helpText]="canEditInboundPrices()
@@ -299,8 +279,8 @@
       </app-form-section>
 
       @if (product.manejaLotes !== false) {
-        <app-form-section title="Lote" description="Un mismo lote siempre tiene el mismo vencimiento." [cols]="2">
-          <app-suggest-input
+        <app-form-section compact title="Lote" description="Un mismo lote siempre tiene el mismo vencimiento." [cols]="2">
+          <app-suggest-input compact
             label="Código de lote"
             [required]="!!product.manejaLotes"
             helpText="Escribe uno nuevo o elige uno que ya tengas en este almacén; si ya existe, se le suma la cantidad."
@@ -314,7 +294,7 @@
             (searchChange)="inboundLotSearch.set($event)"
             (selected)="selectInboundLot($event.value)"
           />
-          <app-input-field
+          <app-input-field compact
             label="Fecha de vencimiento"
             [isRequired]="!!product.manejaLotes"
             helpText="Debe ser posterior a hoy. Si el lote ya existe, se toma la fecha con la que se registró."
@@ -327,8 +307,8 @@
         </app-form-section>
       }
 
-      <app-form-section title="Datos del registro" [cols]="2">
-        <app-form-select
+      <app-form-section compact title="Datos del registro" [cols]="2">
+        <app-form-select compact
           label="Motivo"
           [required]="true"
           helpText="Por qué entra la mercadería. Queda en el kardex: «Compra nacional» para compras e «Inventario inicial» para el stock con el que empiezas."
@@ -337,7 +317,7 @@
           [disabled]="inboundPending() || transferReasonsQuery.isPending()"
           (valueChange)="inboundTransferReasonId.set($event)"
         />
-        <app-input-field
+        <app-input-field compact
           label="Fecha de registro"
           helpText="Cuándo entró la mercadería."
           type="datetime-local"
@@ -345,7 +325,7 @@
           [value]="inboundRegisteredAt()"
           (valueChange)="inboundRegisteredAt.set($event + '')"
         />
-        <app-input-field
+        <app-input-field compact
           label="Documento de referencia"
           helpText="Por ejemplo, el número de factura o guía del proveedor."
           placeholder="F001-123"
@@ -354,7 +334,7 @@
           [value]="inboundReference()"
           (valueChange)="inboundReference.set($event + '')"
         />
-        <app-text-area
+        <app-text-area compact
           label="Comentarios"
           [maxLength]="500"
           [rows]="2"
@@ -365,11 +345,11 @@
       </app-form-section>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="inboundPending()" (btnClick)="closeInboundModal()">
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="inboundPending()" (btnClick)="closeInboundModal()">
       Cancelar
     </app-button>
-    <app-button
+    <app-button size="sm"
       variant="outline"
       startIconName="mdi:playlist-plus"
       tooltip="Guarda este ingreso y deja el formulario listo para otro producto, con el mismo almacén, motivo y documento."
@@ -378,7 +358,7 @@
     >
       Guardar y agregar otro
     </app-button>
-    <app-button startIconName="mdi:check" [disabled]="inboundPending() || !inboundProduct()" [loading]="inboundPending()" (btnClick)="processInbound()">
+    <app-button size="sm" startIconName="mdi:check" [disabled]="inboundPending() || !inboundProduct()" [loading]="inboundPending()" (btnClick)="processInbound()">
       {{ inboundPending() ? 'Guardando…' : 'Guardar ingreso' }}
     </app-button>
   </div>
@@ -387,16 +367,16 @@
 <app-withdrawal-modal [open]="withdrawalOpen()" [preset]="withdrawalPreset()" (closed)="withdrawalOpen.set(false)" />
 
 <app-modal compact [isOpen]="adjustmentOpen()" (closed)="closeAdjustmentModal()" className="w-full max-w-3xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajustar stock según conteo físico</h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Ajustar stock según conteo físico</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Si la diferencia alcanza el límite del establecimiento, el ajuste espera la aprobación de otro usuario.</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
     @if (adjustmentProduct(); as product) {
       <ng-container [ngTemplateOutlet]="productSummary" [ngTemplateOutletContext]="{ $implicit: product, canChange: false }" />
 
-      <app-form-section title="Conteo" [cols]="2">
-        <app-form-select
+      <app-form-section compact title="Conteo" [cols]="2">
+        <app-form-select compact
           class="sm:col-span-2"
           label="Almacén"
           [required]="true"
@@ -407,7 +387,7 @@
           (valueChange)="adjustmentWarehouseId.set($event)"
         />
         @if (product.manejaLotes !== false) {
-          <app-suggest-input
+          <app-suggest-input compact
             class="sm:col-span-2"
             label="Código de lote"
             [required]="!!product.manejaLotes"
@@ -423,12 +403,12 @@
             (selected)="selectAdjustmentLot($event.value)"
           />
         }
-        <app-input-field
+        <app-input-field compact
           [label]="adjustmentLotStock() !== null ? 'Stock del lote en el sistema' : 'Stock en el sistema'"
           [value]="formatStock(adjustmentSystemStock())"
           [disabled]="true"
         />
-        <app-input-field
+        <app-input-field compact
           label="Cantidad contada"
           [isRequired]="true"
           helpText="Lo que hay físicamente. El sistema calcula la diferencia."
@@ -440,7 +420,7 @@
           [value]="adjustmentCountedQty()"
           (valueChange)="adjustmentCountedQty.set(+$event || 0)"
         />
-        <app-text-area
+        <app-text-area compact
           class="sm:col-span-2"
           label="Motivo"
           [required]="true"
@@ -454,21 +434,21 @@
       </app-form-section>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="adjustmentPending()" (btnClick)="closeAdjustmentModal()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="adjustmentPending()" (btnClick)="closeAdjustmentModal()">
       Cancelar
     </app-button>
-    <app-button startIconName="mdi:content-save-outline" [disabled]="adjustmentPending()" [loading]="adjustmentPending()" (btnClick)="processAdjustment()">
+    <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="adjustmentPending()" [loading]="adjustmentPending()" (btnClick)="processAdjustment()">
       {{ adjustmentPending() ? 'Guardando…' : 'Registrar ajuste' }}
     </app-button>
   </div>
 </app-modal>
 
 <app-modal compact [isOpen]="importOpen()" (closed)="closeImportModal()" className="w-full max-w-2xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ importTitle() }}</h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">{{ importTitle() }}</h3>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
     <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
       <li>Descarga el formato y llénalo sin cambiar sus columnas.</li>
       <li>Elige el almacén, selecciona el archivo y pulsa «Procesar». Las filas con errores se listan aquí abajo.</li>
@@ -480,7 +460,7 @@
       title="Antes de importar"
       message="Sirve para crear lotes o series nuevos, y el producto queda con control de lotes. El stock de ese almacén pasa a ser la suma de sus lotes y series, y esta carga no deja movimiento en el kardex. Para sumar unidades a un producto, usa «Registrar ingreso»."
     />
-    <app-form-select
+    <app-form-select compact
       class="mt-4 block"
       label="Almacén"
       [required]="true"
@@ -505,21 +485,21 @@
       </app-alert>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button startIconName="mdi:close" variant="outline" [disabled]="importPending()" (btnClick)="closeImportModal()">
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" [disabled]="importPending()" (btnClick)="closeImportModal()">
       Cerrar
     </app-button>
-    <app-button startIconName="mdi:play-circle-outline" [disabled]="importPending() || !importFile()" [loading]="importPending()" (btnClick)="processImport()">
+    <app-button size="sm" startIconName="mdi:play-circle-outline" [disabled]="importPending() || !importFile()" [loading]="importPending()" (btnClick)="processImport()">
       {{ importPending() ? 'Procesando…' : 'Procesar' }}
     </app-button>
   </div>
 </app-modal>
 
 <app-modal compact [isOpen]="pendingOpen()" (closed)="closePendingAdjustmentsModal()" className="w-full max-w-5xl shadow-theme-lg">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Ajustes pendientes de aprobación</h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Ajustes pendientes de aprobación</h3>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
     @if (pendingAdjustmentsQuery.isPending()) {
       <p class="text-theme-sm text-gray-500 dark:text-gray-400">Cargando…</p>
     } @else if (pendingRows().length === 0) {
@@ -556,7 +536,7 @@
       </div>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button startIconName="mdi:close" variant="outline" (btnClick)="closePendingAdjustmentsModal()">Cerrar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" startIconName="mdi:close" variant="outline" (btnClick)="closePendingAdjustmentsModal()">Cerrar</app-button>
   </div>
 </app-modal>

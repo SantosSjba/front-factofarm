@@ -15,7 +15,9 @@
   </ol>
 </app-help-panel>
 
+<!-- Buscador + «Filtros» plegable y resumen en chips por vencimiento (al pulsar, filtran). -->
 <app-list-filters
+  compact
   collapsible
   [activeCount]="activeFilterCount()"
   [searchValue]="searchTerm()"
@@ -23,47 +25,46 @@
   [selectOptions]="fieldFilterOptions"
   [selectShowPlaceholder]="false"
   searchPlaceholder="Buscar lote o producto"
-  selectLabel="Buscar por"
+  selectLabel="Buscar en"
   clearLabel="Limpiar"
+  [summaryChips]="summaryChips()"
+  summaryLabel="Vencimientos"
+  summaryStorageKey="lotes"
+  (summaryChipClick)="onSummaryChip($event)"
   (searchValueChange)="onSearchChange($event)"
   (selectValueChange)="onFieldChange($event)"
   (clear)="clearFilters()"
 >
-  <app-form-select label="Almacén" [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseFilterOptions()" (valueChange)="setWarehouse($event)" />
-  <app-form-select label="Vencimiento" [showPlaceholder]="false" [value]="expiryFilter()" [options]="expiryOptions" (valueChange)="setExpiry($event)" />
+  @if (warehouseOptions().length > 1) {
+    <app-form-select compact label="Almacén" helpText="Sin elegir, se ven los almacenes de la sede actual." [showPlaceholder]="false" [value]="warehouseId()" [options]="warehouseFilterOptions()" (valueChange)="setWarehouse($event)" />
+  }
+  <app-form-select compact label="Vencimiento" helpText="También puedes pulsar los chips del resumen." [showPlaceholder]="false" [value]="expiryFilter()" [options]="expiryOptions" (valueChange)="setExpiry($event)" />
 </app-list-filters>
 
 @let listState = lotsQuery | queryPageState: totalRows();
 
-<app-component-card
-  title="Stock por lote"
-  [desc]="totalRows() ? totalRows() + ' lotes con stock' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título está en la barra y los vencimientos en el resumen. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   [emptyTitle]="searchTerm().trim() || activeFilterCount() ? 'Sin lotes con esos filtros' : 'Aún no hay lotes'"
   [emptyHint]="searchTerm().trim() || activeFilterCount() ? 'Prueba con otro texto o limpia los filtros.' : 'Los lotes se crean al recibir mercadería de productos que manejan lotes.'"
+  skeleton="table"
   (retry)="lotsQuery.refetch()"
 >
-  <app-color-legend
-    data-card-header-end
-    ariaLabel="Leyenda de vencimientos"
-    [items]="legend"
-    helpText="El color se basa en la fecha de vencimiento del lote frente a hoy."
-  />
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Stock por lote con su vencimiento</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Lote y vencimiento</th>
+            @if (warehouseOptions().length > 1) {
+              <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Almacén</th>
+            }
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Stock</th>
-            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Costo unit.</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vencimiento</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
         </thead>
@@ -71,22 +72,30 @@
           @for (row of rows(); track row.id) {
             @let state = expiryState(row.fechaVencimiento);
             <tr [attr.data-row-tone]="state.row">
-              <td class="px-5 py-4 text-theme-sm">
-                <span class="font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
-                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.codigoInterno ? 'Cód. ' + row.codigoInterno + ' · ' : '' }}{{ row.categoria }}</span>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.producto }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ productMeta(row.codigoInterno, row.categoria) }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm font-medium">{{ row.codigoLote }}</td>
-              <td class="px-5 py-4 text-theme-sm">
-                {{ row.almacen }}
-                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.establecimiento }}</span>
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.codigoLote }}</span>
+                <span class="mt-0.5 flex items-center gap-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                  {{ formatDate(row.fechaVencimiento) }}
+                  <app-status-badge [status]="state.label" [tone]="state.tone" [label]="state.label" />
+                </span>
               </td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ num(row.stock) | number: '1.0-4' }}</td>
-              <td class="px-5 py-4 text-end text-theme-sm tabular-nums">{{ row.costoUnitario != null ? (num(row.costoUnitario) | number: '1.2-4') : '—' }}</td>
-              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
-                {{ formatDate(row.fechaVencimiento) }}
-                <span class="mt-1 block"><app-status-badge [status]="state.label" [tone]="state.tone" [label]="state.label" /></span>
+              @if (warehouseOptions().length > 1) {
+                <td class="px-5 py-3 text-theme-sm">
+                  {{ row.almacen }}
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.establecimiento }}</span>
+                </td>
+              }
+              <td class="px-5 py-3 text-end text-theme-sm tabular-nums whitespace-nowrap">
+                <span class="font-semibold text-gray-800 dark:text-white/90">{{ num(row.stock) | number: '1.0-4' }}</span>
+                @if (row.costoUnitario != null) {
+                  <span class="block text-theme-xs text-gray-500 dark:text-gray-400">S/ {{ num(row.costoUnitario) | number: '1.2-4' }} c/u</span>
+                }
               </td>
-              <td class="px-5 py-4 text-end">
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
@@ -102,25 +111,23 @@
                 </div>
               </td>
             </tr>
-          } @empty {
-            <tr><td colspan="99" class="px-5 py-4 text-center text-theme-sm text-gray-500">Sin coincidencias para los filtros aplicados.</td></tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />
 
 <!-- ========== CORREGIR VENCIMIENTO ========== -->
 <app-modal compact [isOpen]="!!expiryTarget()" (closed)="!expiryMutation.isPending() && expiryTarget.set(null)" className="w-full max-w-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Corregir vencimiento</h3>
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Corregir vencimiento</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ expiryTarget()?.producto }} · Lote {{ expiryTarget()?.codigoLote }}</p>
   </div>
-  <div data-modal-body class="space-y-4 px-4 py-5 sm:px-6">
-    <app-input-field
+  <div data-modal-body class="space-y-4 px-4 py-4 sm:px-6">
+    <app-input-field compact
       label="Fecha de vencimiento"
       [isRequired]="true"
       helpText="Un lote del fabricante tiene una sola fecha: la que figura en el empaque."
@@ -131,29 +138,29 @@
       (valueChange)="expiryDraft.set($event + ''); expiryError.set('')"
     />
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="expiryMutation.isPending()" (btnClick)="expiryTarget.set(null)">Cancelar</app-button>
-    <app-button startIconName="mdi:content-save-outline" [loading]="expiryMutation.isPending()" [disabled]="expiryMutation.isPending()" (btnClick)="saveExpiry()">Guardar fecha</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="expiryMutation.isPending()" (btnClick)="expiryTarget.set(null)">Cancelar</app-button>
+    <app-button size="sm" startIconName="mdi:content-save-outline" [loading]="expiryMutation.isPending()" [disabled]="expiryMutation.isPending()" (btnClick)="saveExpiry()">Guardar fecha</app-button>
   </div>
 </app-modal>
 
 <!-- ========== SIMULAR SALIDA ========== -->
 <app-modal compact [isOpen]="simOpen()" (closed)="simOpen.set(false)" className="w-full max-w-2xl" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Simular salida</h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Simular salida</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Mira de qué lotes saldría una venta. No mueve stock.</p>
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
-    <div class="grid gap-4 sm:grid-cols-2">
+  <div data-modal-body class="min-h-0 space-y-4 px-4 py-4 sm:px-6">
+    <div class="grid gap-3 sm:grid-cols-2">
       <div class="sm:col-span-2">
         @if (simProduct(); as p) {
-          <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-400">Producto</p>
-          <div class="flex min-h-11 items-center justify-between gap-3 rounded-[10px] border border-gray-200 px-4 py-2 dark:border-gray-800">
-            <span class="truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ p.nombre }}</span>
-            <app-button size="sm" variant="outline" startIconName="mdi:swap-horizontal" (btnClick)="changeSimProduct()">Cambiar</app-button>
+          <app-label compact>Producto</app-label>
+          <div class="mt-1 flex h-9 items-center justify-between gap-2 rounded-lg border border-gray-200 ps-3 pe-1 dark:border-gray-800">
+            <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ p.nombre }}</span>
+            <app-button size="sm" variant="ghost" [iconOnly]="true" startIconName="mdi:swap-horizontal" tooltip="Cambiar de producto" (btnClick)="changeSimProduct()" />
           </div>
         } @else {
-          <app-search-select
+          <app-search-select compact
             label="Producto"
             [required]="true"
             helpText="Solo aparecen productos que manejan lotes."
@@ -167,8 +174,8 @@
           />
         }
       </div>
-      <app-form-select label="Almacén" [required]="true" placeholder="Seleccionar" [value]="simWarehouseId()" [options]="warehouseOptions()" (valueChange)="simWarehouseId.set($event)" />
-      <app-input-field label="Cantidad a vender" [isRequired]="true" type="number" min="1" step="1" [value]="simQuantity()" (valueChange)="simQuantity.set(+$event || 0)" />
+      <app-form-select compact label="Almacén" [required]="true" placeholder="Seleccionar" [value]="simWarehouseId()" [options]="warehouseOptions()" (valueChange)="simWarehouseId.set($event)" />
+      <app-input-field compact label="Cantidad a vender" [isRequired]="true" type="number" min="1" step="1" [value]="simQuantity()" (valueChange)="simQuantity.set(+$event || 0)" />
     </div>
 
     @if (simProduct() && simWarehouseId() && simQuantity() > 0) {
@@ -184,34 +191,35 @@
             <app-status-badge status="FALTA" tone="error" [label]="'Solo alcanza para ' + simAssigned()" />
           }
         </div>
-        <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-          <table class="w-full min-w-[420px] text-sm text-gray-700 dark:text-gray-300">
-            <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
-              <tr>
-                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Orden</th>
-                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
-                <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Vencimiento</th>
-                <th class="px-4 py-2 text-end text-xs font-medium text-gray-500 dark:text-gray-400">Saldría</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (line of sim.asignacion; track line.lotId; let i = $index) {
-                <tr class="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
-                  <td class="px-4 py-2 tabular-nums">{{ i + 1 }}.º</td>
-                  <td class="px-4 py-2 font-medium text-gray-800 dark:text-white/90">{{ line.codigoLote }}</td>
-                  <td class="px-4 py-2" [class.text-error-600]="line.vencido">{{ formatDate(line.fechaVencimiento) }}{{ line.vencido ? ' · vencido' : '' }}</td>
-                  <td class="px-4 py-2 text-end font-semibold tabular-nums">{{ num(line.cantidad) | number: '1.0-4' }}</td>
+        <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="max-w-full overflow-x-auto">
+            <table data-table-cards="off" class="min-w-full text-start text-gray-700 dark:text-gray-300">
+              <caption class="sr-only">Lotes de los que saldría la venta</caption>
+              <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+                <tr>
+                  <th class="px-4 py-2.5 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
+                  <th class="px-4 py-2.5 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Vence</th>
+                  <th class="px-4 py-2.5 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Saldría</th>
                 </tr>
-              } @empty {
-                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay lotes con stock para esta venta.</td></tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                @for (line of sim.asignacion; track line.lotId; let i = $index) {
+                  <tr [attr.data-row-tone]="line.vencido ? 'error' : null">
+                    <td class="px-4 py-2.5 text-theme-sm"><span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ i + 1 }}.º</span> <span class="font-medium text-gray-800 dark:text-white/90">{{ line.codigoLote }}</span></td>
+                    <td class="px-4 py-2.5 text-theme-sm whitespace-nowrap" [class.text-error-600]="line.vencido">{{ formatDate(line.fechaVencimiento) }}{{ line.vencido ? ' · vencido' : '' }}</td>
+                    <td class="px-4 py-2.5 text-end text-theme-sm font-semibold tabular-nums">{{ num(line.cantidad) | number: '1.0-4' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="px-4 py-6 text-center text-theme-sm text-gray-500 dark:text-gray-400">No hay lotes con stock para esta venta.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
       }
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
-    <app-button variant="outline" (btnClick)="simOpen.set(false)">Cerrar</app-button>
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" (btnClick)="simOpen.set(false)">Cerrar</app-button>
   </div>
 </app-modal>

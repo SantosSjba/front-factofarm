@@ -7,6 +7,8 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { SummaryChipsComponent, type SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -44,6 +46,8 @@ const COUNT_STATUS: Record<string, { label: string; tone: StatusTone }> = {
     BreadcrumbInlineComponent,
     ButtonComponent,
     ComponentCardComponent,
+    PageStateComponent,
+    SummaryChipsComponent,
     FormSelectComponent,
     HasPermissionDirective,
     HelpHintComponent,
@@ -93,6 +97,20 @@ export class ReporteInventarioComponent {
   }));
   protected readonly count = computed(() => this.countQuery.data());
   protected readonly isEditable = computed(() => this.count()?.estado === 'EN_PROCESO');
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const s = this.summary();
+    return [
+      { id: 'iguales', label: 'Coinciden', count: s.iguales, tone: 'success', clickable: false },
+      { id: 'sobrantes', label: 'Con sobrante', count: s.sobrantes, tone: 'info', clickable: false, tooltip: 'Hay más de lo que dice el sistema.' },
+      { id: 'faltantes', label: 'Con faltante', count: s.faltantes, tone: 'error', clickable: false, tooltip: 'Hay menos de lo que dice el sistema.' },
+    ];
+  });
+
+  /** Código y lote en una línea, debajo del nombre del producto. */
+  protected itemMeta(codigo: string | null | undefined, lote: string | null | undefined): string {
+    return [codigo ? 'Cód. ' + codigo : '', lote ? 'Lote ' + lote : ''].filter(Boolean).join(' · ') || 'Sin lote';
+  }
+
   protected readonly summary = computed(() => {
     let sobrantes = 0;
     let faltantes = 0;

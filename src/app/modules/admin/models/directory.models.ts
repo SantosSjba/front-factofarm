@@ -1820,12 +1820,16 @@ export interface InventoryMovementListItemDto {
   manejaLotes: boolean;
 }
 
+export type InventoryStockLevel = 'agotado' | 'critico' | 'bajo' | 'normal';
+
 export interface InventoryMovementListResponseDto {
   items: InventoryMovementListItemDto[];
   total: number;
   page: number;
   pageSize: number;
   totalPages: number;
+  /** Filas por nivel de stock con los demás filtros (sin el de nivel). */
+  levels?: Record<InventoryStockLevel, number> & { total: number };
 }
 
 export interface InventoryMovementListFiltersRequest {
@@ -1833,6 +1837,7 @@ export interface InventoryMovementListFiltersRequest {
   field?: 'all' | 'producto' | 'marca' | 'almacen';
   warehouseId?: string;
   categoryId?: string;
+  stockLevel?: InventoryStockLevel;
   page?: number;
   pageSize?: number;
 }
@@ -1928,7 +1933,10 @@ export interface InventoryLotListItemDto {
   stockMinimo: number;
 }
 
-export type InventoryLotListResponseDto = PaginatedResponseDto<InventoryLotListItemDto>;
+export type InventoryLotListResponseDto = PaginatedResponseDto<InventoryLotListItemDto> & {
+  /** Lotes por vencimiento con los demás filtros (sin el de vencimiento). */
+  counts?: { total: number; vencidos: number; d30: number; d90: number };
+};
 
 export interface InventoryLotListFiltersRequest {
   search?: string;
@@ -2069,9 +2077,15 @@ export interface InventoryValuationReportResponseDto extends PaginatedResponseDt
   unidadesTotal?: string;
   /** Filas sin costo registrado (se valorizan en 0). */
   sinCosto?: number;
+  /** Filas con stock de todo el filtro (sin recortar por «sin costo»). */
+  filas?: number;
+  /** Métodos de valoración presentes (uno por establecimiento). */
+  metodos?: ('PEPS' | 'PROMEDIO_PONDERADO')[];
 }
 
 export interface InventoryValuationFiltersRequest {
+  search?: string;
+  sinCosto?: boolean;
   warehouseId?: string;
   establishmentId?: string;
   page?: number;
