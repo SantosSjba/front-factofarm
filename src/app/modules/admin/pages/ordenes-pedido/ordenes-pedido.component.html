@@ -1,249 +1,258 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
-    Órdenes de pedido (delivery)
-  </h1>
-  <app-button startIconName="mdi:plus" variant="primary" (btnClick)="createOpen.set(true)">Nuevo pedido</app-button>
+
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Órdenes de pedido (delivery)</h1>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nuevo pedido</app-button>
+  </div>
 </app-page-toolbar>
 
-<div class="mb-4 rounded-xl border border-blue-light-200 bg-blue-light-50/80 p-4 text-sm text-gray-700 dark:border-blue-light-500/30 dark:bg-blue-light-500/10 dark:text-gray-200">
-  <p class="font-medium text-blue-light-700 dark:text-blue-light-300">Notificaciones WhatsApp</p>
-  <p class="mt-1">
-    Al cambiar el estado del pedido se genera un enlace <code class="text-brand-600">wa.me</code> con el mensaje precargado.
-    El envío es <strong>manual</strong> (abrir enlace y enviar desde WhatsApp); no hay integración con API Business de Meta.
-  </p>
-  <p class="mt-2 text-theme-xs text-gray-600 dark:text-gray-400">
-    Detalle: <code>docs/DELIVERY-WHATSAPP.md</code>
-  </p>
-</div>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="ordenes-pedido">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Registra los pedidos para entregar a domicilio: cliente, dirección y productos del almacén que despacha.</li>
+    <li>Ábrelo para avanzar su estado (Recibido → Preparando → En camino → Entregado), asignar repartidor o cancelarlo. «Cobrar y entregar» registra la venta en efectivo y descuenta el stock.</li>
+    <li>Al cambiar el estado se prepara un mensaje de WhatsApp para el cliente: pulsa «Avisar por WhatsApp» y envíalo desde tu WhatsApp. El envío es manual.</li>
+  </ol>
+</app-help-panel>
 
+<!-- Buscador + estado en una fila compacta. -->
+<app-list-filters
+  compact
+  [searchValue]="search()"
+  [selectValue]="estadoFilter()"
+  [selectOptions]="estadoOptions"
+  [selectShowPlaceholder]="false"
+  searchPlaceholder="Buscar número, cliente o teléfono"
+  selectLabel="Estado"
+  clearLabel="Limpiar"
+  (searchValueChange)="search.set($event); page.set(1)"
+  (selectValueChange)="estadoFilter.set($event); page.set(1)"
+  (clear)="search.set(''); estadoFilter.set(''); page.set(1)"
+/>
+
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra. -->
 <app-page-state
   [loading]="listQuery.isPending()"
   [error]="listError()"
-  [showRetry]="true"
+  [empty]="listQuery.isSuccess() && !(listQuery.data()?.items?.length)"
+  [emptyTitle]="search().trim() || estadoFilter() ? 'Sin pedidos con esos filtros' : 'Aún no hay pedidos delivery'"
+  [emptyHint]="search().trim() || estadoFilter() ? 'Prueba con otra búsqueda o estado.' : 'Usa «Nuevo pedido» para registrar el primero.'"
+  skeleton="table"
   (retry)="listQuery.refetch()"
 >
-  <app-component-card className="mt-4">
-    <div class="mb-4 flex flex-wrap gap-3">
-      <app-form-select
-        [options]="estadoOptions"
-        [value]="estadoFilter()"
-        (valueChange)="estadoFilter.set($event); page.set(1)"
-      />
-      <app-input-field
-        placeholder="Buscar número, cliente o teléfono"
-        [value]="search()"
-        (valueChange)="search.set('' + $event)"
-      />
-      <app-button startIconName="mdi:magnify" variant="outline" (btnClick)="page.set(1); listQuery.refetch()">Buscar</app-button>
-    </div>
-
-    @if (listQuery.data(); as list) {
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <caption class="sr-only">Listado de pedidos delivery con cliente, estado, total y repartidor</caption>
-          <thead>
-            <tr class="border-b border-gray-200 text-left text-gray-500 dark:border-gray-700">
-              <th class="py-2 pr-4">Número</th>
-              <th class="py-2 pr-4">Cliente</th>
-              <th class="py-2 pr-4">Estado</th>
-              <th class="py-2 pr-4">Total</th>
-              <th class="py-2 pr-4">Repartidor</th>
-              <th class="py-2">Creado</th>
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Pedidos delivery con cliente, estado, repartidor y total</caption>
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pedido</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total</th>
+            <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of listQuery.data()?.items ?? []; track row.id) {
+            <tr [attr.data-row-tone]="row.estado === 'CANCELADO' ? 'muted' : null">
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.numero }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}</span>
+              </td>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block text-gray-800 dark:text-white/90">{{ row.clienteNombre }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.clienteTelefono }}</span>
+              </td>
+              <td class="px-5 py-3 text-theme-sm">
+                <app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabels[row.estado]" />
+                <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.assignedTo ? 'Repartidor: ' + row.assignedTo.nombre : 'Sin repartidor' }}</span>
+              </td>
+              <td class="px-5 py-3 text-end text-theme-sm font-medium tabular-nums">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+              <td class="px-5 py-3 text-end">
+                <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:eye-outline" [tooltip]="'Ver y gestionar el pedido ' + row.numero" (btnClick)="openDetail(row.id)" />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @for (row of list.items; track row.id) {
-              <tr
-                class="border-b border-gray-100 cursor-pointer hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-900/40"
-                (click)="openDetail(row.id)"
-              >
-                <td class="py-2 pr-4 font-medium">{{ row.numero }}</td>
-                <td class="py-2 pr-4">
-                  {{ row.clienteNombre }}
-                  <span class="text-gray-500">{{ row.clienteTelefono }}</span>
-                </td>
-                <td class="py-2 pr-4">
-                  <app-status-badge [status]="row.estado" [label]="statusLabels[row.estado]" />
-                </td>
-                <td class="py-2 pr-4">{{ row.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
-                <td class="py-2 pr-4">{{ row.assignedTo?.nombre ?? '—' }}</td>
-                <td class="py-2">{{ row.createdAt | appDate: 'short' }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="6" class="py-6 text-center text-gray-500">Sin pedidos delivery</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      <app-pagination
-        class="mt-4"
-        [totalItems]="list.total"
-        [currentPage]="page()"
-        [pageSize]="15"
-        (currentPageChange)="page.set($event)"
-      />
-    }
-  </app-component-card>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
 </app-page-state>
 
+<app-pagination [totalItems]="listQuery.data()?.total ?? 0" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+
+<!-- ========== DETALLE ========== -->
 @if (detailId()) {
-  <app-modal compact [isOpen]="true" (closed)="closeDetail()" [title]="detail() ? 'Pedido ' + detail()!.numero : 'Detalle pedido'" className="w-full max-w-2xl">
-    @if (detailQuery.isPending()) {
-      <p class="text-sm text-gray-500">Cargando…</p>
-    } @else if (detail(); as order) {
-    <div class="space-y-4 text-sm">
-      <div class="flex flex-wrap gap-2">
-        <app-status-badge [status]="order.estado" [label]="statusLabels[order.estado]" />
-        <span class="text-gray-500">{{ order.canal }}</span>
-      </div>
-      <p><strong>Cliente:</strong> {{ order.clienteNombre }} · {{ order.clienteTelefono }}</p>
-      <p><strong>Dirección:</strong> {{ order.direccionEntrega }}</p>
-      @if (order.referenciaDireccion) {
-        <p class="text-gray-600 dark:text-gray-400">Ref: {{ order.referenciaDireccion }}</p>
-      }
-      <ul class="divide-y divide-gray-100 dark:divide-gray-800">
-        @for (item of order.items; track item.id) {
-          <li class="flex justify-between py-2">
-            <span>{{ item.cantidad }} × {{ item.producto }}</span>
-            <span>{{ item.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-          </li>
-        }
-      </ul>
-      <p class="text-lg font-semibold">
-        Total: {{ order.total | currency: 'PEN' : 'symbol' : '1.2-2' }}
-      </p>
-
-      @if (!order.saleId && order.estado !== 'CANCELADO' && order.estado !== 'ENTREGADO') {
-        <div class="flex flex-wrap gap-2">
-          @if (nextStatus(); as next) {
-            <app-button variant="primary" endIconName="mdi:arrow-right" (btnClick)="advanceStatus(order)">
-              {{ statusLabels[next] }}
-            </app-button>
-          }
-          <app-button startIconName="mdi:cash-check" variant="outline" (btnClick)="completeSale(order)">Cobrar y entregar</app-button>
+  <app-modal compact [isOpen]="true" (closed)="closeDetail()" className="w-full max-w-2xl shadow-theme-lg" bodyClass="custom-scrollbar">
+    <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+      @if (detail(); as order) {
+        <div class="flex flex-wrap items-center gap-2 pe-12">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Pedido {{ order.numero }}</h3>
+          <app-status-badge [status]="order.estado" [tone]="statusTone(order.estado)" [label]="statusLabels[order.estado]" />
         </div>
-        <div class="ff-form-row">
-          <app-form-select
-            [options]="userOptions()"
-            [value]="assignUserId()"
-            (valueChange)="assignUserId.set($event)"
-          />
-          <app-button startIconName="mdi:moped-outline" variant="outline" (btnClick)="assignOrder(order)">Asignar repartidor</app-button>
-        </div>
-      }
-
-      @if (order.estado !== 'CANCELADO' && order.estado !== 'ENTREGADO') {
-        <div>
-          <app-label required>Motivo cancelación</app-label>
-          <app-input-field [maxLength]="500" [value]="cancelReason()" (valueChange)="cancelReason.set('' + $event)" />
-          <app-button startIconName="mdi:cancel" variant="outline" className="mt-2" (btnClick)="cancelOrder(order)">
-            Cancelar pedido
-          </app-button>
-        </div>
-      }
-
-      @if (order.sale) {
-        <p class="text-emerald-700 dark:text-emerald-400">Venta: {{ order.sale.serie }}-{{ order.sale.numero }}</p>
-      }
-
-      @if (order.notifications.length) {
-        <div>
-          <h4 class="mb-2 font-semibold">Notificaciones</h4>
-          @for (n of order.notifications; track n.id) {
-            <div class="text-xs text-gray-600 dark:text-gray-400">{{ n.channel }} · {{ n.templateKey }} · {{ n.destino }}</div>
-          }
-        </div>
+        <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">{{ order.clienteNombre }} · {{ order.clienteTelefono }} · {{ order.canal }}</p>
+      } @else {
+        <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Pedido</h3>
       }
     </div>
-    }
+    <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+      @if (detailQuery.isPending()) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">Cargando…</p>
+      } @else if (detail(); as order) {
+        @if (whatsappLink()) {
+          <app-alert variant="success" title="Mensaje listo para el cliente" message="Ábrelo y envíalo desde tu WhatsApp.">
+            <a class="mt-2 inline-block" [href]="whatsappLink()" target="_blank" rel="noopener">
+              <app-button size="sm" startIconName="mdi:whatsapp">Avisar por WhatsApp</app-button>
+            </a>
+          </app-alert>
+        }
+
+        <section>
+          <app-section-heading compact title="Entrega" icon="mdi:map-marker-outline" />
+          <p class="text-sm text-gray-800 dark:text-white/90">{{ order.direccionEntrega }}</p>
+          @if (order.referenciaDireccion) {
+            <p class="text-theme-xs text-gray-500 dark:text-gray-400">Ref.: {{ order.referenciaDireccion }}</p>
+          }
+        </section>
+
+        <section>
+          <app-section-heading compact title="Productos" icon="mdi:package-variant-closed" />
+          <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+            <table data-table-cards="off" class="min-w-full text-start text-gray-700 dark:text-gray-300">
+              <caption class="sr-only">Productos del pedido</caption>
+              <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                @for (item of order.items; track item.id) {
+                  <tr>
+                    <td class="px-4 py-2.5 text-theme-sm"><span class="text-gray-500 dark:text-gray-400">{{ item.cantidad }} ×</span> {{ item.producto }}</td>
+                    <td class="px-4 py-2.5 text-end text-theme-sm tabular-nums whitespace-nowrap">{{ item.totalLinea | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="border-t border-gray-200 dark:border-gray-800">
+                <tr>
+                  <td class="px-4 py-2.5 text-end text-theme-sm font-medium text-gray-800 dark:text-white/90">Total</td>
+                  <td class="px-4 py-2.5 text-end text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">{{ order.total | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+
+        @if (order.sale) {
+          <p class="text-sm text-success-700 dark:text-success-400">Venta registrada: {{ order.sale.serie }}-{{ order.sale.numero }}</p>
+        }
+
+        @if (!order.saleId && order.estado !== 'CANCELADO' && order.estado !== 'ENTREGADO') {
+          <app-form-section compact title="Gestionar" [cols]="2">
+            <div class="flex flex-wrap gap-2 sm:col-span-2">
+              @if (nextStatus(); as next) {
+                <app-button size="sm" endIconName="mdi:arrow-right" (btnClick)="advanceStatus(order)">Pasar a «{{ statusLabels[next] }}»</app-button>
+              }
+              <app-button size="sm" variant="outline" startIconName="mdi:cash-check" tooltip="Registra la venta en efectivo por el total, descuenta el stock y marca el pedido como entregado." (btnClick)="completeSale(order)">Cobrar y entregar</app-button>
+            </div>
+            <div class="flex items-end gap-2 sm:col-span-2">
+              <app-form-select compact class="min-w-0 flex-1" label="Repartidor" helpText="Quién lleva el pedido." [options]="userOptions()" [value]="assignUserId()" [showPlaceholder]="false" (valueChange)="assignUserId.set($event)" />
+              <app-button size="sm" variant="outline" startIconName="mdi:moped-outline" (btnClick)="assignOrder(order)">Asignar</app-button>
+            </div>
+          </app-form-section>
+        }
+
+        @if (order.estado !== 'CANCELADO' && order.estado !== 'ENTREGADO') {
+          <app-form-section compact title="Cancelar pedido" description="El pedido queda cancelado y no se puede reactivar." [cols]="1">
+            <app-text-area compact label="Motivo" [required]="true" [rows]="2" [maxLength]="500" placeholder="Ej.: el cliente ya no lo necesita" [value]="cancelReason()" (valueChange)="cancelReason.set($event)" />
+            <div class="flex justify-end">
+              <app-button size="sm" variant="danger" startIconName="mdi:cancel" (btnClick)="cancelOrder(order)">Cancelar pedido</app-button>
+            </div>
+          </app-form-section>
+        }
+
+        @if (order.notifications.length) {
+          <section>
+            <app-section-heading compact title="Avisos generados" icon="mdi:message-text-outline" />
+            <ul class="space-y-1 text-theme-xs text-gray-600 dark:text-gray-400">
+              @for (n of order.notifications; track n.id) {
+                <li>{{ n.channel }} · {{ n.templateKey }} · {{ n.destino }}</li>
+              }
+            </ul>
+          </section>
+        }
+      }
+    </div>
+    <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+      <app-button size="sm" variant="outline" (btnClick)="closeDetail()">Cerrar</app-button>
+    </div>
   </app-modal>
 }
 
-<app-modal compact title="Nuevo pedido delivery" [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
-  <div class="grid gap-3 sm:grid-cols-2">
-    <div class="sm:col-span-2">
-      <app-label required>Almacén</app-label>
-      <div class="flex items-center gap-2">
-        <app-form-select className="flex-1"
-          [options]="warehouseOptions()"
-          [value]="warehouseId()"
-          (valueChange)="warehouseId.set($event)"
-        />
-        <app-quick-create entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
+<!-- ========== NUEVO PEDIDO ========== -->
+<app-modal compact [isOpen]="createOpen()" (closed)="!createMutation.isPending() && createOpen.set(false)" className="w-full max-w-2xl shadow-theme-lg" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo pedido delivery</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">El stock se descuenta recién al cobrar y entregar.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+    <app-form-section compact title="Cliente" [cols]="2">
+      <app-input-field compact label="Nombre" [isRequired]="true" [maxLength]="200" [value]="clienteNombre()" (valueChange)="clienteNombre.set('' + $event)" />
+      <app-input-field compact label="Teléfono" [isRequired]="true" helpText="Se usa para el aviso por WhatsApp." inputMode="tel" [maxLength]="30" [value]="clienteTelefono()" (valueChange)="clienteTelefono.set('' + $event)" />
+      <app-input-field compact class="sm:col-span-2" label="Correo" type="email" [maxLength]="120" [value]="clienteEmail()" (valueChange)="clienteEmail.set('' + $event)" />
+    </app-form-section>
+
+    <app-form-section compact title="Entrega" [cols]="2">
+      <app-input-field compact class="sm:col-span-2" label="Dirección" [isRequired]="true" [maxLength]="500" [value]="direccionEntrega()" (valueChange)="direccionEntrega.set('' + $event)" />
+      <app-input-field compact label="Distrito" [maxLength]="120" [value]="distritoEntrega()" (valueChange)="distritoEntrega.set('' + $event)" />
+      <app-input-field compact label="Referencia" placeholder="Ej.: frente al parque" [maxLength]="200" [value]="referenciaDireccion()" (valueChange)="referenciaDireccion.set('' + $event)" />
+      <app-input-field compact label="Costo de delivery (S/)" helpText="Se suma al total del pedido." type="number" min="0" step="any" [value]="costoDelivery()" (valueChange)="costoDelivery.set(+$event || 0)" />
+    </app-form-section>
+
+    <app-form-section compact title="Productos" [cols]="2">
+      <div class="flex items-end gap-2 sm:col-span-2">
+        <app-form-select compact class="min-w-0 flex-1" label="Almacén que despacha" [required]="true" placeholder="Seleccionar" [options]="warehouseOptions()" [value]="warehouseId()" (valueChange)="warehouseId.set($event)" />
+        <app-quick-create compact entity="warehouse" [iconOnly]="true" (created)="warehouseId.set($event.id)" />
       </div>
-    </div>
-    <div>
-      <app-label required>Nombre cliente</app-label>
-      <app-input-field [maxLength]="200" [value]="clienteNombre()" (valueChange)="clienteNombre.set('' + $event)" />
-    </div>
-    <div>
-      <app-label required>Teléfono</app-label>
-      <app-input-field [maxLength]="30" inputMode="tel" [value]="clienteTelefono()" (valueChange)="clienteTelefono.set('' + $event)" />
-    </div>
-    <div>
-      <app-label>Email</app-label>
-      <app-input-field type="email" [maxLength]="120" [value]="clienteEmail()" (valueChange)="clienteEmail.set('' + $event)" />
-    </div>
-    <div>
-      <app-label>Costo delivery (S/)</app-label>
-      <app-input-field min="0" type="number" [value]="costoDelivery()" (valueChange)="costoDelivery.set(+$event)" />
-    </div>
-    <div class="sm:col-span-2">
-      <app-label required>Dirección de entrega</app-label>
-      <app-input-field [maxLength]="500" [value]="direccionEntrega()" (valueChange)="direccionEntrega.set('' + $event)" />
-    </div>
-    <div>
-      <app-label>Distrito</app-label>
-      <app-input-field [maxLength]="120" [value]="distritoEntrega()" (valueChange)="distritoEntrega.set('' + $event)" />
-    </div>
-    <div>
-      <app-label>Referencia</app-label>
-      <app-input-field [maxLength]="200" [value]="referenciaDireccion()" (valueChange)="referenciaDireccion.set('' + $event)" />
-    </div>
-    <div class="sm:col-span-2 flex gap-2">
-      <app-input-field
-        class="flex-1"
-        placeholder="Filtrar producto"
-        [value]="productSearch()"
-        (valueChange)="productSearch.set('' + $event)"
+      <app-search-select
+        compact
+        class="sm:col-span-2"
+        label="Agregar producto"
+        [helpText]="warehouseId() ? 'Solo aparecen productos con stock en ese almacén.' : 'Primero elige el almacén.'"
+        placeholder="Escribe para buscar"
+        [emptyText]="warehouseId() ? 'No hay productos con stock que coincidan.' : 'Elige un almacén primero.'"
+        [disabled]="!warehouseId()"
+        [resetToken]="pickerReset()"
+        [options]="catalogOptions()"
+        (searchChange)="productSearch.set($event)"
+        (selected)="pickProduct($event.value)"
       />
-      <app-button startIconName="mdi:magnify" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
-    </div>
-    <app-option-list class="sm:col-span-2" ariaLabel="Productos disponibles">
-      @if (!warehouseId()) {
-        <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">Seleccione un almacén</p>
-      } @else if (catalog().length === 0) {
-        <p class="px-3 py-4 text-center text-xs text-gray-500 dark:text-gray-400">No hay productos con stock</p>
-      } @else {
-        @for (item of catalog(); track item.id) {
-          <app-option-item [meta]="'S/ ' + item.precio" (optionSelect)="addLine(item)">{{ item.nombre }}</app-option-item>
-        }
+      @if (lines().length) {
+        <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white sm:col-span-2 dark:border-gray-800 dark:bg-white/[0.03]">
+          <table data-table-cards="off" class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <caption class="sr-only">Productos del pedido</caption>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (line of lines(); track line.productId) {
+                <tr>
+                  <td class="px-3 py-2 text-theme-sm">
+                    <span class="block text-gray-800 dark:text-white/90">{{ line.nombre }}</span>
+                    <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ line.precio | currency: 'PEN' : 'symbol' : '1.2-2' }} c/u · {{ line.quantity * line.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
+                  </td>
+                  <td class="px-3 py-2 text-end">
+                    <div class="inline-flex items-center gap-1.5">
+                      <app-quantity-stepper size="sm" [value]="line.quantity" [ariaLabel]="'Cantidad de ' + line.nombre" (valueChange)="setQuantity(line.productId, $event)" />
+                      <app-button size="sm" variant="ghost" [iconOnly]="true" startIconName="mdi:trash-can-outline" [tooltip]="'Quitar ' + line.nombre" (btnClick)="removeLine(line.productId)" />
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
-    </app-option-list>
-    @if (lines().length) {
-      <ul class="sm:col-span-2 divide-y text-sm">
-        @for (line of lines(); track line.productId) {
-          <li class="flex justify-between py-2">
-            <span>{{ line.quantity }} × {{ line.nombre }}</span>
-            <span>{{ line.quantity * line.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
-          </li>
-        }
-      </ul>
-      <p class="sm:col-span-2 font-semibold">
-        Total estimado: {{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}
-      </p>
-    }
-    <div class="sm:col-span-2">
-      <app-button startIconName="mdi:plus"
-        variant="primary"
-        [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()"
-        (btnClick)="submitCreate()"
-      >
-        Crear pedido
-      </app-button>
+    </app-form-section>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-sm text-gray-700 dark:text-gray-300">Total: <strong class="tabular-nums">{{ orderTotal() | currency: 'PEN' : 'symbol' : '1.2-2' }}</strong></p>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" startIconName="mdi:close" [disabled]="createMutation.isPending()" (btnClick)="createOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:check" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">Crear pedido</app-button>
     </div>
   </div>
 </app-modal>

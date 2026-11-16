@@ -7,13 +7,20 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { isOptionalEmail } from '../../../../core/utils/form-validators';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { SectionHeadingComponent } from '../../../../shared/components/common/section-heading/section-heading.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
+import { QuantityStepperComponent } from '../../../../shared/components/form/quantity-stepper/quantity-stepper.component';
+import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
+import { TextAreaComponent } from '../../../../shared/components/form/input/text-area.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import type { StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
@@ -32,34 +39,43 @@ const STATUS_LABELS: Record<DeliveryOrderStatus, string> = {
   ENTREGADO: 'Entregado',
   CANCELADO: 'Cancelado' };
 
+const STATUS_TONES: Record<DeliveryOrderStatus, StatusTone> = {
+  RECIBIDO: 'info',
+  PREPARANDO: 'warning',
+  EN_CAMINO: 'purple',
+  ENTREGADO: 'success',
+  CANCELADO: 'neutral' };
+
 const NEXT_STATUS: Partial<Record<DeliveryOrderStatus, DeliveryOrderStatus>> = {
   RECIBIDO: 'PREPARANDO',
   PREPARANDO: 'EN_CAMINO',
   EN_CAMINO: 'ENTREGADO' };
 
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
-import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
-import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 @Component({
   selector: 'app-ordenes-pedido',
   standalone: true,
   imports: [
     QuickCreateComponent,
-    OptionItemComponent,
-    OptionListComponent,
     StatusBadgeComponent,
     CommonModule,
     AppDatePipe,
     CurrencyPipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
+    AlertComponent,
+    FormSectionComponent,
+    HelpPanelComponent,
+    ListFiltersComponent,
+    QuantityStepperComponent,
+    SearchSelectComponent,
+    SectionHeadingComponent,
+    TextAreaComponent,
     PaginationComponent,
     ButtonComponent,
     FormSelectComponent,
     InputFieldComponent,
-    LabelComponent,
     ModalComponent,
     PageStateComponent,
   ],
@@ -70,7 +86,7 @@ export class OrdenesPedidoComponent {
   private readonly queryClient = injectQueryClient();
 
   protected readonly breadcrumb: BreadcrumbSegment[] = [
-    { label: 'Comprobantes' },
+    { label: 'Comprobantes avanzados' },
     { label: 'Órdenes de pedido (delivery)' },
   ];
   protected readonly statusLabels = STATUS_LABELS;
@@ -95,6 +111,9 @@ export class OrdenesPedidoComponent {
   protected readonly catalog = signal<PosCatalogItemDto[]>([]);
   protected readonly lines = signal<OrderLine[]>([]);
   protected readonly assignUserId = signal('');
+  protected readonly pickerReset = signal(0);
+  /** Enlace wa.me que devuelve el API al cambiar de estado: el usuario lo abre y envía el mensaje. */
+  protected readonly whatsappLink = signal<string | null>(null);
 
   protected readonly estadoOptions = [
     { value: '', label: 'Todos los estados' },
@@ -127,7 +146,6 @@ export class OrdenesPedidoComponent {
     queryFn: () => firstValueFrom(this.api.listUsers({ page: 1, pageSize: 50 })) }));
 
   protected readonly warehouseOptions = computed(() => [
-    { value: '', label: 'Almacén' },
     ...(this.warehousesQuery.data() ?? []).map((w) => ({
       value: w.id,
       label: `${w.nombre} · ${w.establishment.nombre}` })),
@@ -137,6 +155,14 @@ export class OrdenesPedidoComponent {
     { value: '', label: 'Sin asignar' },
     ...(this.usersQuery.data()?.items ?? []).map((u) => ({ value: u.id, label: u.nombre })),
   ]);
+
+  protected readonly catalogOptions = computed(() =>
+    this.catalog().map((item) => ({
+      value: item.id,
+      label: item.nombre,
+      meta: `S/ ${(Number.parseFloat(item.precio) || 0).toFixed(2)}`,
+    })),
+  );
 
   protected readonly orderTotal = computed(() =>
     this.lines().reduce((acc, l) => acc + l.precio * l.quantity, 0) + this.costoDelivery(),
@@ -172,9 +198,45 @@ export class OrdenesPedidoComponent {
     return null;
   }
 
+  protected statusTone(estado: DeliveryOrderStatus): StatusTone {
+    return STATUS_TONES[estado] ?? 'neutral';
+  }
+
   protected openDetail(id: string) {
     this.detailId.set(id);
     this.cancelReason.set('');
+    this.whatsappLink.set(null);
+    const row = this.listQuery.data()?.items.find((x) => x.id === id);
+    this.assignUserId.set(row?.assignedTo?.id ?? '');
+  }
+
+  protected openCreate() {
+    this.warehouseId.set((this.warehousesQuery.data() ?? []).length === 1 ? this.warehousesQuery.data()![0].id : '');
+    this.clienteNombre.set('');
+    this.clienteTelefono.set('');
+    this.clienteEmail.set('');
+    this.direccionEntrega.set('');
+    this.distritoEntrega.set('');
+    this.referenciaDireccion.set('');
+    this.costoDelivery.set(0);
+    this.productSearch.set('');
+    this.lines.set([]);
+    this.pickerReset.update((n) => n + 1);
+    this.createOpen.set(true);
+  }
+
+  protected pickProduct(id: string) {
+    const item = this.catalog().find((x) => x.id === id);
+    if (item) this.addLine(item);
+    this.pickerReset.update((n) => n + 1);
+  }
+
+  protected setQuantity(productId: string, quantity: number) {
+    this.lines.update((rows) => rows.map((l) => (l.productId === productId ? { ...l, quantity } : l)));
+  }
+
+  protected removeLine(productId: string) {
+    this.lines.update((rows) => rows.filter((l) => l.productId !== productId));
   }
 
   protected closeDetail() {
@@ -275,9 +337,8 @@ export class OrdenesPedidoComponent {
       const res = await firstValueFrom(
         this.api.updateDeliveryOrderStatus(order.id, { estado: next }),
       );
-      if (res.whatsappLink) {
-        this.notify.info('Enlace WhatsApp generado para el cliente');
-      }
+      this.whatsappLink.set(res.whatsappLink ?? null);
+      this.notify.success(`Pedido en «${STATUS_LABELS[next]}»`);
       void this.queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
       if (this.detailId() === order.id) void this.detailQuery.refetch();
     } catch (err) {
