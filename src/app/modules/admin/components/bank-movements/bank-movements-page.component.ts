@@ -6,8 +6,6 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -24,6 +22,9 @@ import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pi
 import type { BankMovementListItemDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { soles } from '../../utils/finance-labels';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 
 export type BankMode = 'transacciones' | 'conciliacion';
 
@@ -53,6 +54,7 @@ const COPY: Record<BankMode, { title: string; storageKey: string; help: string[]
   selector: 'app-bank-movements-page',
   standalone: true,
   imports: [
+    PageStateComponent,
     CommonModule,
     CurrencyPipe,
     AppDatePipe,
@@ -60,17 +62,16 @@ const COPY: Record<BankMode, { title: string; storageKey: string; help: string[]
     BreadcrumbInlineComponent,
     ButtonComponent,
     CheckboxComponent,
-    ComponentCardComponent,
     FormSelectComponent,
     HelpPanelComponent,
     InputFieldComponent,
-    KpiTileComponent,
     ListFiltersComponent,
     ModalComponent,
     PageToolbarComponent,
     PaginationComponent,
     StatusBadgeComponent,
     TextAreaComponent,
+    AlertComponent,
   ],
   templateUrl: './bank-movements-page.component.html',
 })
@@ -150,6 +151,38 @@ export class BankMovementsPageComponent {
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly total = computed(() => this.listQuery.data()?.total ?? 0);
   protected readonly totals = computed(() => this.listQuery.data()?.totales ?? null);
+
+  /** Saldo de cada cuenta (filtra por ella) y totales de lo filtrado («Por conciliar» filtra los pendientes). */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const chips: SummaryChip[] = this.accounts().map((a) => ({
+      id: 'acc:' + a.id,
+      label: a.nombre,
+      count: this.soles(a.saldoLibro),
+      icon: a.tipo === 'CAJA' ? 'mdi:safe' : 'mdi:bank-outline',
+      group: 'Cuentas',
+      active: this.accountId() === a.id,
+      tooltip: (a.banco ?? (a.tipo === 'CAJA' ? 'Caja' : 'Banco')) + (a.numeroCuenta ? ' · ' + a.numeroCuenta : ''),
+    }));
+    const t = this.totals();
+    if (t) {
+      chips.push(
+        { id: 'ingresos', label: 'Ingresos', count: this.soles(t.ingresos), tone: 'success', group: 'Lo filtrado', clickable: false },
+        { id: 'egresos', label: 'Egresos', count: this.soles(t.egresos), tone: 'error', group: 'Lo filtrado', clickable: false },
+        { id: 'neto', label: 'Neto', count: this.soles(t.neto), tone: +t.neto < 0 ? 'warning' : 'brand', group: 'Lo filtrado', clickable: false, tooltip: 'Ingresos menos egresos.' },
+        { id: 'pendientes', label: 'Por conciliar', count: t.pendientes, tone: t.pendientes ? 'warning' : 'neutral', group: 'Lo filtrado', active: this.estado() === 'false' },
+      );
+    }
+    return chips;
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    if (chip.id.startsWith('acc:')) {
+      const id = chip.id.slice(4);
+      this.setFilter('accountId', this.accountId() === id ? '' : id);
+    } else if (chip.id === 'pendientes') {
+      this.setFilter('estado', this.estado() === 'false' ? '' : 'false');
+    }
+  }
 
   protected setSearch(v: string) {
     this.search.set(v);

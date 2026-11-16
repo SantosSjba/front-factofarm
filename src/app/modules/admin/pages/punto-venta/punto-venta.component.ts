@@ -127,7 +127,7 @@ const DOC_OPTIONS_INTERNAL: { value: SaleDocumentType; label: string }[] = [
   { value: 'NOTA_VENTA', label: 'Nota de venta' },
 ];
 
-import { statusToneClasses } from '../../../../shared/components/ui/badge/status-badge.component';
+import { StatusBadgeComponent, statusToneClasses } from '../../../../shared/components/ui/badge/status-badge.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { TabStripComponent } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
@@ -159,6 +159,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
     CashOpenSessionsBannerComponent,
     CashOpenFormComponent,
     CashCloseModalComponent,
+    StatusBadgeComponent,
   ],
   templateUrl: './punto-venta.component.html',
 })
@@ -207,6 +208,10 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly search = signal('');
   protected readonly catalog = signal<PosCatalogItemDto[]>([]);
   protected readonly catalogLoading = signal(false);
+  /** Productos del catálogo con stock en lotes vencidos (aviso en el contador). */
+  /** Productos que sí se pueden vender (sin contar los que solo tienen lotes vencidos). */
+  protected readonly sellableCount = computed(() => this.catalog().filter((p) => !this.isOnlyExpired(p)).length);
+  protected readonly expiredCount = computed(() => this.catalog().filter((p) => this.expiredStock(p) > 0).length);
   protected readonly cart = signal<CartLine[]>([]);
   protected readonly prescriptionValidated = signal(false);
   protected readonly prescriptionId = signal('');
@@ -902,11 +907,30 @@ export class PuntoVentaComponent implements OnDestroy {
     this.customerDocType.set('');
   }
 
+  /** Unidades en lotes vencidos del producto (se muestran como aviso; no se venden). */
+  protected expiredStock(item: PosCatalogItemDto): number {
+    return Number.parseFloat(item.stockVencido ?? '0') || 0;
+  }
+
+  /** Solo tiene lotes vencidos: aparece en el catálogo marcado, pero no se puede agregar. */
+  protected isOnlyExpired(item: PosCatalogItemDto): boolean {
+    return Number.parseFloat(item.stock) <= 0 && this.expiredStock(item) > 0;
+  }
+
   protected addToCart(item: PosCatalogItemDto) {
     // Nueva venta: deja de retener el comprobante anterior en pantalla cliente.
     this.customerDisplaySaleHold = false;
     const price = Number.parseFloat(item.precio);
     const stock = Number.parseFloat(item.stock);
+    if (stock <= 0 && this.expiredStock(item) > 0) {
+      const fecha = item.vencimientoMasAntiguo
+        ? new Date(item.vencimientoMasAntiguo).toLocaleDateString('es-PE', { timeZone: 'UTC' })
+        : null;
+      this.notify.error(
+        `${item.nombre} está vencido${fecha ? ` (venció el ${fecha})` : ''}: no se puede vender. Retíralo del anaquel o regulariza el lote en Lotes.`,
+      );
+      return;
+    }
     if (stock <= 0) {
       this.notify.warning(
         item.manejaLotes

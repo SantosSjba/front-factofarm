@@ -5,8 +5,6 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -15,19 +13,22 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
-import { ColorLegendComponent, type LegendItem, type LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { LegendTone } from '../../../../shared/components/ui/color-legend/color-legend.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import type { SaleDocumentType, SoldItemRowDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { documentNumber, documentTypeLabel, saleStatusLabel, saleStatusTone } from '../../utils/sale-labels';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 
 /** Reporte de productos vendidos: cada producto de cada venta, del más reciente al más antiguo. */
 @Component({
   selector: 'app-reporte-productos-vendidos',
   standalone: true,
   imports: [
+    PageStateComponent,
     CommonModule,
     CurrencyPipe,
     RouterLink,
@@ -35,12 +36,9 @@ import { documentNumber, documentTypeLabel, saleStatusLabel, saleStatusTone } fr
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     CheckboxComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
     FormSelectComponent,
     HelpPanelComponent,
     InputFieldComponent,
-    KpiTileComponent,
     ListFiltersComponent,
     PageToolbarComponent,
     PaginationComponent,
@@ -58,10 +56,6 @@ export class ReporteProductosVendidosComponent {
   protected readonly number = documentNumber;
   protected readonly statusLabel = saleStatusLabel;
   protected readonly statusTone = saleStatusTone;
-  protected readonly legend: LegendItem[] = [
-    { label: 'Venta anulada (no suma)', tone: 'error-light' },
-    { label: 'Con devolución', tone: 'warning' },
-  ];
   private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
   private readonly qty = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 2 });
 
@@ -101,16 +95,16 @@ export class ReporteProductosVendidosComponent {
   protected readonly total = computed(() => this.query.data()?.total ?? 0);
 
   /** Totales de todo el filtro, calculados en la API (no solo de la página). */
-  protected readonly kpis = computed(() => {
+  /** Totales de todo el filtro (no solo la página) en chips. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
     const t = this.query.data()?.totales;
-    if (!t) return null;
-    return {
-      monto: this.pen.format(Number(t.monto)),
-      unidades: this.qty.format(Number(t.unidades)),
-      lineas: `${t.lineas}`,
-      ventas: `${t.ventas}`,
-      ticket: this.pen.format(t.ventas ? Number(t.monto) / t.ventas : 0),
-    };
+    if (!t) return [];
+    return [
+      { id: 'monto', label: 'Total vendido', count: this.pen.format(Number(t.monto)), icon: 'mdi:cash-multiple', tone: 'success', clickable: false },
+      { id: 'unid', label: 'Unidades', count: this.qty.format(Number(t.unidades)), clickable: false, tooltip: t.lineas + ' líneas de venta.' },
+      { id: 'ventas', label: 'Ventas', count: t.ventas, clickable: false, tooltip: 'Comprobantes con estos productos.' },
+      { id: 'ticket', label: 'Ticket promedio', count: this.pen.format(t.ventas ? Number(t.monto) / t.ventas : 0), clickable: false, tooltip: 'Total vendido entre número de ventas.' },
+    ];
   });
 
   protected setSearch(v: string) {

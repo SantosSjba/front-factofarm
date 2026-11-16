@@ -1,16 +1,21 @@
-<div class="mb-5">
-  <app-breadcrumb-inline
+<app-breadcrumb-inline
     [segments]="[{ label: 'Plataforma' }, { label: 'Libro de reclamaciones' }]"
   />
-</div>
 
-<app-page-toolbar>
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
     Libro de reclamaciones
   </h1>
 </app-page-toolbar>
 
-<app-list-filters
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="platform-reclamaciones">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Es el libro de reclamaciones de la plataforma que exige la Ley 29571.</li>
+    <li>Abre cada registro para cambiar su estado y dejar la respuesta al consumidor.</li>
+  </ol>
+</app-help-panel>
+
+<app-list-filters compact
   [searchValue]="searchTerm()"
   searchPlaceholder="Buscar por número, nombre o documento"
   [selectValue]="statusFilter()"
@@ -24,41 +29,41 @@
 
 @let listState = complaintsQuery | queryPageState: totalItems();
 
-<app-component-card
-  title="Registros Ley 29571"
-  helpText="Libro de reclamaciones a nivel plataforma (Ley 29571). Revisa cada registro, cambia el estado y deja la respuesta al consumidor."
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   emptyTitle="Sin reclamos registrados"
   (retry)="refetch()"
+  skeleton="table"
 >
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-left">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="max-w-full overflow-x-auto">
+    <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+      <caption class="sr-only">Reclamos y quejas registrados</caption>
       <thead class="border-b border-gray-100 dark:border-white/[0.05]">
         <tr>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Registro</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Fecha</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Consumidor</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Tipo</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Estado</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500"></th>
+          <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Registro</th>
+          <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Consumidor</th>
+          <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+          <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
         @for (row of complaintsQuery.data()?.items ?? []; track row.id) {
-          <tr class="border-b border-gray-50 dark:border-white/[0.03]">
-            <td class="px-5 py-4 font-medium text-gray-800 dark:text-white">{{ row.numeroRegistro }}</td>
-            <td class="px-5 py-4 text-sm">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
-            <td class="px-5 py-4 text-sm">
+          <tr>
+            <td class="px-5 py-3 font-medium text-gray-800 dark:text-white">{{ row.numeroRegistro }}</td>
+            <td class="px-5 py-3 text-theme-sm">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="px-5 py-3 text-theme-sm">
               <div>{{ row.nombresApellidos }}</div>
               <div class="text-theme-xs text-gray-500">{{ row.documentoIdentidad }}</div>
             </td>
-            <td class="px-5 py-4 text-sm">{{ tipoLabel(row.tipo) }}</td>
-            <td class="px-5 py-4 text-sm">{{ statusLabel(row.status) }}</td>
-            <td class="px-5 py-4">
+            <td class="px-5 py-3 text-theme-sm">
+              <app-status-badge [status]="row.status" [tone]="statusTone(row.status)" [label]="statusLabel(row.status)" />
+              <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ tipoLabel(row.tipo) }}</span>
+            </td>
+            <td class="px-5 py-3">
               <app-button
                 size="sm"
                 variant="outline"
@@ -72,17 +77,17 @@
         }
       </tbody>
     </table>
+    </div>
   </div>
 
-  <div class="border-t border-gray-100 p-4 dark:border-white/[0.05]">
-    <app-pagination
+</app-page-state>
+
+<app-pagination
       [currentPage]="currentPage()"
       [totalItems]="totalItems()"
       [pageSize]="itemsPerPage"
       (currentPageChange)="currentPage.set($event)"
     />
-  </div>
-</app-component-card>
 
 <app-complaint-detail-modal
   [isOpen]="detailOpen()"

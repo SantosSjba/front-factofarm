@@ -6,7 +6,6 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -28,6 +27,8 @@ import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pi
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
 import type { InventoryTransferDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { TRANSFER_STATUS_OPTIONS, transferStatusLabel, transferStatusTone } from '../../utils/transfer-status';
 
 type TransferStatus = InventoryTransferDto['estado'];
 type TransferAction = 'dispatch' | 'receive' | 'cancel' | 'guia';
@@ -41,12 +42,6 @@ interface DraftLine {
   cantidad: number;
 }
 
-const STATUS: Record<TransferStatus, { label: string; tone: StatusTone }> = {
-  BORRADOR: { label: 'Borrador', tone: 'neutral' },
-  EN_TRANSITO: { label: 'En tránsito', tone: 'info' },
-  RECIBIDO: { label: 'Recibido', tone: 'success' },
-  ANULADO: { label: 'Anulado', tone: 'error' },
-};
 
 const ACTION_COPY: Record<TransferAction, { title: string; button: string; icon: string }> = {
   dispatch: { title: 'Despachar traslado', button: 'Despachar', icon: 'mdi:truck-delivery-outline' },
@@ -59,12 +54,12 @@ const ACTION_COPY: Record<TransferAction, { title: string; button: string; icon:
   selector: 'app-traslados',
   standalone: true,
   imports: [
+    PageStateComponent,
     CommonModule,
     AppDatePipe,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ComponentCardComponent,
     FormSectionComponent,
     FormSelectComponent,
     HasPermissionDirective,
@@ -98,7 +93,7 @@ export class TrasladosComponent {
   protected readonly warehouseFilter = signal('');
   protected readonly estadoOptions = [
     { value: '', label: 'Todos los estados' },
-    ...(Object.keys(STATUS) as TransferStatus[]).map((value) => ({ value, label: STATUS[value].label })),
+    ...TRANSFER_STATUS_OPTIONS,
   ];
   protected readonly activeFilterCount = computed(() => [this.estadoFilter(), this.warehouseFilter()].filter(Boolean).length);
 
@@ -231,11 +226,11 @@ export class TrasladosComponent {
 
   // ---------- Listado ----------
   protected statusLabel(estado: TransferStatus) {
-    return STATUS[estado].label;
+    return transferStatusLabel(estado);
   }
 
   protected statusTone(estado: TransferStatus): StatusTone {
-    return STATUS[estado].tone;
+    return transferStatusTone(estado);
   }
 
   protected units(row: InventoryTransferDto): number {

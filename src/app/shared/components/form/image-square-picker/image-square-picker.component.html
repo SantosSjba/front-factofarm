@@ -10,6 +10,9 @@
       @let state = preview$ | async;
       @if (state?.src; as src) {
         <img [src]="src" alt="" class="h-full w-full object-cover" />
+      } @else if (state?.failed && placeholder !== '+') {
+        <!-- Con iniciales (p. ej. la foto de perfil), se muestran ellas: el texto no cabe en un círculo chico. -->
+        <span class="font-semibold" title="La imagen ya no está disponible. Toca para subir otra.">{{ placeholder }}</span>
       } @else if (state?.failed) {
         <span class="px-2 text-center text-theme-xs leading-tight">Imagen no disponible<br />Toca para subir otra</span>
       } @else if (previewUrl) {

@@ -19,6 +19,7 @@ import { TenantBrandingService } from '../../../core/services/tenant-branding.se
 import { NavItem, NavSubItem } from './sidebar-menu.config';
 import { sidebarHelp } from './sidebar-help';
 import { TooltipDirective } from '../../directives/tooltip.directive';
+import { isMenuPathActive } from '../../../core/utils/route-access';
 
 @Component({
   selector: 'app-sidebar',
@@ -129,8 +130,9 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
 
   protected readonly help = sidebarHelp;
 
+  /** Resalta la opción aunque la URL traiga parámetros (?x=…) o sea una subruta. */
   isActive(path: string): boolean {
-    return this.router.url === path;
+    return isMenuPathActive(this.router.url, path);
   }
 
   isSubItemActive(subItem: NavSubItem): boolean {
@@ -187,11 +189,13 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       { items: this.othersItems, prefix: 'others' },
     ];
 
+    let found = false;
     menuGroups.forEach((group) => {
       group.items.forEach((nav, i) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem, subIndex) => {
             if (this.isSubItemActive(subItem)) {
+              found = true;
               const key = `${group.prefix}-${i}`;
               this.openSubmenu = key;
               if (subItem.subItems?.length) {
@@ -204,6 +208,12 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
         }
       });
     });
+    // Ruta fuera del menú (perfil, onboarding…): no dejar resaltado el grupo de la pantalla anterior.
+    if (!found && this.openSubmenu !== null) {
+      this.subMenuHeights[String(this.openSubmenu)] = 0;
+      this.openSubmenu = null;
+      this.cdr.detectChanges();
+    }
   }
 
   private getNestedSubmenuKey(parentKey: string, index: number): string {

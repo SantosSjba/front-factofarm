@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, booleanAttribute, input } from '@angular/core';
 import { ThemeService } from '../../../services/theme.service';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../ui/icon/icon.component';
@@ -10,6 +10,9 @@ import { IconComponent } from '../../ui/icon/icon.component';
   imports: [CommonModule, IconComponent],
 })
 export class ThemeToggleButtonComponent {
+  /** Versión compacta (36 px) para la cabecera del panel. */
+  readonly compact = input(false, { transform: booleanAttribute });
+
   private themeService = inject(ThemeService);
 
   theme$;

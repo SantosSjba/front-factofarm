@@ -1,70 +1,96 @@
 ﻿import { CommonModule, CurrencyPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
-import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import { PeriodFilterComponent, type Period } from '../../components/period-filter/period-filter.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 
 @Component({
   selector: 'app-contabilidad-resumen-venta',
   standalone: true,
   imports: [
+    PeriodFilterComponent,
     CommonModule,
     CurrencyPipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
-    InputFieldComponent,
-    ButtonComponent,
     PageStateComponent,
+    HelpPanelComponent,
   ],
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">Resumen de venta</h1>
+
+    <app-page-toolbar [excel]="false">
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Resumen de venta</h1>
     </app-page-toolbar>
-    <app-component-card title="Filtros" className="mt-4">
-      <div class="flex flex-wrap items-end gap-3">
-        <app-input-field label="Desde" [isRequired]="true" type="date" [value]="from()" (valueChange)="from.set('' + $event)" />
-        <app-input-field label="Hasta" [isRequired]="true" type="date" [value]="to()" (valueChange)="to.set('' + $event)" />
-        <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="marginQuery.refetch()">Consultar</app-button>
-      </div>
-    </app-component-card>
-    <app-page-state [loading]="marginQuery.isPending()" [error]="marginError()" (retry)="marginQuery.refetch()">
-      @if (marginQuery.data(); as m) {
-        <div class="mt-4 grid gap-4 md:grid-cols-4">
-          <app-component-card title="Venta total"><p class="text-xl font-semibold">{{ m.ventaTotal | currency: 'PEN' }}</p></app-component-card>
-          <app-component-card title="Costo"><p class="text-xl font-semibold">{{ m.costoTotal | currency: 'PEN' }}</p></app-component-card>
-          <app-component-card title="Margen"><p class="text-xl font-semibold text-emerald-600">{{ m.margen | currency: 'PEN' }}</p></app-component-card>
-          <app-component-card title="Margen %"><p class="text-xl font-semibold">{{ m.margenPorcentaje }}%</p></app-component-card>
-        </div>
-        <app-component-card title="Top productos" className="mt-4">
-          <table class="min-w-full text-sm">
-            <thead><tr class="border-b text-gray-500"><th class="py-2 text-left">Producto</th><th class="py-2 text-right">Venta</th><th class="py-2 text-right">Margen</th></tr></thead>
-            <tbody>
-              @for (p of m.topProducts; track p.productId) {
-                <tr class="border-b border-gray-100 dark:border-gray-800">
-                  <td class="py-2">{{ p.nombre }}</td>
-                  <td class="py-2 text-right">{{ p.venta | currency: 'PEN' }}</td>
-                  <td class="py-2 text-right">{{ p.margen | currency: 'PEN' }}</td>
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="contabilidad-resumen-venta">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Compara lo vendido en el periodo con lo que costó esa mercadería: la diferencia es el margen.</li>
+        <li>Abajo están los productos que más vendiste. El análisis completo está en Finanzas → Balance y margen.</li>
+      </ol>
+    </app-help-panel>
+
+    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (change)="from.set($event.from); to.set($event.to)" />
+
+    @let m = marginQuery.data();
+    <app-page-state
+      [loading]="marginQuery.isPending()"
+      [error]="marginError()"
+      [empty]="marginQuery.isSuccess() && !m?.topProducts?.length"
+      emptyTitle="Sin ventas en el periodo"
+      emptyHint="Prueba con otro rango de fechas."
+      skeleton="table"
+      (retry)="marginQuery.refetch()"
+    >
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <caption class="sr-only">Productos más vendidos del periodo</caption>
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th data-card-role="title" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-start">Producto</th>
+                <th class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-end">Venta</th>
+                <th class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-end">Margen</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (p of m?.topProducts ?? []; track p.productId) {
+                <tr>
+                  <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ p.nombre }}</td>
+                  <td class="px-5 py-3 text-end text-theme-sm tabular-nums">{{ p.venta | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
+                  <td class="px-5 py-3 text-end text-theme-sm font-semibold tabular-nums" [class.text-error-600]="+p.margen < 0">{{ p.margen | currency: 'PEN' : 'symbol' : '1.2-2' }}</td>
                 </tr>
               }
             </tbody>
           </table>
-        </app-component-card>
-      }
+        </div>
+      </div>
     </app-page-state>
   `,
 })
 export class ContabilidadResumenVentaComponent {
+  protected readonly period = computed<Period>(() => ({ from: this.from(), to: this.to() }));
+  private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const m = this.marginQuery.data();
+    if (!m) return [];
+    return [
+      { id: 'venta', label: 'Venta total', count: this.pen.format(Number(m.ventaTotal) || 0), tone: 'brand', clickable: false },
+      { id: 'costo', label: 'Costo', count: this.pen.format(Number(m.costoTotal) || 0), clickable: false },
+      { id: 'margen', label: 'Margen', count: this.pen.format(Number(m.margen) || 0), tone: Number(m.margen) < 0 ? 'error' : 'success', clickable: false },
+      { id: 'pct', label: 'Margen %', count: m.margenPorcentaje + ' %', tone: 'info', clickable: false },
+    ];
+  });
+
   private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
 

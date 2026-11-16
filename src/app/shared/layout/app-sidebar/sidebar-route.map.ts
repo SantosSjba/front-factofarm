@@ -48,6 +48,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.reporte_inventario': { path: '/reporte-inventario' },
   'nav.kardex_valorizado': { path: '/kardex-valorizado' },
   'nav.lotes': { path: '/lotes' },
+  // Alias: la opción «Salida venta (lotes)» se unió a Lotes, pero el permiso sigue existiendo.
   'nav.salida_venta_lotes': { path: '/lotes' },
   'nav.cadena_frio': { path: '/cadena-frio' },
   'nav.retenciones': { path: '/retenciones' },
@@ -84,3 +85,9 @@ export const PERMISSION_ROUTE_MAP: Record<string, { path: string; icon?: string 
   'nav.recepcion_productos_farmaceuticos': { path: '/recepcion-productos-farmaceuticos' },
   'nav.hospital_dispensacion': { path: '/hospital-dispensacion' },
 };
+
+/**
+ * Permisos `nav.*` sin opción propia en el sidebar que siguen dando acceso a la pantalla de otra
+ * opción (permisos antiguos que todavía existen en el API y en los roles ya creados).
+ */
+export const LEGACY_NAV_ALIASES: readonly string[] = ['nav.salida_venta_lotes'];

@@ -5,7 +5,6 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -13,21 +12,27 @@ import { ButtonComponent } from '../../../../shared/components/ui/button/button.
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { ComplaintDto, ComplaintStatusDto } from '../../models/directory.models';
 import { ComplaintDetailModalComponent } from './complaint-detail-modal/complaint-detail-modal.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 
 @Component({
   selector: 'app-platform-reclamaciones',
   standalone: true,
   imports: [
+    PageStateComponent,
     CommonModule,
     AppDatePipe,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     ListFiltersComponent,
     PaginationComponent,
     ButtonComponent,
     ComplaintDetailModalComponent,
+    HelpPanelComponent,
+    StatusBadgeComponent,
   ],
   templateUrl: './platform-reclamaciones.component.html',
 })
@@ -85,6 +90,10 @@ export class PlatformReclamacionesComponent {
   protected statusLabel(status: ComplaintStatusDto): string {
     const found = this.statusOptions.find((o) => o.value === status);
     return found?.label ?? status;
+  }
+
+  protected statusTone(status: ComplaintStatusDto): StatusTone {
+    return status === 'PENDING' ? 'warning' : status === 'IN_REVIEW' ? 'info' : status === 'RESOLVED' ? 'success' : 'neutral';
   }
 
   protected tipoLabel(tipo: ComplaintDto['tipo']): string {

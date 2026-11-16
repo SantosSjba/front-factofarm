@@ -1,110 +1,176 @@
 <app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Recetas médicas</h1>
-  <app-button startIconName="mdi:plus" size="sm" (btnClick)="openCreate()">Nueva receta</app-button>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nueva receta</app-button>
+  </div>
 </app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="recetas">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Registra las recetas que traen los pacientes: quién la firma, para quién es y qué medicamentos indica.</li>
+    <li>Al vender, la receta se va dispensando: aquí ves cuánto se entregó de cada una y si quedó completa.</li>
+    <li>Puedes adjuntar una foto de la receta física como respaldo.</li>
+  </ol>
+</app-help-panel>
+
+<app-list-filters
+  compact
+  [showSelect]="false"
+  [searchValue]="search()"
+  searchPlaceholder="Buscar número, paciente o médico"
+  clearLabel="Limpiar"
+  (searchValueChange)="search.set($event); page.set(1)"
+  (clear)="search.set(''); page.set(1)"
+/>
 
 @let listState = listQuery | queryPageState: (listQuery.data()?.total ?? 0);
 
-<app-component-card title="Recetas registradas" className="mt-4"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay recetas registradas"
-  (retry)="listQuery.refetch()">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b text-xs uppercase text-gray-500">
-      <tr>
-        <th class="px-3 py-2">Número</th>
-        <th class="px-3 py-2">Paciente</th>
-        <th class="px-3 py-2">Médico</th>
-        <th class="px-3 py-2">Estado</th>
-        <th class="px-3 py-2">Fecha</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of listQuery.data()?.items ?? []; track row.id) {
-        <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2 font-medium">{{ row.numero }}</td>
-          <td class="px-3 py-2">{{ row.customer.nombre }}</td>
-          <td class="px-3 py-2">{{ row.medicoNombre ?? row.medicoCmp ?? '—' }}</td>
-          <td class="px-3 py-2">{{ row.estado }}</td>
-          <td class="px-3 py-2">{{ row.fechaEmision | appDate: 'shortDate' }}</td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="5" class="px-3 py-6 text-center text-gray-500">No hay recetas registradas.</td>
-        </tr>
-      }
-    </tbody>
-  </table>
-  @if (listQuery.data(); as data) {
-    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
-  }
-</app-component-card>
+  [emptyTitle]="search().trim() ? 'Sin recetas con esa búsqueda' : 'Aún no hay recetas registradas'"
+  [emptyHint]="search().trim() ? 'Prueba con otro texto.' : 'Usa «Nueva receta» para registrar la primera.'"
+  skeleton="table"
+  (retry)="listQuery.refetch()"
+>
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Recetas registradas</caption>
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Receta</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Paciente</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Médico</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Dispensado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of listQuery.data()?.items ?? []; track row.id) {
+            <tr [attr.data-row-tone]="row.estado === 'VENCIDA' || row.estado === 'ANULADA' ? 'muted' : null">
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.numero }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.fechaEmision | appDate: 'dd/MM/yyyy' }}</span>
+              </td>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block text-gray-800 dark:text-white/90">{{ row.customer.nombre }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.customer.numeroDocumento }}</span>
+              </td>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block">{{ row.medicoNombre || '—' }}</span>
+                @if (row.medicoCmp) {
+                  <span class="text-theme-xs text-gray-500 dark:text-gray-400">CMP {{ row.medicoCmp }}</span>
+                }
+              </td>
+              <td class="px-5 py-3 text-theme-sm">
+                <app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" />
+                <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ dispensedLabel(row) }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-page-state>
 
-<app-modal compact [isOpen]="createOpen()" (closed)="createOpen.set(false)" className="w-full max-w-2xl">
-  <div class="space-y-4 p-6">
-    <h3 class="text-lg font-semibold">Registrar receta</h3>
-    <app-form-field label="Paciente" required>
-      <div class="flex gap-2">
-        <app-input-field className="flex-1" [value]="customerSearch()" (valueChange)="onCustomerSearchChange('' + $event)" (keydown.enter)="searchCustomers()" placeholder="Buscar cliente por nombre o documento" />
-        <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchCustomers()">Buscar</app-button>
-        <app-quick-create entity="customer" (created)="selectCustomer($any($event.row))" />
-      </div>
-    </app-form-field>
-    @if (customerOptions().length) {
-      <app-option-list ariaLabel="Pacientes encontrados">
-        @for (c of customerOptions(); track c.id) {
-          <app-option-item (optionSelect)="selectCustomer(c)">{{ c.nombre }} · {{ c.numeroDocumento }}</app-option-item>
+<app-pagination [totalItems]="listQuery.data()?.total ?? 0" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+
+<app-modal compact [isOpen]="createOpen()" (closed)="!createMutation.isPending() && createOpen.set(false)" className="w-full max-w-2xl shadow-theme-lg" bodyClass="custom-scrollbar">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Registrar receta</h3>
+    <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">DIGEMID exige el médico (nombre y CMP) y el paciente.</p>
+  </div>
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
+    <app-form-section compact title="Paciente y médico" [cols]="1">
+      <div class="flex items-end gap-2">
+        @if (selectedCustomer(); as c) {
+          <div class="min-w-0 flex-1">
+            <app-label compact [required]="true">Paciente</app-label>
+            <div class="mt-1 flex h-9 items-center justify-between gap-2 rounded-lg border border-gray-200 ps-3 pe-1 dark:border-gray-800">
+              <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-white/90">{{ c.nombre }} · {{ c.numeroDocumento }}</span>
+              <app-button size="sm" variant="ghost" [iconOnly]="true" startIconName="mdi:swap-horizontal" tooltip="Cambiar de paciente" (btnClick)="clearCustomer()" />
+            </div>
+          </div>
+        } @else {
+          <app-search-select
+            compact
+            class="min-w-0 flex-1"
+            label="Paciente"
+            [required]="true"
+            helpText="Busca entre tus clientes por nombre o documento."
+            placeholder="Nombre o número de documento"
+            emptyText="No se encontró. Regístralo con el botón de al lado."
+            [resetToken]="customerReset()"
+            [options]="customerOptions()"
+            [loading]="customerQuery.isFetching()"
+            (searchChange)="customerSearch.set($event)"
+            (selected)="pickCustomer($event.value)"
+          />
         }
-      </app-option-list>
-    }
-    <app-form-field label="Médico prescriptor" required>
-      <div class="flex gap-2">
-        <app-form-select className="flex-1" [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
-        <app-quick-create entity="medico" (created)="onMedicoCreated($event)" />
+        <app-quick-create compact entity="customer" [iconOnly]="true" (created)="selectCustomer($any($event.row))" />
       </div>
-    </app-form-field>
-    <app-form-field label="Diagnóstico">
-      <app-input-field [value]="diagnostico()" (valueChange)="diagnostico.set('' + $event)" [maxLength]="500" />
-    </app-form-field>
-    <div class="rounded border border-dashed p-3">
-      <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Receta escaneada / digital (opcional)</p>
-      <app-file-input variant="button" accept="image/*" capture="environment" icon="mdi:camera-outline" buttonLabel="Tomar foto o elegir imagen" (fileChange)="onImageSelected($event)" />
+      <div class="flex items-end gap-2">
+        <app-form-select compact class="min-w-0 flex-1" label="Médico prescriptor" [required]="true" placeholder="Selecciona el médico" [options]="medicoOptions()" [value]="medicoId()" (valueChange)="medicoId.set('' + $event)" />
+        <app-quick-create compact entity="medico" [iconOnly]="true" (created)="onMedicoCreated($event)" />
+      </div>
+      <app-input-field compact label="Diagnóstico" helpText="Opcional. Puedes usar el código CIE-10." placeholder="Ej.: J06 infección respiratoria" [maxLength]="500" [value]="diagnostico()" (valueChange)="diagnostico.set('' + $event)" />
+    </app-form-section>
+
+    <app-form-section compact title="Medicamentos prescritos" [cols]="1">
+      <app-search-select
+        compact
+        label="Agregar medicamento"
+        [required]="!draftItems().length"
+        placeholder="Escribe para buscar"
+        emptyText="No se encontró ningún producto."
+        [resetToken]="productReset()"
+        [options]="productOptions()"
+        [loading]="productQuery.isFetching()"
+        (searchChange)="productSearch.set($event)"
+        (selected)="pickProduct($event)"
+      />
+      @if (draftItems().length) {
+        <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <table data-table-cards="off" class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <caption class="sr-only">Medicamentos de la receta</caption>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (item of draftItems(); track item.productId) {
+                <tr>
+                  <td class="px-3 py-2 text-theme-sm text-gray-800 dark:text-white/90">{{ item.label }}</td>
+                  <td class="px-3 py-2 text-end">
+                    <div class="inline-flex items-center gap-1.5">
+                      <app-quantity-stepper size="sm" [value]="item.cantidad" [ariaLabel]="'Cantidad de ' + item.label" (valueChange)="updateItemQty(item.productId, $event)" />
+                      <app-button size="sm" variant="ghost" [iconOnly]="true" startIconName="mdi:trash-can-outline" [tooltip]="'Quitar ' + item.label" (btnClick)="removeItem(item.productId)" />
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </app-form-section>
+
+    <app-form-section compact title="Receta física" description="Opcional: una foto de la receta como respaldo." [cols]="1">
+      <app-file-input compact variant="button" accept="image/*" capture="environment" icon="mdi:camera-outline" buttonLabel="Tomar foto o elegir imagen" (fileChange)="onImageSelected($event)" />
       @if (uploadingImage()) {
-        <p class="mt-2 text-xs text-gray-500">Subiendo imagen…</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Subiendo imagen…</p>
       }
       @if (imagenPreviewUrl() | authFile | async; as src) {
-        <img [src]="src" alt="Vista previa receta" class="mt-2 max-h-40 rounded border object-contain" />
+        <img [src]="src" alt="Vista previa de la receta" class="max-h-40 rounded-lg border border-gray-200 object-contain dark:border-gray-800" />
       }
+    </app-form-section>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" startIconName="mdi:close" [disabled]="createMutation.isPending()" (btnClick)="createOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="createMutation.isPending() || uploadingImage()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">Guardar receta</app-button>
     </div>
-    <div class="rounded border p-3">
-      <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Medicamentos prescritos <span class="text-error-500" aria-hidden="true">*</span></p>
-      <div class="mb-2 flex gap-2">
-        <app-input-field className="flex-1" [value]="productSearch()" (valueChange)="productSearch.set('' + $event)" placeholder="Buscar medicamento" />
-        <app-button startIconName="mdi:magnify" size="sm" variant="outline" (btnClick)="searchProducts()">Buscar</app-button>
-      </div>
-      @if (productOptions().length) {
-        <app-option-list ariaLabel="Medicamentos encontrados">
-          @for (p of productOptions(); track p.id) {
-            <app-option-item (optionSelect)="addItem(p)">{{ p.nombre }}</app-option-item>
-          }
-        </app-option-list>
-      }
-      <ul class="mt-2 space-y-2 text-sm">
-        @for (item of draftItems(); track item.productId) {
-          <li class="flex items-center gap-2">
-            <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
-            <app-input-field className="w-24" type="number" min="0" [ariaLabel]="'Cantidad de ' + item.label" [value]="item.cantidad" (valueChange)="updateItemQty(item.productId, +$event)" />
-            <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:close" tooltip="Quitar" (btnClick)="removeItem(item.productId)" />
-          </li>
-        }
-      </ul>
-    </div>
-    <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="submitCreate()" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()">
-      Guardar receta
-    </app-button>
   </div>
 </app-modal>
-

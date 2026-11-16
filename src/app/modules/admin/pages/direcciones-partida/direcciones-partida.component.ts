@@ -7,17 +7,18 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/common/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import type { DepartureAddressDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 
 @Component({
   selector: 'app-direcciones-partida',
@@ -27,84 +28,119 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     ListFiltersComponent,
     PaginationComponent,
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
-    FormFieldComponent,
     ConfirmDialogComponent,
     HasPermissionDirective,
+    PageStateComponent,
+    HelpPanelComponent,
+    FormSectionComponent,
   ],
   template: `
-    <app-breadcrumb-inline [segments]="[{ label: 'Guías' }, { label: 'Direcciones de partida' }]" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">Direcciones de partida</h1>
-      <app-button startIconName="mdi:plus" *appHasPermission="'shipping.write'" size="sm" (btnClick)="openCreate()">Nueva dirección</app-button>
+    <app-breadcrumb-inline [segments]="[{ label: 'Guías de remisión' }, { label: 'Direcciones de partida' }]" />
+
+    <app-page-toolbar [excel]="false">
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Direcciones de partida</h1>
+      <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+        <ng-container *appHasPermission="'shipping.write'">
+          <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nueva dirección</app-button>
+        </ng-container>
+      </div>
     </app-page-toolbar>
-    <app-component-card title="Filtros" className="mt-4">
-      <app-list-filters [searchValue]="search()" searchPlaceholder="Buscar por código o nombre" [showSelect]="false" (searchValueChange)="search.set($event); page.set(1)" />
-    </app-component-card>
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="direcciones-partida">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Son los lugares desde donde sale la mercadería en una guía de remisión, por ejemplo tu almacén.</li>
+        <li>El código es el del establecimiento anexo que tienes registrado en SUNAT.</li>
+      </ol>
+    </app-help-panel>
+
+    <app-list-filters
+      compact
+      [showSelect]="false"
+      [searchValue]="search()"
+      searchPlaceholder="Buscar por código o nombre"
+      clearLabel="Limpiar"
+      (searchValueChange)="search.set($event); page.set(1)"
+      (clear)="search.set(''); page.set(1)"
+    />
+
     @let listState = listQuery | queryPageState: total();
-    <app-component-card title="Puntos de partida" className="mt-4" [loading]="listState.loading" [error]="listState.error" [empty]="listState.empty" emptyTitle="Sin direcciones" (retry)="listQuery.refetch()">
-      <table class="w-full text-left text-sm">
-        <thead class="border-b text-xs uppercase text-gray-500"><tr><th class="px-3 py-2">Código</th><th class="px-3 py-2">Nombre</th><th class="px-3 py-2">Dirección</th><th class="px-3 py-2"></th></tr></thead>
-        <tbody>
-          @for (row of rows(); track row.id) {
-            <tr class="border-b border-gray-100 dark:border-gray-800">
-              <td class="px-3 py-2 font-medium">{{ row.codigo }}</td>
-              <td class="px-3 py-2">{{ row.nombre }}</td>
-              <td class="px-3 py-2">{{ row.direccion }}</td>
-              <td class="px-3 py-2 text-right">
-                <div class="flex flex-wrap items-center justify-end gap-1.5">
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:pencil-outline"
-                    tooltip="Editar"
-                    (btnClick)="openEdit(row)"
-                  />
-                  <app-button
-                    size="sm"
-                    variant="danger"
-                    [iconOnly]="true"
-                    startIconName="mdi:trash-can-outline"
-                    tooltip="Eliminar"
-                    (btnClick)="deleteTarget.set(row)"
-                  />
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      @if (listQuery.data(); as data) {
-        <app-pagination class="mt-4" [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
-      }
-    </app-component-card>
-    <app-modal compact [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
-      <div class="space-y-3 p-6">
-        <h3 class="text-lg font-semibold">{{ editing() ? 'Editar dirección' : 'Nueva dirección' }}</h3>
+
+    <!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+    <app-page-state
+      [loading]="listState.loading"
+      [error]="listState.error"
+      [empty]="listState.empty"
+      [emptyTitle]="search().trim() ? 'Sin resultados para esa búsqueda' : 'Aún no hay direcciones de partida'"
+      [emptyHint]="search().trim() ? 'Prueba con otro texto.' : 'Usa «Nueva dirección» para registrar el primero.'"
+      skeleton="table"
+      (retry)="listQuery.refetch()"
+    >
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <caption class="sr-only">Direcciones de partida</caption>
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th data-card-role="title" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-start">Punto de partida</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-start">Dirección</th>
+                <th class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (row of rows(); track row.id) {
+                <tr>
+                  <td class="px-5 py-3 text-theme-sm">
+                    <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.nombre }}</span>
+                    <span class="text-theme-xs text-gray-500 dark:text-gray-400">Código {{ row.codigo }}</span>
+                  </td>
+              <td class="px-5 py-3 text-theme-sm">{{ row.direccion }}</td>
+                  <td class="px-5 py-3 text-end">
+                    <div class="inline-flex items-center gap-1.5">
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:pencil-outline" [tooltip]="'Editar ' + row.nombre" (btnClick)="openEdit(row)" />
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:trash-can-outline" [tooltip]="'Eliminar ' + row.nombre" (btnClick)="deleteTarget.set(row)" />
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </app-page-state>
+
+    <app-pagination [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+
+    <app-modal compact [isOpen]="modalOpen()" (closed)="!saveMutation.isPending() && modalOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+      <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+        <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">{{ editing() ? 'Editar dirección' : 'Nueva dirección' }}</h3>
+      </div>
+      <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
+        <app-form-section compact title="Datos" [cols]="2">
         @if (!editing()) {
-          <app-form-field label="Código" required helpText="Código de establecimiento anexo SUNAT del punto de partida.">
-            <app-input-field [value]="codigo()" (valueChange)="codigo.set('' + $event)" placeholder="0000" [maxLength]="40" />
-          </app-form-field>
+          <app-input-field compact label="Código" [isRequired]="true" helpText="Código de establecimiento anexo SUNAT del punto de partida." placeholder="0000" [maxLength]="40" [value]="codigo()" (valueChange)="codigo.set('' + $event)" />
         }
-        <app-form-field label="Nombre" required>
-          <app-input-field [value]="nombre()" (valueChange)="nombre.set('' + $event)" placeholder="Ej. Almacén central" [maxLength]="200" />
-        </app-form-field>
-        <app-form-field label="Dirección completa" required>
-          <app-input-field [value]="direccion()" (valueChange)="direccion.set('' + $event)" [maxLength]="500" />
-        </app-form-field>
-        <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+        <app-input-field compact label="Nombre" [isRequired]="true" placeholder="Ej.: Almacén central" [maxLength]="200" [value]="nombre()" (valueChange)="nombre.set('' + $event)" />
+        <app-input-field compact class="sm:col-span-2" label="Dirección completa" [isRequired]="true" [maxLength]="500" [value]="direccion()" (valueChange)="direccion.set('' + $event)" />
+        </app-form-section>
+      </div>
+      <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+        <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+        <div class="flex items-center gap-2">
+          <app-button size="sm" variant="outline" startIconName="mdi:close" [disabled]="saveMutation.isPending()" (btnClick)="modalOpen.set(false)">Cancelar</app-button>
+          <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submit()">Guardar</app-button>
+        </div>
       </div>
     </app-modal>
+
     <app-confirm-dialog
       [open]="!!deleteTarget()"
       title="Eliminar dirección"
-      [message]="'¿Desea eliminar la dirección ' + (deleteTarget()?.nombre ?? '') + '?'"
+      [message]="'¿Eliminar la dirección ' + (deleteTarget()?.nombre ?? '') + '?'"
       confirmLabel="Eliminar"
       (cancelled)="deleteTarget.set(null)"
       (confirmed)="confirmDelete()"

@@ -7,7 +7,6 @@ import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
@@ -18,37 +17,42 @@ import { TextAreaComponent } from '../../../../shared/components/form/input/text
 import { TabStripComponent, type TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
-import type {
-  AdverseEventItemDto,
-  AdverseEventSeverity,
-  CustomerItemDto,
-  ProductListItemDto } from '../../models/directory.models';
-import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
-import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
+import type {AdverseEventItemDto, AdverseEventSeverity } from '../../models/directory.models';
 
 type Tab = 'farmacovigilancia' | 'mermas' | 'rentabilidad' | 'ventas' | 'medicos';
 
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import type { StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { SectionHeadingComponent } from '../../../../shared/components/common/section-heading/section-heading.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { SearchSelectComponent } from '../../../../shared/components/form/search-select/search-select.component';
 
 @Component({
   selector: 'app-reporte-digemid',
   standalone: true,
   imports: [
     ExcelIconComponent,
-    OptionItemComponent,
-    OptionListComponent,
     QueryPageStatePipe,
     CommonModule,
     AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
     FormSelectComponent,
     ModalComponent,
     TextAreaComponent,
     TabStripComponent,
+    PageStateComponent,
+    ListFiltersComponent,
+    HelpPanelComponent,
+    SectionHeadingComponent,
+    StatusBadgeComponent,
+    SearchSelectComponent,
   ],
   templateUrl: './reporte-digemid.component.html' })
 export class ReporteDigemidComponent {
@@ -79,16 +83,38 @@ export class ReporteDigemidComponent {
   protected readonly notifyOpen = signal(false);
   protected readonly notifyTarget = signal<AdverseEventItemDto | null>(null);
   protected readonly productSearch = signal('');
-  protected readonly productOptions = signal<ProductListItemDto[]>([]);
   protected readonly productId = signal('');
   protected readonly customerSearch = signal('');
-  protected readonly customerOptions = signal<CustomerItemDto[]>([]);
   protected readonly customerId = signal('');
   protected readonly descripcion = signal('');
   protected readonly severidad = signal<AdverseEventSeverity>('LEVE');
   protected readonly digemidReportNumber = signal('');
   protected readonly medidasCorrectivas = signal('');
   protected readonly exporting = signal(false);
+  protected readonly pickerReset = signal(0);
+
+  protected readonly productQuery = injectQuery(() => {
+    const search = this.productSearch().trim();
+    return {
+      queryKey: ['pharma', 'adverse-product-picker', search] as const,
+      enabled: this.createOpen(),
+      queryFn: () => firstValueFrom(this.api.listProducts({ search: search || undefined, field: 'all', page: 1, pageSize: 15 })),
+    };
+  });
+  protected readonly productOptions = computed(() =>
+    (this.productQuery.data()?.items ?? []).map((p) => ({ value: p.id, label: p.nombre, meta: p.codigoInterno ? `Cód. ${p.codigoInterno}` : '' })),
+  );
+  protected readonly customerQuery = injectQuery(() => {
+    const search = this.customerSearch().trim();
+    return {
+      queryKey: ['pharma', 'adverse-customer-picker', search] as const,
+      enabled: this.createOpen(),
+      queryFn: () => firstValueFrom(this.api.listCustomers({ search: search || undefined, page: 1, pageSize: 10 })),
+    };
+  });
+  protected readonly customerOptions = computed(() =>
+    (this.customerQuery.data()?.items ?? []).map((c) => ({ value: c.id, label: c.nombre, meta: c.numeroDocumento })),
+  );
 
   protected readonly severityOptions = [
     { value: 'LEVE', label: 'Leve' },
@@ -166,6 +192,16 @@ export class ReporteDigemidComponent {
   protected readonly salesRows = computed(() => (this.salesQuery.data() ?? []) as Array<Record<string, string | number>>);
   protected readonly medicoRows = computed(() => (this.medicoQuery.data() ?? []) as Array<Record<string, string | number | null>>);
 
+  private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
+  protected readonly shrinkageChips = computed<SummaryChip[]>(() => {
+    const t = this.shrinkageData()?.totales;
+    if (!t) return [];
+    return [
+      { id: 'mermas', label: 'Mermas', count: this.pen.format(this.num(t['mermasValorizado'])), tone: 'error', clickable: false, tooltip: 'Valor de los ajustes negativos del periodo.' },
+      { id: 'venc', label: 'Por vencer', count: this.pen.format(this.num(t['vencimientosValorizado'])), tone: 'warning', clickable: false, tooltip: 'Valor de los lotes que vencen pronto.' },
+    ];
+  });
+
   protected readonly shrinkageItemCount = computed(() => {
     const data = this.shrinkageData();
     return (data?.shrinkage?.length ?? 0) + (data?.expiring?.length ?? 0);
@@ -213,6 +249,9 @@ export class ReporteDigemidComponent {
     this.customerId.set('');
     this.descripcion.set('');
     this.severidad.set('LEVE');
+    this.productSearch.set('');
+    this.customerSearch.set('');
+    this.pickerReset.update((n) => n + 1);
     this.createOpen.set(true);
   }
 
@@ -223,30 +262,21 @@ export class ReporteDigemidComponent {
     this.notifyOpen.set(true);
   }
 
-  protected async searchProducts() {
-    const search = this.productSearch().trim();
-    if (!search) return;
-    const res = await firstValueFrom(this.api.listProducts({ search, page: 1, pageSize: 8 }));
-    this.productOptions.set('items' in res ? res.items : res);
+  protected severityLabel(value: string): string {
+    return this.severityOptions.find((o) => o.value === value)?.label ?? value;
   }
 
-  protected selectProduct(p: ProductListItemDto) {
-    this.productId.set(p.id);
-    this.productSearch.set(p.nombre);
-    this.productOptions.set([]);
+  protected severityTone(value: string): StatusTone {
+    return value === 'GRAVE' ? 'error' : value === 'MODERADO' ? 'warning' : 'info';
   }
 
-  protected async searchCustomers() {
-    const search = this.customerSearch().trim();
-    if (!search) return;
-    const res = await firstValueFrom(this.api.listCustomers({ search, page: 1, pageSize: 8 }));
-    this.customerOptions.set(res.items);
+  protected groupLabel(options: { value: string; label: string }[], value: string): string {
+    return (options.find((o) => o.value === value)?.label ?? 'Grupo').replace(/^Por /, '').replace(/^./, (c) => c.toUpperCase());
   }
 
-  protected selectCustomer(c: CustomerItemDto) {
-    this.customerId.set(c.id);
-    this.customerSearch.set(c.nombre);
-    this.customerOptions.set([]);
+  protected num(value: unknown): number {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
   }
 
   protected async exportFarmacovigilancia() {

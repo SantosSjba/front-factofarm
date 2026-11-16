@@ -1,17 +1,20 @@
 ﻿import { CommonModule, CurrencyPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 
 @Component({
   selector: 'app-sire-compras',
@@ -21,35 +24,54 @@ import { LocaleService } from '../../../../core/services/locale.service';
     CurrencyPipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     PageStateComponent,
     InputFieldComponent,
     ButtonComponent,
+    ListFiltersComponent,
+    HelpPanelComponent,
+    AlertComponent,
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'SIRE compras' }]" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">SIRE — Registro de compras</h1>
-    </app-page-toolbar>
-    <app-component-card className="mt-4" title="Periodo">
-      <div class="flex flex-wrap items-end gap-3">
-        <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
-        <app-button startIconName="mdi:magnify" variant="primary" (btnClick)="summaryQuery.refetch()">Consultar</app-button>
-        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle()">Exportar PLE 8.1</app-button>
+
+    <app-page-toolbar [excel]="false">
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">SIRE — Registro de compras</h1>
+      <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+        <app-button size="sm" variant="outline" startIconName="mdi:file-export-outline" tooltip="Descarga el archivo PLE 8.1 del mes para cargarlo en el portal SIRE de SUNAT." [loading]="exporting()" [disabled]="exporting()" (btnClick)="exportPle()">Exportar PLE 8.1</app-button>
       </div>
-    </app-component-card>
-    <app-page-state [loading]="summaryQuery.isPending()" [error]="summaryError()" (retry)="summaryQuery.refetch()">
+    </app-page-toolbar>
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="sire-compras">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Resume las compras del mes que van al registro de compras del SIRE de SUNAT.</li>
+        <li>Pulsa «Exportar PLE 8.1» para descargar el archivo y valídalo antes de cargarlo en el portal SIRE.</li>
+      </ol>
+    </app-help-panel>
+
+    <app-list-filters compact [showSearch]="false" [showSelect]="false" [showClear]="false" [summaryChips]="summaryChips()" summaryLabel="Resumen del mes" summaryStorageKey="sire-compras">
+      <div data-filters class="contents">
+        <app-input-field compact class="min-w-0 flex-[2] basis-48 sm:max-w-64" icon="mdi:calendar-month" label="Periodo" type="month" [value]="period()" (valueChange)="period.set($event + '')" />
+      </div>
+    </app-list-filters>
+
+    <app-page-state [loading]="summaryQuery.isPending()" [error]="summaryError()" skeleton="table" (retry)="summaryQuery.refetch()">
       @if (summaryQuery.data(); as s) {
-        <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <app-component-card title="Recepciones / compras"><p class="text-2xl font-semibold">{{ s.compras.count }}</p></app-component-card>
-          <app-component-card title="Total compras"><p class="text-2xl font-semibold text-brand-600">{{ s.compras.total | currency: 'PEN' }}</p></app-component-card>
-        </div>
-        <p class="mt-4 text-sm text-gray-500">Exporte el PLE 8.1 y valídelo antes de cargarlo en el portal SIRE de SUNAT.</p>
+        <app-alert variant="info" title="Antes de cargarlo en SUNAT" message="Exporta el PLE 8.1 y valídalo antes de subirlo al portal SIRE: deben estar registradas todas las facturas de proveedores del mes." />
       }
     </app-page-state>
   `,
 })
 export class SireComprasComponent {
+  private readonly pen = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const c = this.summaryQuery.data()?.compras;
+    if (!c) return [];
+    return [
+      { id: 'count', label: 'Compras registradas', count: c.count, icon: 'mdi:truck-check-outline', clickable: false },
+      { id: 'total', label: 'Total compras', count: this.pen.format(Number(c.total) || 0), tone: 'brand', clickable: false },
+    ];
+  });
+
   private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);

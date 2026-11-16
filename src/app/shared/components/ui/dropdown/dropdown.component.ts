@@ -91,12 +91,19 @@ export class DropdownComponent implements AfterViewInit, OnDestroy {
     }
   };
 
+  /** Escape cierra el menú abierto (uso con teclado). */
+  private handleEscape = (event: KeyboardEvent) => {
+    if (this.isOpen && event.key === 'Escape') this.closed.emit();
+  };
+
   ngAfterViewInit() {
     document.addEventListener('mousedown', this.handleClickOutside);
+    document.addEventListener('keydown', this.handleEscape);
   }
 
   ngOnDestroy() {
     this.stopTracking();
     document.removeEventListener('mousedown', this.handleClickOutside);
+    document.removeEventListener('keydown', this.handleEscape);
   }
 }

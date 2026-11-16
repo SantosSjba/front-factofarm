@@ -8,13 +8,11 @@ import { HasPermissionDirective } from '../../../../core/directives/has-permissi
 import { NotifyService } from '../../../../core/services/notify.service';
 import { isOptionalNumberAtLeast } from '../../../../core/utils/form-validators';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/common/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
@@ -22,6 +20,9 @@ import type { ShippingVehicleDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 @Component({
   selector: 'app-vehiculos',
   standalone: true,
@@ -31,94 +32,125 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     ListFiltersComponent,
     PaginationComponent,
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
-    FormFieldComponent,
     ConfirmDialogComponent,
     FormSelectComponent,
     HasPermissionDirective,
+    PageStateComponent,
+    HelpPanelComponent,
+    FormSectionComponent,
   ],
   template: `
-    <app-breadcrumb-inline [segments]="[{ label: 'Guías' }, { label: 'Vehículos' }]" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">Vehículos</h1>
-      <app-button startIconName="mdi:plus" *appHasPermission="'shipping.write'" size="sm" (btnClick)="openCreate()">Nuevo vehículo</app-button>
+    <app-breadcrumb-inline [segments]="[{ label: 'Guías de remisión' }, { label: 'Vehículos' }]" />
+
+    <app-page-toolbar [excel]="false">
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Vehículos</h1>
+      <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+        <ng-container *appHasPermission="'shipping.write'">
+          <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nuevo vehículo</app-button>
+        </ng-container>
+      </div>
     </app-page-toolbar>
-    <app-component-card title="Filtros" className="mt-4">
-      <app-list-filters [searchValue]="search()" searchPlaceholder="Buscar por placa o marca" [showSelect]="false" (searchValueChange)="search.set($event); page.set(1)" />
-    </app-component-card>
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="vehiculos">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Son los vehículos que trasladan la mercadería en una guía de remisión.</li>
+        <li>SUNAT pide la placa; la marca, el modelo y la capacidad son opcionales.</li>
+      </ol>
+    </app-help-panel>
+
+    <app-list-filters
+      compact
+      [showSelect]="false"
+      [searchValue]="search()"
+      searchPlaceholder="Buscar por placa o marca"
+      clearLabel="Limpiar"
+      (searchValueChange)="search.set($event); page.set(1)"
+      (clear)="search.set(''); page.set(1)"
+    />
+
     @let listState = listQuery | queryPageState: total();
-    <app-component-card title="Vehículos" className="mt-4" [loading]="listState.loading" [error]="listState.error" [empty]="listState.empty" emptyTitle="Sin vehículos" (retry)="listQuery.refetch()">
-      <table class="w-full text-left text-sm">
-        <thead class="border-b text-xs uppercase text-gray-500"><tr><th class="px-3 py-2">Placa</th><th class="px-3 py-2">Marca / Modelo</th><th class="px-3 py-2">Transportista</th><th class="px-3 py-2"></th></tr></thead>
-        <tbody>
-          @for (row of rows(); track row.id) {
-            <tr class="border-b border-gray-100 dark:border-gray-800">
-              <td class="px-3 py-2 font-medium">{{ row.placa }}</td>
-              <td class="px-3 py-2">{{ row.marca ?? '—' }} {{ row.modelo ?? '' }}</td>
-              <td class="px-3 py-2">{{ row.carrier?.razonSocial ?? '—' }}</td>
-              <td class="px-3 py-2 text-right">
-                <div class="flex flex-wrap items-center justify-end gap-1.5">
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:pencil-outline"
-                    tooltip="Editar"
-                    (btnClick)="openEdit(row)"
-                  />
-                  <app-button
-                    size="sm"
-                    variant="danger"
-                    [iconOnly]="true"
-                    startIconName="mdi:trash-can-outline"
-                    tooltip="Eliminar"
-                    (btnClick)="deleteTarget.set(row)"
-                  />
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      @if (listQuery.data(); as data) {
-        <app-pagination class="mt-4" [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
-      }
-    </app-component-card>
-    <app-modal compact [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
-      <div class="space-y-3 p-6">
-        <h3 class="text-lg font-semibold">{{ editing() ? 'Editar vehículo' : 'Nuevo vehículo' }}</h3>
-        <app-form-field label="Transportista">
-          <div class="flex items-center gap-2">
-            <app-form-select className="flex-1" [options]="carrierOptions()" [value]="carrierId()" (valueChange)="carrierId.set('' + $event)" />
-            <app-quick-create entity="carrier" [iconOnly]="true" (created)="carrierId.set('' + $event.id)" />
-          </div>
-        </app-form-field>
+
+    <!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+    <app-page-state
+      [loading]="listState.loading"
+      [error]="listState.error"
+      [empty]="listState.empty"
+      [emptyTitle]="search().trim() ? 'Sin resultados para esa búsqueda' : 'Aún no hay vehículos'"
+      [emptyHint]="search().trim() ? 'Prueba con otro texto.' : 'Usa «Nuevo vehículo» para registrar el primero.'"
+      skeleton="table"
+      (retry)="listQuery.refetch()"
+    >
+      <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="max-w-full overflow-x-auto">
+          <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+            <caption class="sr-only">Vehículos</caption>
+            <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+              <tr>
+                <th data-card-role="title" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-start">Vehículo</th>
+            <th class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-start">Transportista</th>
+                <th class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+              @for (row of rows(); track row.id) {
+                <tr>
+                  <td class="px-5 py-3 text-theme-sm">
+                    <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.placa }}</span>
+                    <span class="text-theme-xs text-gray-500 dark:text-gray-400">{{ (row.marca ?? '') + ' ' + (row.modelo ?? '') }}</span>
+                  </td>
+              <td class="px-5 py-3 text-theme-sm">{{ row.carrier?.razonSocial ?? '—' }}</td>
+                  <td class="px-5 py-3 text-end">
+                    <div class="inline-flex items-center gap-1.5">
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:pencil-outline" [tooltip]="'Editar ' + row.placa" (btnClick)="openEdit(row)" />
+                      <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:trash-can-outline" [tooltip]="'Eliminar ' + row.placa" (btnClick)="deleteTarget.set(row)" />
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </app-page-state>
+
+    <app-pagination [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+
+    <app-modal compact [isOpen]="modalOpen()" (closed)="!saveMutation.isPending() && modalOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+      <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+        <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">{{ editing() ? 'Editar vehículo' : 'Nuevo vehículo' }}</h3>
+      </div>
+      <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
+        <app-form-section compact title="Datos" [cols]="2">
+        <div class="flex items-end gap-2 sm:col-span-2">
+          <app-form-select compact class="min-w-0 flex-1" label="Transportista" helpText="Empresa de transporte a la que pertenece. Opcional." [options]="carrierOptions()" [value]="carrierId()" (valueChange)="carrierId.set('' + $event)" />
+          <app-quick-create compact entity="carrier" [iconOnly]="true" (created)="carrierId.set('' + $event.id)" />
+        </div>
         @if (!editing()) {
-          <app-form-field label="Placa" required>
-            <app-input-field [value]="placa()" (valueChange)="placa.set(('' + $event).toUpperCase())" placeholder="ABC-123" [maxLength]="20" />
-          </app-form-field>
+          <app-input-field compact class="sm:col-span-2" label="Placa" [isRequired]="true" placeholder="ABC-123" [maxLength]="20" [value]="placa()" (valueChange)="placa.set(('' + $event).toUpperCase())" />
         }
-        <app-form-field label="Marca">
-          <app-input-field [value]="marca()" (valueChange)="marca.set('' + $event)" [maxLength]="80" />
-        </app-form-field>
-        <app-form-field label="Modelo">
-          <app-input-field [value]="modelo()" (valueChange)="modelo.set('' + $event)" [maxLength]="80" />
-        </app-form-field>
-        <app-form-field label="Capacidad (kg)">
-          <app-input-field type="number" min="0" [value]="capacidadKg()" (valueChange)="capacidadKg.set('' + $event)" />
-        </app-form-field>
-        <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+        <app-input-field compact label="Marca" [maxLength]="80" [value]="marca()" (valueChange)="marca.set('' + $event)" />
+        <app-input-field compact label="Modelo" [maxLength]="80" [value]="modelo()" (valueChange)="modelo.set('' + $event)" />
+        <app-input-field compact label="Capacidad (kg)" type="number" min="0" [value]="capacidadKg()" (valueChange)="capacidadKg.set('' + $event)" />
+        </app-form-section>
+      </div>
+      <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+        <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+        <div class="flex items-center gap-2">
+          <app-button size="sm" variant="outline" startIconName="mdi:close" [disabled]="saveMutation.isPending()" (btnClick)="modalOpen.set(false)">Cancelar</app-button>
+          <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submit()">Guardar</app-button>
+        </div>
       </div>
     </app-modal>
+
     <app-confirm-dialog
       [open]="!!deleteTarget()"
       title="Eliminar vehículo"
-      [message]="'¿Desea eliminar el vehículo ' + (deleteTarget()?.placa ?? '') + '?'"
+      [message]="'¿Eliminar el vehículo ' + (deleteTarget()?.placa ?? '') + '?'"
       confirmLabel="Eliminar"
       (cancelled)="deleteTarget.set(null)"
       (confirmed)="confirmDelete()"

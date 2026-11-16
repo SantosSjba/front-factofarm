@@ -1,102 +1,108 @@
 ﻿<app-breadcrumb-inline [segments]="breadcrumb" />
-<app-page-toolbar>
+
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Médicos prescriptores</h1>
-  <app-button startIconName="mdi:plus" *appHasPermission="'medicos.write'" size="sm" (btnClick)="openCreate()">Nuevo médico</app-button>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
+    <ng-container *appHasPermission="'medicos.write'">
+      <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreate()">Nuevo médico</app-button>
+    </ng-container>
+  </div>
 </app-page-toolbar>
 
-<app-component-card title="Filtros" className="mt-4">
-  <app-list-filters
-    [searchValue]="search()"
-    searchPlaceholder="Buscar por CMP o nombre"
-    [showSelect]="false"
-    (searchValueChange)="search.set($event); page.set(1)"
-  />
-</app-component-card>
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="medicos">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Es la lista de médicos que firman las recetas, con su número de colegiatura (CMP).</li>
+    <li>Al registrar una receta o vender un producto que la exige, eliges al médico de esta lista.</li>
+    <li>El catálogo es compartido entre farmacias: si un médico no aparece, regístralo con su CMP.</li>
+  </ol>
+</app-help-panel>
+
+<app-list-filters
+  compact
+  [showSelect]="false"
+  [searchValue]="search()"
+  searchPlaceholder="Buscar por CMP o nombre"
+  clearLabel="Limpiar"
+  (searchValueChange)="search.set($event); page.set(1)"
+  (clear)="search.set(''); page.set(1)"
+/>
 
 @let listState = listQuery | queryPageState: total();
 
-<app-component-card title="Médicos" className="mt-4"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
-  emptyTitle="No hay médicos registrados"
-  emptyHint="Sin coincidencias para los filtros aplicados."
-  (retry)="listQuery.refetch()">
-  <div class="overflow-x-auto">
-  <table class="w-full text-left text-sm">
-    <thead class="border-b text-xs uppercase text-gray-500">
-      <tr>
-        <th class="px-3 py-2">CMP</th>
-        <th class="px-3 py-2">Nombre</th>
-        <th class="px-3 py-2">Especialidad</th>
-        <th class="px-3 py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of rows(); track row.id) {
-        <tr class="border-b border-gray-100 dark:border-gray-800">
-          <td class="px-3 py-2 font-medium">{{ row.cmp }}</td>
-          <td class="px-3 py-2">{{ row.nombres }} {{ row.apellidos }}</td>
-          <td class="px-3 py-2">{{ row.especialidad ?? '—' }}</td>
-          <td class="px-3 py-2 text-right">
-            <div class="flex flex-wrap items-center justify-end gap-1.5">
+  [emptyTitle]="search().trim() ? 'Sin médicos con esa búsqueda' : 'Aún no hay médicos registrados'"
+  [emptyHint]="search().trim() ? 'Prueba con otro CMP o nombre.' : 'Usa «Nuevo médico» para registrar el primero.'"
+  skeleton="table"
+  (retry)="listQuery.refetch()"
+>
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="max-w-full overflow-x-auto">
+      <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Médicos prescriptores</caption>
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
+          <tr>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Médico</th>
+            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Especialidad</th>
+            @if (canManageGlobal) {
+              <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+            }
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td class="px-5 py-3 text-theme-sm">
+                <span class="block font-medium text-gray-800 dark:text-white/90">{{ row.nombres }} {{ row.apellidos }}</span>
+                <span class="text-theme-xs text-gray-500 dark:text-gray-400">CMP {{ row.cmp }}</span>
+              </td>
+              <td class="px-5 py-3 text-theme-sm">{{ row.especialidad || '—' }}</td>
               @if (canManageGlobal) {
-                <app-button
-                  size="sm"
-                  variant="outline"
-                  [iconOnly]="true"
-                  startIconName="mdi:pencil-outline"
-                  tooltip="Editar"
-                  (btnClick)="openEdit(row)"
-                />
-                <app-button
-                  size="sm"
-                  variant="danger"
-                  [iconOnly]="true"
-                  startIconName="mdi:trash-can-outline"
-                  tooltip="Eliminar"
-                  (btnClick)="deleteTarget.set(row)"
-                />
+                <td class="px-5 py-3 text-end">
+                  <div class="inline-flex items-center gap-1.5">
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:pencil-outline" [tooltip]="'Editar a ' + row.nombres" (btnClick)="openEdit(row)" />
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:trash-can-outline" [tooltip]="'Eliminar a ' + row.nombres" (btnClick)="deleteTarget.set(row)" />
+                  </div>
+                </td>
               }
-            </div>
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="4" class="px-3 py-6 text-center text-gray-500">Sin coincidencias para los filtros aplicados.</td>
-        </tr>
-      }
-    </tbody>
-  </table>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
-  @if (listQuery.data(); as data) {
-    <app-pagination class="mt-4" [totalItems]="data.total" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
-  }
-</app-component-card>
+</app-page-state>
 
-<app-modal compact [isOpen]="modalOpen()" (closed)="modalOpen.set(false)" className="w-full max-w-lg">
-  <div class="space-y-3 p-6">
-    <h3 class="text-lg font-semibold">{{ editing() ? 'Editar médico' : 'Nuevo médico' }}</h3>
-    <app-form-field label="CMP" required helpText="Número de colegiatura del Colegio Médico del Perú.">
-      <app-input-field [value]="cmp()" (valueChange)="cmp.set('' + $event)" [maxLength]="20" [disabled]="!!editing()" />
-    </app-form-field>
-    <app-form-field label="Nombres" required>
-      <app-input-field [value]="nombres()" (valueChange)="nombres.set('' + $event)" [maxLength]="120" />
-    </app-form-field>
-    <app-form-field label="Apellidos" required>
-      <app-input-field [value]="apellidos()" (valueChange)="apellidos.set('' + $event)" [maxLength]="120" />
-    </app-form-field>
-    <app-form-field label="Especialidad">
-      <app-input-field [value]="especialidad()" (valueChange)="especialidad.set('' + $event)" [maxLength]="120" />
-    </app-form-field>
-    <app-button startIconName="mdi:content-save-outline" variant="primary" (btnClick)="submit()" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()">Guardar</app-button>
+<app-pagination [totalItems]="total()" [currentPage]="page()" [pageSize]="15" (currentPageChange)="page.set($event)" />
+
+<app-modal compact [isOpen]="modalOpen()" (closed)="!saveMutation.isPending() && modalOpen.set(false)" className="w-full max-w-lg shadow-theme-lg">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">{{ editing() ? 'Editar médico' : 'Nuevo médico' }}</h3>
+  </div>
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
+    <app-form-section compact title="Datos del médico" [cols]="2">
+      <app-input-field compact class="sm:col-span-2" label="CMP" [isRequired]="true" helpText="Número de colegiatura del Colegio Médico del Perú. No se puede cambiar después." inputMode="numeric" [maxLength]="20" [disabled]="!!editing()" [value]="cmp()" (valueChange)="cmp.set('' + $event)" />
+      <app-input-field compact label="Nombres" [isRequired]="true" [maxLength]="120" [value]="nombres()" (valueChange)="nombres.set('' + $event)" />
+      <app-input-field compact label="Apellidos" [isRequired]="true" [maxLength]="120" [value]="apellidos()" (valueChange)="apellidos.set('' + $event)" />
+      <app-input-field compact class="sm:col-span-2" label="Especialidad" placeholder="Ej.: Pediatría" [maxLength]="120" [value]="especialidad()" (valueChange)="especialidad.set('' + $event)" />
+    </app-form-section>
+  </div>
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" startIconName="mdi:close" [disabled]="saveMutation.isPending()" (btnClick)="modalOpen.set(false)">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="saveMutation.isPending()" [loading]="saveMutation.isPending()" (btnClick)="submit()">Guardar</app-button>
+    </div>
   </div>
 </app-modal>
 
 <app-confirm-dialog
   [open]="!!deleteTarget()"
   title="Eliminar médico"
-  [message]="'¿Desea eliminar al médico ' + (deleteTarget()?.nombres ?? '') + ' ' + (deleteTarget()?.apellidos ?? '') + '?'"
+  [message]="'¿Eliminar al médico ' + (deleteTarget()?.nombres ?? '') + ' ' + (deleteTarget()?.apellidos ?? '') + '?'"
   confirmLabel="Eliminar"
   (cancelled)="deleteTarget.set(null)"
   (confirmed)="confirmDelete()"

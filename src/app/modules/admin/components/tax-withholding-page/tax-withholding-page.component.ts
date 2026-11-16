@@ -23,9 +23,10 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { TabStripComponent, type TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
-import type { CustomerDocumentTypeDto, TaxWithholdingRecordDto } from '../../models/directory.models';
+import type { TaxWithholdingRecordDto } from '../../models/directory.models';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { sunatStatusLabel, sunatStatusTone } from '../../utils/sale-labels';
+import { SUNAT_DOC_TYPE_FROM_PARTY, SUNAT_DOC_TYPE_OPTIONS, sunatDocTypeShort } from '../../utils/sunat-doc-types';
 
 export type TaxWithholdingPageKind = 'RETENCION' | 'PERCEPCION';
 type StatusGroup = 'aceptado' | 'pendiente' | 'rechazado';
@@ -70,23 +71,6 @@ const CONFIG: Record<TaxWithholdingPageKind, {
   },
 };
 
-/** Catálogo 06 SUNAT con nombres que entiende el usuario. */
-const DOC_TYPE_OPTIONS = [
-  { value: '6', label: 'RUC' },
-  { value: '1', label: 'DNI' },
-  { value: '4', label: 'Carnet de extranjería' },
-  { value: '7', label: 'Pasaporte' },
-  { value: '0', label: 'Otro / sin documento' },
-];
-const DOC_TYPE_FROM_PARTY: Record<CustomerDocumentTypeDto, string> = {
-  RUC: '6',
-  DNI: '1',
-  CE: '4',
-  PASAPORTE: '7',
-  DOC_SIN_RUC: '0',
-  OTRO: '0',
-};
-const DOC_TYPE_SHORT: Record<string, string> = { '6': 'RUC', '1': 'DNI', '4': 'CE', '7': 'Pasaporte', '0': 'Doc.' };
 
 /**
  * Pantalla de retenciones o percepciones SUNAT: listado del periodo con resumen en chips y
@@ -326,7 +310,7 @@ export class TaxWithholdingPageComponent {
 
   readonly kind = input.required<TaxWithholdingPageKind>();
   protected readonly cfg = computed(() => CONFIG[this.kind()]);
-  protected readonly docTypeOptions = DOC_TYPE_OPTIONS;
+  protected readonly docTypeOptions = SUNAT_DOC_TYPE_OPTIONS;
   protected readonly tabs: TabStripItem[] = [
     { id: 'comprobantes', label: 'Retenciones' },
     { id: 'detracciones', label: 'Detracciones' },
@@ -440,10 +424,10 @@ export class TaxWithholdingPageComponent {
       queryFn: async (): Promise<(SearchSelectOption & { docType: string; nombre: string; numero: string })[]> => {
         if (kind === 'RETENCION') {
           const res = await firstValueFrom(this.api.listSuppliersPaged({ search: search || undefined, page: 1, pageSize: 15 }));
-          return res.items.map((s) => ({ value: s.id, label: s.razonSocial, meta: s.numeroDocumento, docType: DOC_TYPE_FROM_PARTY[s.tipoDocumento] ?? '0', nombre: s.razonSocial, numero: s.numeroDocumento }));
+          return res.items.map((s) => ({ value: s.id, label: s.razonSocial, meta: s.numeroDocumento, docType: SUNAT_DOC_TYPE_FROM_PARTY[s.tipoDocumento] ?? '0', nombre: s.razonSocial, numero: s.numeroDocumento }));
         }
         const res = await firstValueFrom(this.api.listCustomers({ search: search || undefined, page: 1, pageSize: 15 }));
-        return res.items.map((c) => ({ value: c.id, label: c.nombre, meta: c.numeroDocumento, docType: DOC_TYPE_FROM_PARTY[c.tipoDocumento] ?? '0', nombre: c.nombre, numero: c.numeroDocumento }));
+        return res.items.map((c) => ({ value: c.id, label: c.nombre, meta: c.numeroDocumento, docType: SUNAT_DOC_TYPE_FROM_PARTY[c.tipoDocumento] ?? '0', nombre: c.nombre, numero: c.numeroDocumento }));
       },
     };
   });
@@ -589,7 +573,7 @@ export class TaxWithholdingPageComponent {
   }
 
   protected partyDoc(row: TaxWithholdingRecordDto): string {
-    return `${DOC_TYPE_SHORT[row.partyDocType] ?? 'Doc.'} ${row.partyDocNumber}`;
+    return `${sunatDocTypeShort(row.partyDocType)} ${row.partyDocNumber}`;
   }
 
   protected refLabel(row: TaxWithholdingRecordDto): string {

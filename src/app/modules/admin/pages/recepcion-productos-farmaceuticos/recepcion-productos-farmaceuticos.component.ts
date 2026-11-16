@@ -1,34 +1,40 @@
 ﻿import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { ShortcutSectionComponent, type ShortcutLink } from '../../../../shared/components/common/shortcut-section/shortcut-section.component';
 
 @Component({
   selector: 'app-recepcion-productos-farmaceuticos',
   standalone: true,
-  imports: [RouterLink, BreadcrumbInlineComponent, PageToolbarComponent, ComponentCardComponent],
+  imports: [BreadcrumbInlineComponent, PageToolbarComponent, HelpPanelComponent, ShortcutSectionComponent],
   template: `
-    <app-breadcrumb-inline [segments]="[{ label: 'Compras' }, { label: 'Recepción farmacéutica' }]" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">Recepción de productos farmacéuticos</h1>
+    <app-breadcrumb-inline [segments]="[{ label: 'Fármacos' }, { label: 'Recepción farmacéutica' }]" />
+
+    <app-page-toolbar [excel]="false">
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Recepción de productos farmacéuticos</h1>
     </app-page-toolbar>
-    <app-component-card className="mt-4">
-      <p class="text-sm text-gray-600 dark:text-gray-300">
-        La recepción de mercadería y el control de lotes se gestionan en los módulos de compras e inventario.
-      </p>
-      <div class="mt-6 flex flex-wrap gap-4">
-        <a routerLink="/recepcion-mercaderia" class="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600">
-          Ir a recepción de mercadería
-        </a>
-        <a routerLink="/lotes" class="rounded-lg border border-gray-300 px-5 py-3 text-sm font-semibold hover:border-brand-500 dark:border-gray-700">
-          Control de lotes
-        </a>
-        <a routerLink="/inventario-movimientos" class="rounded-lg border border-gray-300 px-5 py-3 text-sm font-semibold hover:border-brand-500 dark:border-gray-700">
-          Movimientos de inventario
-        </a>
-      </div>
-    </app-component-card>
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="recepcion-farmaceutica">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Reúne los pasos para recibir medicamentos: registrar lo que llega con su lote y vencimiento, y revisar después que el stock cuadre.</li>
+        <li>Si compraste con orden de compra, usa «Recepción de mercadería». Si no, registra el ingreso en «Movimientos de inventario».</li>
+      </ol>
+    </app-help-panel>
+
+    <app-shortcut-section
+      title="Recibir mercadería"
+      desc="Elige cómo registrar lo que llegó."
+      icon="mdi:truck-check-outline"
+      [links]="links"
+    />
   `,
 })
-export class RecepcionProductosFarmaceuticosComponent {}
+export class RecepcionProductosFarmaceuticosComponent {
+  protected readonly links: ShortcutLink[] = [
+    { label: 'Recepción de mercadería', path: '/recepcion-mercaderia', desc: 'Recibe una orden de compra: lotes, vencimientos y cantidades.', icon: 'mdi:truck-check-outline' },
+    { label: 'Movimientos de inventario', path: '/inventario-movimientos', desc: 'Registra un ingreso sin orden de compra.', icon: 'mdi:swap-vertical' },
+    { label: 'Lotes y vencimientos', path: '/lotes', desc: 'Revisa los lotes recibidos y sus fechas.', icon: 'mdi:calendar-alert' },
+    { label: 'Cadena de frío', path: '/cadena-frio', desc: 'Temperaturas de los productos refrigerados.', icon: 'mdi:snowflake-thermometer' },
+  ];
+}

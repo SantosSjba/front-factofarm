@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterModule, type Params } from '@angular/router';
 
 @Component({
   selector: 'app-dropdown-item-two',
@@ -9,6 +9,7 @@ import { RouterModule } from '@angular/router';
   template: `
     <a
       [routerLink]="to"
+      [queryParams]="queryParams"
       [ngClass]="combinedClasses"
       (click)="handleClick()"
     >
@@ -18,6 +19,8 @@ import { RouterModule } from '@angular/router';
 })
 export class DropdownItemTwoComponent {
   @Input() to!: string; // Required route path
+  /** Parámetros de la ruta (p. ej. la pestaña a abrir). */
+  @Input() queryParams: Params | null = null;
   @Input() baseClassName = 'block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white';
   @Input() className = '';
   @Output() itemClick = new EventEmitter<void>();

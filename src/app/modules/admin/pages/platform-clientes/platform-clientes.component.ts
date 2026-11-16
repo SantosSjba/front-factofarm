@@ -6,7 +6,6 @@ import { injectQuery, injectQueryClient } from '@tanstack/angular-query-experime
 import { firstValueFrom } from 'rxjs';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -18,22 +17,32 @@ import type { TenantDetailDto, TenantPlanDto, TenantStatusDto } from '../../mode
 import { TenantFormModalComponent } from './tenant-form-modal/tenant-form-modal.component';
 import { TenantProvisionModalComponent } from './tenant-provision-modal/tenant-provision-modal.component';
 import { TenantEditModalComponent } from './tenant-edit-modal/tenant-edit-modal.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import type { StatusTone } from '../../../../shared/components/ui/badge/status-badge.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
+import { TableDropdownComponent } from '../../../../shared/components/common/table-dropdown/table-dropdown.component';
+import { MenuItemComponent } from '../../../../shared/components/ui/menu-item/menu-item.component';
 
 @Component({
   selector: 'app-platform-clientes',
   standalone: true,
   imports: [
+    PageStateComponent,
     CommonModule,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     ListFiltersComponent,
     PaginationComponent,
     ButtonComponent,
     TenantFormModalComponent,
     TenantProvisionModalComponent,
     TenantEditModalComponent,
+    HelpPanelComponent,
+    StatusBadgeComponent,
+    TableDropdownComponent,
+    MenuItemComponent,
   ],
   templateUrl: './platform-clientes.component.html',
 })
@@ -176,6 +185,10 @@ export class PlatformClientesComponent implements OnInit {
       SUSPENDED: 'Suspendido',
     };
     return map[status] ?? status;
+  }
+
+  protected statusTone(status: TenantStatusDto): StatusTone {
+    return status === 'ACTIVE' ? 'success' : status === 'TRIAL' ? 'info' : status === 'SUSPENDED' ? 'error' : 'warning';
   }
 
   protected planLabel(plan: TenantPlanDto): string {

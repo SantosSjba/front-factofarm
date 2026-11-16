@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
 import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
@@ -14,12 +13,21 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { PeriodFilterComponent, type Period } from '../../components/period-filter/period-filter.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { soles } from '../../utils/finance-labels';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 
 /** Flujo de caja: lo que entró y salió de dinero en el periodo. */
 @Component({
   selector: 'app-finanzas-movimientos',
   standalone: true,
-  imports: [RouterLink, BreadcrumbInlineComponent, ComponentCardComponent, HelpPanelComponent, KpiTileComponent, PageStateComponent, PageToolbarComponent, PeriodFilterComponent],
+  imports: [
+    RouterLink,
+    BreadcrumbInlineComponent,
+    ComponentCardComponent,
+    HelpPanelComponent,
+    PageStateComponent,
+    PageToolbarComponent,
+    PeriodFilterComponent,
+  ],
   template: `
     <app-breadcrumb-inline [segments]="breadcrumb" />
     <app-page-toolbar [excel]="false">
@@ -34,26 +42,19 @@ import { soles } from '../../utils/finance-labels';
       </ol>
     </app-help-panel>
 
-    <app-period-filter [value]="period()" (change)="period.set($event)" />
+    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (change)="period.set($event)" />
 
     <app-page-state [loading]="query.isPending()" [error]="error()" (retry)="query.refetch()">
       @if (view(); as v) {
-        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <app-kpi-tile label="Entró" [value]="v.entro" icon="mdi:arrow-down-bold-circle-outline" tone="success" sub="Ventas cobradas + cobros" />
-          <app-kpi-tile label="Salió" [value]="v.salio" icon="mdi:arrow-up-bold-circle-outline" tone="error" sub="Pagos + devoluciones" />
-          <app-kpi-tile label="Flujo neto" [value]="v.neto" icon="mdi:scale-balance" [tone]="v.netoNegativo ? 'warning' : 'brand'" sub="Entró − salió" />
-          <app-kpi-tile label="Compras del periodo" [value]="v.compras" icon="mdi:cart-outline" tone="gray" [sub]="v.comprasCount + ' compra(s) · pagadas o no'" hint="Informativo: lo comprado en el periodo, se haya pagado o no." />
-        </div>
-
-        <div class="mt-4 grid gap-4 lg:grid-cols-2">
-          <app-component-card title="Entradas de dinero">
+        <div class="grid gap-x-4 lg:grid-cols-2">
+          <app-component-card compact icon="mdi:arrow-down-bold-circle-outline" title="Entradas de dinero">
             <dl class="space-y-2 text-sm">
               <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Ventas cobradas ({{ v.ventasCount }})</dt><dd class="tabular-nums">{{ v.ventas }}</dd></div>
               <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Cobros a clientes ({{ v.cobrosCount }})</dt><dd class="tabular-nums">{{ v.cobros }}</dd></div>
               <div class="flex justify-between border-t border-gray-200 pt-2 font-semibold text-gray-800 dark:border-gray-700 dark:text-white/90"><dt>Total</dt><dd class="tabular-nums">{{ v.entro }}</dd></div>
             </dl>
           </app-component-card>
-          <app-component-card title="Salidas de dinero">
+          <app-component-card compact icon="mdi:arrow-up-bold-circle-outline" title="Salidas de dinero">
             <dl class="space-y-2 text-sm">
               <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Pagos a proveedores ({{ v.pagosCount }})</dt><dd class="tabular-nums">{{ v.pagos }}</dd></div>
               <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Devoluciones a clientes</dt><dd class="tabular-nums">{{ v.devoluciones }}</dd></div>
@@ -67,6 +68,18 @@ import { soles } from '../../utils/finance-labels';
   `,
 })
 export class FinanzasMovimientosComponent {
+  /** Totales del periodo en chips; «Compras» es informativo (pagadas o no). */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const v = this.view();
+    if (!v) return [];
+    return [
+      { id: 'in', label: 'Entró', count: v.entro, tone: 'success', clickable: false, tooltip: 'Ventas cobradas y cobros a clientes.' },
+      { id: 'out', label: 'Salió', count: v.salio, tone: 'error', clickable: false, tooltip: 'Pagos a proveedores y devoluciones.' },
+      { id: 'neto', label: 'Flujo neto', count: v.neto, tone: v.netoNegativo ? 'warning' : 'brand', clickable: false },
+      { id: 'compras', label: 'Compras del periodo', count: v.compras, icon: 'mdi:cart-outline', clickable: false, tooltip: v.comprasCount + ' compra(s), pagadas o no. Es informativo.' },
+    ];
+  });
+
   private readonly locale = inject(LocaleService);
   private readonly api = inject(DirectoryApiService);
 

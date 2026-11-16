@@ -145,7 +145,14 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
   protected readonly isMobileOpen;
   searchTerm = '';
   isSearchDropdownOpen = false;
-  readonly searchOptions: SearchMenuOption[] = this.buildSearchOptions();
+  /** Opciones del buscador según los permisos del usuario actual (se recalculan si cambia). */
+  protected readonly searchOptions = computed(() => {
+    this.auth.user();
+    return this.buildSearchOptions();
+  });
+  /** «⌘» en Mac, «Ctrl» en el resto. */
+  protected readonly shortcutKey =
+    typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl';
 
   /** Logo en header: solo móvil/tablet con menú cerrado. */
   protected readonly showHeaderLogo = computed(
@@ -242,8 +249,8 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
 
   get filteredSearchOptions(): SearchMenuOption[] {
     const query = this.searchTerm.trim();
-    if (!query) return this.searchOptions.slice(0, 10);
-    return this.searchOptions
+    if (!query) return this.searchOptions().slice(0, 10);
+    return this.searchOptions()
       .filter((option) => matchesTextSearch(`${option.section} ${option.name}`, query))
       .slice(0, 12);
   }

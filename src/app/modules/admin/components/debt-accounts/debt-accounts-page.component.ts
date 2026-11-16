@@ -6,8 +6,6 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
-import { KpiTileComponent } from '../../../../shared/components/common/dashboard/kpi-tile.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
@@ -15,7 +13,7 @@ import { FormSelectComponent } from '../../../../shared/components/form/form-sel
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
-import { ColorLegendComponent, type LegendItem } from '../../../../shared/components/ui/color-legend/color-legend.component';
+import type { SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
@@ -29,6 +27,7 @@ import {
   debtStatusTone,
   soles,
 } from '../../utils/finance-labels';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 
 export type DebtKind = 'cobrar' | 'pagar';
 
@@ -90,18 +89,16 @@ const COPY: Record<DebtKind, {
   selector: 'app-debt-accounts-page',
   standalone: true,
   imports: [
+    PageStateComponent,
     CommonModule,
     CurrencyPipe,
     AppDatePipe,
     QueryPageStatePipe,
     BreadcrumbInlineComponent,
     ButtonComponent,
-    ColorLegendComponent,
-    ComponentCardComponent,
     FormSelectComponent,
     HelpPanelComponent,
     InputFieldComponent,
-    KpiTileComponent,
     ListFiltersComponent,
     ModalComponent,
     PageToolbarComponent,
@@ -125,10 +122,6 @@ export class DebtAccountsPageComponent {
   protected readonly statusLabel = debtStatusLabel;
   protected readonly statusTone = debtStatusTone;
   protected readonly rowTone = debtRowTone;
-  protected readonly legend: LegendItem[] = [
-    { label: 'Vencida', tone: 'error-light' },
-    { label: 'Vence en 7 días', tone: 'warning' },
-  ];
 
   // ---------- Filtros ----------
   protected readonly page = signal(1);
@@ -183,6 +176,22 @@ export class DebtAccountsPageComponent {
   }));
   protected readonly rows = computed(() => this.listQuery.data()?.items ?? []);
   protected readonly total = computed(() => this.listQuery.data()?.total ?? 0);
+  /** Chips de resumen: lo pendiente y lo vencido; al pulsarlos filtran por ese estado. */
+  protected readonly summaryChips = computed<SummaryChip[]>(() => {
+    const t = this.listQuery.data()?.totales;
+    if (!t) return [];
+    const e = this.estado();
+    return [
+      { id: 'ABIERTA', label: this.copy().open, count: soles(t.porCobrar ?? t.porPagar), icon: 'mdi:cash-clock', tone: 'brand', active: e === 'ABIERTA', tooltip: `${t.documentosAbiertos} documento(s) con saldo.` },
+      { id: 'VENCIDA', label: 'Vencido', count: soles(t.vencido), tone: t.documentosVencidos ? 'error' : 'neutral', active: e === 'VENCIDA', tooltip: `${t.documentosVencidos} documento(s) vencido(s).` },
+      { id: '', label: 'Todos los documentos', icon: 'mdi:file-document-multiple-outline', active: e === '' },
+    ];
+  });
+
+  protected onSummaryChip(chip: SummaryChip) {
+    this.setEstado(chip.id);
+  }
+
   protected readonly kpis = computed(() => {
     const t = this.listQuery.data()?.totales;
     if (!t) return null;

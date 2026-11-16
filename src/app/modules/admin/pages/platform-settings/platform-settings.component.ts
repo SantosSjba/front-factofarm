@@ -33,10 +33,12 @@ type Setting = {
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Plataforma' }, { label: 'Configuración' }]" />
-    <app-page-toolbar>
+    <app-page-toolbar [excel]="false">
       <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Configuración de plataforma</h1>
     </app-page-toolbar>
     <app-component-card
+      compact
+      icon="mdi:cog-outline"
       className="max-w-4xl"
       title="Parámetros generales"
       desc="Correo, recuperación de contraseña, sesiones y datos públicos. Los cambios se aplican a las próximas solicitudes."
@@ -44,11 +46,11 @@ type Setting = {
       [error]="loadError()"
       (retry)="reload()"
     >
-    <form (ngSubmit)="save()" class="space-y-4">
+    <form (ngSubmit)="save()" class="space-y-3">
       @for (item of settings(); track item.key) {
         <div>
           @if (item.key.endsWith('_ENABLED')) {
-            <app-form-select
+            <app-form-select compact
               [id]="item.key"
               [label]="item.label"
               [showPlaceholder]="false"
@@ -58,7 +60,7 @@ type Setting = {
               (valueChange)="item.value = $event"
             />
           } @else {
-            <app-input-field
+            <app-input-field compact
               [id]="item.key"
               [name]="item.key"
               [label]="item.label"
@@ -75,7 +77,7 @@ type Setting = {
           }}</p>
         </div>
       }
-      <app-button startIconName="mdi:content-save-outline"
+      <app-button size="sm" startIconName="mdi:content-save-outline"
         type="submit"
         [disabled]="loading() || saving() || !settings().length"
         [loading]="saving()"

@@ -15,7 +15,24 @@ const ROUTE_PERMISSIONS: Map<string, string[]> = (() => {
  */
 export function canOpenRoute(path: string | null | undefined, hasPermission: (code: string) => boolean): boolean {
   if (!path) return false;
-  const clean = path.split(/[?#]/)[0].replace(/\/+$/, '') || '/';
+  const clean = cleanRoutePath(path);
   const codes = ROUTE_PERMISSIONS.get(clean);
   return !codes || codes.some((code) => hasPermission(code));
+}
+
+/** Ruta sin parámetros ni fragmento, y sin «/» final: «/notas-venta?x=1#a» → «/notas-venta». */
+export function cleanRoutePath(url: string | null | undefined): string {
+  return (url ?? '').split(/[?#]/)[0].replace(/\/+$/, '') || '/';
+}
+
+/**
+ * ¿La opción del menú con esta ruta corresponde a la URL actual? Ignora parámetros y fragmento
+ * (los accesos desde reportes, notificaciones o paneles los agregan) y acepta subrutas
+ * («/productos/123» resalta «Productos»).
+ */
+export function isMenuPathActive(currentUrl: string | null | undefined, menuPath: string | null | undefined): boolean {
+  if (!menuPath) return false;
+  const current = cleanRoutePath(currentUrl);
+  const target = cleanRoutePath(menuPath);
+  return current === target || (target !== '/' && current.startsWith(target + '/'));
 }

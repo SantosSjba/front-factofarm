@@ -2,14 +2,14 @@
   <button
     type="button"
     (click)="toggleDropdown()"
-    class="dropdown-toggle flex max-w-[12rem] items-center text-gray-700 sm:max-w-[14rem] lg:max-w-[16rem] dark:text-gray-400"
+    class="dropdown-toggle flex max-w-[12rem] cursor-pointer items-center text-gray-700 sm:max-w-[14rem] lg:max-w-[16rem] dark:text-gray-400"
     [attr.aria-expanded]="isOpen"
     aria-label="Menú de usuario"
   >
-    <span class="me-3 size-11 shrink-0 overflow-hidden rounded-lg">
-      <app-avatar-text [name]="displayName()" [photoUrl]="isSupport() ? null : auth.user()?.fotoUrl" size="lg" className="size-11! rounded-lg!" />
+    <span class="me-2 size-9 shrink-0 overflow-hidden rounded-lg">
+      <app-avatar-text [name]="displayName()" [photoUrl]="isSupport() ? null : auth.user()?.fotoUrl" size="md" className="size-9! rounded-lg!" />
     </span>
-    <span class="me-1 block min-w-0 flex-1 text-start">
+    <span class="me-1 hidden min-w-0 flex-1 text-start sm:block">
       <span class="block truncate text-sm font-medium">
         {{ displayName() }}
       </span>
@@ -42,7 +42,7 @@
   <app-dropdown
     [isOpen]="isOpen"
     (closed)="closeDropdown()"
-    className="end-0 mt-3 z-50 w-65 max-w-[calc(100vw-2rem)] outline-none"
+    className="end-0 mt-2 z-50 w-65 max-w-[calc(100vw-2rem)] outline-none"
   >
     <div class="flex items-center gap-3 px-3 py-2">
       <div class="min-w-0">
@@ -72,10 +72,10 @@
           (itemClick)="closeDropdown()"
           tag="a"
           [to]="'/profile'"
-          className="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 outline-hidden transition-colors duration-200 select-none hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
+          className="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 outline-hidden transition-colors duration-200 select-none hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
         >
           <svg
-            class="size-6 shrink-0 fill-gray-500 group-hover/dropdown-menu-item:fill-gray-700 dark:fill-gray-400 dark:group-hover/dropdown-menu-item:fill-gray-300"
+            class="size-5 shrink-0 fill-gray-500 group-hover/dropdown-menu-item:fill-gray-700 dark:fill-gray-400 dark:group-hover/dropdown-menu-item:fill-gray-300"
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -97,10 +97,11 @@
           (itemClick)="closeDropdown()"
           tag="a"
           [to]="'/profile'"
-          className="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 outline-hidden transition-colors duration-200 select-none hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
+          [queryParams]="{ seccion: 'seguridad' }"
+          className="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 outline-hidden transition-colors duration-200 select-none hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
         >
           <svg
-            class="size-6 shrink-0 fill-gray-500 group-hover/dropdown-menu-item:fill-gray-700 dark:fill-gray-400 dark:group-hover/dropdown-menu-item:fill-gray-300"
+            class="size-5 shrink-0 fill-gray-500 group-hover/dropdown-menu-item:fill-gray-700 dark:fill-gray-400 dark:group-hover/dropdown-menu-item:fill-gray-300"
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -114,7 +115,7 @@
               fill=""
             ></path>
           </svg>
-          Ajustes de cuenta
+          Seguridad y contraseña
         </app-dropdown-item-two>
       </li>
     </ul>
@@ -131,11 +132,11 @@
             <button
               type="button"
               (click)="startTour(tour.id)"
-              class="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 outline-hidden transition-colors duration-200 select-none hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full text-start"
+              class="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 outline-hidden transition-colors duration-200 select-none hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full text-start"
             >
               <app-icon
                 [name]="tour.route ? 'lucide:list-checks' : tour.autoStart ? 'lucide:graduation-cap' : 'lucide:map'"
-                iconClass="size-6 shrink-0 text-gray-500 group-hover/dropdown-menu-item:text-gray-700 dark:text-gray-400 dark:group-hover/dropdown-menu-item:text-gray-300"
+                iconClass="size-5 shrink-0 text-gray-500 group-hover/dropdown-menu-item:text-gray-700 dark:text-gray-400 dark:group-hover/dropdown-menu-item:text-gray-300"
               />
               <span class="min-w-0">
                 <span class="block">{{ tour.title }}</span>
@@ -151,7 +152,7 @@
     <a
       href="/auth/signin"
       (click)="logout($event)"
-      class="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-error-500 outline-hidden transition-colors duration-200 select-none hover:bg-error-50 hover:text-error-600 focus:bg-error-50 focus:text-error-600 dark:text-error-400 dark:hover:bg-error-500/10 dark:hover:text-error-400"
+      class="group/dropdown-menu-item relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-error-500 outline-hidden transition-colors duration-200 select-none hover:bg-error-50 hover:text-error-600 focus:bg-error-50 focus:text-error-600 dark:text-error-400 dark:hover:bg-error-500/10 dark:hover:text-error-400"
     >
       <svg
         class="size-5 shrink-0 fill-current pointer-events-none"

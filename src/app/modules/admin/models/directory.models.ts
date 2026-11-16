@@ -2189,6 +2189,10 @@ export interface PosCatalogItemDto {
   manejaLotes: boolean;
   esControlado: boolean;
   imagenArchivoId?: string | null;
+  /** Unidades en lotes ya vencidos: no se venden, pero el producto se muestra para retirarlo. */
+  stockVencido?: string;
+  /** Fecha (ISO) del lote vencido más antiguo con stock. */
+  vencimientoMasAntiguo?: string | null;
 }
 
 export interface PosSubstituteItemDto {

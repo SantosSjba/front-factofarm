@@ -2,6 +2,7 @@ import { booleanAttribute, Component, computed, inject, input, output } from '@a
 import { LocaleService } from '../../../../core/services/locale.service';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
+import { SummaryChipsComponent, type SummaryChip } from '../../../../shared/components/ui/summary-chips/summary-chips.component';
 
 export type Period = { from: string; to: string };
 
@@ -12,7 +13,7 @@ export type Period = { from: string; to: string };
 @Component({
   selector: 'app-period-filter',
   standalone: true,
-  imports: [ButtonComponent, InputFieldComponent],
+  imports: [ButtonComponent, InputFieldComponent, SummaryChipsComponent],
   host: { class: 'block' },
   template: `
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" [class]="compact() ? 'mb-4 p-3' : 'mb-5 p-4'">
@@ -29,6 +30,11 @@ export type Period = { from: string; to: string };
         </div>
       </div>
       <ng-content />
+      @if (summaryChips().length) {
+        <div class="border-t border-gray-100 dark:border-gray-800" [class]="compact() ? 'mt-2.5 pt-2.5' : 'mt-3 pt-3'">
+          <app-summary-chips [chips]="summaryChips()" [ariaLabel]="summaryLabel()" (chipClick)="summaryChipClick.emit($event)" />
+        </div>
+      }
     </div>
   `,
 })
@@ -39,6 +45,10 @@ export class PeriodFilterComponent {
   /** Versión compacta (fechas de 36px, menos padding). */
   readonly compact = input(false, { transform: booleanAttribute });
   readonly change = output<Period>();
+  /** Resumen del periodo en chips (totales); los que tengan filtro emiten `summaryChipClick`. */
+  readonly summaryChips = input<SummaryChip[]>([]);
+  readonly summaryLabel = input('Resumen del periodo');
+  readonly summaryChipClick = output<SummaryChip>();
 
   protected readonly presets = computed(() => {
     const today = this.locale.todayYmd();

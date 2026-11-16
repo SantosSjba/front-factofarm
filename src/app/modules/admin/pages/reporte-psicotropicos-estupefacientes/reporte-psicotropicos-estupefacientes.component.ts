@@ -7,7 +7,6 @@ import { firstValueFrom } from 'rxjs';
 import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
@@ -19,6 +18,10 @@ type Tab = 'ledger' | 'monthly';
 
 import { TabStripComponent, type TabStripItem } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.component';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { StatusBadgeComponent } from '../../../../shared/components/ui/badge/status-badge.component';
 
 @Component({
   selector: 'app-reporte-psicotropicos-estupefacientes',
@@ -31,9 +34,12 @@ import { ExcelIconComponent } from '../../../../shared/icons/excel-icon.componen
     AppDatePipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
+    PageStateComponent,
+    ListFiltersComponent,
+    HelpPanelComponent,
+    StatusBadgeComponent,
   ],
   templateUrl: './reporte-psicotropicos-estupefacientes.component.html' })
 export class ReportePsicotropicosEstupefacientesComponent {
@@ -57,7 +63,9 @@ export class ReportePsicotropicosEstupefacientesComponent {
   protected readonly reportYear = signal(Number(this.currentYm.slice(0, 4)));
   protected readonly reportMonth = signal(Number(this.currentYm.slice(5, 7)));
   protected readonly exporting = signal(false);
-  protected readonly helpOpen = signal(false);
+  protected readonly reportPeriod = computed(
+    () => `${this.reportYear()}-${String(this.reportMonth()).padStart(2, '0')}`,
+  );
 
   protected readonly ledgerQuery = injectQuery(() => ({
     queryKey: ['pharma', 'controlled-ledger', this.dateFrom(), this.dateTo()] as const,
@@ -80,6 +88,13 @@ export class ReportePsicotropicosEstupefacientesComponent {
 
   protected setTab(tab: Tab) {
     this.activeTab.set(tab);
+  }
+
+  protected onReportPeriodChange(value: string) {
+    const [year, month] = value.split('-').map(Number);
+    if (!year || !month) return;
+    this.reportYear.set(year);
+    this.reportMonth.set(month);
   }
 
   protected onReportYearChange(value: string | number) {

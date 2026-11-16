@@ -289,7 +289,10 @@
           Cargando productos con stock…
         } @else if (catalog().length > 0) {
           <app-icon name="mdi:package-variant-closed" iconClass="size-3.5" />
-          {{ catalog().length }} disponible(s)
+          {{ sellableCount() }} disponible(s)
+          @if (expiredCount() > 0) {
+            <span class="font-medium text-error-600 dark:text-error-500">· {{ expiredCount() }} con lotes vencidos</span>
+          }
         } @else if (warehouseId()) {
           <app-icon name="mdi:package-variant-remove" iconClass="size-3.5" />
           Sin stock en este almacén
@@ -305,8 +308,8 @@
             @for (item of catalog(); track item.id) {
               <app-button
                 variant="unstyled"
-                className="flex w-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-1.5 text-left transition hover:border-brand-400 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:p-2"
-                [ariaLabel]="'Agregar ' + item.nombre"
+                [className]="'flex w-full cursor-pointer flex-col rounded-lg border p-1.5 text-left transition hover:shadow-sm sm:p-2 ' + (isOnlyExpired(item) ? 'border-error-300 bg-error-50/60 hover:border-error-400 dark:border-error-500/40 dark:bg-error-500/10' : 'border-gray-200 bg-white hover:border-brand-400 dark:border-gray-700 dark:bg-gray-900')"
+                [ariaLabel]="isOnlyExpired(item) ? item.nombre + ': vencido, no se puede vender' : 'Agregar ' + item.nombre"
                 (btnClick)="addToCart(item)"
               >
                 <div class="mb-1.5 flex h-10 items-center justify-center overflow-hidden rounded-md bg-gray-100 sm:h-12 dark:bg-gray-800">
@@ -322,8 +325,17 @@
                   <span class="text-sm font-bold text-brand-600">{{ item.precio | currency: 'PEN' : 'symbol' : '1.2-2' }}</span>
                   <span class="text-[10px] text-gray-500">{{ item.stock }}</span>
                 </div>
-                @if (item.necesitaRecetaMedica) {
-                  <span class="mt-0.5 text-[10px] font-medium text-rose-600">Rx</span>
+                @if (item.necesitaRecetaMedica || expiredStock(item) > 0) {
+                  <div class="mt-1 flex flex-wrap items-center gap-1">
+                    @if (item.necesitaRecetaMedica) {
+                      <span class="text-[10px] font-medium text-rose-600">Rx</span>
+                    }
+                    @if (isOnlyExpired(item)) {
+                      <app-status-badge status="" tone="error" label="Vencido" />
+                    } @else if (expiredStock(item) > 0) {
+                      <app-status-badge status="" tone="warning" [label]="item.stockVencido + ' vencido(s)'" />
+                    }
+                  </div>
                 }
               </app-button>
             } @empty {
@@ -347,11 +359,19 @@
           </thead>
           <tbody>
             @for (item of catalog(); track item.id) {
-              <tr class="border-t border-gray-100 hover:bg-brand-50/50 dark:border-gray-800 dark:hover:bg-brand-500/10">
+              <tr
+                class="border-t border-gray-100 dark:border-gray-800"
+                [class]="isOnlyExpired(item) ? 'bg-error-50/60 dark:bg-error-500/10' : 'hover:bg-brand-50/50 dark:hover:bg-brand-500/10'"
+              >
                 <td class="px-2 py-2 font-medium sm:px-3">
                   {{ item.nombre }}
                   @if (item.necesitaRecetaMedica) { <span class="text-xs text-rose-600">Rx</span> }
                   @if (item.manejaLotes) { <span class="text-xs text-sky-600">Lote</span> }
+                  @if (isOnlyExpired(item)) {
+                    <app-status-badge class="ms-1 align-middle" status="" tone="error" label="Vencido" />
+                  } @else if (expiredStock(item) > 0) {
+                    <app-status-badge class="ms-1 align-middle" status="" tone="warning" [label]="item.stockVencido + ' vencido(s)'" />
+                  }
                 </td>
                 <td class="hidden px-2 py-2 text-gray-500 sm:table-cell sm:px-3">{{ item.codigoInterno ?? '—' }}</td>
                 <td class="px-2 py-2 text-right sm:px-3">
@@ -365,8 +385,8 @@
                   <app-button
                     size="sm"
                     [iconOnly]="true"
-                    startIconName="mdi:cart-plus"
-                    tooltip="Agregar al carrito"
+                    [startIconName]="isOnlyExpired(item) ? 'mdi:cart-off' : 'mdi:cart-plus'"
+                    [tooltip]="isOnlyExpired(item) ? 'Vencido: no se puede vender' : 'Agregar al carrito'"
                     (btnClick)="addToCart(item)"
                   />
                 </td>

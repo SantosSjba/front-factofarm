@@ -8,7 +8,6 @@ import { ComponentCardComponent } from '../../../../shared/components/common/com
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { FormSelectComponent } from '../../../../shared/components/form/form-select/form-select.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { LabelComponent } from '../../../../shared/components/form/label/label.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import type {
   DepartureAddressDto,
@@ -25,6 +24,10 @@ function paginatedItems<T>(data: PaginatedResponseDto<T> | T[] | undefined): T[]
 }
 
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
+import { SUNAT_DOC_TYPE_OPTIONS } from '../../utils/sunat-doc-types';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
+import { AlertComponent } from '../../../../shared/components/ui/alert/alert.component';
 @Component({
   selector: 'app-gr-transportista',
   standalone: true,
@@ -35,106 +38,74 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
     ComponentCardComponent,
     FormSelectComponent,
     InputFieldComponent,
-    LabelComponent,
     ButtonComponent,
+    HelpPanelComponent,
+    FormSectionComponent,
+    AlertComponent,
   ],
   template: `
-    <app-breadcrumb-inline [segments]="[{ label: 'Guías' }, { label: 'GR transportista' }]" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold">Guía de remisión transportista</h1>
+    <app-breadcrumb-inline [segments]="[{ label: 'Guías de remisión' }, { label: 'G.R. Transportista' }]" />
+
+    <app-page-toolbar [excel]="false">
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Guía de remisión transportista</h1>
     </app-page-toolbar>
-    <app-component-card className="mt-4" title="Emitir guía transportista">
-      <p class="mb-4 text-sm text-gray-500">
-        Seleccione transportista, conductor y vehículo desde los maestros. Los datos del destinatario se completan automáticamente.
-      </p>
-      <div class="grid max-w-xl gap-4">
-        <div>
-          <app-label>Transportista</app-label>
-          <div class="flex items-center gap-2">
-            <app-form-select className="flex-1"
-              [options]="carrierOptions()"
-              [value]="carrierId()"
-              (valueChange)="onCarrierChange('' + $event)"
-            />
-            <app-quick-create entity="carrier" [iconOnly]="true" (created)="onCarrierChange('' + $event.id)" />
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="gr-transportista">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Emite la guía que acompaña la mercadería cuando la lleva una empresa de transporte.</li>
+        <li>Elige el transportista, el conductor, el vehículo y el punto de partida; si falta alguno, créalo con el botón de al lado.</li>
+      </ol>
+    </app-help-panel>
+
+    @if (specialDocumentBlockedMessage(); as blocked) {
+      <app-alert class="mb-4 block" variant="warning" title="Tu proveedor de facturación no emite esta guía" [message]="blocked" />
+    }
+
+    <app-component-card compact icon="mdi:truck-delivery-outline" title="Emitir guía transportista">
+      <div class="space-y-5">
+        <app-form-section compact title="Transporte" [cols]="2">
+          <div class="flex items-end gap-2">
+            <app-form-select compact class="min-w-0 flex-1" label="Transportista" helpText="Empresa que traslada la mercadería." [options]="carrierOptions()" [value]="carrierId()" (valueChange)="onCarrierChange('' + $event)" />
+            <app-quick-create compact entity="carrier" [iconOnly]="true" (created)="onCarrierChange('' + $event.id)" />
           </div>
-        </div>
-        <div>
-          <app-label>Conductor</app-label>
-          <div class="flex items-center gap-2">
-            <app-form-select className="flex-1"
-              [options]="driverOptions()"
-              [value]="driverId()"
-              (valueChange)="driverId.set('' + $event)"
-            />
-            <app-quick-create entity="driver" [context]="{ carrierId: carrierId() }" [iconOnly]="true" (created)="driverId.set('' + $event.id)" />
+          <div class="flex items-end gap-2">
+            <app-form-select compact class="min-w-0 flex-1" label="Conductor" helpText="Quién maneja." [options]="driverOptions()" [value]="driverId()" (valueChange)="driverId.set('' + $event)" />
+            <app-quick-create compact entity="driver" [context]="{ carrierId: carrierId() }" [iconOnly]="true" (created)="driverId.set('' + $event.id)" />
           </div>
-        </div>
-        <div>
-          <app-label>Vehículo</app-label>
-          <div class="flex items-center gap-2">
-            <app-form-select className="flex-1"
-              [options]="vehicleOptions()"
-              [value]="vehicleId()"
-              (valueChange)="vehicleId.set('' + $event)"
-            />
-            <app-quick-create entity="vehicle" [context]="{ carrierId: carrierId() }" [iconOnly]="true" (created)="vehicleId.set('' + $event.id)" />
+          <div class="flex items-end gap-2">
+            <app-form-select compact class="min-w-0 flex-1" label="Vehículo" helpText="Placa del vehículo." [options]="vehicleOptions()" [value]="vehicleId()" (valueChange)="vehicleId.set('' + $event)" />
+            <app-quick-create compact entity="vehicle" [context]="{ carrierId: carrierId() }" [iconOnly]="true" (created)="vehicleId.set('' + $event.id)" />
           </div>
-        </div>
-        <div>
-          <app-label>Dirección de partida</app-label>
-          <div class="flex items-center gap-2">
-            <app-form-select className="flex-1"
-              [options]="departureOptions()"
-              [value]="departureId()"
-              (valueChange)="departureId.set('' + $event)"
-            />
-            <app-quick-create entity="departure" [iconOnly]="true" (created)="departureId.set('' + $event.id)" />
+          <div class="flex items-end gap-2">
+            <app-form-select compact class="min-w-0 flex-1" label="Dirección de partida" helpText="Desde dónde sale la mercadería." [options]="departureOptions()" [value]="departureId()" (valueChange)="departureId.set('' + $event)" />
+            <app-quick-create compact entity="departure" [iconOnly]="true" (created)="departureId.set('' + $event.id)" />
           </div>
+        </app-form-section>
+
+        <app-form-section compact title="Destinatario" description="Se completa solo; revísalo antes de emitir." [cols]="2">
+          <app-form-select compact label="Tipo de documento" [required]="true" [showPlaceholder]="false" [options]="docTypeOptions" [value]="docType()" (valueChange)="docType.set($event)" />
+          <app-input-field compact label="Número de documento" [isRequired]="true" inputMode="numeric" [maxLength]="20" [value]="docNumber()" (valueChange)="docNumber.set('' + $event)" />
+          <app-input-field compact class="sm:col-span-2" [label]="docType() === '6' ? 'Razón social' : 'Nombre completo'" [isRequired]="true" [maxLength]="200" [value]="customer()" (valueChange)="customer.set('' + $event)" />
+        </app-form-section>
+
+        <app-form-section compact title="Traslado" [cols]="2">
+          <app-input-field compact label="Motivo del traslado" placeholder="Ej.: venta, traslado entre almacenes" [maxLength]="500" [value]="description()" (valueChange)="description.set('' + $event)" />
+          <app-input-field compact label="Valor referencial (S/, con IGV)" [isRequired]="true" type="number" min="0.01" step="any" placeholder="0.00" [value]="amount()" (valueChange)="amount.set('' + $event)" />
+          @if (previewDescription()) {
+            <p class="text-theme-xs text-gray-500 sm:col-span-2 dark:text-gray-400">Así se verá en el comprobante: <strong>{{ previewDescription() }}</strong></p>
+          }
+        </app-form-section>
+
+        <div class="flex justify-end border-t border-gray-100 pt-3 dark:border-gray-800">
+          <app-button size="sm" startIconName="mdi:truck-delivery-outline" [disabled]="emitMutation.isPending() || !canEmitSpecialDocument()" [loading]="emitMutation.isPending()" (btnClick)="emitMutation.mutate()">Emitir guía transportista</app-button>
         </div>
-        <div class="border-t border-gray-100 pt-4 dark:border-gray-800">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">Destinatario (autocompletado)</p>
-          <app-label required>Razón social</app-label>
-          <app-input-field [value]="customer()" (valueChange)="customer.set('' + $event)" [maxLength]="200" />
-          <div class="mt-3 grid grid-cols-2 gap-2">
-            <div>
-              <app-label required>Tipo doc. (SUNAT)</app-label>
-              <app-input-field [value]="docType()" (valueChange)="docType.set('' + $event)" placeholder="6 = RUC" [maxLength]="20" />
-            </div>
-            <div>
-              <app-label required>Número documento</app-label>
-              <app-input-field [value]="docNumber()" (valueChange)="docNumber.set('' + $event)" [maxLength]="20" />
-            </div>
-          </div>
-        </div>
-        <div>
-          <app-label>Concepto / motivo del traslado</app-label>
-          <app-input-field [value]="description()" (valueChange)="description.set('' + $event)" [maxLength]="500" />
-        </div>
-        <div>
-          <app-label required>Valor referencial (inc. IGV)</app-label>
-          <app-input-field type="number" min="0.01" [value]="amount()" (valueChange)="amount.set('' + $event)" placeholder="0.00" />
-        </div>
-        @if (previewDescription()) {
-          <p class="text-xs text-gray-500"><strong>Descripción en comprobante:</strong> {{ previewDescription() }}</p>
-        }
-        @if (specialDocumentBlockedMessage(); as blocked) {
-          <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-            {{ blocked }}
-          </p>
-        }
-        <app-button startIconName="mdi:truck-delivery-outline"
-          variant="primary"
-          [disabled]="emitMutation.isPending() || !canEmitSpecialDocument()" [loading]="emitMutation.isPending()"
-          (btnClick)="emitMutation.mutate()"
-        >
-          Emitir guía transportista
-        </app-button>
       </div>
     </app-component-card>
   `,
 })
 export class GrTransportistaComponent {
+  protected readonly docTypeOptions = SUNAT_DOC_TYPE_OPTIONS;
+
   private readonly api = inject(DirectoryApiService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();

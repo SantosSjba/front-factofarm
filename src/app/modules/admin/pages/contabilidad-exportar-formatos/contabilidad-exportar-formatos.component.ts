@@ -9,6 +9,8 @@ import { InputFieldComponent } from '../../../../shared/components/form/input/in
 import { DirectoryApiService } from '../../services/directory-api.service';
 import { LocaleService } from '../../../../core/services/locale.service';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 
 @Component({
   selector: 'app-contabilidad-exportar-formatos',
@@ -19,40 +21,44 @@ import { PageToolbarComponent } from '../../../../shared/components/common/page-
     ComponentCardComponent,
     ButtonComponent,
     InputFieldComponent,
+    ListFiltersComponent,
+    HelpPanelComponent,
   ],
   template: `
     <app-breadcrumb-inline [segments]="[{ label: 'Contabilidad' }, { label: 'Exportar formatos PLE' }]" />
-    <app-page-toolbar>
-      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Exportar formatos PLE</h1>
-    </app-page-toolbar>
-    <app-component-card title="Libros electrónicos SUNAT (TXT)">
-      <div class="mb-4 flex flex-wrap items-end gap-4">
-        <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle('14.1')">PLE 14.1 Ventas</app-button>
-        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle('8.1')">PLE 8.1 Compras</app-button>
-        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportPle('13.1')">PLE 13.1 Inventario</app-button>
-      </div>
-      <p class="mt-4 text-sm text-gray-500">Formato tabular TXT para carga/revisión contable. Valide contra el PLE oficial SUNAT antes de presentar.</p>
-    </app-component-card>
 
-    <app-component-card class="mt-6" title="Libros SUNAT (Excel RVIE)">
-      <div class="mb-4 flex flex-wrap items-end gap-4">
-        <app-input-field label="Periodo" [isRequired]="true" type="month" placeholder="YYYY-MM" [value]="period()" (valueChange)="period.set($event + '')" />
+    <app-page-toolbar [excel]="false">
+      <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Libros electrónicos SUNAT</h1>
+    </app-page-toolbar>
+
+    <app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="contabilidad-exportar-formatos">
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+        <li>Descarga los libros electrónicos del mes: los PLE en TXT y los libros en Excel para el RVIE.</li>
+        <li>Revísalos con tu contador y valídalos con el formato vigente de SUNAT antes de presentarlos.</li>
+      </ol>
+    </app-help-panel>
+
+    <app-list-filters compact [showSearch]="false" [showSelect]="false" [showClear]="false">
+      <div data-filters class="contents">
+        <app-input-field compact class="min-w-0 flex-[2] basis-48 sm:max-w-64" icon="mdi:calendar-month" label="Periodo" type="month" [value]="period()" (valueChange)="period.set($event + '')" />
       </div>
-      <div class="flex flex-wrap gap-3">
-        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportSunatBook('sales')">
-          Libro de ventas (Excel)
-        </app-button>
-        <app-button startIconName="mdi:file-export-outline" variant="outline" [disabled]="exporting()" (btnClick)="exportSunatBook('inventory')">
-          Registro de inventarios (Excel)
-        </app-button>
-      </div>
-      <p class="mt-4 text-sm text-gray-500">
-        Exportación Excel para revisión contable y RVIE. Valide columnas contra el formato vigente SUNAT.
-      </p>
-    </app-component-card>
+    </app-list-filters>
+
+    <div class="grid gap-x-4 lg:grid-cols-2">
+      <app-component-card compact icon="mdi:file-document-outline" title="PLE (TXT)" desc="Formato de texto para cargar o revisar.">
+        <div class="flex flex-wrap gap-2">
+          <app-button size="sm" variant="outline" startIconName="mdi:download" [disabled]="exporting()" (btnClick)="exportPle('14.1')">14.1 Ventas</app-button>
+          <app-button size="sm" variant="outline" startIconName="mdi:download" [disabled]="exporting()" (btnClick)="exportPle('8.1')">8.1 Compras</app-button>
+          <app-button size="sm" variant="outline" startIconName="mdi:download" [disabled]="exporting()" (btnClick)="exportPle('13.1')">13.1 Inventario</app-button>
+        </div>
+      </app-component-card>
+      <app-component-card compact icon="mdi:microsoft-excel" title="Libros en Excel (RVIE)" desc="Para revisión contable y el RVIE.">
+        <div class="flex flex-wrap gap-2">
+          <app-button size="sm" variant="outline" startIconName="mdi:download" [disabled]="exporting()" (btnClick)="exportSunatBook('sales')">Libro de ventas</app-button>
+          <app-button size="sm" variant="outline" startIconName="mdi:download" [disabled]="exporting()" (btnClick)="exportSunatBook('inventory')">Registro de inventarios</app-button>
+        </div>
+      </app-component-card>
+    </div>
   `,
 })
 export class ContabilidadExportarFormatosComponent {

@@ -1,5 +1,4 @@
 ﻿import { Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -10,10 +9,10 @@ import { KpiTileComponent } from '../../../../shared/components/common/dashboard
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
-import { IconComponent } from '../../../../shared/components/ui/icon/icon.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { ShortcutSectionComponent, type ShortcutLink } from '../../../../shared/components/common/shortcut-section/shortcut-section.component';
 
-type ReportLink = { label: string; path: string; desc: string; icon: string };
+type ReportLink = ShortcutLink;
 type ReportSection = { title: string; desc: string; icon: string; tone: string; links: ReportLink[] };
 
 const SECTIONS: ReportSection[] = [
@@ -73,7 +72,8 @@ const SECTIONS: ReportSection[] = [
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [RouterLink, BreadcrumbInlineComponent, HelpPanelComponent, IconComponent, KpiTileComponent, PageToolbarComponent],
+  imports: [
+    ShortcutSectionComponent, BreadcrumbInlineComponent, HelpPanelComponent, KpiTileComponent, PageToolbarComponent],
   templateUrl: './reportes.component.html',
 })
 export class ReportesComponent {

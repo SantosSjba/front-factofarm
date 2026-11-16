@@ -17,7 +17,7 @@
   </ol>
 </app-help-panel>
 
-<app-list-filters
+<app-list-filters compact
   collapsible
   [showSearch]="false"
   [showSelect]="false"
@@ -25,33 +25,30 @@
   clearLabel="Limpiar"
   (clear)="clearFilters()"
 >
-  <app-form-select label="Estado" [showPlaceholder]="false" [value]="estadoFilter()" [options]="estadoOptions" (valueChange)="setEstado($event)" />
-  <app-form-select label="Almacén (origen o destino)" [showPlaceholder]="false" [value]="warehouseFilter()" [options]="warehouseFilterOptions()" (valueChange)="setWarehouse($event)" />
+  <app-form-select compact label="Estado" [showPlaceholder]="false" [value]="estadoFilter()" [options]="estadoOptions" (valueChange)="setEstado($event)" />
+  <app-form-select compact label="Almacén (origen o destino)" [showPlaceholder]="false" [value]="warehouseFilter()" [options]="warehouseFilterOptions()" (valueChange)="setWarehouse($event)" />
 </app-list-filters>
 
 @let listState = transfersQuery | queryPageState: totalRows();
 
-<app-component-card
-  title="Listado de traslados"
-  [desc]="totalRows() ? totalRows() + ' en total' : ''"
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   [emptyTitle]="activeFilterCount() ? 'Sin traslados con esos filtros' : 'Aún no hay traslados'"
   [emptyHint]="activeFilterCount() ? 'Prueba con otros filtros.' : 'Usa «Nuevo traslado» para mover mercadería entre almacenes.'"
   (retry)="transfersQuery.refetch()"
+  skeleton="table"
 >
-  <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-white/[0.05]">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="max-w-full overflow-x-auto">
       <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+        <caption class="sr-only">Traslados entre almacenes</caption>
         <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Origen → Destino</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Productos</th>
-            <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Guía</th>
+            <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Origen → Destino</th>
             <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
             <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
           </tr>
@@ -59,19 +56,18 @@
         <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
           @for (row of rows(); track row.id) {
             <tr>
-              <td class="px-5 py-4 text-theme-sm whitespace-nowrap">
+              <td class="px-5 py-3 text-theme-sm whitespace-nowrap">
                 {{ row.createdAt | appDate: 'dd/MM/yyyy' }}
                 <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.user?.nombre ?? '' }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm text-gray-800 dark:text-white/90">
+              <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
                 <span class="font-medium">{{ row.fromWarehouse.nombre }}</span>
                 <span class="mx-1 text-gray-400">→</span>
                 <span class="font-medium">{{ row.toWarehouse.nombre }}</span>
+                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.items.length }} producto{{ row.items.length === 1 ? '' : 's' }} · {{ units(row) }} unid.{{ row.guiaNumero ? ' · Guía ' + row.guiaNumero : '' }}</span>
               </td>
-              <td class="px-5 py-4 text-theme-sm">{{ row.items.length }} producto(s) · {{ units(row) }} unid.</td>
-              <td class="px-5 py-4 text-theme-sm">{{ row.guiaNumero || '—' }}</td>
-              <td class="px-5 py-4 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
-              <td class="px-5 py-4 text-end">
+              <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.estado" [tone]="statusTone(row.estado)" [label]="statusLabel(row.estado)" /></td>
+              <td class="px-5 py-3 text-end">
                 <div class="inline-flex justify-end">
                   <app-table-dropdown>
                     <div dropdown-button>
@@ -109,22 +105,22 @@
       </table>
     </div>
   </div>
-</app-component-card>
+</app-page-state>
 
 <app-pagination [currentPage]="currentPage()" [totalItems]="totalRows()" [pageSize]="itemsPerPage" (currentPageChange)="currentPage.set($event)" />
 
 <!-- ========== DETALLE ========== -->
 <app-modal compact [isOpen]="!!detail()" (closed)="detail.set(null)" className="w-full max-w-3xl shadow-theme-lg" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
     @if (detail(); as t) {
     <div class="flex flex-wrap items-center gap-3 pe-12">
-      <h3 class="text-xl font-semibold text-gray-800 dark:text-white/90">{{ t.fromWarehouse.nombre }} → {{ t.toWarehouse.nombre }}</h3>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ t.fromWarehouse.nombre }} → {{ t.toWarehouse.nombre }}</h3>
       <app-status-badge [status]="t.estado" [tone]="statusTone(t.estado)" [label]="statusLabel(t.estado)" />
     </div>
     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Creado el {{ t.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}{{ t.user ? ' por ' + t.user.nombre : '' }}</p>
     }
   </div>
-  <div data-modal-body class="min-h-0 space-y-6 px-4 py-5 sm:px-8">
+  <div data-modal-body class="min-h-0 space-y-5 px-4 py-4 sm:px-6">
     @if (detail(); as t) {
     <dl class="grid gap-4 text-sm sm:grid-cols-3">
       <div>
@@ -146,9 +142,9 @@
         </div>
       }
     </dl>
-    <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+    <div class="ff-table-frame max-w-full overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <table class="w-full min-w-[480px] text-sm text-gray-700 dark:text-gray-300">
-        <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+        <thead class="border-b border-gray-100 dark:border-white/[0.05]">
           <tr>
             <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
             <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
@@ -173,16 +169,16 @@
     </div>
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8">
+  <div data-modal-footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
     @if (detail(); as t) {
-    <app-button variant="outline" (btnClick)="detail.set(null)">Cerrar</app-button>
+    <app-button size="sm" variant="outline" (btnClick)="detail.set(null)">Cerrar</app-button>
     <ng-container *appHasPermission="'inventory.write'">
       @if (t.estado === 'BORRADOR') {
-        <app-button variant="danger" startIconName="mdi:cancel" (btnClick)="ask(t, 'cancel')">Anular</app-button>
-        <app-button startIconName="mdi:truck-delivery-outline" (btnClick)="ask(t, 'dispatch')">Despachar</app-button>
+        <app-button size="sm" variant="danger" startIconName="mdi:cancel" (btnClick)="ask(t, 'cancel')">Anular</app-button>
+        <app-button size="sm" startIconName="mdi:truck-delivery-outline" (btnClick)="ask(t, 'dispatch')">Despachar</app-button>
       }
       @if (t.estado === 'EN_TRANSITO') {
-        <app-button startIconName="mdi:package-down" (btnClick)="ask(t, 'receive')">Recibir</app-button>
+        <app-button size="sm" startIconName="mdi:package-down" (btnClick)="ask(t, 'receive')">Recibir</app-button>
       }
     </ng-container>
     }
@@ -192,7 +188,7 @@
 <!-- ========== CONFIRMAR ACCIÓN ========== -->
 <app-modal compact [isOpen]="!!pendingAction()" (closed)="closeAction()" className="w-full max-w-lg shadow-theme-lg">
   <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">{{ actionCopy()?.title }}</h3>
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">{{ actionCopy()?.title }}</h3>
   </div>
   <div data-modal-body class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300 sm:px-6">
     @if (pendingAction(); as p) {
@@ -212,9 +208,9 @@
       }
     }
   </div>
-  <div data-modal-footer class="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
-    <app-button variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="closeAction()">Cancelar</app-button>
-    <app-button
+  <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6">
+    <app-button size="sm" variant="outline" [disabled]="actionMutation.isPending()" (btnClick)="closeAction()">Cancelar</app-button>
+    <app-button size="sm"
       [variant]="pendingAction()?.action === 'cancel' ? 'danger' : 'primary'"
       [startIconName]="actionCopy()?.icon ?? ''"
       [disabled]="actionMutation.isPending()"
@@ -226,15 +222,15 @@
 
 <!-- ========== NUEVO TRASLADO ========== -->
 <app-modal compact [isOpen]="createOpen()" (closed)="closeCreate()" className="w-full max-w-4xl" maxHeightClass="max-h-[min(95dvh,920px)]" bodyClass="custom-scrollbar">
-  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-8 sm:py-5">
-    <h3 class="pe-12 text-xl font-semibold text-gray-800 dark:text-white/90">Nuevo traslado</h3>
+  <div data-modal-header class="shrink-0 border-b border-gray-100 px-4 py-4 dark:border-gray-800 sm:px-6 sm:py-5">
+    <h3 class="pe-12 text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo traslado</h3>
     <p class="mt-1 pe-12 text-sm text-gray-500 dark:text-gray-400">Se guarda como borrador: el stock no se mueve hasta que lo despachas.</p>
   </div>
-  <div data-modal-body class="min-h-0 px-4 py-5 sm:px-8">
-    <div class="space-y-8">
-      <app-form-section title="Origen y destino" [cols]="2">
-        <div class="flex items-start gap-2">
-          <app-form-select
+  <div data-modal-body class="min-h-0 px-4 py-4 sm:px-6">
+    <div class="space-y-5">
+      <app-form-section compact title="Origen y destino" [cols]="2">
+        <div class="flex items-end gap-2">
+          <app-form-select compact
             class="min-w-0 flex-1"
             label="Sale de"
             [required]="true"
@@ -246,10 +242,10 @@
             [hint]="createErrors().from || ''"
             (valueChange)="setFrom($event)"
           />
-          <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="setFrom($event.id)" /></div>
+          <app-quick-create compact entity="warehouse" [iconOnly]="true" (created)="setFrom($event.id)" />
         </div>
-        <div class="flex items-start gap-2">
-          <app-form-select
+        <div class="flex items-end gap-2">
+          <app-form-select compact
             class="min-w-0 flex-1"
             label="Llega a"
             [required]="true"
@@ -261,7 +257,7 @@
             [hint]="createErrors().to || ''"
             (valueChange)="setTo($event)"
           />
-          <div class="pt-7"><app-quick-create entity="warehouse" [iconOnly]="true" (created)="setTo($event.id)" /></div>
+          <app-quick-create compact entity="warehouse" [iconOnly]="true" (created)="setTo($event.id)" />
         </div>
       </app-form-section>
 
@@ -284,7 +280,7 @@
             </div>
             <div class="grid gap-4 sm:grid-cols-3">
               @if (d.manejaLotes) {
-                <app-suggest-input
+                <app-suggest-input compact
                   class="sm:col-span-2"
                   label="Lote"
                   [required]="true"
@@ -301,7 +297,7 @@
               } @else {
                 <p class="flex items-center text-sm text-gray-500 sm:col-span-2 dark:text-gray-400">Este producto no maneja lotes.</p>
               }
-              <app-input-field label="Cantidad" [isRequired]="true" type="number" min="0" step="1" [value]="d.cantidad" (valueChange)="patchDraft({ cantidad: +$event || 0 })" />
+              <app-input-field compact label="Cantidad" [isRequired]="true" type="number" min="0" step="1" [value]="d.cantidad" (valueChange)="patchDraft({ cantidad: +$event || 0 })" />
             </div>
             @if (draftError()) {
               <p class="mt-2 text-xs font-medium text-error-600 dark:text-error-400">{{ draftError() }}</p>
@@ -311,7 +307,7 @@
             </div>
           </div>
         } @else {
-          <app-search-select
+          <app-search-select compact
             label="Agregar producto"
             helpText="Busca por nombre, código interno o código de barras."
             placeholder="Escribe para buscar"
@@ -330,9 +326,9 @@
             [class]="createErrors().lines ? 'border-error-500 text-error-600 dark:text-error-400' : 'border-gray-300 text-gray-500 dark:border-gray-700 dark:text-gray-400'"
           >{{ createErrors().lines || 'Todavía no agregas productos.' }}</p>
         } @else {
-          <div class="mt-4 max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+          <div class="mt-4 ff-table-frame max-w-full overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
             <table class="w-full min-w-[480px] text-sm text-gray-700 dark:text-gray-300">
-              <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.04]">
+              <thead class="border-b border-gray-100 dark:border-white/[0.05]">
                 <tr>
                   <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Producto</th>
                   <th class="px-4 py-2 text-start text-xs font-medium text-gray-500 dark:text-gray-400">Lote</th>
@@ -357,17 +353,17 @@
         }
       </section>
 
-      <app-form-section title="Más datos" description="Opcional." [cols]="2">
-        <app-input-field label="N.º de guía" helpText="Si ya tienes una guía de remisión física, anota su número. La electrónica se emite después de despachar." [maxLength]="30" [value]="guiaNumero()" (valueChange)="guiaNumero.set($event + '')" />
-        <app-text-area label="Comentario" helpText="Motivo del traslado u otra nota." [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
+      <app-form-section compact title="Más datos" description="Opcional." [cols]="2">
+        <app-input-field compact label="N.º de guía" helpText="Si ya tienes una guía de remisión física, anota su número. La electrónica se emite después de despachar." [maxLength]="30" [value]="guiaNumero()" (valueChange)="guiaNumero.set($event + '')" />
+        <app-text-area compact label="Comentario" helpText="Motivo del traslado u otra nota." [maxLength]="500" [rows]="2" [value]="comentario()" (valueChange)="comentario.set($event)" />
       </app-form-section>
     </div>
   </div>
-  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-8 dark:border-gray-800">
+  <div data-modal-footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
     <p class="text-xs text-gray-500 dark:text-gray-400"><span class="text-error-500">*</span> Campos obligatorios</p>
-    <div class="flex items-center gap-3">
-      <app-button variant="outline" [disabled]="createMutation.isPending()" (btnClick)="closeCreate()">Cancelar</app-button>
-      <app-button startIconName="mdi:content-save-outline" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="outline" [disabled]="createMutation.isPending()" (btnClick)="closeCreate()">Cancelar</app-button>
+      <app-button size="sm" startIconName="mdi:content-save-outline" [disabled]="createMutation.isPending()" [loading]="createMutation.isPending()" (btnClick)="submitCreate()">
         {{ createMutation.isPending() ? 'Guardando…' : 'Guardar borrador' }}
       </app-button>
     </div>

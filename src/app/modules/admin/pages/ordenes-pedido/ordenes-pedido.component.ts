@@ -250,7 +250,8 @@ export class OrdenesPedidoComponent {
       const rows = await firstValueFrom(
         this.api.getPosCatalog(this.warehouseId(), term || undefined),
       );
-      this.catalog.set(rows);
+      // Los productos que solo tienen lotes vencidos se muestran en el punto de venta como aviso; aquí no.
+      this.catalog.set(rows.filter((r) => Number.parseFloat(r.stock) > 0));
     } catch (err) {
       this.notify.error(httpErrorMessage(err, 'Error al buscar productos'));
     }

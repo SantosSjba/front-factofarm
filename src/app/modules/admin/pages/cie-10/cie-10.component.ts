@@ -4,12 +4,12 @@ import { Component, inject, signal } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
-import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
 import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
 import { DirectoryApiService } from '../../services/directory-api.service';
+import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
 
 @Component({
   selector: 'app-cie-10',
@@ -19,9 +19,9 @@ import { DirectoryApiService } from '../../services/directory-api.service';
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
-    InputFieldComponent,
     PageStateComponent,
+    ListFiltersComponent,
+    HelpPanelComponent,
   ],
   templateUrl: './cie-10.component.html',
 })

@@ -1,19 +1,24 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="[{ label: 'Plataforma' }, { label: 'Clientes SaaS' }]" />
-</div>
+<app-breadcrumb-inline [segments]="[{ label: 'Plataforma' }, { label: 'Clientes SaaS' }]" />
 
-<app-page-toolbar>
+<app-page-toolbar [excel]="false">
   <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">
     Clientes SaaS
   </h1>
-  <div data-toolbar-actions>
+  <div data-toolbar-actions class="flex flex-wrap items-center gap-2">
     <app-button size="sm" startIconName="mdi:plus" (btnClick)="openCreateModal()">
       Nuevo cliente
     </app-button>
   </div>
 </app-page-toolbar>
 
-<app-list-filters
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="platform-clientes">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Son las farmacias que usan FactoFarm: su plan, su estado y cuánto de su plan están usando.</li>
+    <li>Con el botón de abrir entras a su panel para darles soporte; el menú ⋮ tiene las demás acciones.</li>
+  </ol>
+</app-help-panel>
+
+<app-list-filters compact
   [searchValue]="searchTerm()"
   searchPlaceholder="Buscar por nombre, RUC o correo"
   [selectValue]="statusFilter()"
@@ -27,110 +32,82 @@
 
 @let listState = tenantsQuery | queryPageState: totalItems();
 
-<app-component-card
-  title="Clientes registrados"
-  helpText="Farmacias y cadenas contratadas. Desde aquí puedes entrar a su panel, ajustar plan/límites o aprovisionar el acceso inicial."
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   emptyTitle="Sin clientes registrados"
+  emptyHint="Usa «Nuevo cliente» o convierte un lead comercial."
   (retry)="refetch()"
+  skeleton="table"
 >
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-left">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="max-w-full overflow-x-auto">
+    <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+      <caption class="sr-only">Clientes SaaS</caption>
       <thead class="border-b border-gray-100 dark:border-white/[0.05]">
         <tr>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Cliente</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Plan</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Estado</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Uso</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Contacto</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Acciones</th>
+          <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Cliente</th>
+          <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Plan</th>
+          <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+          <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Contacto</th>
+          <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
         @for (row of tenantsQuery.data()?.items ?? []; track row.id) {
-          <tr class="border-b border-gray-50 dark:border-white/[0.03]">
-            <td class="px-5 py-4">
-              <p class="font-medium text-gray-800 dark:text-white">{{ row.nombre }}</p>
-              <p class="text-theme-xs text-gray-500">{{ row.slug }}</p>
+          <tr>
+            <td class="px-5 py-3">
+              <p class="font-medium text-gray-800 dark:text-white/90">{{ row.nombre }}</p>
+              <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.slug }}</p>
             </td>
-            <td class="px-5 py-4 text-sm">{{ planLabel(row.plan) }}</td>
-            <td class="px-5 py-4 text-sm">{{ statusLabel(row.status) }}</td>
-            <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-              {{ row.usage.users }}/{{ row.maxUsers }} usuarios ·
-              {{ row.usage.establishments }}/{{ row.maxEstablishments }} sedes
+            <td class="px-5 py-3 text-theme-sm">
+              {{ planLabel(row.plan) }}
+              <span class="block text-theme-xs text-gray-500 dark:text-gray-400">{{ row.usage.users }}/{{ row.maxUsers }} usuarios · {{ row.usage.establishments }}/{{ row.maxEstablishments }} sedes</span>
             </td>
-            <td class="px-5 py-4 text-sm">
+            <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.status" [tone]="statusTone(row.status)" [label]="statusLabel(row.status)" /></td>
+            <td class="px-5 py-3 text-theme-sm">
               <div>{{ row.contactName || '—' }}</div>
               <div class="text-theme-xs text-gray-500">{{ row.contactEmail || '—' }}</div>
             </td>
-            <td class="px-5 py-4">
-              <div class="flex flex-wrap items-center gap-1.5">
+            <td class="px-5 py-3 text-end">
+              <div class="inline-flex items-center gap-1.5">
                 @if (row.status === 'ACTIVE' || row.status === 'TRIAL') {
-                  <app-button
-                    size="sm"
-                    [iconOnly]="true"
-                    startIconName="mdi:open-in-new"
-                    tooltip="Ingresar al panel del cliente"
-                    (btnClick)="enterClientPanel(row)"
-                  />
+                  <app-button size="sm" [iconOnly]="true" startIconName="mdi:open-in-new" tooltip="Ingresar al panel del cliente" (btnClick)="enterClientPanel(row)" />
                 }
-                <app-button
-                  size="sm"
-                  variant="outline"
-                  [iconOnly]="true"
-                  startIconName="mdi:cog-outline"
-                  tooltip="Gestionar cliente"
-                  (btnClick)="openEditModal(row)"
-                />
-                <app-button
-                  size="sm"
-                  variant="outline"
-                  [iconOnly]="true"
-                  startIconName="mdi:account-key-outline"
-                  tooltip="Aprovisionar acceso"
-                  (btnClick)="openProvisionModal(row)"
-                />
-                @if (row.status !== 'ACTIVE') {
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:check-circle-outline"
-                    tooltip="Activar cliente"
-                    (btnClick)="setStatus(row, 'activate')"
-                  />
-                }
-                @if (row.status !== 'SUSPENDED') {
-                  <app-button
-                    size="sm"
-                    variant="outline"
-                    [iconOnly]="true"
-                    startIconName="mdi:pause-circle-outline"
-                    tooltip="Suspender cliente"
-                    (btnClick)="setStatus(row, 'suspend')"
-                  />
-                }
+                <app-table-dropdown>
+                  <div dropdown-button>
+                    <app-button size="sm" variant="outline" [iconOnly]="true" startIconName="mdi:dots-vertical" [tooltip]="'Acciones de ' + row.nombre" />
+                  </div>
+                  <div dropdown-content>
+                    <app-menu-item icon="mdi:cog-outline" tooltip="Plan, límites y datos del cliente." (itemClick)="openEditModal(row)">Gestionar cliente</app-menu-item>
+                    <app-menu-item icon="mdi:account-key-outline" tooltip="Crea o restablece el acceso del administrador." (itemClick)="openProvisionModal(row)">Aprovisionar acceso</app-menu-item>
+                    @if (row.status !== 'ACTIVE') {
+                      <app-menu-item icon="mdi:check-circle-outline" tooltip="Habilita el acceso del cliente." (itemClick)="setStatus(row, 'activate')">Activar cliente</app-menu-item>
+                    }
+                    @if (row.status !== 'SUSPENDED') {
+                      <app-menu-item variant="danger" icon="mdi:pause-circle-outline" tooltip="Bloquea el acceso del cliente hasta reactivarlo." (itemClick)="setStatus(row, 'suspend')">Suspender cliente</app-menu-item>
+                    }
+                  </div>
+                </app-table-dropdown>
               </div>
             </td>
           </tr>
         }
       </tbody>
     </table>
+    </div>
   </div>
 
-  <div class="border-t border-gray-100 p-4 dark:border-white/[0.05]">
-    <app-pagination
+</app-page-state>
+
+<app-pagination
       [currentPage]="currentPage()"
       [totalItems]="totalItems()"
       [pageSize]="itemsPerPage"
       (currentPageChange)="currentPage.set($event)"
     />
-  </div>
-</app-component-card>
 
 <app-tenant-form-modal [isOpen]="modalOpen()" (closed)="closeCreateModal()" />
 

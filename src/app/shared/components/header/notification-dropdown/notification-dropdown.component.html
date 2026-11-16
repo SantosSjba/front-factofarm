@@ -3,7 +3,7 @@
     type="button"
     [attr.aria-label]="unseenCount() ? 'Notificaciones: ' + unseenCount() + ' nuevas' : 'Notificaciones'"
     [attr.aria-expanded]="isOpen"
-    class="relative inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-gray-300 bg-transparent text-gray-500 shadow-theme-xs transition-all dropdown-toggle hover:bg-gray-50 hover:text-gray-800 lg:size-11 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white"
+    class="relative inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-transparent text-gray-500 shadow-theme-xs transition-all dropdown-toggle hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white"
     (click)="toggleDropdown()"
   >
     @if (unseenCount()) {
@@ -21,7 +21,7 @@
   <app-dropdown
     [isOpen]="isOpen"
     (closed)="closeDropdown()"
-    className="fixed inset-x-3 start-auto top-16 mt-0 max-h-[calc(100dvh-5rem)] w-auto min-w-0 overflow-hidden sm:w-[361px] xl:absolute xl:inset-x-auto xl:end-0 xl:top-auto xl:mt-[17px] xl:h-[480px]"
+    className="fixed inset-x-3 sm:start-auto top-14 mt-0 max-h-[calc(100dvh-5rem)] w-auto min-w-0 overflow-hidden sm:w-[361px] xl:absolute xl:inset-x-auto xl:end-0 xl:top-auto xl:mt-3 xl:h-[480px]"
   >
     <div class="mb-3 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
       <div>

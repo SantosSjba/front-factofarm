@@ -7,19 +7,20 @@ import { httpErrorMessage } from '../../../../core/http/http-error-message';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotifyService } from '../../../../core/services/notify.service';
 import { BreadcrumbInlineComponent } from '../../../../shared/components/common/breadcrumb-inline/breadcrumb-inline.component';
-import { ComponentCardComponent } from '../../../../shared/components/common/component-card/component-card.component';
 import { ListFiltersComponent } from '../../../../shared/components/common/list-filters/list-filters.component';
 import { PageToolbarComponent } from '../../../../shared/components/common/page-toolbar/page-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/common/pagination/pagination.component';
 import type { BreadcrumbSegment } from '../../../../shared/components/common/page-breadcrumb/page-breadcrumb.component';
 import { InputFieldComponent } from '../../../../shared/components/form/input/input-field.component';
-import { FormFieldComponent } from '../../../../shared/components/form/form-field/form-field.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/common/confirm-dialog/confirm-dialog.component';
 import { ButtonComponent } from '../../../../shared/components/ui/button/button.component';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal.component';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 import { DirectoryApiService } from '../../services/directory-api.service';
 import type { CreateMedicoRequest, MedicoItemDto } from '../../models/directory.models';
+import { PageStateComponent } from '../../../../shared/components/common/page-state/page-state.component';
+import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/help-panel.component';
+import { FormSectionComponent } from '../../../../shared/components/form/form-section/form-section.component';
 
 @Component({
   selector: 'app-medicos',
@@ -29,15 +30,16 @@ import type { CreateMedicoRequest, MedicoItemDto } from '../../models/directory.
     CommonModule,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
-    ComponentCardComponent,
     ListFiltersComponent,
     PaginationComponent,
     ModalComponent,
     ButtonComponent,
     InputFieldComponent,
-    FormFieldComponent,
     ConfirmDialogComponent,
     HasPermissionDirective,
+    PageStateComponent,
+    HelpPanelComponent,
+    FormSectionComponent,
   ],
   templateUrl: './medicos.component.html',
 })

@@ -1,46 +1,49 @@
-<div class="mb-5">
-  <app-breadcrumb-inline [segments]="[{ label: 'Plataforma' }, { label: 'Leads comerciales' }]" />
-</div>
+<app-breadcrumb-inline [segments]="[{ label: 'Plataforma' }, { label: 'Leads comerciales' }]" />
 
-<app-page-toolbar>
-  <h1 data-toolbar-title class="text-lg font-semibold">Leads comerciales</h1>
+<app-page-toolbar [excel]="false">
+  <h1 data-toolbar-title class="text-lg font-semibold text-gray-800 dark:text-white/90">Leads comerciales</h1>
 </app-page-toolbar>
+
+<app-help-panel title="¿Para qué sirve esta pantalla?" storageKey="platform-leads">
+  <ol class="list-decimal space-y-1 ps-5 text-sm text-gray-500 dark:text-gray-400">
+    <li>Son los contactos que dejaron sus datos en el formulario de la web pública.</li>
+    <li>Pulsa «Convertir a cliente» para crear su cuenta SaaS con su sede y su administrador.</li>
+  </ol>
+</app-help-panel>
 
 @let listState = leadsQuery | queryPageState: totalItems();
 
-<app-component-card
-  title="Solicitudes desde la landing"
-  helpText="Contactos capturados desde el formulario de la web pública. Puedes convertir un lead en cliente SaaS con sede y administrador."
-  className="overflow-hidden"
-  [bodyClass]="'p-0 sm:p-0'"
+<!-- Tabla directa (sin tarjeta): el título ya está en la barra de la página. -->
+<app-page-state
   [loading]="listState.loading"
   [error]="listState.error"
   [empty]="listState.empty"
   emptyTitle="Sin leads registrados"
   (retry)="refetch()"
+  skeleton="table"
 >
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-left">
+  <div class="ff-table-frame overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="max-w-full overflow-x-auto">
+    <table class="min-w-full text-start text-gray-700 dark:text-gray-300">
+      <caption class="sr-only">Solicitudes de la web</caption>
       <thead class="border-b border-gray-100 dark:border-white/[0.05]">
         <tr>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Fecha</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Contacto</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Farmacia</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500">Estado</th>
-          <th class="px-5 py-3 text-theme-xs text-gray-500"></th>
+          <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+          <th data-card-role="title" class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Contacto</th>
+          <th class="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
+          <th class="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-100 dark:divide-white/[0.05]">
         @for (row of leadsQuery.data()?.items ?? []; track row.id) {
-          <tr class="border-b border-gray-50 dark:border-white/[0.03]">
-            <td class="px-5 py-4 text-sm">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
-            <td class="px-5 py-4 text-sm">
-              <div>{{ row.nombre }}</div>
-              <div class="text-theme-xs text-gray-500">{{ row.email }} · {{ row.telefono }}</div>
+          <tr>
+            <td class="px-5 py-3 text-theme-sm">{{ row.createdAt | appDate: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="px-5 py-3 text-theme-sm">
+              <div class="font-medium text-gray-800 dark:text-white/90">{{ row.nombre }}</div>
+              <div class="text-theme-xs text-gray-500 dark:text-gray-400">{{ row.farmacia }} · {{ row.email }} · {{ row.telefono }}</div>
             </td>
-            <td class="px-5 py-4 text-sm">{{ row.farmacia }}</td>
-            <td class="px-5 py-4 text-sm">{{ row.status }}</td>
-            <td class="px-5 py-4">
+            <td class="px-5 py-3 text-theme-sm"><app-status-badge [status]="row.status" [tone]="leadTone(row.status)" [label]="leadLabel(row.status)" /></td>
+            <td class="px-5 py-3">
               @if (row.status !== 'CONVERTED') {
                 <app-button
                   size="sm"
@@ -56,17 +59,17 @@
         }
       </tbody>
     </table>
+    </div>
   </div>
 
-  <div class="border-t border-gray-100 p-4 dark:border-white/[0.05]">
-    <app-pagination
+</app-page-state>
+
+<app-pagination
       [currentPage]="currentPage()"
       [totalItems]="totalItems()"
       [pageSize]="itemsPerPage"
       (currentPageChange)="currentPage.set($event)"
     />
-  </div>
-</app-component-card>
 
 <app-tenant-lead-convert-modal
   [isOpen]="convertOpen()"
