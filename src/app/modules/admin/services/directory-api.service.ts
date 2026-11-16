@@ -4,6 +4,7 @@ import { map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type {
   CreateCustomerRequest,
+  PaymentMethod,
   CreateCustomerTypeRequest,
   CreateCategoryRequest,
   CreateBrandRequest,
@@ -500,6 +501,14 @@ export class DirectoryApiService {
   /** Supervisores anulan en el acto; el resto deja una solicitud pendiente de aprobación. */
   requestVoidSale(id: string, reason: string) {
     return this.http.post<{ ok: boolean; requestId?: string; status?: string; message?: string }>(`${this.base}/sales/${id}/void-request`, { reason });
+  }
+
+  /** Corrige el medio de pago sin anular la venta (solo supervisores). */
+  correctSalePayments(
+    id: string,
+    body: { payments: { metodo: PaymentMethod; monto: number; referencia?: string }[]; reason: string },
+  ) {
+    return this.http.post<{ ok: boolean; message?: string }>(`${this.base}/sales/${id}/payment-correction`, body);
   }
 
   approveVoidRequest(requestId: string) {

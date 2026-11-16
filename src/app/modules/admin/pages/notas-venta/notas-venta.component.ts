@@ -28,6 +28,10 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal.com
 import { AppDatePipe } from '../../../../shared/pipes/app-date.pipe';
 import { QueryPageStatePipe } from '../../../../shared/pipes/query-page-state.pipe';
 import { SaleVoidModalComponent, type SaleVoidTarget } from '../../components/sale-void-modal/sale-void-modal.component';
+import {
+  SalePaymentCorrectionModalComponent,
+  type SalePaymentCorrectionTarget,
+} from '../../components/sale-payment-correction-modal/sale-payment-correction-modal.component';
 import type {
   DataStorageMode,
   PaymentMethod,
@@ -72,6 +76,7 @@ type ReturnLineDraft = { saleItemId: string; producto: string; maxQty: number; q
     PageToolbarComponent,
     PaginationComponent,
     SaleVoidModalComponent,
+    SalePaymentCorrectionModalComponent,
     StatusBadgeComponent,
     TableDropdownComponent,
     TextAreaComponent,
@@ -218,6 +223,19 @@ export class NotasVentaComponent {
   protected canDebit(sale: { canDebit?: boolean; storage?: string; archivedAt?: string | null; fromColdStorage?: boolean }): boolean {
     return !this.isArchived(sale) && sale.canDebit === true;
   }
+  /** Mismos roles que `DIRECT_SALE_VOID_ROLES` en la API (`sales.void` / Anulaciones). */
+  private readonly canCorrectPaymentPermission =
+    this.auth.hasPermission('sales.void') || this.auth.hasPermission('nav.anulaciones');
+  protected canCorrectPayment(row: SaleListItemDto): boolean {
+    return (
+      this.canCorrectPaymentPermission &&
+      !this.isArchived(row) &&
+      row.estado === 'COMPLETADA' &&
+      row.canVoid === true &&
+      !row.pendingVoidRequestId
+    );
+  }
+
   protected canVoid(row: SaleListItemDto): boolean {
     return this.canRequestVoid && !this.isArchived(row) && row.canVoid === true && !row.pendingVoidRequestId;
   }
@@ -429,5 +447,12 @@ export class NotasVentaComponent {
   protected openVoid(row: SaleListItemDto) {
     this.detailRow.set(null);
     this.voidTarget.set(row);
+  }
+
+  // ---------- Corregir pago ----------
+  protected readonly paymentTarget = signal<SalePaymentCorrectionTarget | null>(null);
+  protected openPaymentCorrection(row: SaleListItemDto) {
+    this.detailRow.set(null);
+    this.paymentTarget.set(row);
   }
 }

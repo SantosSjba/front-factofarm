@@ -120,6 +120,9 @@
                         @if (canDebit(row)) {
                           <app-menu-item icon="mdi:file-document-plus-outline" tooltip="Cobra un cargo adicional sobre el comprobante aceptado." (itemClick)="openDebit(row)">Nota de débito</app-menu-item>
                         }
+                        @if (canCorrectPayment(row)) {
+                          <app-menu-item icon="mdi:cash-sync" tooltip="Se marcó un medio de pago equivocado (p. ej. efectivo en vez de Yape). No anula la venta." (itemClick)="openPaymentCorrection(row)">Corregir método de pago</app-menu-item>
+                        }
                         @if (canVoid(row)) {
                           <app-menu-item variant="danger" icon="mdi:cancel" tooltip="Anula la venta entera. Te pedirá el motivo." (itemClick)="openVoid(row)">Anular venta</app-menu-item>
                         }
@@ -262,6 +265,9 @@
     <app-button size="sm" variant="outline" (btnClick)="detailRow.set(null)">Cerrar</app-button>
     @if (row && !isArchived(row)) {
       <app-button size="sm" variant="outline" startIconName="mdi:file-pdf-box" (btnClick)="downloadPdf(row.id)">PDF</app-button>
+      @if (canCorrectPayment(row)) {
+        <app-button size="sm" variant="outline" startIconName="mdi:cash-sync" (btnClick)="openPaymentCorrection(row)">Corregir pago</app-button>
+      }
       @if (canVoid(row)) {
         <app-button size="sm" variant="danger" startIconName="mdi:cancel" (btnClick)="openVoid(row)">Anular venta</app-button>
       }
@@ -280,6 +286,7 @@
 
 <!-- ========== ANULAR (compartido) ========== -->
 <app-sale-void-modal [sale]="voidTarget()" (closed)="voidTarget.set(null)" />
+<app-sale-payment-correction-modal [sale]="paymentTarget()" (closed)="paymentTarget.set(null)" />
 
 <!-- ========== CAMBIAR A BOLETA / FACTURA ========== -->
 <app-modal compact [isOpen]="!!convertRow()" (closed)="convertRow.set(null)" className="w-full max-w-lg shadow-theme-lg">
