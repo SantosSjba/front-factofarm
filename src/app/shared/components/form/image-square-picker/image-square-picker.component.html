@@ -21,7 +21,8 @@
         <span class="font-semibold">{{ placeholder }}</span>
       }
     </button>
-    <input #inp type="file" [accept]="accept" class="sr-only" (change)="onChange($event)" />
+    <!-- El control accesible es el botón de arriba: el input oculto no es otra parada de Tab. -->
+    <input #inp type="file" [accept]="accept" class="sr-only" tabindex="-1" aria-hidden="true" (change)="onChange($event)" />
   </div>
   <div class="min-w-0 flex-1 text-theme-sm text-gray-500 dark:text-gray-400">
     <ng-content />

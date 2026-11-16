@@ -1,22 +1,24 @@
 @if (isOpen) {
-<!-- Teléfono: hoja inferior pegada abajo (botones al alcance del pulgar).
-     Tablet y escritorio: diálogo centrado. -->
-<div
-  class="modal fixed inset-0 z-99999 flex justify-center overflow-y-auto"
-  [ngClass]="isFullscreen ? 'items-start p-4 sm:items-center sm:py-6' : 'items-end sm:items-center sm:p-4 sm:py-6'"
+<!-- <dialog> nativo (showModal): ocupa la pantalla y centra el panel; el oscurecido es su ::backdrop.
+     Teléfono: hoja inferior pegada abajo (botones al alcance del pulgar). Tablet y escritorio: centrado. -->
+<dialog
+  #dialog
+  class="ff-modal-dialog fixed inset-0 m-0 h-full max-h-none w-full max-w-none justify-center overflow-y-auto overscroll-contain border-0 bg-transparent text-inherit open:flex"
+  [ngClass]="isFullscreen ? 'items-start p-4 sm:items-center sm:py-6' : 'p-0 items-end sm:items-center sm:p-4 sm:py-6'"
+  [attr.aria-labelledby]="title ? titleId : null"
+  [attr.aria-label]="title ? null : ariaLabel"
+  (cancel)="onCancel($event)"
+  (close)="onNativeClose()"
 >
   @if (!isFullscreen) {
+  <!-- Zona fuera del panel: clic para cerrar (funciona en todos los navegadores, sin `closedby`). -->
   <button type="button" tabindex="-1" aria-label="Cerrar ventana"
-    class="fixed inset-0 h-full w-full bg-black/50 backdrop-blur-xs transition-opacity"
+    class="fixed inset-0 h-full w-full cursor-default bg-transparent"
     (click)="onBackdropClick()"
   ></button>
   }
   <div
-    #dialogPanel
-    role="dialog"
-    aria-modal="true"
-    [attr.aria-label]="title || ariaLabel"
-    tabindex="-1"
+    data-modal-panel
     [attr.data-modal-compact]="compact ? '' : null"
     [ngClass]="panelClasses()"
   >
@@ -56,7 +58,7 @@
       class="flex shrink-0 flex-col text-start"
       [class]="compact ? 'gap-0.5 px-4 pt-4 pe-11 sm:px-6 sm:pt-5' : 'gap-2 px-6 pt-6 pe-10 sm:px-10 sm:pt-10'"
     >
-      <h3 class="font-semibold text-gray-800 dark:text-white/90" [class]="compact ? 'text-lg' : 'text-xl sm:text-2xl'">{{ title }}</h3>
+      <h3 [id]="titleId" class="font-semibold text-gray-800 dark:text-white/90" [class]="compact ? 'text-lg' : 'text-xl sm:text-2xl'">{{ title }}</h3>
       @if (description) {
       <p class="text-gray-500 dark:text-gray-400" [class]="compact ? 'text-theme-xs' : 'text-sm'">{{ description }}</p>
       }
@@ -74,5 +76,5 @@
 
     <ng-content select="[data-modal-footer]"></ng-content>
   </div>
-</div>
+</dialog>
 }

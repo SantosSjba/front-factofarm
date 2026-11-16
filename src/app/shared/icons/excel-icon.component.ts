@@ -1,6 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { EXCEL_ICON } from './excel-icon';
+import { excelIconSvg } from './excel-icon';
 
 /** Icono de Microsoft Excel para acciones de descargar / importar Excel. */
 @Component({
@@ -15,7 +15,7 @@ export class ExcelIconComponent {
   // SVG estático propio (no viene del usuario): seguro de insertar.
   protected readonly svg = computed(() =>
     this.sanitizer.bypassSecurityTrustHtml(
-      EXCEL_ICON.replace('width="16" height="16"', `width="${this.size()}" height="${this.size()}"`),
+      excelIconSvg(this.size()),
     ),
   );
 }

@@ -573,7 +573,7 @@ export class ProductosComponent {
   protected readonly warehousePrecioInputs = signal<Record<string, string>>({});
   protected readonly presentationRows = signal<PresentationRow[]>([]);
   protected readonly attributeRows = signal<AttributeRow[]>([]);
-  protected readonly formErrors = signal<Record<string, string>>({});
+  protected readonly formErrors = signal<Partial<Record<string, string>>>({});
   protected readonly productImagePreview = signal<string | null>(null);
   protected readonly productImageUploadError = signal<string | null>(null);
   protected readonly newCategoryName = signal('');

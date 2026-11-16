@@ -20,7 +20,7 @@ export type Period = { from: string; to: string };
       <div class="flex flex-wrap items-end" [class]="compact() ? 'gap-2' : 'gap-3'">
         <div class="flex flex-wrap gap-2" role="group" aria-label="Periodos rápidos">
           @for (p of presets(); track p.id) {
-            <app-button size="sm" [variant]="isActive(p) ? 'primary' : 'outline'" (btnClick)="change.emit({ from: p.from, to: p.to })">{{ p.label }}</app-button>
+            <app-button size="sm" [variant]="isActive(p) ? 'primary' : 'outline'" (btnClick)="periodChange.emit({ from: p.from, to: p.to })">{{ p.label }}</app-button>
           }
         </div>
         <!-- Desde y Hasta siempre juntas; si bajan de línea quedan a la izquierda (sin hueco). -->
@@ -44,7 +44,8 @@ export class PeriodFilterComponent {
   readonly value = input.required<Period>();
   /** Versión compacta (fechas de 36px, menos padding). */
   readonly compact = input(false, { transform: booleanAttribute });
-  readonly change = output<Period>();
+  /** Antes `change`: con ese nombre, los `change` nativos de los campos internos burbujean al host y llegaban como Event. */
+  readonly periodChange = output<Period>();
   /** Resumen del periodo en chips (totales); los que tengan filtro emiten `summaryChipClick`. */
   readonly summaryChips = input<SummaryChip[]>([]);
   readonly summaryLabel = input('Resumen del periodo');
@@ -76,6 +77,6 @@ export class PeriodFilterComponent {
       if (which === 'from') next.to = next.from;
       else next.from = next.to;
     }
-    this.change.emit(next);
+    this.periodChange.emit(next);
   }
 }

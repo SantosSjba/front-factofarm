@@ -48,7 +48,7 @@ import type { SummaryChip } from '../../../../shared/components/ui/summary-chips
       </ol>
     </app-help-panel>
 
-    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" summaryLabel="Totales del periodo" (summaryChipClick)="onSummaryChip($event)" (change)="period.set($event); page.set(1)">
+    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" summaryLabel="Totales del periodo" (summaryChipClick)="onSummaryChip($event)" (periodChange)="period.set($event); page.set(1)">
       <div class="mt-2.5 grid gap-2 border-t border-gray-100 pt-2.5 sm:grid-cols-2 lg:grid-cols-4 dark:border-gray-800">
         <app-form-select compact label="Tipo" [showPlaceholder]="false" [options]="tipoOptions" [value]="tipo()" (valueChange)="tipo.set($event); page.set(1)" />
         <app-form-select compact label="Medio de pago" [showPlaceholder]="false" [options]="metodoOptions" [value]="metodo()" (valueChange)="metodo.set($event); page.set(1)" />

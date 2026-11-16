@@ -1,4 +1,4 @@
-﻿import { CommonModule, CurrencyPipe } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, inject, signal, computed } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { firstValueFrom } from 'rxjs';
@@ -21,7 +21,6 @@ import { AlertComponent } from '../../../../shared/components/ui/alert/alert.com
   standalone: true,
   imports: [
     CommonModule,
-    CurrencyPipe,
     BreadcrumbInlineComponent,
     PageToolbarComponent,
     PageStateComponent,

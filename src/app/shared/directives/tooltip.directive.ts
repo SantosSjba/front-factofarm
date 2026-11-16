@@ -3,6 +3,7 @@ import {
   ElementRef,
   HostListener,
   Input,
+  OnChanges,
   OnDestroy,
   inject,
 } from '@angular/core';
@@ -11,12 +12,24 @@ import { createPopper, Instance, type Placement } from '@popperjs/core';
 /**
  * Tooltip flotante (Popper, strategy fixed) anclado al body.
  * z-index por encima del header sticky (z-99999) para que nunca se recorte.
+ *
+ * Accesibilidad (WCAG 1.4.13 y guía de tooltips):
+ * - El texto queda enlazado desde el inicio: como descripción (`aria-describedby`) si el control
+ *   ya tiene nombre distinto, o como nombre (`aria-labelledby`) si no tiene ninguno. Así el lector
+ *   de pantalla lo lee sin necesidad de pasar el mouse.
+ * - Se puede pasar el mouse sobre el tooltip sin que desaparezca, y Esc lo cierra.
+ * (`interestfor` + `popover="hint"` aún no está en Safari ni Firefox: por eso sigue con Popper.)
  */
 @Directive({
   selector: '[appTooltip]',
   standalone: true,
 })
-export class TooltipDirective implements OnDestroy {
+export class TooltipDirective implements OnChanges, OnDestroy {
+  private static nextId = 0;
+  private readonly descId = `ff-tip-${++TooltipDirective.nextId}`;
+  private descEl: HTMLElement | null = null;
+  private hideTimer: ReturnType<typeof setTimeout> | null = null;
+
   private readonly el = inject(ElementRef<HTMLElement>);
 
   @Input('appTooltip') text = '';
@@ -37,15 +50,103 @@ export class TooltipDirective implements OnDestroy {
     this.scheduleShow();
   }
 
+  /** Con el mouse: espera un instante por si va hacia el tooltip (WCAG 1.4.13, "hoverable"). */
   @HostListener('mouseleave')
+  onMouseLeave(): void {
+    this.clearShowTimer();
+    this.hideSoon();
+  }
+
   @HostListener('focusout')
   onHide(): void {
     this.clearShowTimer();
     this.destroyTip();
   }
 
+  ngOnChanges(): void {
+    // Tras renderizar el contenido proyectado, para comparar con el nombre visible del control.
+    queueMicrotask(() => this.syncA11y());
+  }
+
+  /** Esc cierra el tooltip sin mover el foco; si estaba visible, no cierra además el modal. */
+  private readonly onKeydown = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !this.tipEl) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.destroyTip();
+  };
+
+  private hideSoon(): void {
+    this.clearHideTimer();
+    this.hideTimer = setTimeout(() => this.destroyTip(), 150);
+  }
+
+  private clearHideTimer(): void {
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
+    }
+  }
+
+  /**
+   * Enlaza el texto del tooltip al control: descripción si ya tiene otro nombre, nombre si no
+   * tiene ninguno, nada si el tooltip repite su nombre (se leería dos veces).
+   */
+  private syncA11y(): void {
+    const host = this.el.nativeElement as HTMLElement;
+    const text = this.text?.trim() ?? '';
+    const ownsDescribed = host.getAttribute('aria-describedby')?.split(' ').includes(this.descId);
+    const ownsLabelled = host.getAttribute('aria-labelledby') === this.descId;
+    if (ownsDescribed) this.removeIdRef(host, 'aria-describedby');
+    if (ownsLabelled) host.removeAttribute('aria-labelledby');
+    if (!text) {
+      this.descEl?.remove();
+      this.descEl = null;
+      return;
+    }
+    const norm = (v: string) => v.replace(/\s+/g, ' ').trim().toLowerCase();
+    const name = norm(host.getAttribute('aria-label') ?? host.textContent ?? '');
+    if (name === norm(text)) {
+      this.descEl?.remove();
+      this.descEl = null;
+      return;
+    }
+    const desc = this.ensureDescEl();
+    desc.textContent = text;
+    if (!name && !host.hasAttribute('aria-labelledby')) {
+      host.setAttribute('aria-labelledby', this.descId);
+    } else {
+      const ids = (host.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean);
+      host.setAttribute('aria-describedby', [...ids, this.descId].join(' '));
+    }
+  }
+
+  /** Textos ocultos en un contenedor común al final del body: no alteran el layout ni :last-child. */
+  private ensureDescEl(): HTMLElement {
+    if (this.descEl) return this.descEl;
+    let bag = document.getElementById('ff-tooltip-texts');
+    if (!bag) {
+      bag = document.createElement('div');
+      bag.id = 'ff-tooltip-texts';
+      bag.hidden = true;
+      document.body.appendChild(bag);
+    }
+    const span = document.createElement('span');
+    span.id = this.descId;
+    bag.appendChild(span);
+    this.descEl = span;
+    return span;
+  }
+
+  private removeIdRef(host: HTMLElement, attr: string): void {
+    const ids = (host.getAttribute(attr) ?? '').split(' ').filter((id) => id && id !== this.descId);
+    if (ids.length) host.setAttribute(attr, ids.join(' '));
+    else host.removeAttribute(attr);
+  }
+
   private scheduleShow(): void {
     if (!this.text?.trim()) return;
+    this.clearHideTimer();
     this.clearShowTimer();
     this.showTimer = setTimeout(() => this.mount(), 80);
   }
@@ -53,6 +154,8 @@ export class TooltipDirective implements OnDestroy {
   ngOnDestroy(): void {
     this.clearShowTimer();
     this.destroyTip();
+    this.descEl?.remove();
+    this.descEl = null;
   }
 
   private mount(): void {
@@ -76,7 +179,7 @@ export class TooltipDirective implements OnDestroy {
       fontWeight: '400',
       lineHeight: '1.35',
       textAlign: 'center',
-      pointerEvents: 'none',
+      pointerEvents: 'auto',
       boxShadow: '0 10px 25px rgba(0,0,0,0.25)',
       wordBreak: 'break-word',
     } as CSSStyleDeclaration);
@@ -93,8 +196,13 @@ export class TooltipDirective implements OnDestroy {
     tip.appendChild(arrow);
     this.arrowEl = arrow;
 
-    document.body.appendChild(tip);
+    // Dentro de un menú (popover) o un <dialog> modal abiertos: fuera quedaría tapado (capa superior) e inerte.
+    (this.el.nativeElement.closest('[popover]:popover-open, dialog[open]') ?? document.body).appendChild(tip);
     this.tipEl = tip;
+    // Se puede pasar el mouse sobre el tooltip para leerlo (lupa, texto largo).
+    tip.addEventListener('mouseenter', () => this.clearHideTimer());
+    tip.addEventListener('mouseleave', () => this.hideSoon());
+    document.addEventListener('keydown', this.onKeydown, true);
 
     // Espacio superior por header sticky (+ banner soporte) para forzar flip a bottom.
     const stickyTopPad = this.estimateStickyHeaderPad();
@@ -142,6 +250,8 @@ export class TooltipDirective implements OnDestroy {
   }
 
   private destroyTip(): void {
+    this.clearHideTimer();
+    document.removeEventListener('keydown', this.onKeydown, true);
     this.popper?.destroy();
     this.popper = null;
     this.tipEl?.remove();

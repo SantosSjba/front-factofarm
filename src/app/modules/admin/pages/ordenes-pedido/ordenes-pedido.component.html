@@ -34,7 +34,7 @@
 <app-page-state
   [loading]="listQuery.isPending()"
   [error]="listError()"
-  [empty]="listQuery.isSuccess() && !(listQuery.data()?.items?.length)"
+  [empty]="listQuery.isSuccess() && !listQuery.data().items.length"
   [emptyTitle]="search().trim() || estadoFilter() ? 'Sin pedidos con esos filtros' : 'Aún no hay pedidos delivery'"
   [emptyHint]="search().trim() || estadoFilter() ? 'Prueba con otra búsqueda o estado.' : 'Usa «Nuevo pedido» para registrar el primero.'"
   skeleton="table"

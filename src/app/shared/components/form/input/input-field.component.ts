@@ -7,11 +7,12 @@ import { Component, Input, Output, EventEmitter, booleanAttribute } from '@angul
 @Component({
   selector: 'app-input-field',
   // `className="flex-1"` debe aplicar al host para que crezca dentro de filas flex.
-  host: { class: 'block', '[class.flex-1]': 'hostFlex', '[class.min-w-0]': 'hostFlex' },
+  // `[attr.id]: null`: un `id="…"` estático también quedaría en el host y el <label for> apuntaría a él, no al <input>.
+  host: { class: 'block', '[class.flex-1]': 'hostFlex', '[class.min-w-0]': 'hostFlex', '[attr.id]': 'null' },
   imports: [CommonModule, LabelComponent, IconComponent, InputDirective],
   template: `
     @if (label) {
-      <app-label [for]="id || undefined" [required]="isRequired" [helpText]="helpText" [compact]="compact">{{ label }}</app-label>
+      <app-label [for]="inputId" [required]="isRequired" [helpText]="helpText" [compact]="compact">{{ label }}</app-label>
     }
     <div class="relative">
       @if (icon) {
@@ -25,13 +26,13 @@ import { Component, Input, Output, EventEmitter, booleanAttribute } from '@angul
         unstyled
         [className]="inputClasses"
         [type]="type"
-        [id]="id || ''"
+        [id]="inputId"
         [name]="name"
         [placeholder]="placeholder"
         [value]="value"
-        [min]="min"
-        [max]="max"
-        [step]="step"
+        [attr.min]="min ?? null"
+        [attr.max]="max ?? null"
+        [attr.step]="step ?? null"
         [disabled]="disabled"
         [attr.maxlength]="maxLength ?? null"
         [attr.minlength]="minLength ?? null"
@@ -40,27 +41,40 @@ import { Component, Input, Output, EventEmitter, booleanAttribute } from '@angul
         [attr.aria-label]="ariaLabel"
         [attr.aria-required]="isRequired || ariaRequired ? true : null"
         [attr.aria-invalid]="error ? true : null"
-        [attr.aria-describedby]="ariaDescribedBy"
+        [attr.aria-describedby]="describedBy"
         [attr.required]="isRequired ? true : null"
         (input)="onInput($event)"
         (click)="openNativePicker($event)"
       />
 
       @if (hint) {
-      <p class="text-xs" [class.mt-2]="!compact" [class.mt-1]="compact"
+      <p [id]="hintId" class="text-xs" [class.mt-2]="!compact" [class.mt-1]="compact"
         [attr.role]="error ? 'alert' : null"
         [ngClass]="{
           'text-error-500 dark:text-error-400': error,
           'text-success-600 dark:text-success-400': success,
           'text-gray-500 dark:text-gray-400': !error && !success
         }">
-        {{ hint }}
+        @if (error) {<app-icon name="mdi:alert-circle-outline" class="me-1 -mt-0.5" iconClass="size-3.5" />}{{ hint }}
       </p>
       }
     </div>
   `,
 })
 export class InputFieldComponent {
+  private static nextId = 0;
+  /** Id propio cuando la página no pasa `id`: así el label siempre queda asociado al campo. */
+  private readonly autoId = `ff-input-${++InputFieldComponent.nextId}`;
+  protected get inputId(): string {
+    return this.id || this.autoId;
+  }
+  protected get hintId(): string {
+    return `${this.inputId}-hint`;
+  }
+  /** Ayuda o error visible + lo que pase la página: el lector de pantalla lo lee al enfocar. */
+  protected get describedBy(): string | null {
+    return [this.hint ? this.hintId : '', this.ariaDescribedBy ?? ''].filter(Boolean).join(' ') || null;
+  }
 
   @Input() type: string = 'text';
   @Input() id?: string = '';

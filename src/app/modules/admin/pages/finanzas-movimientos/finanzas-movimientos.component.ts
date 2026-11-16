@@ -42,7 +42,7 @@ import type { SummaryChip } from '../../../../shared/components/ui/summary-chips
       </ol>
     </app-help-panel>
 
-    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (change)="period.set($event)" />
+    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (periodChange)="period.set($event)" />
 
     <app-page-state [loading]="query.isPending()" [error]="error()" (retry)="query.refetch()">
       @if (view(); as v) {

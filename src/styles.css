@@ -1,9 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap")
-layer(base);
-
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "swiper/css/bundle";
 @import "@angular/cdk/overlay-prebuilt.css";
 @import "driver.js/dist/driver.css";
 
@@ -218,8 +214,16 @@ layer(base);
     explícita hereda colores legibles. Las utilities (capa posterior) siguen
     ganando, así que esto solo cubre elementos "desnudos".
   */
-  html.dark {
-    color-scheme: dark;
+  /* `color-scheme` sigue a <meta name="color-scheme"> (la actualiza ThemeService). */
+  :root {
+    color-scheme: light dark;
+
+    &:has(> head > meta[name="color-scheme"][content="dark"]) {
+      color-scheme: dark;
+    }
+    &:has(> head > meta[name="color-scheme"][content="light"]) {
+      color-scheme: light;
+    }
   }
   .dark body {
     @apply bg-gray-900 text-gray-300;
@@ -408,7 +412,11 @@ layer(base);
   }
 
   *::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-gray-300 dark:bg-gray-600;
+    @apply rounded-full bg-gray-300;
+  }
+  /* `dark:` dentro de un pseudo-elemento genera un selector vacío (`:is()`) y se descarta. */
+  .dark *::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-600);
   }
 }
 
@@ -433,11 +441,27 @@ layer(base);
   }
 
   &::-webkit-scrollbar-track {
-    @apply rounded-full bg-gray-100 dark:bg-gray-800;
+    @apply rounded-full bg-gray-100;
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500;
+    @apply rounded-full bg-gray-300;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-gray-400);
+  }
+
+  :where(.dark) &::-webkit-scrollbar-track {
+    background-color: var(--color-gray-800);
+  }
+
+  :where(.dark) &::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-600);
+  }
+
+  :where(.dark) &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-gray-500);
   }
 }
 
@@ -452,7 +476,7 @@ layer(base);
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 rounded-full dark:bg-gray-700;
+    @apply bg-gray-200 rounded-full;
   }
 }
 
@@ -495,6 +519,18 @@ layer(base);
   padding-top: calc(var(--spacing) * 2.5);
   padding-bottom: calc(var(--spacing) * 2.5);
   gap: calc(var(--spacing) * 2);
+}
+
+/* `app-modal` sobre <dialog> nativo. El oscurecido es el ::backdrop; overscroll + overflow en el
+   backdrop evitan que la página de atrás se desplace (mejora progresiva: Safari aún no lo cumple). */
+dialog.ff-modal-dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog.ff-modal-dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(4px);
 }
 
 /* Modal adaptativo (`app-modal`): en teléfono es una hoja inferior. Los footers proyectados
@@ -1768,4 +1804,38 @@ table.ff-usuarios-list.ff-table-is-cards > tbody > tr > td.ff-table-title {
 
 .cdk-overlay-pane {
   background: transparent !important;
+}
+
+/* Menús de acciones (`app-table-dropdown`, popover nativo): aparecen con un leve fundido. */
+@media (prefers-reduced-motion: no-preference) {
+  .ff-menu-popover {
+    opacity: 0;
+    translate: 0 -0.25rem;
+    transition: opacity, translate, display, overlay;
+    transition-duration: 0.15s;
+    transition-behavior: allow-discrete;
+  }
+  .ff-menu-popover:popover-open {
+    opacity: 1;
+    translate: 0 0;
+    transition-duration: 0.1s;
+    @starting-style {
+      opacity: 0;
+      translate: 0 -0.25rem;
+    }
+  }
+}
+
+/* Transición entre pantallas (router con View Transitions): fundido corto; sin animación si el
+   usuario pidió reducir movimiento. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.12s;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

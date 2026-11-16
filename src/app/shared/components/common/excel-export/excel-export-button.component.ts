@@ -1,6 +1,6 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { NotifyService } from '../../../../core/services/notify.service';
-import { EXCEL_ICON } from '../../../icons/excel-icon';
+import { excelIconSvg } from '../../../icons/excel-icon';
 import { TableExcelExportService } from '../../../services/table-excel-export.service';
 import { ButtonComponent } from '../../ui/button/button.component';
 
@@ -32,7 +32,7 @@ export class ExcelExportButtonComponent {
   readonly scope = input.required<HTMLElement>();
   readonly fileName = input('Listado');
 
-  protected readonly icon = EXCEL_ICON;
+  protected readonly icon = excelIconSvg();
   protected readonly busy = signal(false);
   protected readonly progress = signal('Exportando…');
 

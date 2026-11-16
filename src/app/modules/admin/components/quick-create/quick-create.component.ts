@@ -108,7 +108,7 @@ const opt = (v: string) => v.trim() || undefined;
           @switch (f.type ?? 'text') {
             @case ('select') {
               <app-form-field [label]="f.label" [required]="!!f.required">
-                <app-form-select [options]="f.options ?? []" [value]="values()[f.key] ?? ''" (valueChange)="set(f.key, $event)" />
+                <app-form-select [options]="f.options ?? []" [value]="val(f.key)" (valueChange)="set(f.key, $event)" />
               </app-form-field>
             }
             @case ('checkbox') {
@@ -120,19 +120,19 @@ const opt = (v: string) => v.trim() || undefined;
             @case ('ubigeo') {
               <div class="grid gap-3 sm:grid-cols-3">
                 <app-form-field label="Departamento" [required]="!!f.required">
-                  <app-form-select [options]="departmentOptions()" [value]="values()['departmentId'] ?? ''" (valueChange)="onDepartment($event)" />
+                  <app-form-select [options]="departmentOptions()" [value]="val('departmentId')" (valueChange)="onDepartment($event)" />
                 </app-form-field>
                 <app-form-field label="Provincia" [required]="!!f.required">
-                  <app-form-select [options]="provinceOptions()" [value]="values()['provinceId'] ?? ''" (valueChange)="onProvince($event)" />
+                  <app-form-select [options]="provinceOptions()" [value]="val('provinceId')" (valueChange)="onProvince($event)" />
                 </app-form-field>
                 <app-form-field label="Distrito" [required]="!!f.required">
-                  <app-form-select [options]="districtOptions()" [value]="values()['districtId'] ?? ''" (valueChange)="set('districtId', $event)" />
+                  <app-form-select [options]="districtOptions()" [value]="val('districtId')" (valueChange)="set('districtId', $event)" />
                 </app-form-field>
               </div>
             }
             @default {
               <app-form-field [label]="f.label" [required]="!!f.required" [helpText]="f.hint ?? ''">
-                <app-input-field [value]="values()[f.key] ?? ''" [maxLength]="f.maxLength ?? 200" [placeholder]="f.placeholder ?? ''" (valueChange)="set(f.key, '' + $event)" />
+                <app-input-field [value]="val(f.key)" [maxLength]="f.maxLength ?? 200" [placeholder]="f.placeholder ?? ''" (valueChange)="set(f.key, '' + $event)" />
               </app-form-field>
             }
           }
@@ -166,6 +166,10 @@ export class QuickCreateComponent {
   protected readonly isOpen = signal(false);
   protected readonly saving = signal(false);
   protected readonly values = signal<Record<string, string>>({});
+  /** Valor del campo o '' si aún no se escribió (el Record no garantiza que la clave exista). */
+  protected val(key: string): string {
+    return this.values()[key] ?? '';
+  }
   private readonly departments = signal<{ id: string; name: string }[]>([]);
   private readonly provinces = signal<{ id: string; name: string }[]>([]);
   private readonly districts = signal<{ id: string; name: string }[]>([]);

@@ -78,7 +78,7 @@ import type { PromotionListItemDto, PromotionType } from '../../models/directory
     <app-page-state
       [loading]="listQuery.isPending()"
       [error]="listError()"
-      [empty]="listQuery.isSuccess() && !(listQuery.data()?.items?.length)"
+      [empty]="listQuery.isSuccess() && !listQuery.data().items.length"
       emptyTitle="Aún no hay promociones"
       emptyHint="Usa «Nueva promoción» para crear la primera."
       skeleton="table"

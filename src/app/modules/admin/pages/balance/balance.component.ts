@@ -42,7 +42,7 @@ import { SectionHeadingComponent } from '../../../../shared/components/common/se
       </ol>
     </app-help-panel>
 
-    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (change)="period.set($event)" />
+    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (periodChange)="period.set($event)" />
 
     <app-page-state [loading]="query.isPending()" [error]="error()" skeleton="table" (retry)="query.refetch()">
       @if (query.data(); as m) {

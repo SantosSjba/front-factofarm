@@ -37,7 +37,7 @@ import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/
       </ol>
     </app-help-panel>
 
-    <app-period-filter compact [value]="period()" (change)="from.set($event.from); to.set($event.to)" />
+    <app-period-filter compact [value]="period()" (periodChange)="from.set($event.from); to.set($event.to)" />
 
     <app-component-card compact icon="mdi:file-export-outline" title="Elige el formato" desc="Ventas y compras del periodo, listas para importar.">
       <div class="grid gap-2 sm:grid-cols-3">

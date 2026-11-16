@@ -43,7 +43,7 @@ import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/
       </ol>
     </app-help-panel>
 
-    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (change)="from.set($event.from); to.set($event.to); page.set(1)" />
+    <app-period-filter compact [value]="period()" [summaryChips]="summaryChips()" (periodChange)="from.set($event.from); to.set($event.to); page.set(1)" />
 
     @let r = ledgerQuery.data();
     <app-page-state

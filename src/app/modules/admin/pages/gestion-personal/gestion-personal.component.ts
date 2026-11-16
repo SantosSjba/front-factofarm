@@ -427,7 +427,7 @@ export class GestionPersonalComponent {
     queryFn: () => firstValueFrom(this.api.getStaffProductivityReport(this.period().from, this.period().to)),
   }));
   protected readonly employees = computed(() =>
-    [...(this.productivityQuery.data()?.employees ?? [])].sort((a, b) => Number(b.ventasTotal) - Number(a.ventasTotal)),
+    (this.productivityQuery.data()?.employees ?? []).toSorted((a, b) => Number(b.ventasTotal) - Number(a.ventasTotal)),
   );
   protected readonly productivityKpis = computed(() => {
     const e = this.employees();

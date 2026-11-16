@@ -3,21 +3,25 @@ import {
   Component,
   ElementRef,
   EventEmitter,
-  HostListener,
   Input,
   OnChanges,
   OnDestroy,
-  OnInit,
   Output,
   SimpleChanges,
   ViewChild,
   booleanAttribute,
   inject,
 } from '@angular/core';
-import { BodyScrollLockService } from '../../../services/body-scroll-lock.service';
+import { TopLayerService } from '../../../services/top-layer.service';
 
 /**
- * Diálogo modal con altura limitada y scroll en el cuerpo; admite `data-modal-header|body|footer`.
+ * Diálogo modal sobre `<dialog>` nativo abierto con `showModal()`: el navegador lo pone en la capa
+ * superior, vuelve inerte el resto de la página, atrapa el foco, cierra con Esc / gesto atrás y
+ * devuelve el foco a quien lo abrió. Admite `data-modal-header|body|footer`.
+ *
+ * Sigue siendo controlado por la página: Esc o clic fuera emiten `closed` y la página decide
+ * (si deja `isOpen` en true, el modal sigue abierto).
+ *
  * En teléfono se muestra como hoja inferior y los botones del footer van apilados a todo el ancho
  * (acción principal arriba); en tablet y escritorio, centrado. Ver `.ff-modal-panel` en `styles.css`.
  */
@@ -27,8 +31,8 @@ import { BodyScrollLockService } from '../../../services/body-scroll-lock.servic
   templateUrl: './modal.component.html',
   styles: ``,
 })
-export class ModalComponent implements OnInit, OnDestroy, OnChanges {
-  private readonly scrollLock = inject(BodyScrollLockService);
+export class ModalComponent implements OnDestroy, OnChanges {
+  private readonly topLayer = inject(TopLayerService);
   @Input() isOpen = false;
   @Output() closed = new EventEmitter<void>();
   /** Clases del panel (ancho, sombra, etc.). */
@@ -52,33 +56,67 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
    */
   @Input({ transform: booleanAttribute }) compact = false;
 
-  @ViewChild('dialogPanel') private dialogPanel?: ElementRef<HTMLElement>;
+  private static nextId = 0;
+  /** Id del título, para nombrar el diálogo con `aria-labelledby`. */
+  protected readonly titleId = `ff-modal-title-${++ModalComponent.nextId}`;
 
+  private dialogEl?: HTMLDialogElement;
+  /** Por si el modal desaparece del DOM sin `close()` (la página lo quita con su propio @if). */
   private previouslyFocused?: HTMLElement | null;
 
-  ngOnInit() {
-    this.lockBody(this.isOpen);
-  }
-
-  ngOnDestroy() {
-    this.scrollLock.setLocked(this, false);
-    this.previouslyFocused?.focus();
+  /** El `<dialog>` aparece con `@if (isOpen)`: se abre como modal en cuanto existe. */
+  @ViewChild('dialog')
+  private set dialogRef(ref: ElementRef<HTMLDialogElement> | undefined) {
+    const dialog = ref?.nativeElement;
+    if (dialog === this.dialogEl) return;
+    this.dialogEl = dialog;
+    if (dialog) this.open(dialog);
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    this.lockBody(this.isOpen);
-    if (changes['isOpen']?.currentValue === true) {
-      this.previouslyFocused = document.activeElement as HTMLElement | null;
-      setTimeout(() => this.focusDialog(), 0);
-    }
-    if (changes['isOpen']?.currentValue === false && this.previouslyFocused) {
-      this.previouslyFocused.focus();
-      this.previouslyFocused = null;
-    }
+    // Cerrar antes de que el @if quite el <dialog>: así el navegador devuelve el foco y los
+    // flotantes (listas, toasts) salen del modal antes de que desaparezca.
+    if (changes['isOpen'] && !this.isOpen) this.close();
   }
 
-  private lockBody(open: boolean) {
-    this.scrollLock.setLocked(this, open);
+  ngOnDestroy() {
+    this.close();
+    const active = document.activeElement;
+    if (!active || active === document.body) this.previouslyFocused?.focus();
+  }
+
+  private open(dialog: HTMLDialogElement) {
+    this.previouslyFocused = document.activeElement as HTMLElement | null;
+    if (!dialog.open) dialog.showModal();
+    this.topLayer.opened(dialog);
+    this.nameFromProjectedHeading(dialog);
+    this.focusInitial(dialog);
+  }
+
+  private close() {
+    const dialog = this.dialogEl;
+    if (!dialog) return;
+    this.topLayer.closed(dialog);
+    if (dialog.open) dialog.close();
+  }
+
+  /** Esc o gesto "atrás": la página decide si se cierra. */
+  protected onCancel(event: Event) {
+    event.preventDefault();
+    this.closed.emit();
+  }
+
+  /**
+   * El navegador cerró el diálogo por su cuenta (p. ej. un segundo Esc sin interacción no se puede
+   * cancelar). Si la página lo quiere abierto, se vuelve a abrir para no quedar invisible.
+   */
+  protected onNativeClose() {
+    if (!this.isOpen) return;
+    this.closed.emit();
+    queueMicrotask(() => {
+      const dialog = this.dialogEl;
+      if (this.isOpen && dialog?.isConnected && !dialog.open) dialog.showModal();
+    });
   }
 
   onBackdropClick() {
@@ -87,47 +125,32 @@ export class ModalComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  onContentClick(event: MouseEvent) {
-    event.stopPropagation();
+  /**
+   * Foco inicial: el elemento marcado con `autofocus` / `data-autofocus` (o el primer control
+   * dentro de él, útil en `<app-button data-autofocus>`); si no hay, el primer control del panel.
+   * `showModal()` ya enfocó algo, pero el botón de cierre va primero en el DOM y `data-autofocus`
+   * no es nativo: por eso se ajusta aquí, igual que antes de la migración.
+   */
+  private focusInitial(dialog: HTMLDialogElement) {
+    const panel = dialog.querySelector<HTMLElement>('[data-modal-panel]') ?? dialog;
+    const controls = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href]';
+    const marked = panel.querySelector<HTMLElement>('[autofocus], [data-autofocus]');
+    const target = marked
+      ? marked.matches(controls) ? marked : marked.querySelector<HTMLElement>(controls)
+      : panel.querySelector<HTMLElement>(controls);
+    (target ?? panel).focus();
   }
 
-  @HostListener('document:keydown.escape')
-  onEscape() {
-    if (this.isOpen) {
-      this.closed.emit();
-    }
-  }
-
-  @HostListener('document:keydown.tab', ['$event'])
-  onTab(event: Event) {
-    if (!(event instanceof KeyboardEvent)) return;
-    if (!this.isOpen) return;
-    const panel = this.dialogPanel?.nativeElement;
-    if (!panel) return;
-    const focusable = [
-      ...panel.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ),
-    ].filter((el) => el.offsetParent !== null);
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  private focusDialog() {
-    const panel = this.dialogPanel?.nativeElement;
-    if (!panel) return;
-    const focusable = panel.querySelector<HTMLElement>(
-      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href]',
-    );
-    (focusable ?? panel).focus();
+  /**
+   * Sin `title` ni `ariaLabel` propio, el diálogo se llamaría "Diálogo". Si la página proyecta su
+   * cabecera (`[data-modal-header]`), se nombra con su encabezado visible vía `aria-labelledby`.
+   */
+  private nameFromProjectedHeading(dialog: HTMLDialogElement) {
+    if (this.title || this.ariaLabel !== 'Diálogo') return;
+    const heading = dialog.querySelector<HTMLElement>('[data-modal-header] :is(h1, h2, h3, h4)');
+    if (!heading) return;
+    heading.id ||= `${this.titleId}-projected`;
+    dialog.setAttribute('aria-labelledby', heading.id);
   }
 
   /** Panel interior: columna con altura limitada y sin desbordar. */

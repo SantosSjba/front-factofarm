@@ -295,7 +295,7 @@ export class ServiciosComponent {
   });
 
   protected readonly attributeRows = signal<AttributeRow[]>([]);
-  protected readonly formErrors = signal<Record<string, string>>({});
+  protected readonly formErrors = signal<Partial<Record<string, string>>>({});
   protected readonly serviceImagePreview = signal<string | null>(null);
   protected readonly serviceImageUploadError = signal<string | null>(null);
   protected readonly newCategoryName = signal('');

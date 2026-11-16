@@ -79,7 +79,7 @@ import { LocaleService } from '../../../../core/services/locale.service';
     <app-page-state
       [loading]="listQuery.isPending()"
       [error]="listError()"
-      [empty]="listQuery.isSuccess() && !(listQuery.data()?.items?.length)"
+      [empty]="listQuery.isSuccess() && !listQuery.data().items.length"
       emptyTitle="Aún no hay convenios"
       emptyHint="Usa «Nuevo convenio» para registrar el primero."
       skeleton="table"

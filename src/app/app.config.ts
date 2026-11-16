@@ -13,15 +13,29 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withViewTransitions } from '@angular/router';
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
 import { GlobalErrorHandler } from './core/handlers/global-error.handler';
+import { TopLayerOverlayContainer } from './shared/services/top-layer-overlay-container';
 
 registerLocaleData(localeEsPe);
+
+/** Tras navegar, si el foco se perdió (quedó en el body), lo lleva al título de la nueva pantalla. */
+function focusPageHeadingIfLost(): void {
+  const active = document.activeElement as HTMLElement | null;
+  // Perdido: en el body, fuera del DOM o en algo que ya no se ve (enlace del menú lateral cerrado).
+  const visible = active?.checkVisibility?.({ visibilityProperty: true }) ?? true;
+  if (active && active !== document.body && active.isConnected && visible) return;
+  const heading = document.querySelector<HTMLElement>('main h1, h1');
+  if (!heading) return;
+  if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+  heading.focus({ preventScroll: true });
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,7 +65,19 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(withInterceptors([authInterceptor, apiErrorInterceptor])),
     provideTanStackQuery(queryClient),
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      // Fundido corto entre pantallas (View Transitions, Baseline). Con "reducir movimiento" no hay
+      // animación (styles.css). Si el foco quedó en algo que ya no existe, pasa al título de la página.
+      withViewTransitions({
+        skipInitialTransition: true,
+        onViewTransitionCreated: ({ transition }) => {
+          transition.finished.then(focusPageHeadingIfLost, () => undefined);
+        },
+      }),
+    ),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    // Las listas desplegables del CDK siguen al <dialog> abierto (si no, quedan inertes detrás).
+    { provide: OverlayContainer, useExisting: TopLayerOverlayContainer },
   ],
 };

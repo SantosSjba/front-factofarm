@@ -123,6 +123,7 @@ import {
 })
 export class PosPantallaClienteComponent implements OnInit, OnDestroy {
   private readonly display = inject(PosCustomerDisplayService);
+  /** Se inyecta para que esta ventana siga el tema que el cajero elija en el POS (ThemeService escucha `storage`). */
   private readonly theme = inject(ThemeService);
   private unsubscribe: (() => void) | null = null;
 
@@ -136,11 +137,6 @@ export class PosPantallaClienteComponent implements OnInit, OnDestroy {
   protected onLogoError() {
     this.logoFailed.set(true);
   }
-
-  /** El tema se guarda en localStorage: si el cajero lo cambia en el POS, esta ventana lo sigue. */
-  private readonly onStorage = (e: StorageEvent) => {
-    if (e.key === 'theme' && (e.newValue === 'dark' || e.newValue === 'light')) this.theme.setTheme(e.newValue);
-  };
 
   protected readonly phase = signal<'idle' | 'cart' | 'paying' | 'completed'>('idle');
   protected readonly lines = signal<PosDisplayLine[]>([]);
@@ -182,7 +178,6 @@ export class PosPantallaClienteComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
-    window.addEventListener('storage', this.onStorage);
     this.brand.set(this.display.readBrand());
     const last = this.display.readLast();
     if (last && last.type !== 'request-state' && last.type !== 'pos-ready') {
@@ -201,7 +196,6 @@ export class PosPantallaClienteComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    window.removeEventListener('storage', this.onStorage);
     this.unsubscribe?.();
   }
 

@@ -1,23 +1,22 @@
 import { Component, input, output } from '@angular/core';
 import { ButtonComponent } from '../../ui/button/button.component';
+import { ModalComponent } from '../../ui/modal/modal.component';
 
+/**
+ * Confirmación simple sobre `app-modal` (Esc, foco atrapado y devuelto al cerrar).
+ * El foco inicial va a "Cancelar": en una acción destructiva lo seguro es no confirmar por accidente.
+ */
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [ButtonComponent],
+  imports: [ButtonComponent, ModalComponent],
   template: `
-    @if (open()) {
-      <div class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" [attr.aria-label]="title()">
-        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white">{{ title() }}</h3>
-          <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{ message() }}</p>
-          <div class="mt-6 flex justify-end gap-2">
-            <app-button startIconName="mdi:close" variant="outline" (btnClick)="cancelled.emit()">{{ cancelLabel() }}</app-button>
-            <app-button startIconName="mdi:check" variant="primary" (btnClick)="confirmed.emit()">{{ confirmLabel() }}</app-button>
-          </div>
-        </div>
+    <app-modal compact [isOpen]="open()" [title]="title()" [description]="message()" className="sm:max-w-md" bodyClass="pb-4" (closed)="cancelled.emit()">
+      <div data-modal-footer class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-4 py-4 sm:px-6 dark:border-gray-800">
+        <app-button data-autofocus startIconName="mdi:close" variant="outline" (btnClick)="cancelled.emit()">{{ cancelLabel() }}</app-button>
+        <app-button startIconName="mdi:check" variant="primary" (btnClick)="confirmed.emit()">{{ confirmLabel() }}</app-button>
       </div>
-    }
+    </app-modal>
   `,
 })
 export class ConfirmDialogComponent {

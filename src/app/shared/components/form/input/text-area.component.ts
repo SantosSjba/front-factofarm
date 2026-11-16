@@ -1,27 +1,32 @@
 import { CommonModule } from '@angular/common';
 import { LabelComponent } from '../label/label.component';
 import { TextareaDirective } from '../../ui/textarea/textarea.directive';
+import { IconComponent } from '../../ui/icon/icon.component';
 import { Component, Input, Output, EventEmitter, booleanAttribute } from '@angular/core';
 
 
 @Component({
   selector: 'app-text-area',
   standalone: true,
-  imports: [CommonModule, LabelComponent, TextareaDirective],
+  // Un `id="…"` estático también quedaría en el host y el <label for> apuntaría a él, no al <textarea>.
+  host: { '[attr.id]': 'null' },
+  imports: [CommonModule, LabelComponent, TextareaDirective, IconComponent],
   template: `
     @if (label) {
-      <app-label [for]="id || undefined" [required]="required" [helpText]="helpText" [compact]="compact">{{ label }}</app-label>
+      <app-label [for]="textareaId" [required]="required" [helpText]="helpText" [compact]="compact">{{ label }}</app-label>
     }
     <div class="relative">
       <textarea
         app-textarea
         unstyled
         [className]="textareaClasses"
-        [id]="id"
+        [id]="textareaId"
         [attr.name]="name || null"
         [attr.maxlength]="maxLength ?? null"
         [attr.aria-label]="ariaLabel || null"
         [attr.aria-invalid]="error ? true : null"
+        [attr.aria-describedby]="hint ? hintId : null"
+        [attr.required]="required ? true : null"
         [placeholder]="placeholder"
         [rows]="rows"
         [value]="value"
@@ -33,12 +38,13 @@ import { Component, Input, Output, EventEmitter, booleanAttribute } from '@angul
       }
       @if (hint) {
       <p
+        [id]="hintId"
         class="text-xs"
         [class.mt-2]="!compact"
         [class.mt-1]="compact"
         [attr.role]="error ? 'alert' : null"
         [ngClass]="error ? 'text-error-500 dark:text-error-400' : 'text-gray-500 dark:text-gray-400'">
-        {{ hint }}
+        @if (error) {<app-icon name="mdi:alert-circle-outline" class="me-1 -mt-0.5" iconClass="size-3.5" />}{{ hint }}
       </p>
       }
     </div>
@@ -46,6 +52,15 @@ import { Component, Input, Output, EventEmitter, booleanAttribute } from '@angul
   styles: ``
 })
 export class TextAreaComponent {
+  private static nextId = 0;
+  /** Id propio cuando la página no pasa `id`: así el label siempre queda asociado al campo. */
+  private readonly autoId = `ff-textarea-${++TextAreaComponent.nextId}`;
+  protected get textareaId(): string {
+    return this.id || this.autoId;
+  }
+  protected get hintId(): string {
+    return `${this.textareaId}-hint`;
+  }
 
   @Input() placeholder = '';
   @Input() id = '';

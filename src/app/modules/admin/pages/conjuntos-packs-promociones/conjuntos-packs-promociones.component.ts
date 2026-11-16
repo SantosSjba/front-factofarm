@@ -270,7 +270,7 @@ export class ConjuntosPacksPromocionesComponent {
   protected readonly confirmOpen = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly deleteTarget = signal<CompoundProductListItemDto | null>(null);
-  protected readonly formErrors = signal<Record<string, string>>({});
+  protected readonly formErrors = signal<Partial<Record<string, string>>>({});
   protected readonly imagePreview = signal<string | null>(null);
   protected readonly imageUploadError = signal<string | null>(null);
   protected readonly creatingCategory = signal(false);

@@ -206,7 +206,7 @@
   }
 
   @case ('productividad') {
-    <app-period-filter compact [value]="period()" (change)="period.set($event)" />
+    <app-period-filter compact [value]="period()" (periodChange)="period.set($event)" />
     @let k = productivityKpis();
     <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
       <app-kpi-tile label="Ventas" [value]="k.ventas" icon="mdi:receipt-text-outline" tone="brand" />

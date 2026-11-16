@@ -64,7 +64,7 @@ const STATUS: Record<string, { label: string; tone: StatusTone }> = {
     <app-page-state
       [loading]="listQuery.isPending()"
       [error]="listError()"
-      [empty]="listQuery.isSuccess() && !(listQuery.data()?.items?.length)"
+      [empty]="listQuery.isSuccess() && !listQuery.data().items.length"
       emptyTitle="No hay solicitudes de las áreas"
       emptyHint="Cuando un área pida medicamentos, la solicitud aparecerá aquí."
       skeleton="table"

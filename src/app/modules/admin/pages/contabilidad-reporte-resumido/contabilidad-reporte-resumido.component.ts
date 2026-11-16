@@ -40,7 +40,7 @@ import { HelpPanelComponent } from '../../../../shared/components/ui/help-panel/
       </ol>
     </app-help-panel>
 
-    <app-period-filter compact [value]="period()" (change)="from.set($event.from); to.set($event.to)" />
+    <app-period-filter compact [value]="period()" (periodChange)="from.set($event.from); to.set($event.to)" />
 
     <app-page-state [loading]="reportQuery.isPending()" [error]="reportError()" skeleton="card" (retry)="reportQuery.refetch()">
       @if (reportQuery.data(); as r) {

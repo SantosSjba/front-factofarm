@@ -1,25 +1,19 @@
 import { Component, inject, booleanAttribute, input } from '@angular/core';
 import { ThemeService } from '../../../services/theme.service';
-import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../ui/icon/icon.component';
 
 @Component({
   selector: 'app-theme-toggle-button',
   standalone: true,
   templateUrl: './theme-toggle-button.component.html',
-  imports: [CommonModule, IconComponent],
+  imports: [IconComponent],
 })
 export class ThemeToggleButtonComponent {
   /** Versión compacta (36 px) para la cabecera del panel. */
   readonly compact = input(false, { transform: booleanAttribute });
 
-  private themeService = inject(ThemeService);
-
-  theme$;
-
-  constructor() {
-    this.theme$ = this.themeService.theme$;
-  }
+  private readonly themeService = inject(ThemeService);
+  protected readonly theme = this.themeService.theme;
 
   toggleTheme() {
     this.themeService.toggleTheme();
