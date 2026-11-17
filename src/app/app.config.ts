@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, provideAppInitializer } from '@angular/core';
+import { PLATFORM_ID, inject, provideAppInitializer } from '@angular/core';
 import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../environments/environment';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { registerLocaleData } from '@angular/common';
+import { isPlatformServer, registerLocaleData } from '@angular/common';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import localeEsPe from '@angular/common/locales/es-PE';
 import {
   ApplicationConfig,
@@ -21,24 +22,15 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
 import { GlobalErrorHandler } from './core/handlers/global-error.handler';
-import { STALE_CHUNK_ERROR } from './core/handlers/stale-chunk';
+import { isStaleChunkError, reloadOnce } from './core/handlers/stale-chunk';
 import { TopLayerOverlayContainer } from './shared/services/top-layer-overlay-container';
 
 registerLocaleData(localeEsPe);
 
 
+/** Pantalla que no se pudo descargar (versión anterior en memoria): carga completa a esa dirección. */
 function reloadOnStaleChunk(error: unknown, url: string): void {
-  const message = error instanceof Error ? error.message : String(error ?? '');
-  if (!STALE_CHUNK_ERROR.test(message)) return;
-  const key = 'ff-stale-chunk-reload';
-  try {
-    // Una sola vez por pestaña: si tras recargar sigue fallando, que se vea el error real.
-    if (sessionStorage.getItem(key) === url) return;
-    sessionStorage.setItem(key, url);
-  } catch {
-    // Sin sessionStorage se recarga igual (una vez, porque la página nueva ya trae su código).
-  }
-  location.assign(url);
+  if (isStaleChunkError(error)) reloadOnce(url);
 }
 
 /** Tras navegar, si el foco se perdió (quedó en el body), lo lleva al título de la nueva pantalla. */
@@ -66,6 +58,8 @@ const queryClient = new QueryClient({
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAppInitializer(async () => {
+      // Al prerenderizar (build) no se llama a la API: se usan los valores embebidos en el build.
+      if (isPlatformServer(inject(PLATFORM_ID))) return;
       try {
         const info = await firstValueFrom(inject(HttpClient).get<Record<string, string>>(`${environment.apiBaseUrl}/public/settings`).pipe(timeout(5000)));
         if (info['CONTACT_EMAIL'] !== undefined) environment.contactEmail = info['CONTACT_EMAIL'];
@@ -78,6 +72,8 @@ export const appConfig: ApplicationConfig = {
     { provide: LOCALE_ID, useValue: 'es-PE' },
     { provide: DEFAULT_CURRENCY_CODE, useValue: 'PEN' },
     provideBrowserGlobalErrorListeners(),
+    // Reutiliza el HTML prerenderizado de las páginas públicas en vez de volver a dibujarlo.
+    provideClientHydration(withEventReplay()),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(withInterceptors([authInterceptor, apiErrorInterceptor])),
     provideTanStackQuery(queryClient),

@@ -1,610 +1,423 @@
-<div class="min-h-screen bg-white dark:bg-[#071822]">
-  <header
-    class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#071822]/95"
+<div class="min-h-screen bg-white text-gray-900 dark:bg-[#071822] dark:text-white">
+  <a
+    href="#contenido"
+    class="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-theme-lg dark:focus:bg-gray-900"
   >
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
-      <a routerLink="/" class="logo-dark-glow inline-flex shrink-0 items-center">
-        <img
-          src="/images/logo/logo-nav.png"
-          alt="FactoFarm"
-          width="640"
-          height="263"
-          fetchpriority="high"
-          class="h-9 w-auto max-w-[180px] object-contain"
-        />
+    Saltar al contenido
+  </a>
+
+  <!-- ===================== Header ===================== -->
+  <header class="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#071822]/90">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+      <a routerLink="/" class="logo-dark-glow inline-flex shrink-0 items-center" aria-label="FactoFarm, inicio">
+        <img src="/images/logo/logo-nav.png" alt="FactoFarm" width="640" height="263" fetchpriority="high" class="h-9 w-auto max-w-[170px] object-contain" />
       </a>
 
-      <nav class="hidden items-center gap-1 lg:flex" aria-label="Secciones principales">
-        @for (item of navItems; track item.id) {
-          <button
-            type="button"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-400"
-            (click)="scrollTo(item.id)"
+      <nav class="hidden items-center gap-1 lg:flex" aria-label="Secciones">
+        @for (item of nav; track item.id) {
+          <a
+            [href]="'#' + item.id"
+            (click)="goToSection($event, item.id)"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:text-gray-300 dark:hover:text-brand-400"
           >
             {{ item.label }}
-          </button>
+          </a>
         }
       </nav>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <app-button size="sm" variant="outline" [iconOnly]="true" [startIconName]="mobileNavOpen() ? 'mdi:close' : 'mdi:menu'" tooltip="Abrir menú" (btnClick)="toggleMobileNav()"></app-button>
+        <!-- Solo hasta lg: desde ahí las secciones ya están en la barra y el panel móvil está oculto. -->
+        <app-button
+          class="lg:hidden"
+          size="sm"
+          variant="outline"
+          [iconOnly]="true"
+          [startIconName]="mobileNavOpen() ? 'mdi:close' : 'mdi:menu'"
+          [tooltip]="mobileNavOpen() ? 'Cerrar menú' : 'Abrir menú'"
+          [ariaExpanded]="mobileNavOpen()"
+          (btnClick)="toggleMobileNav()"
+        ></app-button>
 
-        <app-theme-toggle-button />
+        <!-- compact: 36px como los demás botones `size="sm"` de esta barra.
+             ngSkipHydration: el ícono depende del tema del visitante, que el HTML prerenderizado no conoce. -->
+        <app-theme-toggle-button compact ngSkipHydration />
 
         @if (isAuthenticated()) {
-          <app-button
-            size="sm"
-            startIconName="mdi:view-dashboard-outline"
-            className="inline-flex"
-            (btnClick)="goToDashboard()"
-          >
-            Ir al panel
-          </app-button>
+          <app-button size="sm" startIconName="mdi:view-dashboard-outline" (btnClick)="goToDashboard()">Ir al panel</app-button>
         } @else {
           <a
             routerLink="/auth/signin"
-            class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-brand-600 sm:px-3 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-400"
+            class="hidden items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-brand-600 sm:inline-flex dark:text-gray-300 dark:hover:text-brand-400"
           >
-            <app-icon name="mdi:login" iconClass="size-4" />
             Entrar
           </a>
-          <app-button
-            size="sm"
-            startIconName="mdi:calendar-check-outline"
-            className="inline-flex"
-            (btnClick)="scrollTo('contacto')"
-          >
-            Demo
-          </app-button>
+          <app-button size="sm" (btnClick)="goToSection($event, 'contacto')">Solicitar demo</app-button>
         }
       </div>
     </div>
 
     @if (mobileNavOpen()) {
-      <div class="border-t border-gray-200 px-4 py-4 lg:hidden dark:border-gray-800">
-        <nav class="flex flex-col gap-1" aria-label="Menú móvil">
-          @for (item of navItems; track item.id) {
-            <button
-              type="button"
-              class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
-              (click)="scrollTo(item.id)"
-            >
-              {{ item.label }}
-            </button>
-          }
-        </nav>
-        @if (isAuthenticated()) {
-          <div class="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
-            <app-button size="sm" startIconName="mdi:view-dashboard-outline" className="w-full" (btnClick)="goToDashboard()">
-              Ir al panel
-            </app-button>
-          </div>
-        } @else {
-          <div class="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
-            <a
-              routerLink="/auth/signin"
-              class="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-white/5"
-            >
-              <app-icon name="mdi:login" iconClass="size-4" />
-              Iniciar sesión
-            </a>
-            <app-button size="sm" startIconName="mdi:calendar-check-outline" className="w-full" (btnClick)="scrollTo('contacto')">
-              Solicitar demo
-            </app-button>
-          </div>
+      <nav class="border-t border-gray-200 px-4 pb-4 pt-2 lg:hidden dark:border-white/10" aria-label="Secciones (menú)">
+        @for (item of nav; track item.id) {
+          <a
+            [href]="'#' + item.id"
+            (click)="goToSection($event, item.id)"
+            class="block rounded-lg px-2 py-2.5 text-sm font-medium text-gray-700 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400"
+          >
+            {{ item.label }}
+          </a>
         }
-      </div>
+        @if (!isAuthenticated()) {
+          <a routerLink="/auth/signin" class="block rounded-lg px-2 py-2.5 text-sm font-medium text-gray-700 hover:text-brand-600 sm:hidden dark:text-gray-300">
+            Entrar al sistema
+          </a>
+        }
+      </nav>
     }
   </header>
 
-  <main>
-  <!-- Hero -->
-  <section class="relative overflow-hidden" aria-labelledby="hero-title">
-    <div class="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-white dark:from-brand-950/40 dark:via-gray-900 dark:to-gray-900"></div>
-    <div class="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
-      <app-grid-shape />
-    </div>
+  <main id="contenido">
+    <!-- ===================== Inicio ===================== -->
+    <section class="relative overflow-hidden" aria-labelledby="hero-title">
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_85%_-10%,var(--color-brand-100),transparent_70%)] dark:bg-[radial-gradient(60rem_30rem_at_85%_-10%,rgb(48_160_56/0.18),transparent_70%)]"
+      ></div>
 
-    <div class="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-12 lg:px-8 lg:py-16">
-      <div>
-        <span class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300">
-          <app-icon name="mdi:pharmacy" iconClass="size-3.5" />
-          Software para farmacias y boticas en Perú
-        </span>
-        <h1 id="hero-title" class="mb-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:leading-tight">
-          El sistema integral para vender, controlar stock y cumplir normativa
-        </h1>
-        <p class="mb-6 max-w-xl text-base leading-relaxed text-gray-600 dark:text-gray-400">
-          FactoFarm unifica punto de venta, inventario con lotes, compras, facturación electrónica SUNAT
-          y reportes en una sola plataforma pensada para el ritmo de tu botica.
-        </p>
-        <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-          <app-button size="sm" startIconName="mdi:rocket-launch-outline" className="w-full sm:w-auto" (btnClick)="scrollTo('contacto')">
-            Habilitar mi cuenta
-          </app-button>
-          <app-button size="sm" variant="outline" startIconName="mdi:view-grid-outline" className="w-full sm:w-auto" (btnClick)="scrollTo('modulos')">
-            Ver módulos
-          </app-button>
-        </div>
-        <p class="mt-5 text-sm text-gray-500 dark:text-gray-400">
-          @if (isAuthenticated()) {
-            <span class="inline-flex items-center gap-1.5">
-              <app-icon name="mdi:check-circle-outline" iconClass="size-4 text-brand-500" />
-              ¿Listo para trabajar?
-              <a routerLink="/dashboard" class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Ir al panel</a>
-            </span>
-          } @else {
-            <span class="inline-flex items-center gap-1.5">
-              <app-icon name="mdi:account-key-outline" iconClass="size-4 text-gray-400" />
-              ¿Ya tienes acceso?
-              <a routerLink="/auth/signin" class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">Inicia sesión aquí</a>
-            </span>
-          }
-        </p>
-      </div>
+      <div class="relative mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-20">
+        <div>
+          <p class="mb-5 text-sm font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            Software para farmacias y boticas en Perú
+          </p>
+          <h1 id="hero-title" class="text-4xl font-semibold leading-[1.1] tracking-tight text-balance sm:text-5xl">
+            Vende, controla tu stock y cumple con SUNAT desde un solo sistema
+          </h1>
+          <p class="mt-5 max-w-xl text-lg leading-relaxed text-pretty text-gray-600 dark:text-gray-300">
+            FactoFarm junta el punto de venta, el inventario por lotes, las compras y la facturación electrónica,
+            pensado para el ritmo de tu botica.
+          </p>
 
-      <div class="relative">
-        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-white/10 dark:bg-[#0c2235] dark:shadow-black/30">
-          <div class="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <p class="text-sm font-medium text-gray-800 dark:text-white">Panel FactoFarm</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Vista general de tu operación</p>
-            </div>
-            <span class="rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-700 dark:bg-success-500/10 dark:text-success-400">
-              En la nube
-            </span>
-          </div>
-          <div class="mb-5 grid grid-cols-3 gap-2">
-            <div class="rounded-xl bg-brand-50 p-3 text-center dark:bg-brand-500/10">
-              <p class="text-lg font-semibold text-brand-600 dark:text-brand-400">128</p>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400">Ventas hoy</p>
-            </div>
-            <div class="rounded-xl bg-gray-50 p-3 text-center dark:bg-white/5">
-              <p class="text-lg font-semibold text-gray-800 dark:text-white">48</p>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400">Comprobantes</p>
-            </div>
-            <div class="rounded-xl bg-gray-50 p-3 text-center dark:bg-white/5">
-              <p class="text-lg font-semibold text-warning-600">12</p>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400">Alertas stock</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            @for (tile of ['POS|Ventas ágiles|mdi:point-of-sale', 'Inventario|Lotes y stock|mdi:warehouse', 'Facturación|SUNAT integrado|mdi:receipt-text-outline', 'Reportes|Decisiones claras|mdi:chart-box-outline']; track tile) {
-              <div class="rounded-xl bg-gray-50 p-4 dark:bg-white/5">
-                <app-icon [name]="tile.split('|')[2]" iconClass="size-6 text-brand-600 dark:text-brand-400" />
-                <p class="mt-3 text-sm font-medium text-gray-800 dark:text-white">{{ tile.split('|')[0] }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ tile.split('|')[1] }}</p>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Stats -->
-  <section class="border-y border-gray-200 bg-white py-10 dark:border-white/10 dark:bg-[#0a1e30]">
-    <div class="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 sm:px-6 md:grid-cols-4 lg:px-8">
-      @for (stat of stats; track stat.label) {
-        <div class="text-center">
-          <p class="text-2xl font-semibold text-brand-600 dark:text-brand-400 sm:text-3xl">{{ stat.value }}</p>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ stat.label }}</p>
-        </div>
-      }
-    </div>
-  </section>
-
-  <!-- Benefits -->
-  <section id="beneficios" class="bg-gray-50 py-16 dark:bg-[#051018] sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto mb-12 max-w-2xl text-center">
-        <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">¿Por qué elegir FactoFarm?</h2>
-        <p class="text-gray-600 dark:text-gray-400">Diseñado para el día a día de farmacias y boticas que necesitan velocidad, control y cumplimiento.</p>
-      </div>
-      <div class="grid gap-6 sm:grid-cols-2">
-        @for (benefit of benefits; track benefit.title) {
-          <article class="flex gap-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-[#0c2235]">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10">
-              <app-icon [name]="benefit.icon" iconClass="size-6 text-brand-600 dark:text-brand-400" />
-            </div>
-            <div>
-              <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{{ benefit.title }}</h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{{ benefit.description }}</p>
-            </div>
-          </article>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Modules -->
-  <section id="modulos" class="py-16 sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto mb-12 max-w-2xl text-center">
-        <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Módulos para toda tu operación</h2>
-        <p class="text-gray-600 dark:text-gray-400">Desde el mostrador hasta finanzas y cumplimiento normativo, en un solo ecosistema.</p>
-      </div>
-      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        @for (feature of features; track feature.title) {
-          <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40 dark:hover:shadow-black/30">
-            <div class="mb-4 inline-flex rounded-xl bg-brand-50 p-3 dark:bg-brand-500/10">
-              <app-icon [name]="feature.icon" iconClass="size-6 text-brand-600 dark:text-brand-400" />
-            </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{{ feature.title }}</h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{{ feature.description }}</p>
-          </article>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Compliance -->
-  <section class="border-y border-gray-200 bg-brand-950 py-16 dark:border-gray-800 sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto mb-12 max-w-2xl text-center">
-        <h2 class="mb-3 text-2xl font-semibold text-white sm:text-3xl">Cumplimiento y confianza</h2>
-        <p class="text-brand-100">Herramientas para operar con respaldo normativo y control de riesgos en medicamentos.</p>
-      </div>
-      <div class="grid gap-6 md:grid-cols-3">
-        @for (item of compliance; track item.title) {
-          <article class="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <app-icon [name]="item.icon" iconClass="mb-4 size-8 text-brand-300" />
-            <h3 class="mb-2 text-lg font-semibold text-white">{{ item.title }}</h3>
-            <p class="text-sm leading-relaxed text-brand-100">{{ item.description }}</p>
-          </article>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- How it works -->
-  <section id="como-funciona" class="py-16 sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto mb-12 max-w-2xl text-center">
-        <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Cómo habilitamos tu cuenta</h2>
-        <p class="text-gray-600 dark:text-gray-400">El acceso es por invitación. Te acompañamos en cada etapa hasta que tu equipo esté operando.</p>
-      </div>
-      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        @for (step of steps; track step.number) {
-          <article class="rounded-2xl border border-gray-200 p-6 dark:border-white/10 dark:bg-[#0c2235]">
-            <span class="mb-4 block text-3xl font-semibold text-brand-500">{{ step.number }}</span>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{{ step.title }}</h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{{ step.description }}</p>
-          </article>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Pricing -->
-  <section id="planes" class="border-t border-gray-200 bg-gray-50 py-16 dark:border-white/10 dark:bg-[#081c2c] sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto mb-12 max-w-2xl text-center">
-        <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Planes para cada tipo de botica</h2>
-        <p class="text-gray-600 dark:text-gray-400">
-          Compara módulos y alcance. La cotización comercial te la enviamos de forma personalizada según tu operación.
-        </p>
-      </div>
-
-      <div class="grid gap-6 lg:grid-cols-3">
-        @for (plan of plans; track plan.id) {
-          <article
-            class="relative flex flex-col rounded-2xl border p-6 shadow-theme-xs transition"
-            [ngClass]="
-              plan.highlighted
-                ? 'border-brand-500 bg-brand-950 text-white ring-2 ring-brand-500 dark:border-brand-400/50 dark:bg-gradient-to-b dark:from-[#0f3524] dark:to-brand-950 dark:ring-brand-400/30 dark:shadow-[0_0_32px_rgba(48,160,56,0.14)]'
-                : 'border-gray-200 bg-white dark:border-white/10 dark:bg-[#0c2235] dark:shadow-lg dark:shadow-black/25'
-            "
-          >
-            @if (plan.highlighted) {
-              <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-500 px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm dark:bg-brand-400 dark:text-brand-950">
-                Más elegido
-              </span>
-            }
-
-            <div class="mb-6">
-              <h3 class="text-xl font-semibold" [class.text-gray-900]="!plan.highlighted" [class.dark:text-white]="!plan.highlighted">
-                {{ plan.name }}
-              </h3>
-              <p
-                class="mt-1 text-sm"
-                [class.text-gray-600]="!plan.highlighted"
-                [class.text-brand-100]="plan.highlighted"
-                [class.dark:text-gray-300]="!plan.highlighted"
-              >
-                {{ plan.subtitle }}
-              </p>
-            </div>
-
-            <div class="mb-6">
-              <p
-                class="text-xl font-semibold sm:text-2xl"
-                [ngClass]="plan.highlighted ? 'text-white' : 'text-gray-900 dark:text-white'"
-              >
-                {{ plan.priceLabel }}
-              </p>
-              <p
-                class="mt-1 text-sm"
-                [class.text-gray-500]="!plan.highlighted"
-                [class.text-brand-200]="plan.highlighted"
-                [class.dark:text-gray-400]="!plan.highlighted"
-              >
-                {{ plan.priceNote }}
-              </p>
-            </div>
-
-            <ul class="mb-8 flex-1 space-y-3">
-              @for (feature of plan.features; track feature) {
-                <li class="flex items-start gap-2 text-sm">
-                  <app-icon
-                    name="mdi:check-circle-outline"
-                    [iconClass]="plan.highlighted ? 'mt-0.5 size-4 shrink-0 text-brand-200' : 'mt-0.5 size-4 shrink-0 text-success-500 dark:text-brand-400'"
-                  />
-                  <span [class.text-gray-700]="!plan.highlighted" [class.text-brand-50]="plan.highlighted" [class.dark:text-gray-200]="!plan.highlighted">
-                    {{ feature }}
-                  </span>
-                </li>
-              }
-            </ul>
-
-            <app-button
-              className="w-full"
-              size="sm"
-              startIconName="mdi:file-document-outline"
-              [variant]="plan.highlighted ? 'primary' : 'outline'"
-              (btnClick)="requestPlan(plan)"
-            >
-              Solicitar cotización
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <app-button className="w-full sm:w-auto" startIconName="mdi:calendar-check-outline" (btnClick)="goToSection($event, 'contacto')">
+              Solicitar una demo
             </app-button>
-          </article>
-        }
-      </div>
-
-      <p class="mx-auto mt-8 max-w-3xl text-center text-xs text-gray-500 dark:text-gray-400">
-        El acceso es por invitación. Tras tu solicitud, nuestro equipo comercial te contacta con la cotización e implementación.
-      </p>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section id="faq" class="border-t border-gray-200 bg-gray-50 py-16 dark:border-white/10 dark:bg-[#051018] sm:py-20">
-    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-      <div class="mb-10 text-center">
-        <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Preguntas frecuentes</h2>
-        <p class="text-gray-600 dark:text-gray-400">Resolvemos las dudas más comunes antes de solicitar tu cuenta.</p>
-      </div>
-      <div class="space-y-3">
-        @for (faq of faqs; track faq.question; let i = $index) {
-          <article class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-[#0c2235]">
-            <button
-              type="button"
-              class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
-              (click)="toggleFaq(i)"
-              [attr.aria-expanded]="isFaqOpen(i)"
-            >
-              <span class="font-medium text-gray-900 dark:text-white">{{ faq.question }}</span>
-              <app-icon [name]="isFaqOpen(i) ? 'mdi:chevron-up' : 'mdi:chevron-down'" iconClass="size-5 shrink-0 text-gray-500" />
-            </button>
-            @if (isFaqOpen(i)) {
-              <div class="border-t border-gray-100 px-5 py-4 text-sm leading-relaxed text-gray-600 dark:border-white/10 dark:text-gray-300">
-                {{ faq.answer }}
-              </div>
-            }
-          </article>
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA strip -->
-  <section class="border-y border-brand-900/20 bg-brand-950 py-10">
-    <div class="mx-auto flex max-w-7xl flex-col items-center gap-5 px-4 sm:px-6 lg:flex-row lg:justify-between lg:px-8 lg:text-left">
-      <div class="max-w-2xl text-center lg:text-left">
-        <h2 class="mb-2 text-xl font-semibold text-white sm:text-2xl">¿Listo para modernizar tu botica?</h2>
-        <p class="text-sm leading-relaxed text-brand-100 sm:text-base">Solicita una demo y te contactamos para habilitar tu cuenta con la configuración que necesitas.</p>
-      </div>
-      <app-button
-        size="sm"
-        startIconName="mdi:email-fast-outline"
-        className="shrink-0"
-        (btnClick)="scrollTo('contacto')"
-      >
-        Solicitar información
-      </app-button>
-    </div>
-  </section>
-
-  <!-- Legal -->
-  <section id="legal" class="border-t border-gray-200 bg-white py-16 dark:border-white/10 dark:bg-[#0a1e30] sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto mb-10 max-w-2xl text-center">
-        <h2 class="mb-3 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Información legal</h2>
-        <p class="text-gray-600 dark:text-gray-400">
-          Transparencia y cumplimiento normativo para nuestros clientes y usuarios en Perú.
-        </p>
-      </div>
-      <div class="grid gap-6 md:grid-cols-3">
-        <a routerLink="/legal/privacidad" class="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40">
-          <app-icon name="mdi:shield-lock-outline" iconClass="mb-4 size-8 text-brand-600 dark:text-brand-400" />
-          <h3 class="mb-2 text-lg font-semibold text-gray-900 group-hover:text-brand-600 dark:text-white">Política de privacidad</h3>
-          <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Tratamiento de datos personales conforme a la Ley N° 29733 (LPDP).</p>
-        </a>
-        <a routerLink="/legal/terminos" class="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40">
-          <app-icon name="mdi:file-document-outline" iconClass="mb-4 size-8 text-brand-600 dark:text-brand-400" />
-          <h3 class="mb-2 text-lg font-semibold text-gray-900 group-hover:text-brand-600 dark:text-white">Términos de uso</h3>
-          <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Condiciones de uso de la plataforma FactoFarm para farmacias y boticas.</p>
-        </a>
-        <a routerLink="/legal/libro-reclamaciones" class="group rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand-200 hover:shadow-theme-md dark:border-white/10 dark:bg-[#0c2235] dark:hover:border-brand-400/40">
-          <app-icon name="mdi:book-edit-outline" iconClass="mb-4 size-8 text-brand-600 dark:text-brand-400" />
-          <h3 class="mb-2 text-lg font-semibold text-gray-900 group-hover:text-brand-600 dark:text-white">Libro de reclamaciones</h3>
-          <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Presenta un reclamo o queja virtual conforme a la Ley N° 29571 e INDECOPI.</p>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Contact -->
-  <section id="contacto" class="py-16 sm:py-20">
-    <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-      <div>
-        <h2 class="mb-4 text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">Solicita habilitar FactoFarm</h2>
-        <p class="mb-8 max-w-lg text-gray-600 dark:text-gray-400">
-          Déjanos tus datos y nos pondremos en contacto para configurar tu botica o farmacia.
-          También puedes escribirnos directamente si prefieres una respuesta más rápida.
-        </p>
-        <div class="space-y-4">
-          @if (contactWhatsApp) {
-            <a [href]="whatsAppHref()" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-success-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-success-700">
-              <app-icon name="mdi:whatsapp" iconClass="size-4" />
-              Escribir por WhatsApp
-            </a>
-          }
-          @if (contactEmail) {
-            <a [href]="'mailto:' + contactEmail" class="flex items-center gap-3 text-sm text-gray-600 hover:text-brand-600 dark:text-gray-400">
-              <app-icon name="mdi:email-outline" iconClass="size-5" />
-              {{ contactEmail }}
-            </a>
-          }
-          @if (siteUrl) {
-            <a [href]="siteUrl" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 text-sm text-gray-600 hover:text-brand-600 dark:text-gray-400">
-              <app-icon name="mdi:web" iconClass="size-5" />
-              factosysperu.com
-            </a>
-          }
-          <div class="space-y-2 pt-2 text-sm text-gray-600 dark:text-gray-400">
-            <p class="flex items-start gap-2">
-              <app-icon name="mdi:map-marker-outline" iconClass="size-4 mt-0.5 shrink-0 text-brand-500" />
-              <span>{{ company.address }}</span>
-            </p>
-            <p class="flex items-start gap-2">
-              <app-icon name="mdi:clock-outline" iconClass="size-4 mt-0.5 shrink-0 text-brand-500" />
-              <span>{{ businessHours[0] }} · {{ businessHours[1] }}</span>
-            </p>
-            <p class="flex items-start gap-2">
-              <app-icon name="mdi:headset" iconClass="size-4 mt-0.5 shrink-0 text-brand-500" />
-              <span>{{ supportNote }}</span>
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-500">
-              {{ company.legalName }} · RUC {{ company.ruc }}
-            </p>
-          </div>
-          <ul class="space-y-2 pt-2 text-sm text-gray-600 dark:text-gray-400">
-            <li class="flex items-center gap-2"><app-icon name="mdi:check-circle-outline" iconClass="size-4 text-success-500" /> Respuesta en 24–48 horas hábiles</li>
-            <li class="flex items-center gap-2"><app-icon name="mdi:check-circle-outline" iconClass="size-4 text-success-500" /> Demo personalizada según tu operación</li>
-            <li class="flex items-center gap-2"><app-icon name="mdi:check-circle-outline" iconClass="size-4 text-success-500" /> Sin registro público: acceso por invitación</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-white/10 dark:bg-[#0c2235] sm:p-8">
-        @if (submitted()) {
-          <div class="flex flex-col items-start gap-4 py-4">
-            <div class="rounded-full bg-success-50 p-3 dark:bg-success-500/10">
-              <app-icon name="mdi:check-circle-outline" iconClass="size-8 text-success-600 dark:text-success-400" />
-            </div>
-            <div>
-              <h3 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">¡Solicitud enviada!</h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                Recibimos tu información. Nuestro equipo se comunicará contigo pronto para habilitar tu cuenta.
-              </p>
-            </div>
             @if (whatsAppHref()) {
-              <a [href]="whatsAppHref()" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-brand-500 hover:text-brand-600">
-                También puedes escribirnos por WhatsApp →
+              <a
+                [href]="whatsAppHref()"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 ring-1 ring-gray-300 transition hover:bg-gray-50 sm:py-2.5 dark:text-gray-200 dark:ring-white/15 dark:hover:bg-white/5"
+              >
+                <app-icon name="mdi:whatsapp" iconClass="size-4 text-success-600" />
+                Escríbenos por WhatsApp
               </a>
             }
           </div>
-        } @else {
-          <h3 class="mb-6 text-lg font-semibold text-gray-900 dark:text-white">Formulario de contacto</h3>
-          <form (submit)="onSubmitContact($event)">
-            <app-form-stack>
-              <app-form-row>
-                <app-form-field label="Nombre completo" for="contact-nombre" required>
-                  <app-input-field [maxLength]="120" id="contact-nombre" placeholder="Ej. María Pérez" [value]="nombre()" (valueChange)="nombre.set($event + '')" [isRequired]="true" />
-                </app-form-field>
-                <app-form-field label="Farmacia / botica" for="contact-farmacia" required>
-                  <app-input-field [maxLength]="200" id="contact-farmacia" placeholder="Nombre del establecimiento" [value]="farmacia()" (valueChange)="farmacia.set($event + '')" [isRequired]="true" />
-                </app-form-field>
-              </app-form-row>
-              <app-form-row>
-                <app-form-field label="Teléfono" for="contact-telefono" required>
-                  <app-input-field [maxLength]="30" id="contact-telefono" type="tel" placeholder="Ej. 999 888 777" [value]="telefono()" (valueChange)="telefono.set($event + '')" [isRequired]="true" />
-                </app-form-field>
-                <app-form-field label="Correo electrónico" for="contact-email" required>
-                  <app-input-field [maxLength]="120" id="contact-email" type="email" placeholder="correo@tufarmacia.com" [value]="email()" (valueChange)="email.set($event + '')" [isRequired]="true" />
-                </app-form-field>
-              </app-form-row>
-              <app-form-field label="Mensaje (opcional)" for="contact-mensaje">
-                <app-text-area [maxLength]="2000" id="contact-mensaje" placeholder="Cuéntanos cuántas sucursales tienes, qué módulos te interesan, etc." [rows]="4" [value]="mensaje()" (valueChange)="mensaje.set($event)" />
-              </app-form-field>
-              @if (formError()) {
-                <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/20 dark:text-rose-200" role="alert">
-                  {{ formError() }}
-                </div>
-              }
-              <app-button
-                className="w-full"
-                size="sm"
-                startIconName="mdi:send-outline"
-                [disabled]="submitting()"
-                [loading]="submitting()"
-                (btnClick)="onSubmitContact($event)"
-              >
-                {{ submitting() ? 'Enviando…' : 'Enviar solicitud' }}
-              </app-button>
-            </app-form-stack>
-          </form>
-        }
-      </div>
-    </div>
-  </section>
-  </main>
 
-  <!-- Footer -->
-  <footer class="border-t border-gray-200 bg-gray-50 py-12 dark:border-white/10 dark:bg-[#051018]">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="grid gap-10 md:grid-cols-4">
-        <div class="md:col-span-2">
-          <a routerLink="/" class="logo-dark-glow mb-4 inline-flex items-center">
-            <img
-              src="/images/logo/logo-nav.png"
-              alt="FactoFarm"
-              width="640"
-              height="263"
-              loading="lazy"
-              class="h-9 w-auto max-w-[200px] object-contain"
-            />
-          </a>
-          <p class="max-w-sm text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Plataforma de gestión para farmacias y boticas: ventas, inventario, compras, facturación y reportes en un solo lugar.
+          <ul class="mt-10 grid grid-cols-1 gap-x-6 gap-y-2.5 text-sm text-gray-700 sm:grid-cols-2 dark:text-gray-300" aria-label="Incluye">
+            @for (item of proof; track item) {
+              <li class="flex items-center gap-2">
+                <app-icon name="mdi:check" iconClass="size-4 shrink-0 text-brand-500" />
+                {{ item }}
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Ilustración: una boleta real de botica (no un panel con tarjetas dentro). -->
+        <figure class="relative mx-auto w-full max-w-sm lg:mx-0 lg:justify-self-end" aria-hidden="true">
+          <div class="rotate-1 rounded-2xl bg-white px-6 pb-7 pt-6 font-mono text-[13px] text-gray-700 shadow-[0_24px_60px_-20px_rgb(16_24_40/0.35)] ring-1 ring-gray-200 dark:bg-[#0d2436] dark:text-gray-300 dark:ring-white/10">
+            <div class="flex items-start justify-between gap-4 font-sans">
+              <div>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">Boleta de venta</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">B001-00428 · 17/11/2026</p>
+              </div>
+              <span class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400">
+                <app-icon name="mdi:check-decagram" iconClass="size-3.5" />
+                Aceptada SUNAT
+              </span>
+            </div>
+
+            <div class="my-4 border-t border-dashed border-gray-300 dark:border-white/15"></div>
+
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between gap-3"><span>Paracetamol 500 mg ×20</span><span>4.50</span></div>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">Lote L2309 · vence 08/2027</p>
+              </div>
+              <div>
+                <div class="flex justify-between gap-3"><span>Amoxicilina 500 mg ×12</span><span>9.80</span></div>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">Genérico sugerido · Lote A1176</p>
+              </div>
+              <div class="flex justify-between gap-3"><span>Alcohol 70° 250 ml</span><span>5.50</span></div>
+            </div>
+
+            <div class="my-4 border-t border-dashed border-gray-300 dark:border-white/15"></div>
+
+            <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Op. gravada</span><span>16.69</span></div>
+            <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>IGV 18%</span><span>3.11</span></div>
+            <div class="mt-2 flex justify-between font-sans text-base font-semibold text-gray-900 dark:text-white"><span>Total</span><span>S/ 19.80</span></div>
+            <p class="mt-4 font-sans text-xs text-gray-500 dark:text-gray-400">Pagado con Yape · Caja principal</p>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ===================== Producto ===================== -->
+    <section id="producto" class="border-t border-gray-200 py-20 dark:border-white/10 sm:py-24" aria-labelledby="producto-title">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="max-w-2xl">
+          <h2 id="producto-title" class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            Todo lo que pasa en tu botica, en un mismo lugar
+          </h2>
+          <p class="mt-4 text-lg leading-relaxed text-pretty text-gray-600 dark:text-gray-300">
+            Sin un programa para vender, otro para el stock y un Excel para las compras.
           </p>
         </div>
-        <div>
-          <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Producto</h4>
-          <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-            <li><app-button variant="link" (btnClick)="scrollTo('beneficios')">Beneficios</app-button></li>
-            <li><app-button variant="link" (btnClick)="scrollTo('modulos')">Módulos</app-button></li>
-            <li><app-button variant="link" (btnClick)="scrollTo('faq')">Preguntas frecuentes</app-button></li>
-          </ul>
+
+        <div class="mt-14 grid gap-12 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-gray-200 dark:lg:divide-white/10">
+          @for (pillar of pillars; track pillar.id; let first = $first) {
+            <div [class.lg:pl-10]="!first" class="lg:pr-10">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex size-10 items-center justify-center rounded-xl bg-brand-500 text-white">
+                  <app-icon [name]="pillar.icon" iconClass="size-5" />
+                </span>
+                <h3 class="text-xl font-semibold">{{ pillar.title }}</h3>
+              </div>
+              <p class="mt-4 text-pretty text-gray-600 dark:text-gray-300">{{ pillar.lead }}</p>
+              <dl class="mt-6 space-y-4">
+                @for (item of pillar.items; track item.title) {
+                  <div>
+                    <dt class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.title }}</dt>
+                    <dd class="mt-0.5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">{{ item.text }}</dd>
+                  </div>
+                }
+              </dl>
+            </div>
+          }
         </div>
+      </div>
+    </section>
+
+    <!-- ===================== Cómo funciona ===================== -->
+    <section id="como-funciona" class="bg-brand-950 py-20 text-white sm:py-24" aria-labelledby="pasos-title">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="max-w-2xl">
+          <h2 id="pasos-title" class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">De la solicitud a tu primera venta</h2>
+          <p class="mt-4 text-lg leading-relaxed text-pretty text-brand-100">
+            El acceso es por invitación: no te dejamos solo con un usuario y una contraseña.
+          </p>
+        </div>
+
+        <ol class="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          @for (step of steps; track step.title; let i = $index) {
+            <li class="relative border-t border-white/20 pt-6">
+              <span class="absolute -top-[9px] start-0 size-4 rounded-full border-2 border-brand-950 bg-brand-400" aria-hidden="true"></span>
+              <p class="text-sm font-semibold text-brand-300">Paso {{ i + 1 }}</p>
+              <h3 class="mt-2 text-lg font-semibold">{{ step.title }}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-brand-100">{{ step.text }}</p>
+            </li>
+          }
+        </ol>
+      </div>
+    </section>
+
+    <!-- ===================== Planes ===================== -->
+    <section id="planes" class="py-20 sm:py-24" aria-labelledby="planes-title">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="max-w-2xl">
+          <h2 id="planes-title" class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Un plan según el tamaño de tu operación</h2>
+          <p class="mt-4 text-lg leading-relaxed text-pretty text-gray-600 dark:text-gray-300">
+            Todos se cotizan a tu medida: te enviamos la propuesta según sedes, usuarios e implementación.
+          </p>
+        </div>
+
+        <div class="mt-12 grid overflow-hidden rounded-2xl ring-1 ring-gray-200 lg:grid-cols-3 dark:ring-white/10">
+          @for (plan of plans; track plan.id; let last = $last) {
+            <div
+              class="flex flex-col border-gray-200 p-7 sm:p-8 dark:border-white/10"
+              [class.border-b]="!last"
+              [class.lg:border-b-0]="!last"
+              [class.lg:border-e]="!last"
+              [class.bg-brand-50]="plan.highlighted"
+              [class.dark:bg-brand-500/10]="plan.highlighted"
+            >
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-semibold">{{ plan.name }}</h3>
+                @if (plan.highlighted) {
+                  <span class="rounded-full bg-brand-500 px-2 py-0.5 text-[11px] font-medium text-white">Más elegido</span>
+                }
+              </div>
+              <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{ plan.forWho }}</p>
+              <ul class="mb-8 mt-6 flex-1 space-y-2.5 text-sm">
+                @for (feature of plan.features; track feature) {
+                  <li class="flex items-start gap-2 text-gray-700 dark:text-gray-200">
+                    <app-icon name="mdi:check" iconClass="mt-0.5 size-4 shrink-0 text-brand-500" />
+                    {{ feature }}
+                  </li>
+                }
+              </ul>
+              <app-button
+                class="w-full"
+                className="w-full justify-center"
+                size="sm"
+                [variant]="plan.highlighted ? 'primary' : 'outline'"
+                (btnClick)="requestPlan($event, plan)"
+              >
+                Cotizar {{ plan.name }}
+              </app-button>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Preguntas ===================== -->
+    <section id="preguntas" class="border-t border-gray-200 py-20 dark:border-white/10 sm:py-24" aria-labelledby="faq-title">
+      <div class="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_2fr] lg:gap-16">
         <div>
-          <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Legal y acceso</h4>
-          <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-            <li><a routerLink="/legal/privacidad" class="hover:text-brand-500">Política de privacidad</a></li>
-            <li><a routerLink="/legal/terminos" class="hover:text-brand-500">Términos de uso</a></li>
-            <li><a routerLink="/legal/libro-reclamaciones" class="hover:text-brand-500">Libro de reclamaciones</a></li>
-            @if (isAuthenticated()) {
-              <li><a routerLink="/dashboard" class="hover:text-brand-500">Ir al panel</a></li>
-            } @else {
-              <li><a routerLink="/auth/signin" class="hover:text-brand-500">Iniciar sesión</a></li>
+          <h2 id="faq-title" class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Preguntas frecuentes</h2>
+          <p class="mt-4 text-pretty text-gray-600 dark:text-gray-300">
+            ¿No encuentras tu duda?
+            <a href="#contacto" (click)="goToSection($event, 'contacto')" class="font-medium text-brand-600 underline-offset-4 hover:underline dark:text-brand-400">Escríbenos</a>.
+          </p>
+        </div>
+        <div class="faq border-t border-gray-200 dark:border-white/10">
+          @for (faq of faqs; track faq.question; let first = $first) {
+            <details [open]="first">
+              <summary>{{ faq.question }}</summary>
+              <p class="pb-5 ps-[1.875rem] text-sm leading-relaxed text-gray-600 dark:text-gray-300">{{ faq.answer }}</p>
+            </details>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Contacto ===================== -->
+    <section id="contacto" class="bg-gray-50 py-20 dark:bg-[#051018] sm:py-24" aria-labelledby="contacto-title">
+      <div class="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <h2 id="contacto-title" class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Pide tu demo</h2>
+          <p class="mt-4 max-w-md text-lg leading-relaxed text-pretty text-gray-600 dark:text-gray-300">
+            Te mostramos FactoFarm con el flujo de tu botica y te enviamos la cotización. Respondemos en 24 a 48 horas hábiles.
+          </p>
+
+          <ul class="mt-8 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+            @if (whatsAppHref()) {
+              <li>
+                <a [href]="whatsAppHref()" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2.5 font-medium hover:text-brand-600 dark:hover:text-brand-400">
+                  <app-icon name="mdi:whatsapp" iconClass="size-5 text-success-600" />
+                  WhatsApp, la respuesta más rápida
+                </a>
+              </li>
             }
-            <li><app-button variant="link" (btnClick)="scrollTo('contacto')">Contacto</app-button></li>
+            @if (contactEmail) {
+              <li>
+                <a [href]="'mailto:' + contactEmail" class="inline-flex items-center gap-2.5 hover:text-brand-600 dark:hover:text-brand-400">
+                  <app-icon name="mdi:email-outline" iconClass="size-5 text-gray-500" />
+                  {{ contactEmail }}
+                </a>
+              </li>
+            }
+            <li class="flex items-center gap-2.5">
+              <app-icon name="mdi:clock-outline" iconClass="size-5 text-gray-500" />
+              {{ businessHours }}
+            </li>
           </ul>
         </div>
+
+        <div class="rounded-2xl bg-white p-6 shadow-theme-lg ring-1 ring-gray-200 sm:p-8 dark:bg-[#0c2235] dark:ring-white/10">
+          @if (submitted()) {
+            <div class="flex flex-col items-start gap-4 py-2" role="status">
+              <app-icon name="mdi:check-circle-outline" iconClass="size-10 text-success-600 dark:text-success-400" />
+              <div>
+                <h3 class="text-xl font-semibold">¡Solicitud enviada!</h3>
+                <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                  Recibimos tus datos. Te contactamos pronto para habilitar tu cuenta.
+                </p>
+              </div>
+              @if (whatsAppHref()) {
+                <a [href]="whatsAppHref()" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                  ¿Prefieres WhatsApp? Escríbenos →
+                </a>
+              }
+            </div>
+          } @else {
+            <!-- novalidate: el mensaje de error es el nuestro (con la causa), no la burbuja del navegador. -->
+            <form novalidate (submit)="onSubmitContact($event)" aria-labelledby="contacto-title">
+              <app-form-stack>
+                <app-form-row>
+                  <app-form-field label="Nombre completo" for="contact-nombre" required>
+                    <app-input-field [maxLength]="120" id="contact-nombre" name="nombre" autocomplete="name" placeholder="Ej. María Pérez" [value]="nombre()" (valueChange)="nombre.set($event + '')" [isRequired]="true" />
+                  </app-form-field>
+                  <app-form-field label="Farmacia o botica" for="contact-farmacia" required>
+                    <app-input-field [maxLength]="200" id="contact-farmacia" name="farmacia" autocomplete="organization" placeholder="Nombre del establecimiento" [value]="farmacia()" (valueChange)="farmacia.set($event + '')" [isRequired]="true" />
+                  </app-form-field>
+                </app-form-row>
+                <app-form-row>
+                  <app-form-field label="Teléfono" for="contact-telefono" required>
+                    <app-input-field [maxLength]="30" id="contact-telefono" name="telefono" type="tel" autocomplete="tel" placeholder="Ej. 999 888 777" [value]="telefono()" (valueChange)="telefono.set($event + '')" [isRequired]="true" />
+                  </app-form-field>
+                  <app-form-field label="Correo electrónico" for="contact-email" required>
+                    <app-input-field [maxLength]="120" id="contact-email" name="email" type="email" autocomplete="email" placeholder="correo@tufarmacia.com" [value]="email()" (valueChange)="email.set($event + '')" [isRequired]="true" />
+                  </app-form-field>
+                </app-form-row>
+                <app-form-field label="Mensaje (opcional)" for="contact-mensaje">
+                  <app-text-area [maxLength]="2000" id="contact-mensaje" name="mensaje" placeholder="Cuántas sedes tienes, qué módulos te interesan…" [rows]="4" [value]="mensaje()" (valueChange)="mensaje.set($event)" />
+                </app-form-field>
+                @if (formError()) {
+                  <p class="rounded-lg bg-error-50 px-4 py-3 text-sm text-error-700 dark:bg-error-500/10 dark:text-error-300" role="alert">{{ formError() }}</p>
+                }
+                <app-button type="submit" className="w-full" startIconName="mdi:send-outline" [disabled]="submitting()" [loading]="submitting()">
+                  {{ submitting() ? 'Enviando…' : 'Enviar solicitud' }}
+                </app-button>
+                <p class="text-center text-xs text-gray-500 dark:text-gray-400">
+                  Al enviar aceptas nuestra
+                  <a routerLink="/legal/privacidad" class="underline underline-offset-2 hover:text-brand-600">política de privacidad</a>.
+                </p>
+              </app-form-stack>
+            </form>
+          }
+        </div>
       </div>
-      <div class="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
-        © {{ currentYear }} FactoFarm. Todos los derechos reservados.
+    </section>
+  </main>
+
+  <!-- ===================== Footer ===================== -->
+  <footer class="border-t border-gray-200 py-12 dark:border-white/10">
+    <div class="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 md:grid-cols-[2fr_1fr_1fr]">
+      <div>
+        <img src="/images/logo/logo-nav.png" alt="FactoFarm" width="640" height="263" loading="lazy" class="logo-dark-glow h-8 w-auto max-w-[160px] object-contain" />
+        <p class="mt-4 max-w-sm text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+          Software para farmacias y boticas en Perú: ventas, inventario, compras y facturación electrónica.
+        </p>
+        <p class="mt-4 text-xs leading-relaxed text-gray-500 dark:text-gray-500">
+          {{ company.legalName }} · RUC {{ company.ruc }}<br />
+          {{ company.address }}
+        </p>
       </div>
+      <nav aria-label="Producto">
+        <p class="text-sm font-semibold">Producto</p>
+        <ul class="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          @for (item of nav; track item.id) {
+            <li><a [href]="'#' + item.id" (click)="goToSection($event, item.id)" class="hover:text-brand-600 dark:hover:text-brand-400">{{ item.label }}</a></li>
+          }
+        </ul>
+      </nav>
+      <nav aria-label="Legal y acceso">
+        <p class="text-sm font-semibold">Legal y acceso</p>
+        <ul class="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <li><a routerLink="/legal/privacidad" class="hover:text-brand-600 dark:hover:text-brand-400">Política de privacidad</a></li>
+          <li><a routerLink="/legal/terminos" class="hover:text-brand-600 dark:hover:text-brand-400">Términos de uso</a></li>
+          <li><a routerLink="/legal/libro-reclamaciones" class="hover:text-brand-600 dark:hover:text-brand-400">Libro de reclamaciones</a></li>
+          @if (isAuthenticated()) {
+            <li><a routerLink="/dashboard" class="hover:text-brand-600 dark:hover:text-brand-400">Ir al panel</a></li>
+          } @else {
+            <li><a routerLink="/auth/signin" class="hover:text-brand-600 dark:hover:text-brand-400">Iniciar sesión</a></li>
+          }
+        </ul>
+      </nav>
     </div>
+    <p class="mx-auto mt-10 max-w-6xl px-4 text-xs text-gray-500 sm:px-6 dark:text-gray-500">© {{ currentYear }} FactoFarm. Todos los derechos reservados.</p>
   </footer>
 </div>

@@ -2,7 +2,7 @@
   type="button"
   (click)="toggleTheme()"
   [attr.aria-label]="theme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
-  [class]="compact() ? 'size-9 rounded-lg' : 'size-10 lg:size-11 rounded-[10px]'"
+  [class]="compact() ? 'size-9 rounded-lg pointer-coarse:after:absolute pointer-coarse:after:-inset-[5px]' : 'size-10 lg:size-11 rounded-[10px]'"
   class="relative inline-flex shrink-0 items-center justify-center border border-gray-300 bg-transparent text-gray-500 shadow-theme-xs transition-all hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white"
 >
   @if (theme() === 'dark') {

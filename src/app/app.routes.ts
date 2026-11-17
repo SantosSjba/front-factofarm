@@ -6,11 +6,12 @@ import { NotFoundComponent } from './pages/other-page/not-found/not-found.compon
  */
 export const routes: Routes = [
   {
+    // Portada y páginas legales: el título y la descripción los pone SeoService (seo.config.ts),
+    // una sola fuente para el navegador y para el HTML prerenderizado.
     path: '',
     pathMatch: 'full',
     loadComponent: () =>
       import('./pages/landing/landing.component').then((m) => m.LandingComponent),
-    title: 'FactoFarm | Software para farmacias y boticas',
   },
   {
     // Pública: ventana secundaria del POS (sessionStorage no se comparte entre ventanas).
@@ -38,13 +39,11 @@ export const routes: Routes = [
         path: 'privacidad',
         loadComponent: () =>
           import('./pages/legal/privacy-policy-page.component').then((m) => m.PrivacyPolicyPageComponent),
-        title: 'FactoFarm | Política de privacidad',
       },
       {
         path: 'terminos',
         loadComponent: () =>
           import('./pages/legal/terms-of-use-page.component').then((m) => m.TermsOfUsePageComponent),
-        title: 'FactoFarm | Términos de uso',
       },
       {
         path: 'libro-reclamaciones',
@@ -52,7 +51,6 @@ export const routes: Routes = [
           import('./pages/legal/complaints-book-page.component').then(
             (m) => m.ComplaintsBookPageComponent,
           ),
-        title: 'FactoFarm | Libro de reclamaciones',
       },
     ],
   },

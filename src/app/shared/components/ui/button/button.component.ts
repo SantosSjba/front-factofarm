@@ -56,11 +56,28 @@ export type ButtonSize =
         display: none !important;
       }
     }
-    /* Pantallas táctiles: área mínima de toque de 44 px para botones de solo ícono. */
+    /* "lg:hidden": solo en teléfono y tablet (p. ej. el botón de menú cuando la barra ya muestra las secciones). */
+    @media (min-width: 1024px) {
+      :host(.lg\\:hidden) {
+        display: none !important;
+      }
+    }
+    /*
+      Pantallas táctiles: los botones de solo ícono conservan su tamaño visible (compactos, a la
+      altura de los demás botones) y suman un área de toque invisible de 44 px alrededor.
+    */
     @media (pointer: coarse) {
-      .ff-icon-btn {
-        min-width: 2.75rem;
-        min-height: 2.75rem;
+      .ff-icon-btn:not(.absolute):not(.fixed):not(.sticky) {
+        position: relative;
+      }
+      .ff-icon-btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: max(100%, 2.75rem);
+        height: max(100%, 2.75rem);
+        translate: -50% -50%;
       }
     }
   `,

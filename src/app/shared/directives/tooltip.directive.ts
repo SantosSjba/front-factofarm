@@ -5,8 +5,10 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  PLATFORM_ID,
   inject,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { createPopper, Instance, type Placement } from '@popperjs/core';
 
 /**
@@ -31,6 +33,8 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly el = inject(ElementRef<HTMLElement>);
+  /** Al prerenderizar páginas públicas (build) no hay mouse, foco ni `document`: no se hace nada. */
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   @Input('appTooltip') text = '';
   @Input() appTooltipPlacement: Placement = 'top';
@@ -85,6 +89,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   }
 
   ngOnChanges(): void {
+    if (!this.isBrowser) return;
     // Tras renderizar el contenido proyectado, para comparar con el nombre visible del control.
     queueMicrotask(() => this.syncA11y());
   }
@@ -173,6 +178,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (!this.isBrowser) return;
     this.clearShowTimer();
     this.destroyTip();
     this.descEl?.remove();

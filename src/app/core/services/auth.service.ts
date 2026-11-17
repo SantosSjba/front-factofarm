@@ -19,6 +19,11 @@ const GLOBAL_CATALOG_WRITE_CODES = new Set([
   'units.write',
 ]);
 
+/** sessionStorage/localStorage existen solo en el navegador (no al prerenderizar en el build). */
+function hasWebStorage(): boolean {
+  return typeof sessionStorage !== 'undefined' && typeof localStorage !== 'undefined';
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -212,12 +217,15 @@ export class AuthService {
   }
 
   private isRememberEnabled(): boolean {
+    if (!hasWebStorage()) return false;
     return (
       localStorage.getItem(REMEMBER_KEY) === '1' || sessionStorage.getItem(REMEMBER_KEY) === '1'
     );
   }
 
   private readStorage(key: string): string | null {
+    // Al prerenderizar páginas públicas (build) no hay almacenamiento: nadie tiene sesión.
+    if (!hasWebStorage()) return null;
     return sessionStorage.getItem(key) ?? localStorage.getItem(key);
   }
 

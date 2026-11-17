@@ -1,0 +1,76 @@
+:host {
+  display: block;
+}
+
+/* Al saltar a una sección, que el header fijo no tape su título. */
+section[id] {
+  scroll-margin-top: 4.5rem;
+}
+
+/* ---------- Preguntas frecuentes: <details> nativo (indexable y encontrable con Ctrl+F) ---------- */
+.faq details {
+  border-bottom: 1px solid var(--color-gray-200);
+}
+:host-context(.dark) .faq details {
+  border-color: rgb(255 255 255 / 0.1);
+}
+
+.faq summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 1.125rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-gray-900);
+}
+:host-context(.dark) .faq summary {
+  color: #fff;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Chevron junto al texto (no al otro extremo): se asocia mejor con la pregunta. */
+.faq summary::before {
+  content: '';
+  flex-shrink: 0;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  background-color: var(--color-brand-500);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  rotate: -90deg;
+}
+.faq details[open] > summary::before {
+  rotate: 0deg;
+}
+.faq summary:hover {
+  color: var(--color-brand-600);
+}
+:host-context(.dark) .faq summary:hover {
+  color: var(--color-brand-400);
+}
+
+.faq details::details-content {
+  /* Permite animar la altura hasta su tamaño natural (mejora progresiva). */
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  contain: layout;
+}
+.faq details:not([open])::details-content {
+  block-size: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .faq summary::before {
+    transition: rotate 0.2s;
+  }
+  .faq details::details-content {
+    transition: block-size, content-visibility;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-in-out;
+    transition-behavior: allow-discrete;
+  }
+}

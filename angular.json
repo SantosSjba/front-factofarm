@@ -23,10 +23,12 @@
               "zone.js"
             ],
             "allowedCommonJsDependencies": [
+              "debug",
               "jsbarcode",
               "property-expr",
               "tiny-case",
-              "toposort"
+              "toposort",
+              "xmlhttprequest-ssl"
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
@@ -38,7 +40,9 @@
             "styles": [
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "server": "src/main.server.ts",
+            "outputMode": "static"
           },
           "configurations": {
             "production": {

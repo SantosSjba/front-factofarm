@@ -1,5 +1,6 @@
 import { environment } from '../../../environments/environment';
 import type { SeoConfig } from './seo.types';
+import { LANDING_FAQS } from '../../pages/landing/landing.content';
 
 const PERU_KEYWORDS =
   'software farmacia peru, sistema botica peru, punto de venta farmacia, facturacion electronica sunat farmacia, inventario farmacia, software botica lima, gestion farmacia, ERP farmacia peru, cotizacion software farmacia';
@@ -58,6 +59,15 @@ export const PUBLIC_SEO: Record<string, SeoConfig> = {
           name: 'FactoFarm',
           url: siteUrl(),
           inLanguage: 'es-PE',
+        },
+        // Mismas preguntas que se ven en la portada (una sola fuente: landing.content.ts).
+        {
+          '@type': 'FAQPage',
+          mainEntity: LANDING_FAQS.map((faq) => ({
+            '@type': 'Question',
+            name: faq.question,
+            acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+          })),
         },
       ],
     },

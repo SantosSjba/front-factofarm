@@ -20,7 +20,11 @@ const parse = (value: string | null): Theme | null => (value === 'light' || valu
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private readonly doc = inject(DOCUMENT);
-  private readonly media = this.doc.defaultView?.matchMedia('(prefers-color-scheme: dark)');
+  // Al prerenderizar (build) no existe matchMedia: se asume claro y el navegador lo corrige al cargar.
+  private readonly media =
+    typeof this.doc.defaultView?.matchMedia === 'function'
+      ? this.doc.defaultView.matchMedia('(prefers-color-scheme: dark)')
+      : undefined;
 
   private readonly override = signal<Theme | null>(this.readStored());
   private readonly system = signal<Theme>(this.media?.matches ? 'dark' : 'light');

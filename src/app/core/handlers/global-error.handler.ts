@@ -3,7 +3,7 @@ import { ErrorHandler, Injectable, inject, isDevMode } from '@angular/core';
 import { NotifyService } from '../services/notify.service';
 import { httpErrorMessage } from '../http/http-error-message';
 import { isGloballyNotifiedStatus } from '../interceptors/api-error.interceptor';
-import { STALE_CHUNK_ERROR } from './stale-chunk';
+import { isReloading, isStaleChunkError, reloadOnce } from './stale-chunk';
 
 /** Promesas rechazadas llegan envueltas (`{ rejection }`) por zone.js. */
 function unwrap(error: unknown): unknown {
@@ -65,11 +65,16 @@ export class GlobalErrorHandler implements ErrorHandler {
       if (isDevMode()) console.error(error);
       return;
     }
-    // No se pudo descargar una pantalla (versión nueva publicada o sin conexión). El router ya
-    // recargó una vez (app.config.ts); si vuelve a fallar, mensaje claro y no "Error de aplicación".
-    if (STALE_CHUNK_ERROR.test(extractMessage(error))) {
-      this.notify.warning('No se pudo abrir la pantalla.', 'Puede haber una versión nueva del sistema o se cortó la conexión. Recarga la página.');
+    // No se pudo descargar código del sistema (hay una versión nueva publicada o se cortó la
+    // conexión): se recarga una vez para traer la versión nueva; si ya se intentó, mensaje claro
+    // en lugar de "Error de aplicación".
+    if (isStaleChunkError(error)) {
       if (isDevMode()) console.warn(error);
+      if (isReloading() || reloadOnce(location.pathname + location.search + location.hash)) return;
+      this.notify.warning(
+        'No se pudo cargar esta parte del sistema.',
+        'Puede haber una versión nueva o se cortó la conexión. Recarga la página.',
+      );
       return;
     }
     if (isIgnorableClientNoise(error)) {
