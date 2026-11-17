@@ -612,6 +612,25 @@ dialog.ff-modal-dialog::backdrop {
   input[type="time"]::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
   }
+
+  /*
+    iPhone/iPad (Safari): los campos de fecha/hora usan un aspecto nativo con ancho mínimo propio
+    y más alto; ignoran `width: 100%` y `min-width: 0` y se salen de su contenedor. Sin ese aspecto
+    toman el ancho y alto de nuestras clases; el selector nativo sigue abriéndose al tocarlos.
+    `-webkit-touch-callout` solo existe en Safari de iOS: escritorio y Android no cambian.
+  */
+  @supports (-webkit-touch-callout: none) {
+    input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]) {
+      -webkit-appearance: none;
+      appearance: none;
+      min-width: 0;
+    }
+    input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"])::-webkit-date-and-time-value {
+      /* Sin el aspecto nativo, iOS centra el valor; se alinea como el resto de campos. */
+      text-align: start;
+      margin: 0;
+    }
+  }
 }
 
 .tableCheckbox:checked ~ span span {
