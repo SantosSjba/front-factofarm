@@ -40,21 +40,42 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   private popper: Instance | null = null;
   private showTimer: ReturnType<typeof setTimeout> | null = null;
 
-  @HostListener('mouseenter')
-  onMouseEnter(): void {
+  /** Cómo se abrió: con mouse se puede pasar el puntero sobre él; con teclado no tapa clics. */
+  private openedBy: 'pointer' | 'keyboard' = 'pointer';
+
+  /**
+   * Solo con un puntero que "flota" (mouse, lápiz). En teléfono un toque simula mouseenter y nunca
+   * llega mouseleave: el tooltip quedaba abierto encima de los ítems del menú y tapaba los toques.
+   */
+  @HostListener('pointerenter', ['$event'])
+  onPointerEnter(event: PointerEvent): void {
+    if (event.pointerType === 'touch') return;
+    this.openedBy = 'pointer';
     this.scheduleShow();
   }
 
-  @HostListener('focusin')
-  onFocusIn(): void {
+  /** Solo foco de teclado (`:focus-visible`): el foco que deja un toque o un clic no lo abre. */
+  @HostListener('focusin', ['$event'])
+  onFocusIn(event: FocusEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.matches(':focus-visible')) return;
+    this.openedBy = 'keyboard';
     this.scheduleShow();
   }
 
   /** Con el mouse: espera un instante por si va hacia el tooltip (WCAG 1.4.13, "hoverable"). */
-  @HostListener('mouseleave')
-  onMouseLeave(): void {
+  @HostListener('pointerleave', ['$event'])
+  onPointerLeave(event: PointerEvent): void {
+    if (event.pointerType === 'touch') return;
     this.clearShowTimer();
     this.hideSoon();
+  }
+
+  /** Tocar o hacer clic en el control lo cierra (la acción ya empezó; el tooltip estorba). */
+  @HostListener('pointerdown')
+  onPointerDown(): void {
+    this.clearShowTimer();
+    this.destroyTip();
   }
 
   @HostListener('focusout')
@@ -160,6 +181,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
 
   private mount(): void {
     if (this.tipEl || !this.text?.trim()) return;
+    if (!this.hasRoomBeside()) return;
 
     const tip = document.createElement('div');
     tip.setAttribute('role', 'tooltip');
@@ -179,7 +201,8 @@ export class TooltipDirective implements OnChanges, OnDestroy {
       fontWeight: '400',
       lineHeight: '1.35',
       textAlign: 'center',
-      pointerEvents: 'auto',
+      // Con mouse se puede pasar sobre el tooltip; abierto por teclado no intercepta clics.
+      pointerEvents: this.openedBy === 'pointer' ? 'auto' : 'none',
       boxShadow: '0 10px 25px rgba(0,0,0,0.25)',
       wordBreak: 'break-word',
     } as CSSStyleDeclaration);
@@ -235,6 +258,18 @@ export class TooltipDirective implements OnChanges, OnDestroy {
         },
       ],
     });
+  }
+
+  /**
+   * Un tooltip pensado al costado (menú lateral: `right`) que no cabe ahí terminaría encima o
+   * debajo, tapando los ítems vecinos (menú lateral en teléfono o ventana angosta). Mejor no mostrarlo.
+   */
+  private hasRoomBeside(): boolean {
+    const side = this.appTooltipPlacement.split('-')[0];
+    if (side !== 'right' && side !== 'left') return true;
+    const rect = (this.el.nativeElement as HTMLElement).getBoundingClientRect();
+    const room = side === 'right' ? window.innerWidth - rect.right : rect.left;
+    return room >= 160;
   }
 
   /** Altura aproximada del header sticky para no dibujar debajo. */

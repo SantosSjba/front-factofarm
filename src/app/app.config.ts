@@ -13,7 +13,7 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideRouter, withViewTransitions } from '@angular/router';
+import { provideRouter, withNavigationErrorHandler, withViewTransitions } from '@angular/router';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 
@@ -21,9 +21,25 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
 import { GlobalErrorHandler } from './core/handlers/global-error.handler';
+import { STALE_CHUNK_ERROR } from './core/handlers/stale-chunk';
 import { TopLayerOverlayContainer } from './shared/services/top-layer-overlay-container';
 
 registerLocaleData(localeEsPe);
+
+
+function reloadOnStaleChunk(error: unknown, url: string): void {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  if (!STALE_CHUNK_ERROR.test(message)) return;
+  const key = 'ff-stale-chunk-reload';
+  try {
+    // Una sola vez por pestaña: si tras recargar sigue fallando, que se vea el error real.
+    if (sessionStorage.getItem(key) === url) return;
+    sessionStorage.setItem(key, url);
+  } catch {
+    // Sin sessionStorage se recarga igual (una vez, porque la página nueva ya trae su código).
+  }
+  location.assign(url);
+}
 
 /** Tras navegar, si el foco se perdió (quedó en el body), lo lleva al título de la nueva pantalla. */
 function focusPageHeadingIfLost(): void {
@@ -69,6 +85,9 @@ export const appConfig: ApplicationConfig = {
       routes,
       // Fundido corto entre pantallas (View Transitions, Baseline). Con "reducir movimiento" no hay
       // animación (styles.css). Si el foco quedó en algo que ya no existe, pasa al título de la página.
+      // Pantalla que no carga porque hubo un deploy (el index.html viejo pide archivos que ya no
+      // existen): recarga una vez para traer la versión nueva, en lugar de mostrar un error.
+      withNavigationErrorHandler(({ error, url }) => reloadOnStaleChunk(error, url)),
       withViewTransitions({
         skipInitialTransition: true,
         onViewTransitionCreated: ({ transition }) => {

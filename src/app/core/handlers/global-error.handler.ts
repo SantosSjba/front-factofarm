@@ -3,6 +3,7 @@ import { ErrorHandler, Injectable, inject, isDevMode } from '@angular/core';
 import { NotifyService } from '../services/notify.service';
 import { httpErrorMessage } from '../http/http-error-message';
 import { isGloballyNotifiedStatus } from '../interceptors/api-error.interceptor';
+import { STALE_CHUNK_ERROR } from './stale-chunk';
 
 /** Promesas rechazadas llegan envueltas (`{ rejection }`) por zone.js. */
 function unwrap(error: unknown): unknown {
@@ -24,7 +25,6 @@ function isIgnorableClientNoise(error: unknown): boolean {
     /Failed to execute 'clone' on 'Response'/i,
     /Response body is already used/i,
     /ResizeObserver loop/i,
-    /Loading chunk [\w-]+ failed/i, // a veces tras deploy; se maneja con reload aparte
     /chrome-extension:\/\//i,
     /moz-extension:\/\//i,
     /safari-extension:\/\//i,
@@ -63,6 +63,13 @@ export class GlobalErrorHandler implements ErrorHandler {
         this.notify.error(httpErrorMessage(error, 'No se pudo completar la operación.'));
       }
       if (isDevMode()) console.error(error);
+      return;
+    }
+    // No se pudo descargar una pantalla (versión nueva publicada o sin conexión). El router ya
+    // recargó una vez (app.config.ts); si vuelve a fallar, mensaje claro y no "Error de aplicación".
+    if (STALE_CHUNK_ERROR.test(extractMessage(error))) {
+      this.notify.warning('No se pudo abrir la pantalla.', 'Puede haber una versión nueva del sistema o se cortó la conexión. Recarga la página.');
+      if (isDevMode()) console.warn(error);
       return;
     }
     if (isIgnorableClientNoise(error)) {
