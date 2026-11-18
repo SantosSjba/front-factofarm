@@ -1850,9 +1850,11 @@ export class DirectoryApiService {
     return this.http.get<Record<SaleDocumentType, string[]>>(`${this.base}/sales/pos-series`);
   }
 
-  getPosCatalog(warehouseId: string, search?: string) {
+  /** `includeOutOfStock`: al buscar, incluye también productos sin stock vendible (solo POS). */
+  getPosCatalog(warehouseId: string, search?: string, includeOutOfStock = false) {
     const params: Record<string, string> = { warehouseId };
     if (search?.trim()) params['search'] = search.trim();
+    if (includeOutOfStock) params['incluirSinStock'] = 'true';
     return this.http.get<PosCatalogItemDto[]>(`${this.base}/sales/pos-catalog`, { params });
   }
 

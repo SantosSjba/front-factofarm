@@ -127,12 +127,22 @@ const DOC_OPTIONS_INTERNAL: { value: SaleDocumentType; label: string }[] = [
   { value: 'NOTA_VENTA', label: 'Nota de venta' },
 ];
 
+import { Router } from '@angular/router';
 import { StatusBadgeComponent, statusToneClasses } from '../../../../shared/components/ui/badge/status-badge.component';
 import { OptionListComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { OptionItemComponent } from '../../../../shared/components/ui/option-list/option-list.component';
 import { TabStripComponent } from '../../../../shared/components/ui/tab-strip/tab-strip.component';
 import { CheckboxComponent } from '../../../../shared/components/form/input/checkbox.component';
 import { QuickCreateComponent } from '../../components/quick-create/quick-create.component';
+/** Por qué un producto del catálogo POS no se puede vender en este momento. */
+interface PosStockIssue {
+  kind: 'VENCIDO' | 'SIN_LOTE' | 'SIN_STOCK';
+  label: string;
+  tone: 'error' | 'warning';
+  message: string;
+  hint: string;
+}
+
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
@@ -166,6 +176,7 @@ import { QuickCreateComponent } from '../../components/quick-create/quick-create
 export class PuntoVentaComponent implements OnDestroy {
   private readonly api = inject(DirectoryApiService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly branding = inject(TenantBrandingService);
   private readonly notify = inject(NotifyService);
   private readonly queryClient = injectQueryClient();
@@ -208,10 +219,15 @@ export class PuntoVentaComponent implements OnDestroy {
   protected readonly search = signal('');
   protected readonly catalog = signal<PosCatalogItemDto[]>([]);
   protected readonly catalogLoading = signal(false);
+  /** Productos que sí se pueden vender (sin contar agotados ni los que solo tienen lotes vencidos). */
+  protected readonly sellableCount = computed(() => this.catalog().filter((p) => !this.stockIssue(p)).length);
   /** Productos del catálogo con stock en lotes vencidos (aviso en el contador). */
-  /** Productos que sí se pueden vender (sin contar los que solo tienen lotes vencidos). */
-  protected readonly sellableCount = computed(() => this.catalog().filter((p) => !this.isOnlyExpired(p)).length);
   protected readonly expiredCount = computed(() => this.catalog().filter((p) => this.expiredStock(p) > 0).length);
+  /** Productos que salen en la búsqueda pero sin stock vendible (agotados o sin lote válido). */
+  protected readonly outOfStockCount = computed(
+    () => this.catalog().filter((p) => { const k = this.stockIssue(p)?.kind; return k === 'SIN_STOCK' || k === 'SIN_LOTE'; }).length,
+  );
+  protected readonly canAdjustStock = computed(() => this.auth.hasPermission('nav.inventario_movimientos'));
   protected readonly cart = signal<CartLine[]>([]);
   protected readonly prescriptionValidated = signal(false);
   protected readonly prescriptionId = signal('');
@@ -824,7 +840,7 @@ export class PuntoVentaComponent implements OnDestroy {
     this.catalogLoading.set(true);
     try {
       const term = this.search().trim();
-      const rows = await firstValueFrom(this.api.getPosCatalog(wh, term || undefined));
+      const rows = await firstValueFrom(this.api.getPosCatalog(wh, term || undefined, true));
       const wedgeEnabled = this.cashSession()?.cashRegister?.barcodeWedgeEnabled ?? false;
       if (explicit && wedgeEnabled && term) {
         const normalized = term.toLowerCase();
@@ -912,9 +928,49 @@ export class PuntoVentaComponent implements OnDestroy {
     return Number.parseFloat(item.stockVencido ?? '0') || 0;
   }
 
-  /** Solo tiene lotes vencidos: aparece en el catálogo marcado, pero no se puede agregar. */
-  protected isOnlyExpired(item: PosCatalogItemDto): boolean {
-    return Number.parseFloat(item.stock) <= 0 && this.expiredStock(item) > 0;
+  /**
+   * Motivo por el que un producto del catálogo no se puede vender. Sale en la búsqueda (con badge)
+   * para que el vendedor vea el precio, pero hay que regularizar el inventario antes de venderlo.
+   */
+  protected stockIssue(item: PosCatalogItemDto): PosStockIssue | null {
+    if (Number.parseFloat(item.stock) > 0) return null;
+    if (this.expiredStock(item) > 0) {
+      const fecha = item.vencimientoMasAntiguo
+        ? new Date(item.vencimientoMasAntiguo).toLocaleDateString('es-PE', { timeZone: 'UTC' })
+        : null;
+      return {
+        kind: 'VENCIDO',
+        label: 'Vencido',
+        tone: 'error',
+        message: `${item.nombre} está vencido${fecha ? ` (venció el ${fecha})` : ''}: no se puede vender.`,
+        hint: 'Retíralo del anaquel o regulariza el lote en Lotes.',
+      };
+    }
+    const warehouseStock = Number.parseFloat(item.warehouseStock ?? '0') || 0;
+    if (item.manejaLotes && warehouseStock > 0) {
+      return {
+        kind: 'SIN_LOTE',
+        label: 'Sin lote vendible',
+        tone: 'warning',
+        message: `${item.nombre} tiene ${warehouseStock} en el almacén, pero ningún lote vigente registrado.`,
+        hint: 'Registra o corrige el lote (Lotes o Movimientos de inventario) para poder venderlo.',
+      };
+    }
+    return {
+      kind: 'SIN_STOCK',
+      label: 'Stock 0',
+      tone: 'warning',
+      message: `${item.nombre} figura con stock 0 en el sistema.`,
+      hint: 'Si aún quedan unidades en la farmacia, regulariza el stock (ingreso o ajuste en Movimientos de inventario) y vuelve a buscarlo para venderlo.',
+    };
+  }
+
+  /** Abre Movimientos de inventario con el ingreso del producto ya elegido, en otra pestaña (no se pierde la venta). */
+  protected openStockAdjustment(item: PosCatalogItemDto) {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/inventario-movimientos'], { queryParams: { ingreso: item.id } }),
+    );
+    window.open(url, '_blank', 'noopener');
   }
 
   protected addToCart(item: PosCatalogItemDto) {
@@ -922,21 +978,10 @@ export class PuntoVentaComponent implements OnDestroy {
     this.customerDisplaySaleHold = false;
     const price = Number.parseFloat(item.precio);
     const stock = Number.parseFloat(item.stock);
-    if (stock <= 0 && this.expiredStock(item) > 0) {
-      const fecha = item.vencimientoMasAntiguo
-        ? new Date(item.vencimientoMasAntiguo).toLocaleDateString('es-PE', { timeZone: 'UTC' })
-        : null;
-      this.notify.error(
-        `${item.nombre} está vencido${fecha ? ` (venció el ${fecha})` : ''}: no se puede vender. Retíralo del anaquel o regulariza el lote en Lotes.`,
-      );
-      return;
-    }
-    if (stock <= 0) {
-      this.notify.warning(
-        item.manejaLotes
-          ? 'Sin stock vendible en lotes elegibles (revise vencimientos o lotes registrados)'
-          : 'Sin stock disponible',
-      );
+    const issue = this.stockIssue(item);
+    if (issue) {
+      if (issue.tone === 'error') this.notify.error(issue.message, issue.hint);
+      else this.notify.warning(issue.message, issue.hint);
       return;
     }
     const existing = this.cart().find((l) => l.productId === item.id);
